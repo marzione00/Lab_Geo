@@ -7,7 +7,21 @@ OUT=ROOT/'qa/browser';OUT.mkdir(parents=True,exist_ok=True)
 with socket.socket() as s:s.bind(('127.0.0.1',0));port=s.getsockname()[1]
 server=subprocess.Popen(['node','scripts/serve.mjs'],cwd=ROOT,env=dict(os.environ,PORT=str(port)),stdout=subprocess.DEVNULL)
 url=f'http://127.0.0.1:{port}/'
-checks=[];errors=[];page=None;context=None
+checks=[];errors=[];layouts=[];page=None;context=None
+def assert_layout(label):
+ result=page.evaluate("""async () => {
+  await document.fonts.ready;
+  const width=innerWidth, scrollWidth=document.documentElement.scrollWidth;
+  return {url:location.href,width,scrollWidth,candidates:scrollWidth>width ?
+   [...document.querySelectorAll('body *')].map(el=>{
+    const r=el.getBoundingClientRect();
+    return {tag:el.tagName,id:el.id,classes:el.getAttribute('class'),left:r.left,right:r.right};
+   }).filter(r=>r.right>width || r.left<0).slice(0,40):[]};
+ }""")
+ result['label']=label;layouts.append(result)
+ (OUT/'layout.json').write_text(json.dumps(layouts,ensure_ascii=False,indent=2))
+ assert result['scrollWidth']<=result['width'], 'Horizontal overflow: '+json.dumps(result,ensure_ascii=False)
+
 subprocess.run(['node','scripts/prepare-browser-harness.mjs'],cwd=ROOT,check=True)
 try:
  for _ in range(100):
@@ -104,14 +118,31 @@ try:
    page.set_viewport_size({'width':390,'height':844})
    page.goto(url+'#indice')
    page.wait_for_selector('.orbital-home')
-   assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
+   assert_layout('home mobile')
    page.screenshot(path=str(OUT/'mobile.png'),full_page=False)
    page.goto(url+'#modulo-M05/slide/44')
    expect(page.locator('.page-counter')).to_have_text('44 / 105')
    page.get_by_role('tab',name='Testo e formule').click()
    page.locator('mjx-container[jax="SVG"]').first.wait_for()
-   assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
+   assert_layout('lettura con formule mobile')
    checks.append('Viewport mobile 390 px')
+   # Keep the strict overflow assertion; cover every planetary header at narrow,
+   # intermediate and desktop widths. Clipped decorations must not hide content.
+   for width in [320,390,430,768,1440]:
+    page.set_viewport_size({'width':width,'height':844})
+    page.goto(url+'#indice')
+    page.locator('.orbital-home').wait_for()
+    assert_layout('home')
+    for m in modules:
+     page.goto(url+'#modulo-'+m['id'])
+     page.get_by_role('heading',name=m['title'],exact=True).wait_for()
+     assert_layout(m['id'])
+    page.goto(url+'#modulo-M05/slide/44')
+    expect(page.locator('.page-counter')).to_have_text('44 / 105')
+    page.get_by_role('tab',name='Testo e formule').click()
+    page.locator('mjx-container[jax="SVG"]').first.wait_for()
+    assert_layout('lettura con formule')
+   checks.append('Home, 28 moduli e formule senza overflow a 320/390/430/768/1440 px')
    page.goto(url+'experiments-harness.html')
    page.locator('#start').click()
    expect(page.locator('#status')).to_have_text('COMPLETATO · 139 superati · 0 errori',timeout=600000)

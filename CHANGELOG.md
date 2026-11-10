@@ -1,5 +1,12 @@
 # Registro delle modifiche
 
+## 3.1.2 — Correzione dell’ingombro dei pianeti
+
+- Contenuto l’overflow dei riferimenti geometrici della Terra e dei pianeti nelle intestazioni, mediante un contenitore riservato alla decorazione. Testi e comandi restano esterni al ritaglio.
+- Conservati geometria, dimensioni e motore WebGL delle rotazioni.
+- Esteso il test Chromium a home, 28 moduli e lettura con formule a 320, 390, 430, 768 e 1440 px; invariata l’asserzione rigorosa sulla larghezza.
+- Aggiunto `qa/browser/layout.json` agli artefatti diagnostici, con URL, larghezze ed elementi candidati in caso di errore.
+
 ## 3.1.1 — Consolidamento editoriale e del collaudo
 
 - Corretto il confronto delle metriche: struttura, denominazioni, tipi, valori testuali e tolleranze numeriche; ogni discrepanza fa fallire l’attività.

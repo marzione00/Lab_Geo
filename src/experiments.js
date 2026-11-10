@@ -10,7 +10,7 @@
  let api={},dispose=()=>{};
  function configure(value){api=value;}
  function cleanup(){dispose();dispose=()=>{};}
- const planet=(id,cls='')=>'<div class="planet-slot '+(root.GeoPlanets.byId[id]?.rings?'ringed ':'')+cls+'" data-planet="'+id+'" data-hero="0.35" aria-hidden="true"></div>';
+ const planet=(id,cls='')=>'<div class="planet-viewport" aria-hidden="true"><div class="planet-slot '+(root.GeoPlanets.byId[id]?.rings?'ringed ':'')+cls+'" data-planet="'+id+'" data-hero="0.35" aria-hidden="true"></div></div>';
  const link=(href,label,cls='')=>'<a class="'+cls+'" href="'+escape(href)+'">'+label+'</a>';
  const button=(id,label,secondary=false)=>'<button type="button" id="'+id+'" class="button'+(secondary?' secondary':'')+'">'+label+'</button>';
  function card(a,index){return '<a class="experiment-card" href="'+path(a)+'"><span class="experiment-module">'+a.module+' / '+escape(root.GeoPlanets.byId[a.module].name)+'</span>'+(index!==undefined?'<span class="activity-order">'+String(index+1).padStart(2,'0')+'</span>':'')+'<h3>'+escape(a.title)+'</h3><p>'+escape(a.goal)+'</p><span class="card-arrow">Apri l’esperimento →</span></a>';}

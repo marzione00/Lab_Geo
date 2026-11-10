@@ -64,4 +64,6 @@ Per annullare una modifica applicativa, creare un commit di revert e lasciare ch
 | R non si avvia | Verificare MIME, worker, CSP, connessione e memoria del dispositivo |
 | R si arresta al limite di tempo | Ridurre i parametri o eseguire lo script scaricato in R nativo |
 | CodeQL ignorato nel repository privato | Verificare servizio GitHub e variabile di abilitazione |
+| `Get Pages site failed` / `Not Found` | Selezionare Settings → Pages → Source → GitHub Actions, poi rilanciare il workflow esistente |
+| `Horizontal overflow` nel test Chromium | Consultare `layout.json`, screenshot e trace nell’artefatto `browser-diagnostics`; mantenere il controllo e correggere l’elemento fuori misura |
 | Pubblicazione rifiutata | Verificare Pages, branch predefinito, environment e permessi, senza ampliare quelli dei test |

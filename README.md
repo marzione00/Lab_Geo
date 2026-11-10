@@ -1,7 +1,7 @@
 # GeoStat Lab
 
 **Laboratori interattivi di statistica e coding R per le scienze della Terra**
-Versione applicativa **3.1.1** · materiali didattici **R6** · lingua italiana
+Versione applicativa **3.1.2** · materiali didattici **R6** · lingua italiana
 
 GeoStat Lab accompagna lo studio dei metodi statistici attraverso 139 esperimenti nei quali, modificando parametri e ipotesi, si osservano le conseguenze sui dati simulati, sulle figure e sulle conclusioni. Ogni attività collega il problema scientifico al formalismo matematico e al programma R che ne produce i risultati. L’atlante di 17 pianeti rotanti organizza il percorso; le 11 spedizioni applicative riuniscono i metodi necessari ad affrontare un’indagine più articolata.
 
@@ -200,9 +200,10 @@ Dependabot propone aggiornamenti settimanali. Ogni modifica a webR, ai pacchetti
 - [DEPLOYMENT.md](DEPLOYMENT.md): pubblicazione, impostazioni GitHub e rollback.
 - [SECURITY.md](SECURITY.md): gestione e segnalazione delle vulnerabilità.
 - [CONTRIBUTING.md](CONTRIBUTING.md): modifiche al codice e ai contenuti scientifici.
-- [CHANGELOG.md](CHANGELOG.md): modifiche della versione 3.1.1.
+- [CHANGELOG.md](CHANGELOG.md): modifiche della versione 3.1.2.
 - [docs/SICUREZZA.md](docs/SICUREZZA.md): modello di minaccia e controlli.
-- [docs/CONSOLIDAMENTO_3_1_1.md](docs/CONSOLIDAMENTO_3_1_1.md): revisione delle stratificazioni e collaudo corrente.
+- [docs/CORREZIONE_LAYOUT_3_1_2.md](docs/CORREZIONE_LAYOUT_3_1_2.md): correzione mobile e verifiche della versione corrente.
+- [docs/CONSOLIDAMENTO_3_1_1.md](docs/CONSOLIDAMENTO_3_1_1.md): revisione delle stratificazioni e collaudo della versione 3.1.1.
 - [docs/COLLAUDO_SICUREZZA.md](docs/COLLAUDO_SICUREZZA.md): rapporto storico della revisione di sicurezza 3.1.0.
 - [docs/LABORATORI_INTERATTIVI.md](docs/LABORATORI_INTERATTIVI.md): struttura didattica degli esperimenti.
 - [docs/ARCHITETTURA.md](docs/ARCHITETTURA.md): organizzazione e aggiornamento dei contenuti.
