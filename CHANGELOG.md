@@ -1,5 +1,16 @@
 # Registro delle modifiche
 
+## 3.2.0 — 10 novembre 2026
+
+- Home trasformata in una galassia con 17 pianeti rotanti, cinque regioni e rotte illustrative.
+- Selezione mediante puntatore, tocco e tastiera; scheda persistente e pulsante Viaggia collegati al catalogo del corso.
+- Transizione avviata anche verso la Terra dalla home; selezioni accidentali durante gli spostamenti del mouse filtrate.
+- Disposizione mobile in tre colonne, ritorno alla mappa e controlli di navigazione nel DOM virtuale e nella pipeline Chromium.
+- Nessuna modifica ai metodi statistici, ai programmi R o ai materiali R6.
+
+Validazione: `npm test` e `npm run test:dom`; controlli interattivi in Chromium sulle larghezze CSS 340, 681 e 1363. La suite completa Python/Playwright resta affidata alla pipeline GitHub e non è stata eseguita localmente per questa modifica della home.
+
+
 ## 3.1.2 — Correzione dell’ingombro dei pianeti
 
 - Contenuto l’overflow dei riferimenti geometrici della Terra e dei pianeti nelle intestazioni, mediante un contenitore riservato alla decorazione. Testi e comandi restano esterni al ritaglio.

@@ -44,6 +44,18 @@ try:
    page.locator('[data-filter="moduli"]').click()
    assert page.locator('.module-card').count()==0
    checks.append('Ricerca e filtri combinati')
+   page.goto(url+'#indice')
+   expect(page.locator('.galaxy-node')).to_have_count(17)
+   for node in page.locator('.galaxy-node').all():
+    node.hover()
+    identifier=node.get_attribute('data-destination')
+    expect(page.locator('#galaxy-travel')).to_have_attribute('href','#modulo-'+identifier)
+    expect(page.locator('.galaxy-node[aria-pressed="true"]')).to_have_count(1)
+   page.locator('[data-destination="M14"]').hover()
+   expect(page.locator('#destination-name')).to_have_text('Ignis')
+   page.locator('#galaxy-travel').click()
+   page.get_by_role('heading',name='Estremi, pericolosità e rischio',exact=True).wait_for()
+   checks.append('Galassia: 17 destinazioni, scheda coerente, viaggio al modulo')
    activities=json.loads((ROOT/'content/experiments.json').read_text())['activities']
    modules=json.loads((ROOT/'content/catalogue.json').read_text())['modules']
    for m in modules:

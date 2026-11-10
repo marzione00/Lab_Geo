@@ -53,7 +53,7 @@
  function cancelFlight(){clearTimeout(flightTimer);flight=null;document.body.classList.remove('in-flight');flightLayer.hidden=true;schedule();}
  function finishFlight(){if(!flight)return;const id=flight.id;cancelFlight();if(location.hash!=='#modulo-'+id)location.hash='#modulo-'+id;refresh();document.getElementById('contenuto').focus({preventScroll:true});document.getElementById('annuncio').textContent='Arrivo: '+id+' · '+planet[id].name;}
  function travel(id,origin){
-  if(!planet[id]||id===currentId||paused||reduced.matches||!ready){location.hash='#modulo-'+id;return;}
+  if(!planet[id]||(id===currentId&&currentType!=='indice')||paused||reduced.matches||!ready){location.hash='#modulo-'+id;return;}
   cancelFlight();const from=origin?geometry(origin):{x:width*1.3,y:height*.63,r:60,hero:0};
   flight={id,from,previous:currentType==='module'||currentType==='slide'||currentType==='code'?currentId:null,started:performance.now(),duration:1450};
   document.body.classList.add('in-flight');flightTitle.textContent=id+' / '+planet[id].name;

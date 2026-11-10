@@ -1,7 +1,7 @@
 # GeoStat Lab
 
 **Laboratori interattivi di statistica e coding R per le scienze della Terra**
-Versione applicativa **3.1.2** · materiali didattici **R6** · lingua italiana
+Versione applicativa **3.2.0** · materiali didattici **R6** · lingua italiana
 
 GeoStat Lab accompagna lo studio dei metodi statistici attraverso 139 esperimenti nei quali, modificando parametri e ipotesi, si osservano le conseguenze sui dati simulati, sulle figure e sulle conclusioni. Ogni attività collega il problema scientifico al formalismo matematico e al programma R che ne produce i risultati. L’atlante di 17 pianeti rotanti organizza il percorso; le 11 spedizioni applicative riuniscono i metodi necessari ad affrontare un’indagine più articolata.
 
@@ -24,6 +24,14 @@ Il progetto è un sito statico: l’interprete R opera nel browser mediante webR
 | Accessibilità | Navigazione da tastiera, testo alternativo, formule vettoriali, pausa delle rotazioni |
 
 Le simulazioni dichiarano le proprie ipotesi e impiegano dati sintetici. I risultati illustrano il comportamento dei metodi nelle condizioni specificate; l’applicazione a dati osservati richiede una valutazione del disegno di campionamento, della qualità delle misure e dell’adeguatezza del modello.
+
+## La galassia del corso
+
+La pagina iniziale riunisce i 17 moduli in una galassia illustrativa originale. Passando il puntatore su un pianeta si apre la scheda con argomento, descrizione e numero di esperimenti; il pulsante **Viaggia** avvia la transizione verso il modulo. La scheda rimane selezionata quando il puntatore lascia il pianeta. Un breve ritardo esclude gli attraversamenti accidentali durante lo spostamento verso il pulsante.
+
+Su schermi piccoli i pianeti sono disposti in tre colonne, con bersagli ampi: un tocco mostra la scheda e **Scegli un altro pianeta** riporta alla mappa. Tab e le frecce consentono di selezionare le destinazioni da tastiera. **Pausa rotazione** e la preferenza di sistema per il movimento ridotto restano disponibili. L’indice testuale conserva l’accesso diretto a tutti i fascicoli.
+
+L’illustrazione è generata da `scripts/generate-galaxy.py`, mediante Python e Pillow con seme deterministico. Il file WebP già incluso non richiede Python per la build. Le distanze e le velocità sono illustrative; le descrizioni dei moduli provengono dal catalogo condiviso.
 
 ## Avvio rapido
 
@@ -200,7 +208,7 @@ Dependabot propone aggiornamenti settimanali. Ogni modifica a webR, ai pacchetti
 - [DEPLOYMENT.md](DEPLOYMENT.md): pubblicazione, impostazioni GitHub e rollback.
 - [SECURITY.md](SECURITY.md): gestione e segnalazione delle vulnerabilità.
 - [CONTRIBUTING.md](CONTRIBUTING.md): modifiche al codice e ai contenuti scientifici.
-- [CHANGELOG.md](CHANGELOG.md): modifiche della versione 3.1.2.
+- [CHANGELOG.md](CHANGELOG.md): modifiche della versione 3.2.0.
 - [docs/SICUREZZA.md](docs/SICUREZZA.md): modello di minaccia e controlli.
 - [docs/CORREZIONE_LAYOUT_3_1_2.md](docs/CORREZIONE_LAYOUT_3_1_2.md): correzione mobile e verifiche della versione corrente.
 - [docs/CONSOLIDAMENTO_3_1_1.md](docs/CONSOLIDAMENTO_3_1_1.md): revisione delle stratificazioni e collaudo della versione 3.1.1.

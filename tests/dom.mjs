@@ -25,6 +25,25 @@ d.getElementById("cerca-moduli").value="P11";d.getElementById("cerca-moduli").di
 assert.equal(d.querySelectorAll(".module-card").length,1);
 d.querySelector('[data-filter="moduli"]').click();assert.equal(d.querySelectorAll(".module-card").length,0);
 const catalog=w.GEO_CATALOG.modules;
+w.location.hash='#indice';await until(()=>d.querySelectorAll('.galaxy-node').length===17);
+for(const p of w.GeoPlanets.planets){
+ const node=d.querySelector('[data-destination="'+p.id+'"]');node.click();
+ assert.equal(d.querySelector('#destination-name').textContent,p.name);
+ assert.equal(d.querySelector('#galaxy-travel').getAttribute('href'),'#modulo-'+p.id);
+ assert.equal(d.querySelectorAll('.galaxy-node[aria-pressed="true"]').length,1);
+ assert.equal(d.querySelector('#destination-title').textContent,catalog.find(m=>m.id===p.id).title);
+ assert.equal(d.querySelector('#destination-count').textContent,String(w.GeoLabs.count(p.id)));
+}
+d.querySelector('[data-destination="M14"]').dispatchEvent(new w.Event('pointerenter'));
+await until(()=>d.querySelector('#destination-name').textContent==='Ignis');
+d.querySelector('[data-destination="M14"]').dispatchEvent(new w.KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true}));
+assert.equal(d.activeElement.dataset.destination,'M15');
+assert.equal(d.querySelector('#destination-name').textContent,'Argenta');
+d.querySelector('[data-destination="M01"]').click();d.querySelector('#galaxy-travel').click();
+assert.equal(w.location.hash,'#modulo-M01');
+await until(()=>d.querySelector('.lab-module-header h1'));
+d.querySelector('#skip-flight').click();
+
 w.location.hash='#mappa';await until(()=>d.querySelectorAll('.world-card').length===17);
 d.querySelector('[data-sector="Inferenza"]').click();assert.equal(d.querySelectorAll('.world-card').length,4);
 assert([...d.querySelectorAll('.world-card')].every(a=>a.href.includes('modulo-M0')));

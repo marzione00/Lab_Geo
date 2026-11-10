@@ -1,6 +1,6 @@
 # Modello di minaccia e misure di protezione
 
-Revisione del 10 novembre 2026 · GeoStat Lab 3.1.2
+Revisione del 10 novembre 2026 · GeoStat Lab 3.2.0
 
 ## Architettura e beni da proteggere
 
