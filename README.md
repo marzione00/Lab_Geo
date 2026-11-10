@@ -1,7 +1,9 @@
 # GeoStat Lab
 
 **Laboratori interattivi di statistica e coding R per le scienze della Terra**
-Versione applicativa **3.2.0** · materiali didattici **R6** · lingua italiana
+**Autore: Marzio De Corato** · Modulo didattico di [Topological Manifolds](https://marzione00.github.io/Personal_web_page/) ([repository del sito principale](https://github.com/marzione00/Personal_web_page)).
+
+Versione applicativa **3.2.3** · materiali didattici **R6** · lingua italiana
 
 GeoStat Lab accompagna lo studio dei metodi statistici attraverso 139 esperimenti nei quali, modificando parametri e ipotesi, si osservano le conseguenze sui dati simulati, sulle figure e sulle conclusioni. Ogni attività collega il problema scientifico al formalismo matematico e al programma R che ne produce i risultati. L’atlante di 17 pianeti rotanti organizza il percorso; le 11 spedizioni applicative riuniscono i metodi necessari ad affrontare un’indagine più articolata.
 
@@ -79,7 +81,7 @@ Per un repository già esistente, lavorare su un branch e aprire una pull reques
 4. In **Settings → Pages**, abilitare **Enforce HTTPS**, quando disponibile. Per un dominio personalizzato configurare e verificare DNS e certificato secondo la documentazione GitHub.
 5. Attivare le protezioni del repository descritte in [DEPLOYMENT.md](DEPLOYMENT.md), inclusa la segnalazione privata delle vulnerabilità.
 
-Il workflow ricava automaticamente l’URL da GitHub Pages; i percorsi relativi supportano sia il dominio principale sia una sottocartella di progetto. In `config/site.json` si possono specificare `mainSiteUrl`, `repositoryUrl` e `siteUrl`; i valori non vuoti devono essere URL HTTPS. La build GitHub sovrascrive URL del sito e repository con i valori della pubblicazione.
+Il workflow ricava automaticamente l’URL da GitHub Pages; i percorsi relativi supportano sia il dominio principale sia una sottocartella di progetto. In `config/site.json` si possono specificare autore (`author`), nome del sito principale (`mainSiteName`) e indirizzi `mainSiteUrl`, `repositoryUrl` e `siteUrl`; i valori non vuoti devono essere URL HTTPS. La build GitHub sovrascrive URL del sito e repository con i valori della pubblicazione.
 
 Il laboratorio M15_N17 dimostra come escludere un file `.env` da Git. Il suo unico file dimostrativo contiene esclusivamente `SEGNAPOSTO_NON_SEGRETO`: viene ricreato da `npm test` e verificato contro il manifesto originale, senza leggere credenziali o sostituire contenuti diversi. `vendor/` conserva i byte originali anche su sistemi con fine riga differenti.
 
@@ -168,7 +170,7 @@ npm run test:browser
 
 I test browser producono schermate, esito JSON e una traccia in `qa/browser/`; GitHub conserva la diagnostica per sette giorni anche quando il collaudo fallisce. CodeQL è configurato per repository pubblici; nei repository privati richiede il relativo servizio GitHub e l’abilitazione esplicita tramite variabile `ENABLE_PRIVATE_CODEQL=true`.
 
-Dependabot propone aggiornamenti settimanali. Ogni modifica a webR, ai pacchetti R, alla CSP o a MathJax richiede un nuovo collaudo dei calcoli e delle formule, oltre all’aggiornamento motivato dei manifesti. Le impronte non devono essere rigenerate automaticamente per far passare una verifica fallita. Il rapporto corrente è in [docs/CONSOLIDAMENTO_3_1_1.md](docs/CONSOLIDAMENTO_3_1_1.md); i rapporti storici conservano la propria data e il proprio ambito.
+Dependabot propone aggiornamenti settimanali. Ogni modifica a webR, ai pacchetti R, alla CSP o a MathJax richiede un nuovo collaudo dei calcoli e delle formule, oltre all’aggiornamento motivato dei manifesti. Le impronte non devono essere rigenerate automaticamente per far passare una verifica fallita. La revisione strutturale 3.2.2 è documentata in [docs/REVISIONE_3_2_2.md](docs/REVISIONE_3_2_2.md); le successive correzioni sono in [CHANGELOG.md](CHANGELOG.md); i rapporti storici conservano la propria data e il proprio ambito.
 
 ## Moduli e spedizioni
 
@@ -208,15 +210,16 @@ Dependabot propone aggiornamenti settimanali. Ogni modifica a webR, ai pacchetti
 - [DEPLOYMENT.md](DEPLOYMENT.md): pubblicazione, impostazioni GitHub e rollback.
 - [SECURITY.md](SECURITY.md): gestione e segnalazione delle vulnerabilità.
 - [CONTRIBUTING.md](CONTRIBUTING.md): modifiche al codice e ai contenuti scientifici.
-- [CHANGELOG.md](CHANGELOG.md): modifiche della versione 3.2.0.
+- [CHANGELOG.md](CHANGELOG.md): modifiche della versione 3.2.3.
 - [docs/SICUREZZA.md](docs/SICUREZZA.md): modello di minaccia e controlli.
-- [docs/CORREZIONE_LAYOUT_3_1_2.md](docs/CORREZIONE_LAYOUT_3_1_2.md): correzione mobile e verifiche della versione corrente.
+- [docs/REVISIONE_3_2_2.md](docs/REVISIONE_3_2_2.md): rilievi, correzioni, verifiche e limiti della revisione 3.2.2.
+- [docs/CORREZIONE_LAYOUT_3_1_2.md](docs/CORREZIONE_LAYOUT_3_1_2.md): correzione mobile e verifiche della versione 3.1.2.
 - [docs/CONSOLIDAMENTO_3_1_1.md](docs/CONSOLIDAMENTO_3_1_1.md): revisione delle stratificazioni e collaudo della versione 3.1.1.
 - [docs/COLLAUDO_SICUREZZA.md](docs/COLLAUDO_SICUREZZA.md): rapporto storico della revisione di sicurezza 3.1.0.
 - [docs/LABORATORI_INTERATTIVI.md](docs/LABORATORI_INTERATTIVI.md): struttura didattica degli esperimenti.
 - [docs/ARCHITETTURA.md](docs/ARCHITETTURA.md): organizzazione e aggiornamento dei contenuti.
 - [docs/ATLANTE_PLANETARIO.md](docs/ATLANTE_PLANETARIO.md): grafica, navigazione e movimento.
-- [Guida al corso](materiali/Guida_corso_R6.pdf) e [rapporto di rilettura delle slide](materiali/audit/Rapporto_revisione_R6.pdf).
+- [Guida al corso](materiali/Guida_corso_R6.pdf). Il [rapporto di lavorazione R6](materiali/audit/Rapporto_revisione_R6.pdf) è conservato nei sorgenti per la manutenzione ed escluso dal sito e dal download didattico.
 
 ## Licenze, provenienza e attribuzioni
 

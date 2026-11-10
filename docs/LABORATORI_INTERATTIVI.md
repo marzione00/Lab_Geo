@@ -1,6 +1,6 @@
 # GeoStat Lab · Laboratori interattivi
 
-La versione 3.2.0 pone l’esperimento al centro del percorso. I 17 pianeti conservano la rotazione continua, le superfici e i caratteri Nimbus dell’atlante; ciascun modulo si apre sull’indice delle attività. PDF, slide, diagrammi TikZ e codici R6 rimangono consultabili attraverso una sezione di approfondimento.
+La versione 3.2.3 pone l’esperimento al centro del percorso. I 17 pianeti conservano la rotazione continua, le superfici e i caratteri Nimbus dell’atlante; ciascun modulo si apre sull’indice delle attività. PDF, slide, diagrammi TikZ e codici R6 rimangono consultabili attraverso una sezione di approfondimento.
 
 ## Copertura didattica
 

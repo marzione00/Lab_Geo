@@ -1,5 +1,30 @@
 # Registro delle modifiche
 
+## 3.2.3 · 10 novembre 2026
+
+- Rimosso il collegamento «Revisione delle slide» dal piè di pagina e i richiami al rapporto dal catalogo, dalla pagina Materiali e dall'indice HTML dei PDF.
+- Rimosse le note di lavorazione dal lettore delle slide e i relativi metadati dai dati pubblicati.
+- Rapporti, registri editoriali e file di lavorazione esclusi dalla distribuzione web e dal download didattico; originali conservati nei sorgenti del progetto.
+- I manifesti pubblici descrivono ora soltanto i file realmente distribuiti. Un controllo della build impedisce di reintrodurre documenti o collegamenti editoriali nell'interfaccia.
+
+
+## 3.2.2 · 10 novembre 2026
+
+- Corrette le associazioni fra spedizioni e moduli preparatori, ora derivate dalle attività effettive.
+- Eliminati 136 selettori obsoleti e l'alias della vecchia home; consolidate regole del pannello galattico e dimensioni responsive dei laboratori.
+- Coordinate della galassia legate agli identificativi; settori e conteggi derivati dai cataloghi; etichette leggibili sul nucleo luminoso.
+- Rigenerazione unica dei due ZIP scaricabili e del CSV; rimossi tre log di compilazione dal download R6. Il controllo rileva anche membri mancanti, aggiunti, duplicati e alterati.
+- Aggiornati architettura e rimandi ai rapporti, distinguendo verifiche correnti e storiche.
+- Collaudo: 23 test, 1.730 espressioni matematiche, 1.095 membri degli archivi e 28 percorsi controllati in Chromium a 1.363 e 340 pixel CSS senza overflow. Dettagli e limiti in [REVISIONE_3_2_2.md](docs/REVISIONE_3_2_2.md).
+
+
+## 3.2.1 — 10 novembre 2026
+
+- Attribuzione a Marzio De Corato nella barra introduttiva, nel piè di pagina e nei metadati della pagina.
+- Collegamento a Topological Manifolds, il sito principale di cui GeoStat Lab è un modulo didattico, disponibile da ogni percorso.
+- Autore, nome e indirizzo del sito principale centralizzati nella configurazione e inseriti nella pagina durante la build; rimosso il precedente inserimento del link tramite JavaScript.
+
+
 ## 3.2.0 — 10 novembre 2026
 
 - Home trasformata in una galassia con 17 pianeti rotanti, cinque regioni e rotte illustrative.

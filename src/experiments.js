@@ -38,6 +38,7 @@
  P10:{intro:'Ricostruisci un’analisi verificabile, rendendo espliciti dati, dipendenze, criteri numerici e piano casuale.',steps:[['Controllare i dati','m02-join','m02-tabella'],['Verificare le funzioni','m15-contratti','m15-tolleranze'],['Conservare la provenienza','m15-integrita','m15-provenienza']]},
  P11:{intro:'Valuta un classificatore su nuove stazioni, distinguendo geometria, probabilità previste e decisioni operative.',steps:[['Definire il trasferimento','m16-bersaglio','m16-geometria'],['Selezionare e addestrare','m16-selezione','m16-alberi'],['Verificare probabilità e decisioni','m16-metriche','m16-trasferimento']]}
  };
+ function modulesForMission(id){return [...new Set((missions[id]?.steps||[]).flatMap(([, ...ids])=>ids.map(activity=>byId.get(activity).module)))];}
  function mission(main,m){cleanup();const mission=missions[m.id];main.innerHTML='<div class="wrap"><div class="breadcrumb">'+link('#progetti','Spedizioni')+'<span>/</span>'+m.id+'</div><header class="lab-module-header">'+planet(m.id,'module-planet')+'<p class="eyebrow">SPEDIZIONE '+m.id+'</p><h1>'+escape(m.title)+'</h1><p class="lead">'+escape(mission.intro)+'</p><p class="lab-footer-note">Gli esperimenti preparatori impiegano dati sintetici dichiarati. I dati e la consegna del caso applicativo sono disponibili nei materiali originali.</p></header><div class="mission-stages">'+mission.steps.map(([title,...ids])=>'<section class="mission-stage"><div><h3>'+escape(title)+'</h3>'+ids.map(id=>{const a=byId.get(id);return '<p>'+escape(a.goal)+'</p>'+link(path(a),escape(a.title)+' →');}).join('')+'</div></section>').join('')+'</div><section class="lab-reading"><h2>Relazione della spedizione</h2><p>Documenta il bersaglio dell’analisi, le unità indipendenti, le assunzioni e almeno un confronto di sensibilità. Esporta le configurazioni degli esperimenti utilizzati e collega la discussione ai dati del caso applicativo.</p></section>'+materials(m)+'</div>';}
  function validate(a,input){return S.parameters(a,input);}
  function parseHash(hash){if(typeof hash!=='string'||hash.length>S.limits.query)return null;const m=/^#laboratorio\/([a-z0-9-]+)(?:\?(.*))?$/.exec(hash);if(!m)return null;const a=byId.get(m[1]);if(!a)return {type:'notfound'};return {type:'experiment',id:a.module,activity:a.id,query:m[2]||''};}
@@ -116,5 +117,5 @@
   dispose=()=>{active=false;request++;if(custom!==a.code)E.reset();clearTimeout(timer);unsub();compareUrls.forEach(u=>URL.revokeObjectURL(u));urls.forEach(u=>URL.revokeObjectURL(u));root.MathJax?.typesetClear?.([main]);};
  }
  function count(module){return listFor(module).length;}
- root.GeoLabs=Object.freeze({configure,cleanup,index,module,mission,experiment,parseHash,byId,listFor,count,activities,validate,missions,path});
+ root.GeoLabs=Object.freeze({configure,cleanup,index,module,mission,experiment,parseHash,byId,listFor,count,activities,validate,missions,modulesForMission,path});
 })(window);

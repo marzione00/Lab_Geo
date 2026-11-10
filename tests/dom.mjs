@@ -21,11 +21,19 @@ await until(()=>d.querySelectorAll(".module-card").length===28);
 const snapshots=process.env.SNAPSHOTS_DIR;
 function snapshot(name){if(snapshots){fs.mkdirSync(snapshots,{recursive:true});fs.writeFileSync(path.join(snapshots,name+".html"),dom.serialize());}}
 snapshot("indice");
+for(const card of d.querySelectorAll('.module-card.project')){
+ assert.deepEqual([...card.querySelectorAll('.project-parents a')].map(a=>a.textContent),[...w.GeoLabs.modulesForMission(card.dataset.module)]);
+}
+
 d.getElementById("cerca-moduli").value="P11";d.getElementById("cerca-moduli").dispatchEvent(new w.Event("input"));
 assert.equal(d.querySelectorAll(".module-card").length,1);
 d.querySelector('[data-filter="moduli"]').click();assert.equal(d.querySelectorAll(".module-card").length,0);
 const catalog=w.GEO_CATALOG.modules;
 w.location.hash='#indice';await until(()=>d.querySelectorAll('.galaxy-node').length===17);
+const originalCoordinates=new Map([...d.querySelectorAll('.galaxy-node')].map(n=>[n.dataset.destination,[n.style.getPropertyValue('--gx'),n.style.getPropertyValue('--gy')]]));
+w.GeoPlanets.planets.reverse();w.GeoGalaxy.mount(d.querySelector('main'));
+for(const n of d.querySelectorAll('.galaxy-node'))assert.deepEqual([n.style.getPropertyValue('--gx'),n.style.getPropertyValue('--gy')],originalCoordinates.get(n.dataset.destination));
+w.GeoPlanets.planets.reverse();w.GeoGalaxy.mount(d.querySelector('main'));
 for(const p of w.GeoPlanets.planets){
  const node=d.querySelector('[data-destination="'+p.id+'"]');node.click();
  assert.equal(d.querySelector('#destination-name').textContent,p.name);

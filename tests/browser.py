@@ -129,7 +129,7 @@ try:
    checks.append('Laboratorio Python e collegamento al file')
    page.set_viewport_size({'width':390,'height':844})
    page.goto(url+'#indice')
-   page.wait_for_selector('.orbital-home')
+   page.wait_for_selector('.galaxy-home')
    assert_layout('home mobile')
    page.screenshot(path=str(OUT/'mobile.png'),full_page=False)
    page.goto(url+'#modulo-M05/slide/44')
@@ -143,7 +143,7 @@ try:
    for width in [320,390,430,768,1440]:
     page.set_viewport_size({'width':width,'height':844})
     page.goto(url+'#indice')
-    page.locator('.orbital-home').wait_for()
+    page.locator('.galaxy-home').wait_for()
     assert_layout('home')
     for m in modules:
      page.goto(url+'#modulo-'+m['id'])

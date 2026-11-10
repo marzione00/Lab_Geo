@@ -20,8 +20,8 @@
     ['M16','Prisma','Mosaico geologico',16,'#5c8685','#39394d','#b4a27a','#91c5b9',.027,186,'Sintesi']
   ];
   const planets=rows.map((r,i)=>({id:r[0],name:r[1],description:r[2],kind:r[3],land:r[4],deep:r[5],high:r[6],atmosphere:r[7],speed:r[8],seed:r[9],sector:r[10],tilt:[-.24,.28,-.34,.19,.41,-.18,.3,.47,-.2,.35,.2,-.25,.17,-.38,.3,-.2,.24][i],phase:i===1?2.2:i*.71+.4,rings:i===7||i===15,moon:i===6||i===8||i===15}));
-  const expeditions={P01:['M05','M07'],P02:['M05','M06'],P03:['M09'],P04:['M07','M10'],P05:['M09','M10'],P06:['M11','M16'],P07:['M12'],P08:['M13'],P09:['M14'],P10:['M15'],P11:['M16']};
+  const expeditionOrigins={P01:'M05',P02:'M05',P03:'M09',P04:'M07',P05:'M09',P06:'M11',P07:'M12',P08:'M13',P09:'M14',P10:'M15',P11:'M16'};
   const byId=Object.fromEntries(planets.map(p=>[p.id,p]));
-  Object.entries(expeditions).forEach(([id,parents],i)=>{byId[id]={...byId[parents[0]],id,name:'Spedizione '+id,description:'Missione applicativa',parents,seed:230+i*13,phase:.5+i*.6,moon:false,rings:false,expedition:true};});
-  root.GeoPlanets=Object.freeze({planets,byId,expeditions,sectors:[...new Set(planets.map(p=>p.sector))]});
+  Object.entries(expeditionOrigins).forEach(([id,origin],i)=>{byId[id]={...byId[origin],id,name:'Spedizione '+id,description:'Missione applicativa',origin,seed:230+i*13,phase:.5+i*.6,moon:false,rings:false,expedition:true};});
+  root.GeoPlanets=Object.freeze({planets,byId,expeditionOrigins,sectors:[...new Set(planets.map(p=>p.sector))]});
 })(globalThis);

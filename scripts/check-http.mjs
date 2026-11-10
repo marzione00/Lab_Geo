@@ -29,7 +29,8 @@ try{
  const index=await raw('/');assert(!index.headers['content-security-policy'].includes(" 'unsafe-eval'"));assert.equal(index.status,200);assert.equal(index.headers['x-frame-options'],'DENY');assert.equal(index.headers['referrer-policy'],'no-referrer');assert(index.headers['content-security-policy'].includes("frame-ancestors 'none'"));
  // A symlink inside the served tree must never expose repository files.
  const probe='dist/security-link-probe';try{fs.symlinkSync('../package.json',probe);assert.equal((await raw('/security-link-probe')).status,403);}finally{fs.rmSync(probe,{force:true});}
- const registry=await raw('/materiali/audit/Registro_slide_R6.html');assert.equal(registry.status,200);assert(registry.headers['content-security-policy'].includes("'sha256-"));
+ const courseIndex=await raw('/materiali/Indice_corso.html');assert.equal(courseIndex.status,200);assert(courseIndex.headers['content-security-policy'].includes("'sha256-"));
+ for(const file of ['/materiali/audit/Registro_slide_R6.html','/materiali/audit/Rapporto_revisione_R6.pdf','/materiali/Rapporto_revisione_R6.pdf'])assert.equal((await raw(file)).status,404,file);
  const missing=await fetch(base+'missing-script.mjs',{method:'HEAD'});assert.equal(missing.status,404);
  console.log('HTTP: MIME, security headers, traversal, malformed requests, symlinks, methods and DNS rebinding verified.');
 }finally{

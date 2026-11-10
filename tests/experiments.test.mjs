@@ -16,3 +16,13 @@ test('Pacchetti wasm con versioni e impronte vincolate, asset realmente presenti
  const lock=JSON.parse(fs.readFileSync('vendor/r-packages-lock.json'));assert(lock.some(p=>p.package==='ggplot2'));assert(lock.some(p=>p.package==='svglite'));for(const p of lock){assert.equal(p.sha256.length,64);assert(fs.existsSync('vendor/r-repo/bin/emscripten/contrib/4.6/'+p.file));}
  const html=fs.readFileSync('config/security.json','utf8');assert(html.includes("connect-src 'self'"));assert(!html.includes(" 'unsafe-eval'"));
 });
+
+test("I rimandi delle spedizioni corrispondono alle attività effettive",()=>{
+ assert.deepEqual([...labs.modulesForMission("P04")],["M07","M06"]);
+ assert.deepEqual([...labs.modulesForMission("P06")],["M11"]);
+ assert.deepEqual([...labs.modulesForMission("P10")],["M02","M15"]);
+ for(const [id,mission]of Object.entries(labs.missions)){
+  const actual=[...new Set(mission.steps.flatMap(([, ...ids])=>ids.map(id=>labs.byId.get(id).module)))];
+  assert.deepEqual([...labs.modulesForMission(id)],actual);
+ }
+});
