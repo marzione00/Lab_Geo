@@ -1,5 +1,12 @@
 # Registro delle modifiche
 
+## 3.2.4 · 10 novembre 2026
+
+- Rigenerato `package-lock.json` dal registro pubblico npm mantenendo `jsdom@26.1.0`. Corretti la versione inesistente `@asamuzakjp/css-color@3.2.1` e il vincolo errato di `cssstyle@4.6.0`; la dipendenza risolta è `@asamuzakjp/css-color@3.2.0`.
+- Installazione CI con cache dedicata al runner e registro esplicito; aggiunta la verifica dell'albero installato mediante `npm ls --all`. Restano attivi il blocco degli script di installazione e l'audit delle vulnerabilità.
+- Aggiornate le istruzioni per l'errore E404. Le slide R6 e i programmi degli esperimenti conservano i contenuti della consegna precedente.
+- Collaudo locale: riprodotto il 404 della 3.2.3; `npm ci` riuscito in una directory isolata con cache vuota, albero delle dipendenze valido e audit npm senza vulnerabilità note. Superati 24 test e i controlli DOM su 28 moduli e 1.730 espressioni. Verifica eseguita con Node 24.22.1 e npm 11.9.0; il workflow GitHub resta configurato per Node 22 e la suite Chromium sarà eseguita sul runner.
+
 ## 3.2.3 · 10 novembre 2026
 
 - Rimosso il collegamento «Revisione delle slide» dal piè di pagina e i richiami al rapporto dal catalogo, dalla pagina Materiali e dall'indice HTML dei PDF.

@@ -2,7 +2,7 @@
 
 ## Ambito e versioni
 
-La versione applicativa mantenuta è **3.2.3**. La revisione di sicurezza documentata riguarda **GeoStat Lab 3.2.1**, applicazione statica con R eseguito nel browser. La manutenzione va applicata alla versione corrente; non è previsto il mantenimento parallelo delle versioni precedenti. Le condizioni dei materiali didattici R6 restano quelle indicate in LICENSE.md.
+La versione applicativa mantenuta è **3.2.4**. La revisione di sicurezza documentata riguarda **GeoStat Lab 3.2.1**, applicazione statica con R eseguito nel browser. La manutenzione va applicata alla versione corrente; non è previsto il mantenimento parallelo delle versioni precedenti. Le condizioni dei materiali didattici R6 restano quelle indicate in LICENSE.md.
 
 Sono compresi nell’ambito gli ingressi dell’interfaccia, i file di configurazione importati, il rendering dei risultati, gli script di build, il server locale e i workflow GitHub. La sicurezza degli account GitHub, dei browser, del sistema operativo e del provider di hosting richiede interventi e aggiornamenti separati.
 

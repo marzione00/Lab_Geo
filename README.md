@@ -3,7 +3,7 @@
 **Laboratori interattivi di statistica e coding R per le scienze della Terra**
 **Autore: Marzio De Corato** · Modulo didattico di [Topological Manifolds](https://marzione00.github.io/Personal_web_page/) ([repository del sito principale](https://github.com/marzione00/Personal_web_page)).
 
-Versione applicativa **3.2.3** · materiali didattici **R6** · lingua italiana
+Versione applicativa **3.2.4** · materiali didattici **R6** · lingua italiana
 
 GeoStat Lab accompagna lo studio dei metodi statistici attraverso 139 esperimenti nei quali, modificando parametri e ipotesi, si osservano le conseguenze sui dati simulati, sulle figure e sulle conclusioni. Ogni attività collega il problema scientifico al formalismo matematico e al programma R che ne produce i risultati. L’atlante di 17 pianeti rotanti organizza il percorso; le 11 spedizioni applicative riuniscono i metodi necessari ad affrontare un’indagine più articolata.
 
@@ -210,7 +210,7 @@ Dependabot propone aggiornamenti settimanali. Ogni modifica a webR, ai pacchetti
 - [DEPLOYMENT.md](DEPLOYMENT.md): pubblicazione, impostazioni GitHub e rollback.
 - [SECURITY.md](SECURITY.md): gestione e segnalazione delle vulnerabilità.
 - [CONTRIBUTING.md](CONTRIBUTING.md): modifiche al codice e ai contenuti scientifici.
-- [CHANGELOG.md](CHANGELOG.md): modifiche della versione 3.2.3.
+- [CHANGELOG.md](CHANGELOG.md): modifiche della versione 3.2.4.
 - [docs/SICUREZZA.md](docs/SICUREZZA.md): modello di minaccia e controlli.
 - [docs/REVISIONE_3_2_2.md](docs/REVISIONE_3_2_2.md): rilievi, correzioni, verifiche e limiti della revisione 3.2.2.
 - [docs/CORREZIONE_LAYOUT_3_1_2.md](docs/CORREZIONE_LAYOUT_3_1_2.md): correzione mobile e verifiche della versione 3.1.2.

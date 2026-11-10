@@ -58,7 +58,8 @@ Per annullare una modifica applicativa, creare un commit di revert e lasciare ch
 | Sintomo | Verifica |
 |---|---|
 | Playwright segnala un sistema non supportato | Confermare Ubuntu 24.04, Python 3.12 e installazione da `security/requirements.txt` |
-| `npm ci` fallisce | Usare Node 22 o successivo; non modificare soltanto uno fra package.json e package-lock.json |
+| `npm ci` fallisce con `E404` su `css-color-3.2.1.tgz` | Sostituire `package.json` e `package-lock.json` con quelli della consegna 3.2.4, poi creare un nuovo commit. Il lockfile corretto usa `@asamuzakjp/css-color@3.2.0` e il vincolo ufficiale di `cssstyle`. Non modificare a mano versioni, URL o impronte nel lockfile. |
+| Altri errori di `npm ci` | Usare Node 22 o successivo; mantenere allineati `package.json` e `package-lock.json`. Per il collaudo della consegna usare una cache npm vuota e verificare anche `npm ls --all`. |
 | Controllo SHA-256 fallito | Accertare provenienza e integrità del file; non aggiornare il manifesto senza revisione |
 | Pagina vuota in locale | Usare `npm start`, non `file://`; controllare che la build sia completa |
 | R non si avvia | Verificare MIME, worker, CSP, connessione e memoria del dispositivo |
