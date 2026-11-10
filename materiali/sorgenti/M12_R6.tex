@@ -1,0 +1,653 @@
+\documentclass[12pt,aspectratio=1610]{beamer}
+\geometry{paperwidth=20cm,paperheight=12.5cm}
+\usepackage[italian,provide=*]{babel}
+\usepackage{lmodern,fontspec}
+\setsansfont{NimbusSans-Regular.otf}[Path=sorgenti/font/,BoldFont=NimbusSans-Bold.otf,ItalicFont=NimbusSans-Italic.otf]
+\setmainfont{NimbusSans-Regular.otf}[Path=sorgenti/font/,BoldFont=NimbusSans-Bold.otf,ItalicFont=NimbusSans-Italic.otf]
+\setmonofont{lmmono10-regular.otf}[Path=sorgenti/font/,Scale=.88]
+\usefonttheme{professionalfonts}
+\usepackage{amsmath,amssymb,booktabs,array,tabularx,graphicx,tikz,listings,bookmark}
+\usetikzlibrary{calc,arrows.meta,positioning}
+\definecolor{Paper}{HTML}{F8F6F1}
+\definecolor{Ink}{HTML}{253344}\definecolor{Navy}{HTML}{15283E}
+\definecolor{Quantum}{HTML}{5146A5}\definecolor{Classical}{HTML}{087C74}
+\definecolor{Measure}{HTML}{A05B10}\definecolor{Rose}{HTML}{9B4564}
+\definecolor{Muted}{HTML}{657180}\definecolor{Rule}{HTML}{D6DAD9}
+\definecolor{Wash}{HTML}{EAE7F6}\definecolor{Night}{HTML}{112236}
+\definecolor{Lilac}{HTML}{ABB5FF}\definecolor{Mint}{HTML}{72D8C8}\definecolor{Gold}{HTML}{EEC184}
+\setbeamercolor{background canvas}{bg=Paper}\setbeamercolor{normal text}{fg=Ink}
+\setbeamertemplate{navigation symbols}{}\setbeamertemplate{headline}{}\setbeamertemplate{footline}{}
+\setbeamersize{text margin left=0pt,text margin right=0pt}\setbeameroption{hide notes}
+\newsavebox{\BodyBox}\newsavebox{\SideBox}\newsavebox{\RecallBox}\newsavebox{\TitleBox}
+\newcommand{\MeasureBox}[2]{\typeout{GEOBOX:#1:\the\wd#2:\the\ht#2:\the\dp#2}}
+\lstset{language=R,basicstyle=\ttfamily\fontsize{10.2}{13.4}\selectfont,
+columns=fullflexible,keepspaces=true,showstringspaces=false,breaklines=true,breakatwhitespace=false,
+commentstyle=\color{Muted},keywordstyle=\color{Classical},stringstyle=\color{Quantum},
+aboveskip=0pt,belowskip=0pt,xleftmargin=0pt,xrightmargin=0pt,tabsize=2}
+\hypersetup{colorlinks=true,linkcolor=Classical,urlcolor=Classical,pdfpagemode=UseOutlines,pdfstartview=Fit,bookmarksopen=true,bookmarksopenlevel=0}
+\bookmarksetup{open,openlevel=0,depth=2}
+\tikzset{arr/.style={-{Stealth[length=2mm]},line width=.8pt,draw=Classical}}
+\hypersetup{pdftitle={Campionamento, stima e incertezza},pdfauthor={},pdfsubject={Corso di statistica e data science per Geologia, primo anno; modulo 05}}
+\usetikzlibrary{decorations.pathreplacing,fit,backgrounds,matrix}\hypersetup{pdftitle={M12 · Raster, telerilevamento e morfometria},pdfsubject={Revisione integrale R6}}\begin{document}
+\begin{frame}[plain]\hypertarget{slide1}{}\begin{tikzpicture}[remember picture,overlay]\fill[Night] (current page.south west) rectangle (current page.north east);\draw[Mint,line width=2pt] ([xshift=1.05cm,yshift=-1.35cm]current page.north west)--([xshift=3cm,yshift=-1.35cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=1.05cm,yshift=-1.7cm]current page.north west){\color{Mint}\bfseries\fontsize{11}{14}\selectfont M12 · REVISIONE R6};
+\node[anchor=north west,inner sep=0] at ([xshift=1.05cm,yshift=-2.65cm]current page.north west){\begin{minipage}{15.8cm}\raggedright\color{white}\bfseries\fontsize{31}{38}\selectfont Raster, telerilevamento e morfometria\end{minipage}};
+\node[anchor=north west,inner sep=0] at ([xshift=1.05cm,yshift=-6.4cm]current page.north west){\begin{minipage}{15.8cm}\raggedright\color{Lilac}\fontsize{15}{21}\selectfont Dalla geometria della griglia alle grandezze derivate\end{minipage}};
+\node[anchor=north west,inner sep=0] at ([xshift=1.05cm,yshift=-8.6cm]current page.north west){\begin{minipage}{16.5cm}\color{white}\fontsize{11}{15}\selectfont 30 slide · teoria, derivazioni, figure e applicazioni in R.\par\smallskip Provenienza dei dati e sorgenti nei materiali allegati.\end{minipage}};
+\node[anchor=south east,inner sep=0] at ([xshift=18.95cm,yshift=-11.35cm]current page.north west){\color{Lilac!45}\bfseries\fontsize{64}{68}\selectfont M12};
+\end{tikzpicture}\end{frame}
+\begin{frame}[plain]\hypertarget{slide2}{}\bookmark[level=0,page=2]{Indice}\begin{tikzpicture}[remember picture,overlay]\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.65cm]current page.north west){\color{Navy}\bfseries\fontsize{22}{27}\selectfont Percorso del modulo};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.23cm]current page.north west){\color{Classical}\bfseries\fontsize{13}{16}\selectfont 3};
+\node[anchor=north west,inner sep=0] at ([xshift=2.0cm,yshift=-2.23cm]current page.north west){\begin{minipage}{7.25cm}\raggedright\color{Navy}\bfseries\fontsize{12.4}{15.5}\selectfont\hyperlink{slide3}{Griglia, celle e georeferenziazione}\end{minipage}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-3.5300000000000002cm]current page.north west){\color{Classical}\bfseries\fontsize{13}{16}\selectfont 7};
+\node[anchor=north west,inner sep=0] at ([xshift=2.0cm,yshift=-3.5300000000000002cm]current page.north west){\begin{minipage}{7.25cm}\raggedright\color{Navy}\bfseries\fontsize{12.4}{15.5}\selectfont\hyperlink{slide7}{Maschere, dominio e superficie}\end{minipage}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-4.83cm]current page.north west){\color{Classical}\bfseries\fontsize{13}{16}\selectfont 10};
+\node[anchor=north west,inner sep=0] at ([xshift=2.0cm,yshift=-4.83cm]current page.north west){\begin{minipage}{7.25cm}\raggedright\color{Navy}\bfseries\fontsize{12.4}{15.5}\selectfont\hyperlink{slide10}{Aggregazione, ricampionamento e allineamento}\end{minipage}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-6.130000000000001cm]current page.north west){\color{Classical}\bfseries\fontsize{13}{16}\selectfont 14};
+\node[anchor=north west,inner sep=0] at ([xshift=2.0cm,yshift=-6.130000000000001cm]current page.north west){\begin{minipage}{7.25cm}\raggedright\color{Navy}\bfseries\fontsize{12.4}{15.5}\selectfont\hyperlink{slide14}{Derivate, pendenza ed esposizione}\end{minipage}};
+\node[anchor=north west,inner sep=0] at ([xshift=10.299999999999999cm,yshift=-2.23cm]current page.north west){\color{Classical}\bfseries\fontsize{13}{16}\selectfont 20};
+\node[anchor=north west,inner sep=0] at ([xshift=11.35cm,yshift=-2.23cm]current page.north west){\begin{minipage}{7.25cm}\raggedright\color{Navy}\bfseries\fontsize{12.4}{15.5}\selectfont\hyperlink{slide20}{Ombreggiatura e rappresentazione del rilievo}\end{minipage}};
+\node[anchor=north west,inner sep=0] at ([xshift=10.299999999999999cm,yshift=-3.5300000000000002cm]current page.north west){\color{Classical}\bfseries\fontsize{13}{16}\selectfont 23};
+\node[anchor=north west,inner sep=0] at ([xshift=11.35cm,yshift=-3.5300000000000002cm]current page.north west){\begin{minipage}{7.25cm}\raggedright\color{Navy}\bfseries\fontsize{12.4}{15.5}\selectfont\hyperlink{slide23}{Bande e indici normalizzati}\end{minipage}};
+\node[anchor=north west,inner sep=0] at ([xshift=10.299999999999999cm,yshift=-4.83cm]current page.north west){\color{Classical}\bfseries\fontsize{13}{16}\selectfont 26};
+\node[anchor=north west,inner sep=0] at ([xshift=11.35cm,yshift=-4.83cm]current page.north west){\begin{minipage}{7.25cm}\raggedright\color{Navy}\bfseries\fontsize{12.4}{15.5}\selectfont\hyperlink{slide26}{Sintesi zonali e dipendenza}\end{minipage}};
+\node[anchor=north west,inner sep=0] at ([xshift=10.299999999999999cm,yshift=-6.130000000000001cm]current page.north west){\color{Classical}\bfseries\fontsize{13}{16}\selectfont 29};
+\node[anchor=north west,inner sep=0] at ([xshift=11.35cm,yshift=-6.130000000000001cm]current page.north west){\begin{minipage}{7.25cm}\raggedright\color{Navy}\bfseries\fontsize{12.4}{15.5}\selectfont\hyperlink{slide29}{Memoria, esportazione e verifica}\end{minipage}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.55cm]current page.north west){\begin{minipage}{18cm}\color{Muted}\fontsize{10}{13}\selectfont I numeri indicano le pagine iniziali; i titoli sono cliccabili. Codice, figure e verifiche sono inclusi nel progetto.\end{minipage}};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Il raster: valori e geometria territoriale\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Un raster associa valori a celle organizzate in una griglia, la cui geometria stabilisce posizione, dimensioni e orientamento. La matrice numerica rappresenta soltanto una parte del dato, poiché origine e riferimento geografico determinano dove ricadano le celle. Il capitolo utilizza una superficie sintetica di ventiquattro righe e trenta colonne, con passo di trenta metri. Quote, zone e bande spettrali sono costruite per l’esercitazione; il GeoTIFF allegato possiede una georeferenziazione fittizia e non coincide territorialmente con i siti del modulo precedente.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}Z=(z_{ij}),\qquad i=1,\ldots,24,\ j=1,\ldots,30\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \includegraphics[width=7.45cm]{figure/M12/F01.pdf}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont Quote sintetiche in metri; 720 celle con centri nel piano locale.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Valori e geometria della griglia devono essere conservati insieme.\end{minipage}\end{lrbox}
+\MeasureBox{3-TitleBox}{\TitleBox}
+\MeasureBox{3-BodyBox}{\BodyBox}
+\MeasureBox{3-SideBox}{\SideBox}
+\MeasureBox{3-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide3}{}
+\bookmark[level=0,page=3]{Griglia, celle e georeferenziazione}
+\bookmark[level=1,page=3]{Il raster: valori e geometria territoriale}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Evidenza grafica};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M12 · Raster, telerilevamento e morfometria};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 3/30};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Indici di matrice e coordinate dei centri\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Gli indici di riga e colonna individuano posizioni discrete nella memoria, mentre le coordinate descrivono la collocazione metrica. Nella tabella didattica gli indici iniziano da zero e le coordinate dei centri crescono con essi. In una griglia geografica con prima riga a Nord, la coordinata y diminuisce invece procedendo verso le righe successive. La convenzione deve essere stabilita prima della conversione in matrice, controllando unicità delle coppie, completezza della griglia e regolarità del passo.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}x_j=x_0+j\Delta x,\qquad y_i=y_0+i\Delta y\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \input{tikz/M12/D01.tex}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont $(x_0,y_0)$: centro della prima cella; i, j: indici da zero; $\Delta x=\Delta y=30$ m nel piano locale, orientato verso Est e Nord.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Una cella mancante deve restare esplicita e non spostare i valori successivi.\end{minipage}\end{lrbox}
+\MeasureBox{4-TitleBox}{\TitleBox}
+\MeasureBox{4-BodyBox}{\BodyBox}
+\MeasureBox{4-SideBox}{\SideBox}
+\MeasureBox{4-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide4}{}
+\bookmark[level=1,page=4]{Indici di matrice e coordinate dei centri}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Lettura del diagramma};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M12 · Raster, telerilevamento e morfometria};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 4/30};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Ricostruzione e verifica degli angoli\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont L’ordinamento per riga e colonna precede il riempimento della matrice per righe, affinché la disposizione in memoria corrisponda alla disposizione dichiarata nella tabella. Il valore di una cella con coordinate note costituisce un controllo più informativo della sola plausibilità visiva. Nella matrice locale, la prima riga è quella meridionale; nel GeoTIFF la prima riga letta è quella settentrionale. La corrispondenza fra i due oggetti richiede quindi un’inversione dell’ordine delle righe, oltre alla tolleranza dovuta alla precisione di memorizzazione.\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \par\vspace{.25cm}\lstinputlisting[language=R]{estratti/M12/griglia.R}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Il controllo degli angoli riconosce un’inversione che media e varianza lascerebbero invisibile.\end{minipage}\end{lrbox}
+\MeasureBox{5-TitleBox}{\TitleBox}
+\MeasureBox{5-BodyBox}{\BodyBox}
+\MeasureBox{5-SideBox}{\SideBox}
+\MeasureBox{5-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide5}{}
+\bookmark[level=1,page=5]{Ricostruzione e verifica degli angoli}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Implementazione in R};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M12 · Raster, telerilevamento e morfometria};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 5/30};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Lettura del GeoTIFF e metadati geometrici\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont L’oggetto SpatRaster restituito da terra conserva dimensioni, estensione, risoluzione e sistema di riferimento. La verifica confronta le dimensioni attese e le quote con la matrice locale dopo il riordinamento necessario. La tolleranza di un millimetro riconosce la memorizzazione del GeoTIFF senza confondere differenze numeriche minime con errori di orientamento. Prima di sovrapporre altri dati occorre inoltre verificare che il riferimento e l’origine fittizia siano compatibili con il compito, evitando di trattare il file didattico come un rilievo reale.\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \par\vspace{.25cm}\lstinputlisting[language=R]{estratti/M12/geotiff.R}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La verifica dei valori deve essere accompagnata dall’esame della georeferenziazione.\end{minipage}\end{lrbox}
+\MeasureBox{6-TitleBox}{\TitleBox}
+\MeasureBox{6-BodyBox}{\BodyBox}
+\MeasureBox{6-SideBox}{\SideBox}
+\MeasureBox{6-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide6}{}
+\bookmark[level=1,page=6]{Lettura del GeoTIFF e metadati geometrici}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Implementazione in R};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M12 · Raster, telerilevamento e morfometria};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 6/30};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Celle mancanti e copertura osservata\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Una maschera distingue le celle prive di informazione dalle quote fisiche, fra le quali lo zero può essere perfettamente valido. Nel laboratorio si rimuovono ventiquattro celle di una finestra interna; sostituirle con zero introdurrebbe una depressione artificiale e altererebbe la media. La media dei valori disponibili descrive invece il dominio effettivamente osservato, la cui rappresentatività dipende dal motivo della mancanza. La copertura deve essere riportata insieme alla sintesi, conservando la maschera nelle successive operazioni.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}c=\frac{n_{\rm disponibili}}{n_{\rm totale}}=\frac{696}{720}\approx0{,}967\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \includegraphics[width=7.45cm]{figure/M12/F02.pdf}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont Rosa: 24 celle escluse. Quote in metri sulla scala cromatica.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La mancanza di una misura e una quota fisica nulla hanno significati differenti.\end{minipage}\end{lrbox}
+\MeasureBox{7-TitleBox}{\TitleBox}
+\MeasureBox{7-BodyBox}{\BodyBox}
+\MeasureBox{7-SideBox}{\SideBox}
+\MeasureBox{7-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide7}{}
+\bookmark[level=0,page=7]{Maschere, dominio e superficie}
+\bookmark[level=1,page=7]{Celle mancanti e copertura osservata}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Evidenza grafica};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M12 · Raster, telerilevamento e morfometria};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 7/30};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Ritaglio e cambiamento del dominio descritto\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Ritagliare una finestra centrale seleziona una porzione della superficie e può modificare la distribuzione delle quote, poiché la zona alta occupa una frazione diversa del nuovo dominio. La riduzione delle dimensioni del file coincide quindi con una scelta geografica sostanziale. La media della finestra risponde a una domanda circoscritta, mentre la sua estensione all’intero terreno richiederebbe un disegno o un modello di trasferimento. Se si applica anche una maschera irregolare, occorre distinguere l’estensione rettangolare dalla superficie effettivamente inclusa.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}\overline z_A=\frac{\sum_i z_i\mathbf1\{s_i\in A\}}{\sum_i\mathbf1\{s_i\in A\}}\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \input{tikz/M12/D02.tex}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont A: finestra; $s_i$: centro della cella; $z_i$: quota. L’indicatore vale 1 per celle incluse, 0 per le altre; il denominatore deve essere positivo.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Ogni sintesi territoriale deve dichiarare il dominio al quale si riferisce.\end{minipage}\end{lrbox}
+\MeasureBox{8-TitleBox}{\TitleBox}
+\MeasureBox{8-BodyBox}{\BodyBox}
+\MeasureBox{8-SideBox}{\SideBox}
+\MeasureBox{8-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide8}{}
+\bookmark[level=1,page=8]{Ritaglio e cambiamento del dominio descritto}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Lettura del diagramma};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M12 · Raster, telerilevamento e morfometria};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 8/30};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Dal numero di celle alla superficie territoriale\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont In una griglia piana metrica con celle rettangolari, l’area della cella è il prodotto dei due passi. Per celle di trenta metri si ottengono novecento metri quadrati, equivalenti a 0,09 ettari; le 720 celle rappresentano quindi 64,8 ettari. Il conteggio misura la superficie discretizzata, mentre l’indipendenza statistica dipende dalla struttura spaziale. Per griglie in coordinate geografiche, un identico intervallo angolare può sottendere aree diverse secondo la latitudine e richiede un calcolo geometrico appropriato.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}a=\Delta x\Delta y=900\ \mathrm{m}^2\qquad A=na=64{,}8\ \mathrm{ha}\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \input{tikz/M12/D03.tex}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Il conteggio delle celle quantifica copertura e superficie, senza stabilire il numero di repliche indipendenti.\end{minipage}\end{lrbox}
+\MeasureBox{9-TitleBox}{\TitleBox}
+\MeasureBox{9-BodyBox}{\BodyBox}
+\MeasureBox{9-SideBox}{\SideBox}
+\MeasureBox{9-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide9}{}
+\bookmark[level=1,page=9]{Dal numero di celle alla superficie territoriale}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Lettura del diagramma};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M12 · Raster, telerilevamento e morfometria};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 9/30};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Aggregazione e conservazione della media\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont L’aggregazione di blocchi completi 2 × 2 produce celle di sessanta metri, ciascuna delle quali riassume quattro quote originarie. Poiché tutti i blocchi hanno uguale numerosità e area, la media globale rimane invariata, mentre gli estremi vengono attenuati. Questa conservazione discende dai pesi e può venir meno quando i blocchi contengono numeri diversi di celle disponibili. Una verifica del procedimento deve quindi confrontare media, estensione, risoluzione e trattamento dei mancanti, conservando la distinzione fra valore medio e dettaglio morfologico.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}\overline z_b=\frac14\sum_{i\in b}z_i\qquad \frac1B\sum_b\overline z_b=\frac1{4B}\sum_i z_i\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \includegraphics[width=7.45cm]{figure/M12/F03.pdf}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont 180 blocchi completi di quattro celle; quote in m, passo 60 m.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La media globale si conserva perché i blocchi sono completi ed equiponderati.\end{minipage}\end{lrbox}
+\MeasureBox{10-TitleBox}{\TitleBox}
+\MeasureBox{10-BodyBox}{\BodyBox}
+\MeasureBox{10-SideBox}{\SideBox}
+\MeasureBox{10-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide10}{}
+\bookmark[level=0,page=10]{Aggregazione, ricampionamento e allineamento}
+\bookmark[level=1,page=10]{Aggregazione e conservazione della media}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Evidenza grafica};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M12 · Raster, telerilevamento e morfometria};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 10/30};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}La risoluzione di uscita e l’informazione disponibile\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Suddividere ogni cella in celle più piccole oppure interpolare una griglia più fitta aumenta il numero dei valori memorizzati, mentre l’informazione originaria rimane vincolata alla misura e al suo supporto. Una superficie più liscia può rendere meno visibili i limiti della risoluzione e favorire interpretazioni eccessivamente dettagliate. Aggregazione e disaggregazione hanno pertanto finalità differenti, delle quali occorre conservare traccia nei metadati. La dimensione del pixel deve essere distinta dalla capacità del sensore o del rilievo di risolvere strutture geologiche vicine.\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \input{tikz/M12/D04.tex}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Risoluzione geometrica e contenuto informativo devono essere valutati separatamente.\end{minipage}\end{lrbox}
+\MeasureBox{11-TitleBox}{\TitleBox}
+\MeasureBox{11-BodyBox}{\BodyBox}
+\MeasureBox{11-SideBox}{\SideBox}
+\MeasureBox{11-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide11}{}
+\bookmark[level=1,page=11]{La risoluzione di uscita e l’informazione disponibile}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Lettura del diagramma};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M12 · Raster, telerilevamento e morfometria};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 11/30};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Ricampionamento di grandezze e classi nominali\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Un’interpolazione lineare può essere pertinente per una grandezza continua quando le sue ipotesi locali sono adeguate. Applicata ai codici di una carta litologica, genera invece valori fra classi che non possiedono significato nominale: il codice 1,5 non definisce una roccia intermedia fra le categorie 1 e 2. Per dati categoriali si impiega una regola che conservi le categorie, come il vicino più prossimo, oppure una sintesi modale dichiarata. Anche la gestione dei pareggi può modificare i confini e deve restare esplicita.\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \includegraphics[width=7.45cm]{figure/M12/F09.pdf}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont L’interpolazione lineare introduce codici fra 1 e 2; il vicino più prossimo conserva le categorie originarie.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Il metodo di ricampionamento dipende dal significato della variabile.\end{minipage}\end{lrbox}
+\MeasureBox{12-TitleBox}{\TitleBox}
+\MeasureBox{12-BodyBox}{\BodyBox}
+\MeasureBox{12-SideBox}{\SideBox}
+\MeasureBox{12-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide12}{}
+\bookmark[level=1,page=12]{Ricampionamento di grandezze e classi nominali}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Evidenza grafica};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M12 · Raster, telerilevamento e morfometria};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont terra: resample};
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 12/30};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Griglie traslate e operazioni cella per cella\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Due raster con lo stesso numero di righe e colonne possono rappresentare celle collocate in luoghi differenti. Una traslazione di quindici metri equivale a mezzo pixel nella griglia del laboratorio e compromette una sottrazione cella per cella, pur lasciando compatibili le dimensioni delle matrici. Prima di combinare bande o epoche si confrontano riferimento, origine, risoluzione ed estensione, oltre alle unità e alla definizione delle variabili. Un eventuale ricampionamento deve utilizzare una griglia obiettivo esplicita e una regola coerente con i dati.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}\delta=\frac{15\ \mathrm m}{30\ \mathrm m}=0{,}5\ \mathrm{pixel}\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \input{tikz/M12/D05.tex}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La compatibilità delle matrici deve essere verificata anche sul piano geografico.\end{minipage}\end{lrbox}
+\MeasureBox{13-TitleBox}{\TitleBox}
+\MeasureBox{13-BodyBox}{\BodyBox}
+\MeasureBox{13-SideBox}{\SideBox}
+\MeasureBox{13-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide13}{}
+\bookmark[level=1,page=13]{Griglie traslate e operazioni cella per cella}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Lettura del diagramma};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M12 · Raster, telerilevamento e morfometria};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 13/30};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Differenze centrate e unità del gradiente\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont La derivata rispetto a x viene approssimata sottraendo le quote nei due centri adiacenti al centro considerato e dividendo per la loro distanza, pari a due passi. Per una griglia di trenta metri il denominatore è quindi sessanta metri. La direzione y richiede il medesimo calcolo, con orientamento coerente. Con quote e coordinate in metri, il gradiente è adimensionale. La formula è definita nelle celle interne, poiché al bordo manca un vicino.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}g_x\approx\frac{z_{i,j+1}-z_{i,j-1}}{2\Delta x}\\ g_y\approx\frac{z_{i+1,j}-z_{i-1,j}}{2\Delta y}\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \input{tikz/M12/D06.tex}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont $z_{ij}$: quota; i: riga verso Nord; j: colonna verso Est. $g_x,g_y$: derivate; $\Delta x=\Delta y=30$ m. Calcolo nelle sole celle interne.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Il denominatore deriva dalla geometria del reticolo e determina l’unità della derivata.\end{minipage}\end{lrbox}
+\MeasureBox{14-TitleBox}{\TitleBox}
+\MeasureBox{14-BodyBox}{\BodyBox}
+\MeasureBox{14-SideBox}{\SideBox}
+\MeasureBox{14-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide14}{}
+\bookmark[level=0,page=14]{Derivate, pendenza ed esposizione}
+\bookmark[level=1,page=14]{Differenze centrate e unità del gradiente}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Lettura del diagramma};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M12 · Raster, telerilevamento e morfometria};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 14/30};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Verifica su una superficie analiticamente nota\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Un piano con coefficienti noti costituisce una prova indipendente del programma, perché le derivate esatte sono disponibili prima dell’esecuzione. Per la superficie scelta, il gradiente deve restituire 0,12 lungo x e 0,08 lungo y in tutte le celle interne. Un errore nel passo, nell’ordine delle righe o nella direzione delle differenze emerge dal confronto entro una tolleranza numerica. Dopo questa prova, l’applicazione alla superficie sintetica più articolata può essere interpretata come approssimazione locale, la cui precisione dipende dal passo e dalla curvatura.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}z(x,y)=900+0{,}12x+0{,}08y\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \par\vspace{.25cm}\lstinputlisting[language=R]{estratti/M12/piano_noto.R}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Una soluzione analitica nota permette di distinguere un errore del codice da una proprietà dei dati.\end{minipage}\end{lrbox}
+\MeasureBox{15-TitleBox}{\TitleBox}
+\MeasureBox{15-BodyBox}{\BodyBox}
+\MeasureBox{15-SideBox}{\SideBox}
+\MeasureBox{15-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide15}{}
+\bookmark[level=1,page=15]{Verifica su una superficie analiticamente nota}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Implementazione in R};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M12 · Raster, telerilevamento e morfometria};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 15/30};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Pendenza: rapporto, percentuale e angolo\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont La norma del gradiente rappresenta il rapporto fra incremento verticale e distanza orizzontale nella direzione di massima salita. L’angolo di pendenza si ottiene mediante l’arcotangente, mentre la percentuale moltiplica il rapporto per cento. La conversione è non lineare: quarantacinque gradi corrispondono al cento per cento, e una pendenza percentuale può superare cento senza contraddizione. Per confrontare strumenti o carte occorre verificare quale rappresentazione sia stata utilizzata, oltre alle unità delle quote e delle distanze.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}g=\sqrt{g_x^2+g_y^2},\qquad \alpha=\arctan g\\ p_{\%}=100g=100\tan\alpha\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \includegraphics[width=7.45cm]{figure/M12/F05.pdf}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont Relazione fra angolo e percentuale. Il punto viola evidenzia 45° e 100\%.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La percentuale di pendenza è un rapporto geometrico e non una riscalatura lineare dei gradi.\end{minipage}\end{lrbox}
+\MeasureBox{16-TitleBox}{\TitleBox}
+\MeasureBox{16-BodyBox}{\BodyBox}
+\MeasureBox{16-SideBox}{\SideBox}
+\MeasureBox{16-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide16}{}
+\bookmark[level=1,page=16]{Pendenza: rapporto, percentuale e angolo}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Evidenza grafica};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M12 · Raster, telerilevamento e morfometria};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 16/30};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Carta delle pendenze e gestione del bordo\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Applicando le differenze centrate al raster di ventiquattro per trenta celle si ottiene una matrice interna di ventidue per ventotto celle, pari a 616 valori. Le celle di bordo vengono lasciate fuori dalla derivazione anziché ricevere uno zero artificiale, che indicherebbe terreno piano. Metodi differenti possono utilizzare vicinati più ampi o stime unilaterali, producendo risultati diversi soprattutto lungo discontinuità e margini. La didascalia deve specificare algoritmo, passo, unità e trattamento del bordo, affinché la carta possa essere riprodotta e confrontata.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}n_{\rm interno}=(24-2)(30-2)=616\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \includegraphics[width=7.45cm]{figure/M12/F04.pdf}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont Pendenza in gradi; differenze centrate, passo 30 metri.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Una convenzione per il bordo è parte del metodo e deve essere documentata.\end{minipage}\end{lrbox}
+\MeasureBox{17-TitleBox}{\TitleBox}
+\MeasureBox{17-BodyBox}{\BodyBox}
+\MeasureBox{17-SideBox}{\SideBox}
+\MeasureBox{17-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide17}{}
+\bookmark[level=1,page=17]{Carta delle pendenze e gestione del bordo}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Evidenza grafica};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M12 · Raster, telerilevamento e morfometria};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont terra: terrain};
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 17/30};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Esposizione e convenzione dell’azimut\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont L’esposizione descrive la direzione di massima discesa, ottenuta dal gradiente con segno opposto. Assumendo x verso Est e y verso Nord, l’azimut viene misurato in senso orario a partire dal Nord. La funzione atan2 permette di distinguere i quadranti, mentre il risultato viene ricondotto all’intervallo da zero a 360 gradi. Su una cella perfettamente piana la direzione è indeterminata, poiché il vettore di discesa è nullo; valori convenzionali restituiti dal software devono essere riconosciuti e trattati coerentemente.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}\theta=\operatorname{atan2}(-g_x,-g_y)\bmod 2\pi\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \input{tikz/M12/D07.tex}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont $g_x,g_y$: derivate verso Est e Nord. La formula restituisce radianti; per ottenere gradi si moltiplica per $180/\pi$. Celle piane escluse.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont L’orientamento degli assi deve restare coerente fra matrice, gradiente e azimut.\end{minipage}\end{lrbox}
+\MeasureBox{18-TitleBox}{\TitleBox}
+\MeasureBox{18-BodyBox}{\BodyBox}
+\MeasureBox{18-SideBox}{\SideBox}
+\MeasureBox{18-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide18}{}
+\bookmark[level=1,page=18]{Esposizione e convenzione dell’azimut}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Lettura del diagramma};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M12 · Raster, telerilevamento e morfometria};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 18/30};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Media circolare e concentrazione delle direzioni\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Le direzioni di 359° e 1° sono entrambe prossime al Nord, mentre la loro media aritmetica vale 180°. La media circolare opera sulle componenti dei vettori unitari e ricostruisce l’angolo mediante atan2. La lunghezza del vettore risultante descrive la concentrazione direzionale: quando si avvicina a zero, la direzione media diventa instabile o indeterminata. Per direzioni opposte, la concentrazione segnala l’indeterminatezza della media.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}\overline C=\frac1n\sum_i\cos\theta_i,\quad\overline S=\frac1n\sum_i\sin\theta_i\\ \overline\theta=\operatorname{atan2}(\overline S,\overline C),\quad\overline R=\sqrt{\overline C^2+\overline S^2}\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \input{tikz/M12/D08.tex}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont Angoli in radianti nel calcolo. Per 359° e 1°: media 0° e $\bar R=\cos(1^\circ)\simeq0{,}99985$. $\bar R=0$ rende indeterminata la media.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Una sintesi angolare deve riportare anche la concentrazione del vettore risultante.\end{minipage}\end{lrbox}
+\MeasureBox{19-TitleBox}{\TitleBox}
+\MeasureBox{19-BodyBox}{\BodyBox}
+\MeasureBox{19-SideBox}{\SideBox}
+\MeasureBox{19-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide19}{}
+\bookmark[level=1,page=19]{Media circolare e concentrazione delle direzioni}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Lettura del diagramma};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M12 · Raster, telerilevamento e morfometria};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 19/30};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Illuminazione di una superficie inclinata\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont L’ombreggiatura lambertiana semplificata dipende dal prodotto scalare fra la normale unitaria alla superficie e il vettore unitario diretto verso la luce. Le componenti negative vengono poste a zero, rappresentando una faccia priva di illuminazione diretta nel modello locale. La costruzione utilizza pendenza, esposizione, azimut della sorgente e sua altezza sull’orizzonte. Non include automaticamente ombre proiettate da ostacoli lontani, riflessioni o proprietà radiometriche del terreno; descrive una convenzione grafica applicata alla geometria del rilievo.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}L=\max\{0,\mathbf n\cdot\boldsymbol\ell\},\qquad\|\mathbf n\|=\|\boldsymbol\ell\|=1\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \input{tikz/M12/D09.tex}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont L’intensità dell’ombreggiatura dipende dall’illuminazione scelta oltre che dal terreno.\end{minipage}\end{lrbox}
+\MeasureBox{20-TitleBox}{\TitleBox}
+\MeasureBox{20-BodyBox}{\BodyBox}
+\MeasureBox{20-SideBox}{\SideBox}
+\MeasureBox{20-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide20}{}
+\bookmark[level=0,page=20]{Ombreggiatura e rappresentazione del rilievo}
+\bookmark[level=1,page=20]{Illuminazione di una superficie inclinata}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Lettura del diagramma};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M12 · Raster, telerilevamento e morfometria};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 20/30};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Luce da Nord-Ovest sul medesimo rilievo\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Con azimut di 315° e altezza di 45°, le facce orientate verso Nord-Ovest ricevono maggiore illuminazione. La carta rende percepibili variazioni di orientamento che una scala altimetrica può mostrare meno chiaramente, mantenendo però una dipendenza dalla posizione della sorgente. L’esagerazione verticale è un ulteriore parametro capace di modificare la percezione della morfologia. Nel laboratorio viene mantenuta pari a uno, mentre le derivate provengono dalla griglia originale di trenta metri.\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \includegraphics[width=7.45cm]{figure/M12/F06.pdf}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont Azimut 315°, altezza 45°, esagerazione verticale unitaria.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La didascalia dell’ombreggiatura deve dichiarare i parametri dell’illuminazione.\end{minipage}\end{lrbox}
+\MeasureBox{21-TitleBox}{\TitleBox}
+\MeasureBox{21-BodyBox}{\BodyBox}
+\MeasureBox{21-SideBox}{\SideBox}
+\MeasureBox{21-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide21}{}
+\bookmark[level=1,page=21]{Luce da Nord-Ovest sul medesimo rilievo}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Evidenza grafica};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M12 · Raster, telerilevamento e morfometria};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 21/30};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Variazione dell’illuminazione a quote invariate\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Spostando la sorgente verso Sud-Est, con azimut di 135°, cambiano le zone chiare e scure benché quote, pendenze e disposizione delle celle rimangano identiche. Il confronto dimostra che la luminosità della carta non costituisce una misura altimetrica indipendente. Un’interpretazione morfologica può essere verificata usando più illuminazioni, curve di livello e quote, soprattutto quando la percezione visiva suggerisce inversioni fra rilievi e depressioni. La scala di intensità rimane fissata fra zero e uno in entrambe le figure.\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \includegraphics[width=7.45cm]{figure/M12/F07.pdf}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont Azimut 135°, altezza 45°; terreno e scala invariati.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Il confronto fra illuminazioni aiuta a riconoscere strutture indotte dalla rappresentazione.\end{minipage}\end{lrbox}
+\MeasureBox{22-TitleBox}{\TitleBox}
+\MeasureBox{22-BodyBox}{\BodyBox}
+\MeasureBox{22-SideBox}{\SideBox}
+\MeasureBox{22-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide22}{}
+\bookmark[level=1,page=22]{Variazione dell’illuminazione a quote invariate}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Evidenza grafica};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M12 · Raster, telerilevamento e morfometria};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 22/30};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Contrasto spettrale fra bande comparabili\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Un indice normalizzato confronta la differenza fra due bande con la loro somma, ottenendo una misura di contrasto relativo. Nel laboratorio, rosso e vicino infrarosso sono riflettanze sintetiche positive, prive di una provenienza satellitare reale. Per valori non negativi e somma positiva, l’indice appartiene all’intervallo da meno uno a uno. Il rapporto richiede tuttavia coerenza radiometrica, allineamento spaziale e identico supporto; la normalizzazione algebrica non corregge unità incompatibili, offset strumentali o differenze di acquisizione.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}I=\frac{N-R}{N+R},\qquad -1\le I\le1\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \includegraphics[width=7.45cm]{figure/M12/F08.pdf}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont N: riflettanza nel vicino infrarosso; R: riflettanza nel rosso. Indice adimensionale da bande sintetiche.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La costruzione di un indice deve seguire la verifica radiometrica e geometrica delle bande.\end{minipage}\end{lrbox}
+\MeasureBox{23-TitleBox}{\TitleBox}
+\MeasureBox{23-BodyBox}{\BodyBox}
+\MeasureBox{23-SideBox}{\SideBox}
+\MeasureBox{23-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide23}{}
+\bookmark[level=0,page=23]{Bande e indici normalizzati}
+\bookmark[level=1,page=23]{Contrasto spettrale fra bande comparabili}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Evidenza grafica};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M12 · Raster, telerilevamento e morfometria};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 23/30};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Sensibilità ai denominatori prossimi a zero\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Quando la somma delle bande è piccola, variazioni minime dei valori possono produrre variazioni ampie dell’indice. Le derivate mostrano che la sensibilità cresce con l’inverso del quadrato del denominatore, modulato dal valore dell’altra banda. Il laboratorio introduce una soglia esplicita sulla somma e conserva come mancanti le celle escluse. La soglia deve essere motivata rispetto a precisione, rumore e significato delle bande; abbassarla per ottenere più celle finite può aumentare l’instabilità senza migliorare l’informazione.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}\frac{\partial I}{\partial N}=\frac{2R}{(N+R)^2}\qquad \frac{\partial I}{\partial R}=-\frac{2N}{(N+R)^2}\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \input{tikz/M12/D10.tex}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont $I=(N-R)/(N+R)$; N: infrarosso; R: rosso. Nell’esempio di codice si calcola per $N+R>10^{-6}$; altrimenti si conserva NA.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Un risultato finito può restare estremamente sensibile al rumore.\end{minipage}\end{lrbox}
+\MeasureBox{24-TitleBox}{\TitleBox}
+\MeasureBox{24-BodyBox}{\BodyBox}
+\MeasureBox{24-SideBox}{\SideBox}
+\MeasureBox{24-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide24}{}
+\bookmark[level=1,page=24]{Sensibilità ai denominatori prossimi a zero}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Lettura del diagramma};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M12 · Raster, telerilevamento e morfometria};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 24/30};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Maschera radiometrica e tracciabilità del calcolo\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Il codice applica il criterio di ammissibilità prima della divisione, evitando che valori indefiniti vengano corretti soltanto dopo il calcolo. Le celle escluse conservano una posizione e un motivo di esclusione, che possono essere riportati insieme alla copertura finale. Se più maschere intervengono nell’analisi, come nubi, saturazione e denominatore insufficiente, conviene mantenerne le cause separatamente prima di costruire la maschera complessiva. Il risultato può così essere interpretato rispetto al territorio rimasto osservabile e alla qualità delle misure utilizzate.\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \par\vspace{.25cm}\lstinputlisting[language=R]{estratti/M12/indice.R}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La maschera è parte del dato derivato e deve accompagnare l’indice esportato.\end{minipage}\end{lrbox}
+\MeasureBox{25-TitleBox}{\TitleBox}
+\MeasureBox{25-BodyBox}{\BodyBox}
+\MeasureBox{25-SideBox}{\SideBox}
+\MeasureBox{25-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide25}{}
+\bookmark[level=1,page=25]{Maschera radiometrica e tracciabilità del calcolo}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Implementazione in R};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M12 · Raster, telerilevamento e morfometria};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 25/30};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Statistiche zonali e livello dell’unità statistica\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Le statistiche zonali aggregano le celle secondo un’appartenenza territoriale, producendo una riga per zona. Media, dispersione e copertura descrivono proprietà diverse del dominio e devono essere conservate insieme. Nel raster sintetico, le zone A e B sono convenzioni didattiche; le differenze fra le distribuzioni altimetriche riflettono la loro collocazione sulla superficie. Trattare tutte le celle come repliche indipendenti in un test ignorerebbe la continuità spaziale e il fatto che le quote provengono dalla medesima superficie costruita.\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \includegraphics[width=7.45cm]{figure/M12/F10.pdf}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont Distribuzioni delle quote nelle due zone sintetiche. I box plot descrivono le celle, senza attribuire loro indipendenza.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Una sintesi per zona cambia il livello della tabella e richiede una nuova definizione dell’unità statistica.\end{minipage}\end{lrbox}
+\MeasureBox{26-TitleBox}{\TitleBox}
+\MeasureBox{26-BodyBox}{\BodyBox}
+\MeasureBox{26-SideBox}{\SideBox}
+\MeasureBox{26-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide26}{}
+\bookmark[level=0,page=26]{Sintesi zonali e dipendenza}
+\bookmark[level=1,page=26]{Statistiche zonali e livello dell’unità statistica}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Evidenza grafica};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M12 · Raster, telerilevamento e morfometria};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 26/30};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Distanza fra celle e dipendenza spaziale\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Il confronto fra differenze di quota a trenta e a trecento metri descrive quanto la superficie cambi a due scale longitudinali. Le coppie condividono celle e risentono della tendenza del rilievo, cosicché il confronto non equivale a un test basato su repliche indipendenti. Per la media di un campo correlato, la varianza comprende tutte le covarianze fra celle; la formula basata sulla sola varianza marginale divisa per n richiederebbe covarianze nulle. La risoluzione della griglia entra quindi nel calcolo senza determinare da sola l’informazione effettiva.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}\operatorname{Var}(\overline Z)=\frac1{n^2}\sum_i\sum_j\operatorname{Cov}(Z_i,Z_j)\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont $Z_i$: quota casuale della cella i; n = 720. Si confrontano 696 differenze a un passo e 480 a dieci passi: sono relazioni fra celle condivise, non altrettante osservazioni indipendenti. La varianza della media dipende anche dalle covarianze fra celle.\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont L’incertezza di una media spaziale dipende dalla covarianza oltre che dal numero di celle.\end{minipage}\end{lrbox}
+\MeasureBox{27-TitleBox}{\TitleBox}
+\MeasureBox{27-BodyBox}{\BodyBox}
+\MeasureBox{27-SideBox}{\SideBox}
+\MeasureBox{27-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide27}{}
+\bookmark[level=1,page=27]{Distanza fra celle e dipendenza spaziale}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Sviluppo e interpretazione};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M12 · Raster, telerilevamento e morfometria};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 27/30};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Ricampionamento e scambiabilità dei blocchi\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont La superficie viene suddivisa in dodici blocchi completi di sei righe e dieci colonne, dei quali si calcolano le medie. Il ricampionamento di tali medie produce una distribuzione della media complessiva condizionata allo schema adottato. Blocchi confinanti possono restare dipendenti e un gradiente può renderli poco scambiabili, per cui i quantili vengono presentati come analisi di sensibilità didattica. Dimensioni e disposizione dei blocchi dovrebbero essere valutate rispetto alla scala della dipendenza e alla popolazione sulla quale si vuole inferire.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}\overline Z^{*}=\frac1{12}\sum_{b=1}^{12}\overline Z_{J_b},\qquad J_b\overset{\rm iid}{\sim}\operatorname{Unif}\{1,\ldots,12\}\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \includegraphics[width=7.45cm]{figure/M12/F11.pdf}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont $\bar Z_j$: media del blocco j. Si estraggono 12 indici indipendenti con reinserimento; 1999 repliche. Viola: media originaria.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Il ricampionamento a blocchi richiede ipotesi sulla dipendenza residua fra blocchi.\end{minipage}\end{lrbox}
+\MeasureBox{28-TitleBox}{\TitleBox}
+\MeasureBox{28-BodyBox}{\BodyBox}
+\MeasureBox{28-SideBox}{\SideBox}
+\MeasureBox{28-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide28}{}
+\bookmark[level=1,page=28]{Ricampionamento e scambiabilità dei blocchi}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Evidenza grafica};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M12 · Raster, telerilevamento e morfometria};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 28/30};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Lettura per finestre e uso della memoria\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont La lettura di una finestra limita il numero di celle caricate senza modificare la risoluzione né il contenuto dei valori. Gli argomenti di riga e colonna individuano posizioni nella griglia del file, delle quali occorre conoscere l’orientamento. Il confronto con la stessa porzione della lettura completa verifica l’ordine dei valori restituiti. Per operazioni locali, l’elaborazione per blocchi può richiedere una fascia aggiuntiva di celle attorno a ciascuna finestra, affinché i vicinati delle celle di margine siano disponibili.\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \par\vspace{.25cm}\lstinputlisting[language=R]{estratti/M12/finestra.R}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Una strategia di memoria deve preservare valori, ordine e vicinati richiesti dall’algoritmo.\end{minipage}\end{lrbox}
+\MeasureBox{29-TitleBox}{\TitleBox}
+\MeasureBox{29-BodyBox}{\BodyBox}
+\MeasureBox{29-SideBox}{\SideBox}
+\MeasureBox{29-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide29}{}
+\bookmark[level=0,page=29]{Memoria, esportazione e verifica}
+\bookmark[level=1,page=29]{Lettura per finestre e uso della memoria}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Implementazione in R};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M12 · Raster, telerilevamento e morfometria};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 29/30};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Esportazione delle derivate e percorso di laboratorio\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont La consegna conserva le 616 celle interne con coordinate locali, pendenza in gradi, metodo delle differenze e passo di trenta metri. Una tabella di coordinate locali richiederebbe ulteriori metadati per diventare un raster georeferenziato. I laboratori N01–N08 ricostruiscono griglia e trasformazioni; N09–N12 verificano derivate e illuminazione; N13–N17 affrontano indici, zone e dipendenza; N18–N20 completano lettura per finestre, allineamento ed esportazione. Lo studio autonomo può confrontare pendenze calcolate prima e dopo l’aggregazione, discutendo il ruolo della scala.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}Z\longrightarrow(g_x,g_y)\longrightarrow\alpha\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont La consegna deve consentire di riconoscere la natura sintetica del terreno, le celle escluse e l’assenza di una collocazione geografica reale. I sorgenti R riproducono ogni figura, mentre i controlli numerici confrontano il procedimento con casi di risultato noto.\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La documentazione deve seguire il dato dalla griglia originaria alle grandezze derivate.\end{minipage}\end{lrbox}
+\MeasureBox{30-TitleBox}{\TitleBox}
+\MeasureBox{30-BodyBox}{\BodyBox}
+\MeasureBox{30-SideBox}{\SideBox}
+\MeasureBox{30-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide30}{}
+\bookmark[level=1,page=30]{Esportazione delle derivate e percorso di laboratorio}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Sviluppo e interpretazione};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M12 · Raster, telerilevamento e morfometria};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 30/30};
+\end{tikzpicture}\end{frame}
+\end{document}

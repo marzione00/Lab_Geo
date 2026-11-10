@@ -1,0 +1,10 @@
+r <- terra::rast('dati/raster_v3.tif')
+terra::crs(r)
+terra::ext(r)
+terra::res(r)
+stopifnot(nrow(r)==24,ncol(r)==30,
+ all(terra::res(r)==30))
+d <- read.csv('dati/raster_v3.csv')
+Z <- matrix(d$quota_m,24,byrow=TRUE)
+M <- as.matrix(r,wide=TRUE)
+stopifnot(max(abs(M-Z[24:1,])) < .001)

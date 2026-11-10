@@ -1,0 +1,671 @@
+\documentclass[12pt,aspectratio=1610]{beamer}
+\geometry{paperwidth=20cm,paperheight=12.5cm}
+\usepackage[italian,provide=*]{babel}
+\usepackage{lmodern,fontspec}
+\setsansfont{NimbusSans-Regular.otf}[Path=sorgenti/font/,BoldFont=NimbusSans-Bold.otf,ItalicFont=NimbusSans-Italic.otf]
+\setmainfont{NimbusSans-Regular.otf}[Path=sorgenti/font/,BoldFont=NimbusSans-Bold.otf,ItalicFont=NimbusSans-Italic.otf]
+\setmonofont{lmmono10-regular.otf}[Path=sorgenti/font/,Scale=.88]
+\usefonttheme{professionalfonts}
+\usepackage{amsmath,amssymb,booktabs,array,tabularx,graphicx,tikz,listings,bookmark}
+\usetikzlibrary{calc,arrows.meta,positioning}
+\definecolor{Paper}{HTML}{F8F6F1}
+\definecolor{Ink}{HTML}{253344}\definecolor{Navy}{HTML}{15283E}
+\definecolor{Quantum}{HTML}{5146A5}\definecolor{Classical}{HTML}{087C74}
+\definecolor{Measure}{HTML}{A05B10}\definecolor{Rose}{HTML}{9B4564}
+\definecolor{Muted}{HTML}{657180}\definecolor{Rule}{HTML}{D6DAD9}
+\definecolor{Wash}{HTML}{EAE7F6}\definecolor{Night}{HTML}{112236}
+\definecolor{Lilac}{HTML}{ABB5FF}\definecolor{Mint}{HTML}{72D8C8}\definecolor{Gold}{HTML}{EEC184}
+\setbeamercolor{background canvas}{bg=Paper}\setbeamercolor{normal text}{fg=Ink}
+\setbeamertemplate{navigation symbols}{}\setbeamertemplate{headline}{}\setbeamertemplate{footline}{}
+\setbeamersize{text margin left=0pt,text margin right=0pt}\setbeameroption{hide notes}
+\newsavebox{\BodyBox}\newsavebox{\SideBox}\newsavebox{\RecallBox}\newsavebox{\TitleBox}
+\newcommand{\MeasureBox}[2]{\typeout{GEOBOX:#1:\the\wd#2:\the\ht#2:\the\dp#2}}
+\lstset{language=R,basicstyle=\ttfamily\fontsize{10.2}{13.4}\selectfont,
+columns=fullflexible,keepspaces=true,showstringspaces=false,breaklines=true,breakatwhitespace=false,
+commentstyle=\color{Muted},keywordstyle=\color{Classical},stringstyle=\color{Quantum},
+aboveskip=0pt,belowskip=0pt,xleftmargin=0pt,xrightmargin=0pt,tabsize=2}
+\hypersetup{colorlinks=true,linkcolor=Classical,urlcolor=Classical,pdfpagemode=UseOutlines,pdfstartview=Fit,bookmarksopen=true,bookmarksopenlevel=0}
+\bookmarksetup{open,openlevel=0,depth=2}
+\tikzset{arr/.style={-{Stealth[length=2mm]},line width=.8pt,draw=Classical}}
+\hypersetup{pdftitle={Campionamento, stima e incertezza},pdfauthor={},pdfsubject={Corso di statistica e data science per Geologia, primo anno; modulo 05}}
+\usetikzlibrary{decorations.pathreplacing,fit,backgrounds,matrix}\hypersetup{pdftitle={M14 · Estremi, pericolosità e rischio},pdfsubject={Revisione integrale R6}}\begin{document}
+\begin{frame}[plain]\hypertarget{slide1}{}\begin{tikzpicture}[remember picture,overlay]\fill[Night] (current page.south west) rectangle (current page.north east);\draw[Mint,line width=2pt] ([xshift=1.05cm,yshift=-1.35cm]current page.north west)--([xshift=3cm,yshift=-1.35cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=1.05cm,yshift=-1.7cm]current page.north west){\color{Mint}\bfseries\fontsize{11}{14}\selectfont M14 · REVISIONE R6};
+\node[anchor=north west,inner sep=0] at ([xshift=1.05cm,yshift=-2.65cm]current page.north west){\begin{minipage}{15.8cm}\raggedright\color{white}\bfseries\fontsize{31}{38}\selectfont Estremi, pericolosità e rischio\end{minipage}};
+\node[anchor=north west,inner sep=0] at ([xshift=1.05cm,yshift=-6.4cm]current page.north west){\begin{minipage}{15.8cm}\raggedright\color{Lilac}\fontsize{15}{21}\selectfont Superamenti, tempi di ritorno e incertezza dei livelli rari\end{minipage}};
+\node[anchor=north west,inner sep=0] at ([xshift=1.05cm,yshift=-8.6cm]current page.north west){\begin{minipage}{16.5cm}\color{white}\fontsize{11}{15}\selectfont 31 slide · teoria, derivazioni, figure e applicazioni in R.\par\smallskip Provenienza dei dati e sorgenti nei materiali allegati.\end{minipage}};
+\node[anchor=south east,inner sep=0] at ([xshift=18.95cm,yshift=-11.35cm]current page.north west){\color{Lilac!45}\bfseries\fontsize{64}{68}\selectfont M14};
+\end{tikzpicture}\end{frame}
+\begin{frame}[plain]\hypertarget{slide2}{}\bookmark[level=0,page=2]{Indice}\begin{tikzpicture}[remember picture,overlay]\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.65cm]current page.north west){\color{Navy}\bfseries\fontsize{22}{27}\selectfont Percorso del modulo};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.23cm]current page.north west){\color{Classical}\bfseries\fontsize{13}{16}\selectfont 3};
+\node[anchor=north west,inner sep=0] at ([xshift=2.0cm,yshift=-2.23cm]current page.north west){\begin{minipage}{7.25cm}\raggedright\color{Navy}\bfseries\fontsize{12.4}{15.5}\selectfont\hyperlink{slide3}{Massimi annuali e probabilità empiriche}\end{minipage}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-3.5300000000000002cm]current page.north west){\color{Classical}\bfseries\fontsize{13}{16}\selectfont 8};
+\node[anchor=north west,inner sep=0] at ([xshift=2.0cm,yshift=-3.5300000000000002cm]current page.north west){\begin{minipage}{7.25cm}\raggedright\color{Navy}\bfseries\fontsize{12.4}{15.5}\selectfont\hyperlink{slide8}{Ritorno, attesa e orizzonte temporale}\end{minipage}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-4.83cm]current page.north west){\color{Classical}\bfseries\fontsize{13}{16}\selectfont 13};
+\node[anchor=north west,inner sep=0] at ([xshift=2.0cm,yshift=-4.83cm]current page.north west){\begin{minipage}{7.25cm}\raggedright\color{Navy}\bfseries\fontsize{12.4}{15.5}\selectfont\hyperlink{slide13}{Modello Gumbel e verifica dell’adattamento}\end{minipage}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-6.130000000000001cm]current page.north west){\color{Classical}\bfseries\fontsize{13}{16}\selectfont 18};
+\node[anchor=north west,inner sep=0] at ([xshift=2.0cm,yshift=-6.130000000000001cm]current page.north west){\begin{minipage}{7.25cm}\raggedright\color{Navy}\bfseries\fontsize{12.4}{15.5}\selectfont\hyperlink{slide18}{Livelli rari e incertezza della stima}\end{minipage}};
+\node[anchor=north west,inner sep=0] at ([xshift=10.299999999999999cm,yshift=-2.23cm]current page.north west){\color{Classical}\bfseries\fontsize{13}{16}\selectfont 24};
+\node[anchor=north west,inner sep=0] at ([xshift=11.35cm,yshift=-2.23cm]current page.north west){\begin{minipage}{7.25cm}\raggedright\color{Navy}\bfseries\fontsize{12.4}{15.5}\selectfont\hyperlink{slide24}{Forma della coda e sensibilità GEV}\end{minipage}};
+\node[anchor=north west,inner sep=0] at ([xshift=10.299999999999999cm,yshift=-3.5300000000000002cm]current page.north west){\color{Classical}\bfseries\fontsize{13}{16}\selectfont 26};
+\node[anchor=north west,inner sep=0] at ([xshift=11.35cm,yshift=-3.5300000000000002cm]current page.north west){\begin{minipage}{7.25cm}\raggedright\color{Navy}\bfseries\fontsize{12.4}{15.5}\selectfont\hyperlink{slide26}{Superamenti giornalieri ed episodi}\end{minipage}};
+\node[anchor=north west,inner sep=0] at ([xshift=10.299999999999999cm,yshift=-4.83cm]current page.north west){\color{Classical}\bfseries\fontsize{13}{16}\selectfont 29};
+\node[anchor=north west,inner sep=0] at ([xshift=11.35cm,yshift=-4.83cm]current page.north west){\begin{minipage}{7.25cm}\raggedright\color{Navy}\bfseries\fontsize{12.4}{15.5}\selectfont\hyperlink{slide29}{Pericolosità, conseguenze e comunicazione}\end{minipage}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.55cm]current page.north west){\begin{minipage}{18cm}\color{Muted}\fontsize{10}{13}\selectfont I numeri indicano le pagine iniziali; i titoli sono cliccabili. Codice, figure e verifiche sono inclusi nel progetto.\end{minipage}};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}La variabile estrema e l’unità temporale\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont La serie comprende cento massimi annuali di portata sintetici, associati agli anni dal 1920 al 2019. Ogni riga rappresenta il maggiore valore di un anno e possiede quindi un significato diverso da una portata media annua o da una misura giornaliera. Prima della modellazione si verificano unicità degli anni, continuità del calendario, unità e valori mancanti. La completezza della tabella rende ricostruibile la sequenza, mentre indipendenza e stazionarietà riguardano proprietà del processo che richiedono una valutazione distinta.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}M_y=\max_{t\in\text{anno }y}Q_t\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \includegraphics[width=7.45cm]{figure/M14/F01.pdf}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont Cento massimi annuali simulati, in metri cubi al secondo. Gli anni sono etichette del caso didattico.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La definizione del blocco temporale determina la variabile alla quale si applica il modello degli estremi.\end{minipage}\end{lrbox}
+\MeasureBox{3-TitleBox}{\TitleBox}
+\MeasureBox{3-BodyBox}{\BodyBox}
+\MeasureBox{3-SideBox}{\SideBox}
+\MeasureBox{3-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide3}{}
+\bookmark[level=0,page=3]{Massimi annuali e probabilità empiriche}
+\bookmark[level=1,page=3]{La variabile estrema e l’unità temporale}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Evidenza grafica};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M14 · Estremi, pericolosità e rischio};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 3/31};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Distribuzione del massimo di un blocco\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Se un blocco contenesse m osservazioni indipendenti con la medesima distribuzione F, la probabilità che il massimo sia inferiore a una soglia coinciderebbe con la probabilità che tutte le osservazioni lo siano. Il prodotto delle probabilità produce la potenza m della distribuzione originaria. Questa derivazione chiarisce come l’operazione di massimo modifichi la distribuzione; per serie idrologiche reali, dipendenza e stagionalità impediscono spesso di applicare direttamente la formula. La modellazione dei massimi annuali affronta il blocco come unità di analisi.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}P(M_m\le q)=P(Q_1\le q,\ldots,Q_m\le q)=F(q)^m\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \input{tikz/M14/D01.tex}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La distribuzione di un massimo dipende dalla dimensione e dalla struttura del blocco.\end{minipage}\end{lrbox}
+\MeasureBox{4-TitleBox}{\TitleBox}
+\MeasureBox{4-BodyBox}{\BodyBox}
+\MeasureBox{4-SideBox}{\SideBox}
+\MeasureBox{4-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide4}{}
+\bookmark[level=1,page=4]{Distribuzione del massimo di un blocco}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Lettura del diagramma};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M14 · Estremi, pericolosità e rischio};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 4/31};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Posizioni empiriche di superamento\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Ordinando i massimi in senso decrescente, si attribuisce al rango r la posizione grafica r diviso n più uno. L’inverso fornisce una scala convenzionale di ritorno sulla quale rappresentare i dati osservati. Il massimo del record occupa così una posizione prossima a centouno anni, senza diventare una stima certa della probabilità dell’evento. Altre convenzioni di posizione grafica possono modificare leggermente i punti, soprattutto agli estremi; la scelta deve essere dichiarata quando si confrontano grafici o software.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}\widehat p_r=\frac{r}{n+1},\qquad\widehat T_r=\frac{n+1}{r}\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \includegraphics[width=7.45cm]{figure/M14/F02.pdf}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont n = 100; r = 1 per il massimo, 100 per il minimo. p è la posizione di superamento; T il suo inverso in anni, su scala logaritmica.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Una posizione grafica ordina l’evidenza osservata e conserva l’incertezza dei ranghi estremi.\end{minipage}\end{lrbox}
+\MeasureBox{5-TitleBox}{\TitleBox}
+\MeasureBox{5-BodyBox}{\BodyBox}
+\MeasureBox{5-SideBox}{\SideBox}
+\MeasureBox{5-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide5}{}
+\bookmark[level=1,page=5]{Posizioni empiriche di superamento}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Evidenza grafica};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M14 · Estremi, pericolosità e rischio};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 5/31};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Distribuzione empirica e soglia di superamento\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont La distribuzione empirica conta la frazione dei massimi minori o uguali alla soglia, mentre il suo complemento conta quelli strettamente maggiori. La distinzione sull’uguaglianza diventa rilevante quando le misure sono arrotondate e compaiono pareggi. Il codice esplicita entrambi gli eventi e verifica che le proporzioni sommino a uno. La frequenza campionaria ottenuta descrive il record disponibile; la sua interpretazione come probabilità del processo richiede che il campione sia pertinente al periodo e al regime di interesse.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}\widehat F_n(q)=\frac1n\sum_i\mathbf1\{M_i\le q\}\qquad\widehat p(q)=1-\widehat F_n(q)\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont M indica il massimo annuale; n = 100 anni. Nel codice la soglia q è 600 m³/s.\par\vspace{.25cm}\lstinputlisting[language=R]{estratti/M14/superamento.R}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La convenzione sulla soglia deve essere identica nel conteggio, nel modello e nella comunicazione del risultato.\end{minipage}\end{lrbox}
+\MeasureBox{6-TitleBox}{\TitleBox}
+\MeasureBox{6-BodyBox}{\BodyBox}
+\MeasureBox{6-SideBox}{\SideBox}
+\MeasureBox{6-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide6}{}
+\bookmark[level=1,page=6]{Distribuzione empirica e soglia di superamento}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Implementazione in R};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M14 · Estremi, pericolosità e rischio};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 6/31};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Quantili campionari e limite del supporto osservato\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Un quantile campionario interpolato, come quello di tipo sette in R, combina valori ordinati del record e rimane entro il loro intervallo. Per probabilità molto elevate, il risultato dipende da pochi massimi e non costruisce automaticamente una coda oltre il valore più grande osservato. Un modello parametrico può produrre quantili esterni al supporto campionario, introducendo ipotesi sulla forma della distribuzione. Il confronto deve quindi distinguere la sintesi dei dati dall’estrapolazione modellistica e riportare la convenzione utilizzata per i quantili empirici.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}\min_iM_i\le\widehat Q_n(u)\le\max_iM_i\qquad(0\le u\le1)\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont Con cento massimi annuali, una probabilità di superamento dell’ordine di un millesimo riguarda eventi più rari della risoluzione empirica del record. Il numero restituito da una formula deve essere valutato rispetto alla distanza dall’informazione osservata.\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont L’estrapolazione richiede ipotesi ulteriori e un’analisi della loro influenza.\end{minipage}\end{lrbox}
+\MeasureBox{7-TitleBox}{\TitleBox}
+\MeasureBox{7-BodyBox}{\BodyBox}
+\MeasureBox{7-SideBox}{\SideBox}
+\MeasureBox{7-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide7}{}
+\bookmark[level=1,page=7]{Quantili campionari e limite del supporto osservato}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Sviluppo e interpretazione};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M14 · Estremi, pericolosità e rischio};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 7/31};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Tempo di ritorno e probabilità annua\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Per una soglia fissata e una probabilità annua di superamento costante p, il tempo di ritorno viene definito come il suo inverso. La denominazione centennale corrisponde quindi a p uguale a 0,01 e non impone un intervallo deterministico fra eventi. Due anni consecutivi possono entrambi superare la soglia; nel modello indipendente, l’evento precedente lascia invariata la probabilità del successivo. L’interpretazione richiede di specificare la soglia, il blocco annuale e il regime rispetto al quale la probabilità è considerata stabile.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}T(q)=\frac1{P(M_y>q)}=\frac1{1-F_M(q)}\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \input{tikz/M14/D02.tex}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont $F_M(q)=P(M_y\leq q)$: distribuzione del massimo annuale. q: soglia; T: tempo di ritorno in anni. Esempio p = 0,01.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Il tempo di ritorno è una proprietà probabilistica del modello e della soglia.\end{minipage}\end{lrbox}
+\MeasureBox{8-TitleBox}{\TitleBox}
+\MeasureBox{8-BodyBox}{\BodyBox}
+\MeasureBox{8-SideBox}{\SideBox}
+\MeasureBox{8-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide8}{}
+\bookmark[level=0,page=8]{Ritorno, attesa e orizzonte temporale}
+\bookmark[level=1,page=8]{Tempo di ritorno e probabilità annua}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Lettura del diagramma};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M14 · Estremi, pericolosità e rischio};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 8/31};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Probabilità di superamento lungo un orizzonte\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Con anni indipendenti e identica probabilità p, l’assenza di superamenti per H anni ha probabilità pari a uno meno p elevato a H. Il complemento descrive almeno un superamento durante l’intero orizzonte. Per una soglia centennale, la probabilità è circa 39,5\% in cinquant’anni e 63,4\% in cento anni. Il numero atteso di superamenti è invece Hp: le due quantità rispondono a domande differenti e possono assumere valori numericamente molto diversi.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}P(N_H\ge1)=1-(1-p)^H,\qquad E[N_H]=Hp\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \includegraphics[width=7.45cm]{figure/M14/F03.pdf}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont $N_H$: numero di anni con superamento entro H anni. Curva per p = 0,01 annuo, con anni indipendenti e probabilità costante.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La probabilità sull’intero orizzonte deve essere calcolata sulle condizioni temporali del problema.\end{minipage}\end{lrbox}
+\MeasureBox{9-TitleBox}{\TitleBox}
+\MeasureBox{9-BodyBox}{\BodyBox}
+\MeasureBox{9-SideBox}{\SideBox}
+\MeasureBox{9-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide9}{}
+\bookmark[level=1,page=9]{Probabilità di superamento lungo un orizzonte}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Evidenza grafica};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M14 · Estremi, pericolosità e rischio};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 9/31};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Distribuzione geometrica del tempo di attesa\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Nel modello di prove annuali indipendenti, l’attesa W fino al primo superamento conta gli anni compreso quello dell’evento. Per attendere esattamente k anni devono verificarsi k meno uno anni senza superamento, seguiti da un anno con superamento. La distribuzione geometrica ha media pari a uno diviso p, mentre la sua asimmetria separa media e mediana. Con p uguale a 0,01 la mediana è sessantanove anni, mentre l’attesa media è cento.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}P(W=k)=(1-p)^{k-1}p,\quad k=1{,}2,\ldots\\ E[W]=\frac1p,\qquad\operatorname{Var}(W)=\frac{1-p}{p^2}\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \input{tikz/M14/D03.tex}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Il valore medio dell’attesa deve essere interpretato insieme alla sua distribuzione.\end{minipage}\end{lrbox}
+\MeasureBox{10-TitleBox}{\TitleBox}
+\MeasureBox{10-BodyBox}{\BodyBox}
+\MeasureBox{10-SideBox}{\SideBox}
+\MeasureBox{10-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide10}{}
+\bookmark[level=1,page=10]{Distribuzione geometrica del tempo di attesa}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Lettura del diagramma};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M14 · Estremi, pericolosità e rischio};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 10/31};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Simulazione delle attese e asimmetria\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont La simulazione genera diecimila attese indipendenti dal modello geometrico, aggiungendo uno ai valori di rgeom, che conta gli insuccessi prima del primo successo. L’istogramma mostra una concentrazione di attese brevi e una coda di attese lunghe, mentre la linea verticale indica la media teorica di cento anni. La simulazione rende visibile il significato del modello, senza verificare che un processo idrologico reale ne soddisfi le ipotesi. La sequenza casuale e la convenzione di conteggio sono incluse nel codice riproducibile.\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \includegraphics[width=7.45cm]{figure/M14/F04.pdf}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont Diecimila attese simulate con p = 0,01. La linea viola indica cento anni; il supporto inizia da uno.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Il conteggio degli insuccessi e quello degli anni fino all’evento differiscono di una unità.\end{minipage}\end{lrbox}
+\MeasureBox{11-TitleBox}{\TitleBox}
+\MeasureBox{11-BodyBox}{\BodyBox}
+\MeasureBox{11-SideBox}{\SideBox}
+\MeasureBox{11-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide11}{}
+\bookmark[level=1,page=11]{Simulazione delle attese e asimmetria}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Evidenza grafica};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M14 · Estremi, pericolosità e rischio};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 11/31};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Probabilità variabile e dipendenza fra anni\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Se la probabilità cambia nel tempo ma gli anni restano indipendenti, la probabilità di nessun superamento è il prodotto dei complementi delle probabilità annuali. Un unico tempo di ritorno costante non riassume più l’intero periodo. Quando vi è dipendenza, anche tale prodotto richiede una sostituzione con probabilità condizionate o con un modello congiunto. La valutazione di lungo periodo deve quindi considerare cambiamenti del processo, modifiche del bacino e persistenza, oltre all’incertezza nella stima dei parametri.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}P(N_H\ge1)=1-\prod_{t=1}^{H}(1-p_t)\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \input{tikz/M14/D04.tex}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont $p_t$: probabilità di superamento nell’anno t; H: durata; $N_H$: conteggio. Il prodotto vale sotto indipendenza, anche con probabilità diverse.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La stazionarietà e l’indipendenza svolgono ruoli distinti nelle formule di probabilità temporale.\end{minipage}\end{lrbox}
+\MeasureBox{12-TitleBox}{\TitleBox}
+\MeasureBox{12-BodyBox}{\BodyBox}
+\MeasureBox{12-SideBox}{\SideBox}
+\MeasureBox{12-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide12}{}
+\bookmark[level=1,page=12]{Probabilità variabile e dipendenza fra anni}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Lettura del diagramma};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M14 · Estremi, pericolosità e rischio};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 12/31};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Gumbel per massimi: posizione e scala\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont La distribuzione Gumbel per massimi descrive una famiglia con parametro di posizione a e parametro di scala b positivo. La funzione cumulativa aumenta da zero a uno, mentre la trasformazione interna determina una coda destra asimmetrica. Il modello è una possibile approssimazione dei massimi di blocco, la cui pertinenza deve essere valutata rispetto al processo e ai dati. La parametrizzazione per massimi deve essere distinta da quella per minimi, poiché un’inversione dei segni modifica la direzione della coda.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}F(q)=\exp\!\left[-\exp\!\left(-\frac{q-a}{b}\right)\right],\qquad b>0\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont La media è a + γb e la deviazione standard è bπ/√6, dove γ ≈ 0,577216 è la costante di Eulero–Mascheroni. Nella Gumbel il parametro di posizione e la media hanno valori differenti.\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Parametrizzazione, unità e direzione dell’estremo devono essere coerenti in tutte le formule.\end{minipage}\end{lrbox}
+\MeasureBox{13-TitleBox}{\TitleBox}
+\MeasureBox{13-BodyBox}{\BodyBox}
+\MeasureBox{13-SideBox}{\SideBox}
+\MeasureBox{13-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide13}{}
+\bookmark[level=0,page=13]{Modello Gumbel e verifica dell’adattamento}
+\bookmark[level=1,page=13]{Gumbel per massimi: posizione e scala}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Sviluppo e interpretazione};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M14 · Estremi, pericolosità e rischio};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont NIST: distribuzione dei valori estremi I};
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 13/31};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Stima basata sui momenti campionari\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont La stima utilizzata nel laboratorio ricava la scala dalla deviazione standard campionaria e la posizione dalla media, sfruttando le relazioni teoriche della Gumbel. La deviazione standard di R impiega il denominatore n meno uno, convenzione che viene mantenuta nel codice. Per il record sintetico si ottengono a circa 476,26 e b circa 82,96 metri cubi al secondo. Questa procedura basata sui momenti è semplice da verificare manualmente e rimane distinta dalla massima verosimiglianza, che richiede un’ottimizzazione della funzione di verosimiglianza.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}\widehat b=s\frac{\sqrt6}{\pi},\qquad\widehat a=\overline M-\gamma\widehat b\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont $\bar M$: media; s: deviazione campionaria; $\gamma\simeq0{,}577216$: costante di Eulero–Mascheroni. a e b sono posizione e scala.\par\vspace{.25cm}\lstinputlisting[language=R]{estratti/M14/momenti.R}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La procedura di stima e le convenzioni campionarie devono accompagnare i parametri.\end{minipage}\end{lrbox}
+\MeasureBox{14-TitleBox}{\TitleBox}
+\MeasureBox{14-BodyBox}{\BodyBox}
+\MeasureBox{14-SideBox}{\SideBox}
+\MeasureBox{14-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide14}{}
+\bookmark[level=1,page=14]{Stima basata sui momenti campionari}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Implementazione in R};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M14 · Estremi, pericolosità e rischio};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 14/31};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Quantile Gumbel e controllo dell’inversione\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Invertendo la funzione cumulativa si ottiene il quantile per probabilità comprese strettamente fra zero e uno. Il doppio logaritmo rende essenziale il controllo dei segni e del dominio: una probabilità esterna all’intervallo produrrebbe valori indefiniti. Il codice verifica che la composizione della distribuzione con il quantile restituisca le probabilità iniziali entro la tolleranza numerica. Tale identità controlla l’implementazione algebrica e deve essere distinta dall’adeguatezza del modello ai massimi osservati.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}Q(u)=a-b\log[-\log(u)],\qquad F[Q(u)]=u\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont a: posizione; b > 0: scala; u: probabilità cumulativa, con 0 < u < 1. log indica il logaritmo naturale.\par\vspace{.25cm}\lstinputlisting[language=R]{estratti/M14/inversione.R}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Una formula correttamente implementata può restare statisticamente inadeguata al processo studiato.\end{minipage}\end{lrbox}
+\MeasureBox{15-TitleBox}{\TitleBox}
+\MeasureBox{15-BodyBox}{\BodyBox}
+\MeasureBox{15-SideBox}{\SideBox}
+\MeasureBox{15-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide15}{}
+\bookmark[level=1,page=15]{Quantile Gumbel e controllo dell’inversione}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Implementazione in R};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M14 · Estremi, pericolosità e rischio};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 15/31};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Distribuzione cumulativa empirica e adattata\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Il confronto sovrappone la funzione empirica, che procede per salti di ampiezza uno su cento, alla distribuzione Gumbel stimata. La corrispondenza complessiva aiuta a riconoscere scostamenti di posizione e dispersione, ma la scala cumulativa può rendere poco evidenti divergenze nella coda estrema. La valutazione deve perciò integrare rappresentazioni mirate ai quantili alti e analisi di sensibilità. La distribuzione empirica e quella adattata utilizzano lo stesso record, circostanza da ricordare nell’interpretazione della concordanza.\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \includegraphics[width=7.45cm]{figure/M14/F06.pdf}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont Verde: distribuzione empirica dei cento massimi. Viola: Gumbel stimata mediante i momenti campionari.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La concordanza centrale deve essere accompagnata da una verifica della coda pertinente al problema.\end{minipage}\end{lrbox}
+\MeasureBox{16-TitleBox}{\TitleBox}
+\MeasureBox{16-BodyBox}{\BodyBox}
+\MeasureBox{16-SideBox}{\SideBox}
+\MeasureBox{16-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide16}{}
+\bookmark[level=1,page=16]{Distribuzione cumulativa empirica e adattata}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Evidenza grafica};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M14 · Estremi, pericolosità e rischio};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 16/31};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Diagramma quantile–quantile e coda\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Il diagramma confronta massimi ordinati e quantili Gumbel calcolati alle stesse posizioni di probabilità. Una corrispondenza sulla diagonale indica accordo locale fra le due scale, mentre curvature o scostamenti agli estremi suggeriscono differenze nella forma della distribuzione. I punti di coda sono pochi e variabili, per cui una deviazione isolata richiede un esame dell’evento e della qualità della misura. La diagnostica deve essere collegata ai livelli che si vogliono stimare, poiché un buon adattamento centrale può coesistere con incertezza elevata sui valori rari.\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \includegraphics[width=7.45cm]{figure/M14/F05.pdf}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont Quantili teorici alle posizioni (i − 0,5)/n; la diagonale rappresenta l’uguaglianza fra quantile teorico e osservato.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La coda della distribuzione richiede un esame specifico, proporzionato alla scarsità dell’informazione.\end{minipage}\end{lrbox}
+\MeasureBox{17-TitleBox}{\TitleBox}
+\MeasureBox{17-BodyBox}{\BodyBox}
+\MeasureBox{17-SideBox}{\SideBox}
+\MeasureBox{17-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide17}{}
+\bookmark[level=1,page=17]{Diagramma quantile–quantile e coda}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Evidenza grafica};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M14 · Estremi, pericolosità e rischio};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 17/31};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Livelli di ritorno ed estrapolazione\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Il livello associato al tempo di ritorno T è il quantile con probabilità cumulativa uno meno uno su T. La Gumbel stimata restituisce circa 857,90 metri cubi al secondo per cento anni e 991,75 per cinquecento anni. Quest’ultimo orizzonte supera la lunghezza del record e rende più forte la dipendenza dalla forma della coda. La curva viene quindi affiancata ai punti empirici e a una regione che segnala i tempi oltre cento anni, affinché l’estrapolazione rimanga visibile.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}q_T=a-b\log[-\log(1-1/T)],\qquad T>1\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \includegraphics[width=7.45cm]{figure/M14/F07.pdf}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont a = 476,26 e b = 82,96 m³/s, stimati sul record. Curva Gumbel e punti empirici; fondo viola oltre cento anni.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont L’orizzonte di ritorno deve essere confrontato con la durata e con la qualità del record.\end{minipage}\end{lrbox}
+\MeasureBox{18-TitleBox}{\TitleBox}
+\MeasureBox{18-BodyBox}{\BodyBox}
+\MeasureBox{18-SideBox}{\SideBox}
+\MeasureBox{18-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide18}{}
+\bookmark[level=0,page=18]{Livelli rari e incertezza della stima}
+\bookmark[level=1,page=18]{Livelli di ritorno ed estrapolazione}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Evidenza grafica};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M14 · Estremi, pericolosità e rischio};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 18/31};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Il ricampionamento ripete l’intera stima\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Nel bootstrap dei massimi annuali si estraggono anni con reinserimento e, per ogni campione, si ristimano posizione, scala e livello centennale. Mantenere fissi i parametri durante il ricampionamento escluderebbe proprio la componente di variabilità che si vuole esaminare. Si eseguono 1999 ripetizioni con seme documentato, ricostruendo ogni volta l’intero procedimento di stima. L’interpretazione del bootstrap richiede che gli anni possano essere trattati come unità scambiabili sotto un regime stabile.\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \input{tikz/M14/D05.tex}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont $\widehat a$: posizione; $\widehat b$: scala; $\widehat q_{100}$: livello centennale. Tutte le stime vengono ricalcolate nel campione estratto.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Ogni ripetizione deve comprendere tutti i passaggi di stima che dipendono dal campione.\end{minipage}\end{lrbox}
+\MeasureBox{19-TitleBox}{\TitleBox}
+\MeasureBox{19-BodyBox}{\BodyBox}
+\MeasureBox{19-SideBox}{\SideBox}
+\MeasureBox{19-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide19}{}
+\bookmark[level=1,page=19]{Il ricampionamento ripete l’intera stima}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Lettura del diagramma};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M14 · Estremi, pericolosità e rischio};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 19/31};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Distribuzione bootstrap del livello centennale\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont I quantili al 2,5\% e 97,5\% della distribuzione bootstrap sono circa 789,16 e 923,10 metri cubi al secondo. L’intervallo percentile descrive la variabilità della procedura sotto le ipotesi di ricampionamento e di modello, senza includere automaticamente cambiamenti futuri del processo o incertezza sulla scelta della famiglia. La dispersione attorno alla stima puntuale rende visibile quanto il livello dipenda dal record finito. Il numero di ripetizioni controlla la precisione Monte Carlo dei quantili e non sostituisce l’informazione osservativa mancante.\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \includegraphics[width=7.45cm]{figure/M14/F08.pdf}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont 1999 stime bootstrap del livello centennale. La linea viola indica la stima sul record completo.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont L’incertezza campionaria deve essere distinta dall’incertezza sulla struttura e sulla stabilità del modello.\end{minipage}\end{lrbox}
+\MeasureBox{20-TitleBox}{\TitleBox}
+\MeasureBox{20-BodyBox}{\BodyBox}
+\MeasureBox{20-SideBox}{\SideBox}
+\MeasureBox{20-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide20}{}
+\bookmark[level=1,page=20]{Distribuzione bootstrap del livello centennale}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Evidenza grafica};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M14 · Estremi, pericolosità e rischio};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 20/31};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Lunghezza del record e stabilità dei parametri\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont La stima del livello centennale viene ripetuta utilizzando i primi venti, quaranta, sessanta, ottanta e cento anni. I campioni sono annidati e condividono gran parte delle osservazioni, cosicché i punti della curva non rappresentano esperimenti indipendenti. Le oscillazioni mostrano la sensibilità alla quantità di informazione disponibile e agli estremi progressivamente inclusi. Un tratto apparentemente stabile può essere rassicurante sul campione esaminato, ma non dimostra che il processo resterà invariato né che la famiglia scelta descriva correttamente la coda.\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \includegraphics[width=7.45cm]{figure/M14/F09.pdf}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont Stime su prefissi crescenti dello stesso record sintetico. Il periodo iniziale è comune a tutti i campioni.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La stabilità su campioni annidati è una diagnosi di sensibilità, da interpretare insieme alle ipotesi del modello.\end{minipage}\end{lrbox}
+\MeasureBox{21-TitleBox}{\TitleBox}
+\MeasureBox{21-BodyBox}{\BodyBox}
+\MeasureBox{21-SideBox}{\SideBox}
+\MeasureBox{21-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide21}{}
+\bookmark[level=1,page=21]{Lunghezza del record e stabilità dei parametri}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Evidenza grafica};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M14 · Estremi, pericolosità e rischio};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 21/31};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Influenza del massimo e verifica dell’osservazione\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Aumentando del trenta per cento il massimo in una copia del record, il livello centennale passa da circa 857,90 a 897,27 metri cubi al secondo. Il confronto quantifica l’influenza di un’estremità campionaria sulla stima dei momenti, mantenendo intatti i dati originari. Un valore influente può essere un errore di misura oppure un evento raro pertinente alla coda, per cui l’eliminazione richiede evidenze indipendenti. La relazione dovrebbe documentare il controllo dell’evento e l’effetto delle decisioni alternative sulla conclusione.\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \input{tikz/M14/D06.tex}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont L’influenza di un estremo richiede un controllo documentato, senza cancellarne automaticamente l’informazione.\end{minipage}\end{lrbox}
+\MeasureBox{22-TitleBox}{\TitleBox}
+\MeasureBox{22-BodyBox}{\BodyBox}
+\MeasureBox{22-SideBox}{\SideBox}
+\MeasureBox{22-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide22}{}
+\bookmark[level=1,page=22]{Influenza del massimo e verifica dell’osservazione}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Lettura del diagramma};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M14 · Estremi, pericolosità e rischio};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 22/31};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Confronto fra periodi e attribuzione dei cambiamenti\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Le due metà del record comprendono cinquanta anni ciascuna e possono mostrare medie e dispersioni differenti anche quando il processo generatore è costante, come nella simulazione inclusa. Il confronto descrittivo deve precedere ogni attribuzione a cambiamenti climatici, uso del suolo o opere nel bacino. Per dati osservativi, metadati, omogeneità delle misure e ipotesi sulle forzanti sono necessari a distinguere variabilità campionaria e cambiamento del processo. Una suddivisione scelta dopo avere osservato il massimo contrasto introduce inoltre un effetto di selezione.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}\Delta\overline M=\overline M_{1970:2019}-\overline M_{1920:1969}\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont Un’indagine temporale può includere covariate, modelli non stazionari e controlli di sensibilità, purché la complessità sia sostenuta dall’informazione disponibile. La differenza fra due statistiche descrittive costituisce un punto di partenza per l’analisi, non una spiegazione causale.\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La descrizione di una differenza temporale deve essere separata dall’identificazione del suo meccanismo.\end{minipage}\end{lrbox}
+\MeasureBox{23-TitleBox}{\TitleBox}
+\MeasureBox{23-BodyBox}{\BodyBox}
+\MeasureBox{23-SideBox}{\SideBox}
+\MeasureBox{23-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide23}{}
+\bookmark[level=1,page=23]{Confronto fra periodi e attribuzione dei cambiamenti}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Sviluppo e interpretazione};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M14 · Estremi, pericolosità e rischio};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 23/31};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}La famiglia generalizzata dei valori estremi\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont La GEV aggiunge un parametro di forma xi, che controlla il comportamento della coda oltre a posizione e scala. La distribuzione è definita dove il termine di supporto rimane positivo, mentre il limite per xi tendente a zero restituisce la Gumbel. Una forma positiva produce una coda superiore più pesante; una forma negativa introduce un estremo superiore finito. L’incertezza di xi può influenzare fortemente i livelli con tempi di ritorno lunghi.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}F(q)=\exp\left\{-\left[1+\xi\frac{q-\mu}{\sigma}\right]^{-1/\xi}\right\}\\ \sigma>0,\qquad1+\xi(q-\mu)/\sigma>0,\qquad\xi\ne0\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \input{tikz/M14/D07.tex}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont $\mu$: posizione; $\sigma$: scala, entrambe in m³/s; $\xi$: forma adimensionale. Per $\xi\to0$ si usa il limite Gumbel.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Il parametro di forma modifica sia il supporto sia l’estrapolazione della coda.\end{minipage}\end{lrbox}
+\MeasureBox{24-TitleBox}{\TitleBox}
+\MeasureBox{24-BodyBox}{\BodyBox}
+\MeasureBox{24-SideBox}{\SideBox}
+\MeasureBox{24-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide24}{}
+\bookmark[level=0,page=24]{Forma della coda e sensibilità GEV}
+\bookmark[level=1,page=24]{La famiglia generalizzata dei valori estremi}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Lettura del diagramma};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M14 · Estremi, pericolosità e rischio};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont evd: distribuzione GEV};
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 24/31};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Scenari di forma a posizione e scala fissate\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Il confronto mantiene posizione pari a 480 e scala pari a 90, variando xi fra meno 0,15, zero e più 0,15. I valori sono ipotesi di sensibilità e non stime aggiuntive dal record. Le curve divergono soprattutto ai tempi di ritorno elevati, rendendo visibile la dipendenza dell’estrapolazione dalla forma della coda. Quando si confrontano implementazioni, occorre verificare anche il segno del parametro: alcune librerie utilizzano una convenzione opposta per la forma, pur rappresentando la stessa famiglia di distribuzioni.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}q_T=\mu+\frac{\sigma}{\xi}\{[-\log(1-1/T)]^{-\xi}-1\},\quad\xi\ne0\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \includegraphics[width=7.45cm]{figure/M14/F10.pdf}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont $\mu=480$, $\sigma=90$ m³/s; T in anni. Forme prefissate: −0,15, 0, +0,15; per $\xi=0$ si usa il limite Gumbel.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La sensibilità alla forma deve accompagnare la comunicazione dei livelli molto rari.\end{minipage}\end{lrbox}
+\MeasureBox{25-TitleBox}{\TitleBox}
+\MeasureBox{25-BodyBox}{\BodyBox}
+\MeasureBox{25-SideBox}{\SideBox}
+\MeasureBox{25-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide25}{}
+\bookmark[level=1,page=25]{Scenari di forma a posizione e scala fissate}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Evidenza grafica};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M14 · Estremi, pericolosità e rischio};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 25/31};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Giorni sopra soglia e numero degli episodi\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont La breve serie giornaliera sintetica contiene sei valori superiori alla soglia dieci, organizzati in due sequenze consecutive. Contare i giorni misura la durata discreta del superamento, mentre contare le sequenze individua episodi secondo una regola temporale. Entrambe le quantità possono essere utili, ma rispondono a domande differenti. La distinzione diventa essenziale quando un modello per eventi richiede approssimativa indipendenza: più giorni della stessa piena non costituiscono automaticamente più episodi indipendenti.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}N_{\rm giorni}=\sum_t\mathbf1\{Q_t>u\}=6\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \includegraphics[width=7.45cm]{figure/M14/F11.pdf}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont Soglia u = 10 nelle unità arbitrarie della serie. I sei punti viola appartengono a due sequenze.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La definizione operativa di evento deve precedere il conteggio e il modello probabilistico.\end{minipage}\end{lrbox}
+\MeasureBox{26-TitleBox}{\TitleBox}
+\MeasureBox{26-BodyBox}{\BodyBox}
+\MeasureBox{26-SideBox}{\SideBox}
+\MeasureBox{26-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide26}{}
+\bookmark[level=0,page=26]{Superamenti giornalieri ed episodi}
+\bookmark[level=1,page=26]{Giorni sopra soglia e numero degli episodi}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Evidenza grafica};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M14 · Estremi, pericolosità e rischio};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 26/31};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Separazione delle sequenze e picchi di evento\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont La regola didattica apre un episodio quando un giorno sopra soglia segue un giorno che non la supera, quindi assegna lo stesso gruppo ai superamenti consecutivi. Di ogni gruppo si conserva il massimo, ottenendo picchi pari a quattordici e quindici. Un’analisi idrologica reale può richiedere una separazione minima più lunga e criteri fondati sulla dinamica del bacino. La regola deve essere scelta prima della stima degli estremi, poiché modifica frequenza degli eventi, distribuzione dei picchi e interpretazione dei tempi di ritorno.\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \par\vspace{.25cm}\lstinputlisting[language=R]{estratti/M14/episodi.R}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La separazione degli episodi deve riflettere la scala di dipendenza del processo.\end{minipage}\end{lrbox}
+\MeasureBox{27-TitleBox}{\TitleBox}
+\MeasureBox{27-BodyBox}{\BodyBox}
+\MeasureBox{27-SideBox}{\SideBox}
+\MeasureBox{27-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide27}{}
+\bookmark[level=1,page=27]{Separazione delle sequenze e picchi di evento}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Implementazione in R};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M14 · Estremi, pericolosità e rischio};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 27/31};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Due strategie per costruire il campione degli estremi\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Il metodo dei massimi di blocco conserva un solo valore per intervallo temporale, mentre il metodo dei superamenti di soglia seleziona episodi eccedenti un livello prefissato. Il secondo richiede di definire soglia, separazione degli episodi e frequenza di occorrenza, potendo conservare più informazione sugli eventi rari. I due approcci non condividono automaticamente la stessa numerosità né la stessa interpretazione temporale. Il corso usa i massimi annuali per la stima Gumbel e introduce i superamenti giornalieri per chiarire la costruzione del campione.\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \input{tikz/M14/D08.tex}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La scelta del campione degli estremi precede quella della distribuzione da adattare.\end{minipage}\end{lrbox}
+\MeasureBox{28-TitleBox}{\TitleBox}
+\MeasureBox{28-BodyBox}{\BodyBox}
+\MeasureBox{28-SideBox}{\SideBox}
+\MeasureBox{28-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide28}{}
+\bookmark[level=1,page=28]{Due strategie per costruire il campione degli estremi}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Lettura del diagramma};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M14 · Estremi, pericolosità e rischio};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 28/31};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Pericolosità, esposizione e conseguenze\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont La pericolosità descrive la probabilità e l’intensità del fenomeno, mentre le conseguenze dipendono da ciò che è esposto e dalla sua vulnerabilità. Un identico livello di piena può quindi produrre perdite differenti in territori con beni, persone e protezioni diversi. Nel caso didattico vengono assegnati danni ipotetici a classi di evento mutuamente esclusive, rendendo esplicito il passaggio dalla probabilità alla perdita. Il risultato è uno scenario numerico e non una valutazione utilizzabile per un’opera o per un sito reale.\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \input{tikz/M14/D09.tex}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La probabilità di un evento deve essere collegata a un modello esplicito delle sue conseguenze.\end{minipage}\end{lrbox}
+\MeasureBox{29-TitleBox}{\TitleBox}
+\MeasureBox{29-BodyBox}{\BodyBox}
+\MeasureBox{29-SideBox}{\SideBox}
+\MeasureBox{29-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide29}{}
+\bookmark[level=0,page=29]{Pericolosità, conseguenze e comunicazione}
+\bookmark[level=1,page=29]{Pericolosità, esposizione e conseguenze}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Lettura del diagramma};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M14 · Estremi, pericolosità e rischio};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 29/31};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Perdita attesa su classi mutuamente esclusive\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Le tre classi hanno probabilità annue pari a 0,08, 0,015 e 0,005, con danni ipotetici di diecimila, centomila e un milione di unità monetarie. Il restante novanta per cento viene associato a danno nullo nello scenario. I contributi attesi sono rispettivamente 800, 1500 e 5000, per un totale di 7300 unità monetarie per anno. La classe meno frequente fornisce il contributo maggiore a causa del danno assegnato. Usare probabilità cumulative sovrapposte al posto di classi esclusive conterebbe più volte parte degli eventi.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}E[L]=\sum_k p_k\ell_k=7300\quad\text{unità monetarie/anno}\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \includegraphics[width=7.45cm]{figure/M14/F12.pdf}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont L: perdita annua; $p_k$: probabilità della classe k; $\ell_k$: danno. Contributi di classi esclusive; probabilità e danni ipotetici.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La somma dei contributi richiede classi compatibili con la definizione probabilistica della perdita.\end{minipage}\end{lrbox}
+\MeasureBox{30-TitleBox}{\TitleBox}
+\MeasureBox{30-BodyBox}{\BodyBox}
+\MeasureBox{30-SideBox}{\SideBox}
+\MeasureBox{30-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide30}{}
+\bookmark[level=1,page=30]{Perdita attesa su classi mutuamente esclusive}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Evidenza grafica};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M14 · Estremi, pericolosità e rischio};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 30/31};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Relazione finale e percorso di laboratorio\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont La relazione presenta variabile estrema, periodo, unità, controlli del record, famiglia, metodo di stima, diagnostica e incertezza, distinguendo risultati osservati ed estrapolati. I laboratori N01–N07 sviluppano probabilità empiriche, ritorno e attese; N08–N12 affrontano Gumbel e bootstrap; N13–N16 esaminano sensibilità e forma della coda; N17–N20 completano episodi, perdita e consegna. Lo studio autonomo confronti il livello centennale con quello cinquecentennale, spiegando quali conclusioni dipendano maggiormente dalle ipotesi sulla coda e sulla stabilità temporale.\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \input{tikz/M14/D10.tex}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La comunicazione di un livello raro deve rendere riconoscibili evidenza, incertezza e condizioni di validità.\end{minipage}\end{lrbox}
+\MeasureBox{31-TitleBox}{\TitleBox}
+\MeasureBox{31-BodyBox}{\BodyBox}
+\MeasureBox{31-SideBox}{\SideBox}
+\MeasureBox{31-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide31}{}
+\bookmark[level=1,page=31]{Relazione finale e percorso di laboratorio}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Lettura del diagramma};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M14 · Estremi, pericolosità e rischio};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 31/31};
+\end{tikzpicture}\end{frame}
+\end{document}

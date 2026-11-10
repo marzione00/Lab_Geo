@@ -1,0 +1,368 @@
+\documentclass[12pt,aspectratio=1610]{beamer}
+\geometry{paperwidth=20cm,paperheight=12.5cm}
+\usepackage[italian,provide=*]{babel}
+\usepackage{lmodern,fontspec}
+\setsansfont{NimbusSans-Regular.otf}[Path=sorgenti/font/,BoldFont=NimbusSans-Bold.otf,ItalicFont=NimbusSans-Italic.otf]
+\setmainfont{NimbusSans-Regular.otf}[Path=sorgenti/font/,BoldFont=NimbusSans-Bold.otf,ItalicFont=NimbusSans-Italic.otf]
+\setmonofont{lmmono10-regular.otf}[Path=sorgenti/font/,Scale=.88]
+\usefonttheme{professionalfonts}
+\usepackage{amsmath,amssymb,booktabs,array,tabularx,graphicx,tikz,listings,bookmark}
+\usetikzlibrary{calc,arrows.meta,positioning}
+\definecolor{Paper}{HTML}{F8F6F1}
+\definecolor{Ink}{HTML}{253344}\definecolor{Navy}{HTML}{15283E}
+\definecolor{Quantum}{HTML}{5146A5}\definecolor{Classical}{HTML}{087C74}
+\definecolor{Measure}{HTML}{A05B10}\definecolor{Rose}{HTML}{9B4564}
+\definecolor{Muted}{HTML}{657180}\definecolor{Rule}{HTML}{D6DAD9}
+\definecolor{Wash}{HTML}{EAE7F6}\definecolor{Night}{HTML}{112236}
+\definecolor{Lilac}{HTML}{ABB5FF}\definecolor{Mint}{HTML}{72D8C8}\definecolor{Gold}{HTML}{EEC184}
+\setbeamercolor{background canvas}{bg=Paper}\setbeamercolor{normal text}{fg=Ink}
+\setbeamertemplate{navigation symbols}{}\setbeamertemplate{headline}{}\setbeamertemplate{footline}{}
+\setbeamersize{text margin left=0pt,text margin right=0pt}\setbeameroption{hide notes}
+\newsavebox{\BodyBox}\newsavebox{\SideBox}\newsavebox{\RecallBox}\newsavebox{\TitleBox}
+\newcommand{\MeasureBox}[2]{\typeout{GEOBOX:#1:\the\wd#2:\the\ht#2:\the\dp#2}}
+\lstset{language=R,basicstyle=\ttfamily\fontsize{10.2}{13.4}\selectfont,
+columns=fullflexible,keepspaces=true,showstringspaces=false,breaklines=true,breakatwhitespace=false,
+commentstyle=\color{Muted},keywordstyle=\color{Classical},stringstyle=\color{Quantum},
+aboveskip=0pt,belowskip=0pt,xleftmargin=0pt,xrightmargin=0pt,tabsize=2}
+\hypersetup{colorlinks=true,linkcolor=Classical,urlcolor=Classical,pdfpagemode=UseOutlines,pdfstartview=Fit,bookmarksopen=true,bookmarksopenlevel=0}
+\bookmarksetup{open,openlevel=0,depth=2}
+\tikzset{arr/.style={-{Stealth[length=2mm]},line width=.8pt,draw=Classical}}
+\hypersetup{pdftitle={Campionamento, stima e incertezza},pdfauthor={},pdfsubject={Corso di statistica e data science per Geologia, primo anno; modulo 05}}
+\usetikzlibrary{decorations.pathreplacing,fit,backgrounds,matrix}\hypersetup{pdftitle={P11 · Classificare nuove stazioni sintetiche},pdfsubject={Revisione integrale R6}}\begin{document}
+\begin{frame}[plain]\hypertarget{slide1}{}\begin{tikzpicture}[remember picture,overlay]\fill[Night] (current page.south west) rectangle (current page.north east);\draw[Mint,line width=2pt] ([xshift=1.05cm,yshift=-1.35cm]current page.north west)--([xshift=3cm,yshift=-1.35cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=1.05cm,yshift=-1.7cm]current page.north west){\color{Mint}\bfseries\fontsize{11}{14}\selectfont P11 · REVISIONE R6};
+\node[anchor=north west,inner sep=0] at ([xshift=1.05cm,yshift=-2.65cm]current page.north west){\begin{minipage}{15.8cm}\raggedright\color{white}\bfseries\fontsize{31}{38}\selectfont Classificare nuove stazioni sintetiche\end{minipage}};
+\node[anchor=north west,inner sep=0] at ([xshift=1.05cm,yshift=-6.4cm]current page.north west){\begin{minipage}{15.8cm}\raggedright\color{Lilac}\fontsize{15}{21}\selectfont Separazione dei dati, standardizzazione e classificatore dei centroidi\end{minipage}};
+\node[anchor=north west,inner sep=0] at ([xshift=1.05cm,yshift=-8.6cm]current page.north west){\begin{minipage}{16.5cm}\color{white}\fontsize{11}{15}\selectfont 17 slide · teoria, derivazioni, figure e applicazioni in R.\par\smallskip Provenienza dei dati e sorgenti nei materiali allegati.\end{minipage}};
+\node[anchor=south east,inner sep=0] at ([xshift=18.95cm,yshift=-11.35cm]current page.north west){\color{Lilac!45}\bfseries\fontsize{64}{68}\selectfont P11};
+\end{tikzpicture}\end{frame}
+\begin{frame}[plain]\hypertarget{slide2}{}\bookmark[level=0,page=2]{Indice}\begin{tikzpicture}[remember picture,overlay]\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.65cm]current page.north west){\color{Navy}\bfseries\fontsize{22}{27}\selectfont Percorso del modulo};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.23cm]current page.north west){\color{Classical}\bfseries\fontsize{13}{16}\selectfont 3};
+\node[anchor=north west,inner sep=0] at ([xshift=2.0cm,yshift=-2.23cm]current page.north west){\begin{minipage}{7.25cm}\raggedright\color{Navy}\bfseries\fontsize{12.4}{15.5}\selectfont\hyperlink{slide3}{Bersaglio e protocollo di valutazione}\end{minipage}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-3.5300000000000002cm]current page.north west){\color{Classical}\bfseries\fontsize{13}{16}\selectfont 7};
+\node[anchor=north west,inner sep=0] at ([xshift=2.0cm,yshift=-3.5300000000000002cm]current page.north west){\begin{minipage}{7.25cm}\raggedright\color{Navy}\bfseries\fontsize{12.4}{15.5}\selectfont\hyperlink{slide7}{Geometria standardizzata e centroidi}\end{minipage}};
+\node[anchor=north west,inner sep=0] at ([xshift=10.299999999999999cm,yshift=-2.23cm]current page.north west){\color{Classical}\bfseries\fontsize{13}{16}\selectfont 12};
+\node[anchor=north west,inner sep=0] at ([xshift=11.35cm,yshift=-2.23cm]current page.north west){\begin{minipage}{7.25cm}\raggedright\color{Navy}\bfseries\fontsize{12.4}{15.5}\selectfont\hyperlink{slide12}{Prestazione e limiti dell’interpretazione}\end{minipage}};
+\node[anchor=north west,inner sep=0] at ([xshift=10.299999999999999cm,yshift=-3.5300000000000002cm]current page.north west){\color{Classical}\bfseries\fontsize{13}{16}\selectfont 16};
+\node[anchor=north west,inner sep=0] at ([xshift=11.35cm,yshift=-3.5300000000000002cm]current page.north west){\begin{minipage}{7.25cm}\raggedright\color{Navy}\bfseries\fontsize{12.4}{15.5}\selectfont\hyperlink{slide16}{Scheda del modello e consegna}\end{minipage}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.55cm]current page.north west){\begin{minipage}{18cm}\color{Muted}\fontsize{10}{13}\selectfont I numeri indicano le pagine iniziali; i titoli sono cliccabili. Codice, figure e verifiche sono inclusi nel progetto.\end{minipage}};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}La classe viene prevista da cinque caratteristiche\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Il progetto assegna ciascun campione a una delle tre litologie sintetiche, Arenaria, Basalto e Calcare, utilizzando quattro composizioni in ossidi e la densità. Il campione comprende centottanta provini raccolti in diciotto stazioni simulate. La domanda riguarda il trasferimento a stazioni escluse dall’adattamento, per cui la separazione segue l’identità territoriale anziché i singoli provini. Il caso riutilizza dati già incontrati nel percorso didattico e applica una procedura prefissata; il risultato non costituisce una valutazione finale inedita di un modello scelto dopo ripetuti confronti.\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \input{tikz/P11/D01.tex}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Il protocollo di valutazione deve corrispondere al tipo di nuova unità sulla quale si intende applicare il modello.\end{minipage}\end{lrbox}
+\MeasureBox{3-TitleBox}{\TitleBox}
+\MeasureBox{3-BodyBox}{\BodyBox}
+\MeasureBox{3-SideBox}{\SideBox}
+\MeasureBox{3-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide3}{}
+\bookmark[level=0,page=3]{Bersaglio e protocollo di valutazione}
+\bookmark[level=1,page=3]{La classe viene prevista da cinque caratteristiche}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Lettura del diagramma};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont P11 · Classificare nuove stazioni sintetiche};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 3/17};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}La stazione resta interamente in un insieme\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Quindici stazioni, con centocinquanta campioni, appartengono all’adattamento; le tre restanti, con trenta campioni, costituiscono il test. Nessuna stazione compare in entrambi gli insiemi. La divisione conserva dieci provini per stazione e, nel test, una stazione per ciascuna classe. Il controllo dell’intersezione degli identificativi territoriali verifica quindi una condizione più forte della semplice assenza di righe duplicate, evitando che provini dello stesso gruppo forniscano informazione sia alla costruzione sia alla valutazione della regola.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}\mathcal S_{train}\cap\mathcal S_{test}=\varnothing\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \includegraphics[width=7.45cm]{figure/P11/F01.pdf}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont $\mathcal S$: insieme delle stazioni, distinto fra train e test. Are.: Arenaria; Bas.: Basalto; Cal.: Calcare.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La separazione per gruppi conserva il livello al quale si vuole valutare la generalizzazione.\end{minipage}\end{lrbox}
+\MeasureBox{4-TitleBox}{\TitleBox}
+\MeasureBox{4-BodyBox}{\BodyBox}
+\MeasureBox{4-SideBox}{\SideBox}
+\MeasureBox{4-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide4}{}
+\bookmark[level=1,page=4]{La stazione resta interamente in un insieme}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Evidenza grafica};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont P11 · Classificare nuove stazioni sintetiche};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 4/17};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Il controllo conserva la struttura della divisione\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Il frammento ricostruisce i due insiemi dalla variabile di appartenenza già presente nei dati e ne verifica numerosità e disgiunzione delle stazioni. La tabella per litologia rende inoltre esplicito il bilanciamento delle classi. Il controllo precede standardizzazione e calcolo dei centroidi, affinché nessuna statistica della risposta o dei predittori del test entri nella costruzione della regola. Le etichette del test verranno utilizzate soltanto dopo aver prodotto le classificazioni con il procedimento definito.\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \par\vspace{.25cm}\lstinputlisting[language=R]{estratti/P11/separazione.R}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La divisione deve precedere ogni trasformazione che apprende parametri dai dati.\end{minipage}\end{lrbox}
+\MeasureBox{5-TitleBox}{\TitleBox}
+\MeasureBox{5-BodyBox}{\BodyBox}
+\MeasureBox{5-SideBox}{\SideBox}
+\MeasureBox{5-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide5}{}
+\bookmark[level=1,page=5]{Il controllo conserva la struttura della divisione}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Implementazione in R};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont P11 · Classificare nuove stazioni sintetiche};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 5/17};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Il riferimento risolve un pareggio dichiarato\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont La procedura elementare assegna a tutti i nuovi campioni la classe più frequente nell’adattamento. Poiché le tre classi hanno cinquanta osservazioni ciascuna, il pareggio viene risolto secondo l’ordine alfabetico e la previsione costante diventa Arenaria. Nel test bilanciato questa regola classifica correttamente dieci campioni su trenta, con accuratezza pari a un terzo. Il riferimento quantifica così la prestazione ottenibile senza usare le caratteristiche e rende interpretabile il contributo del classificatore successivo.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}\widehat c_0=\arg\max_c n_{c,train},\qquad Acc_0=\frac{10}{30}\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \input{tikz/P11/D02.tex}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont $n_{c,train}$: campioni train della classe c; $\widehat c_0$: classe assegnata. $Acc_0$: quota corretta nel test. Il pareggio segue l’ordine alfabetico.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Anche la procedura di riferimento deve essere definita usando esclusivamente l’insieme di adattamento.\end{minipage}\end{lrbox}
+\MeasureBox{6-TitleBox}{\TitleBox}
+\MeasureBox{6-BodyBox}{\BodyBox}
+\MeasureBox{6-SideBox}{\SideBox}
+\MeasureBox{6-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide6}{}
+\bookmark[level=1,page=6]{Il riferimento risolve un pareggio dichiarato}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Lettura del diagramma};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont P11 · Classificare nuove stazioni sintetiche};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 6/17};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}La standardizzazione apprende soltanto dal train\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Le composizioni e la densità hanno scale numeriche differenti, che influenzerebbero direttamente una distanza euclidea. Ogni variabile viene quindi centrata sulla propria media nell’adattamento e divisa per la deviazione standard dello stesso insieme, calcolata con denominatore n meno uno. Questi parametri vengono conservati e applicati senza ricalcolo ai trenta campioni di test. La trasformazione stabilisce la metrica del classificatore; includere il test nel calcolo delle scale introdurrebbe informazione del campione di verifica nella procedura da valutare.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}z_{ij}=\frac{x_{ij}-\overline x_{j,train}}{s_{j,train}}\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont i: campione; j: una delle cinque variabili; $x_{ij}$: valore originario; $z_{ij}$: valore standardizzato. $\overline x_{j,train}$ e $s_{j,train}$ sono media e deviazione standard nei 150 campioni train, con denominatore 149 per la varianza. Le medie standardizzate sono nulle e le deviazioni unitarie entro la tolleranza numerica; tali proprietà non sono richieste nel test.\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont I parametri della trasformazione fanno parte del modello appreso e devono essere conservati insieme al classificatore.\end{minipage}\end{lrbox}
+\MeasureBox{7-TitleBox}{\TitleBox}
+\MeasureBox{7-BodyBox}{\BodyBox}
+\MeasureBox{7-SideBox}{\SideBox}
+\MeasureBox{7-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide7}{}
+\bookmark[level=0,page=7]{Geometria standardizzata e centroidi}
+\bookmark[level=1,page=7]{La standardizzazione apprende soltanto dal train}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Sviluppo e interpretazione};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont P11 · Classificare nuove stazioni sintetiche};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 7/17};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Il centroide rappresenta la media di una classe\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Per ciascuna litologia si calcola il vettore medio delle cinque caratteristiche standardizzate nei soli campioni di adattamento. La carta cromatica mostra i tre centroidi, consentendo di riconoscere quali variabili caratterizzino la posizione media dei gruppi nel generatore sintetico. Il colore esprime deviazioni standard rispetto alla media complessiva del train. Un centroide riassume la posizione della classe e lascia esclusa la sua dispersione interna, che potrebbe diventare rilevante quando gruppi differenti mostrano forme o varianze molto diverse.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}\mathbf c_k=\frac1{n_{k,train}}\sum_{i\in train:Y_i=k}\mathbf z_i\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \includegraphics[width=7.45cm]{figure/P11/F03.pdf}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont $Y_i$: classe di i; $n_{k,train}$: numerosità della classe k; $\mathbf z_i$: vettore standardizzato; $\mathbf c_k$: sua media. Si, Ca, Mg, Fe: ossidi; $\rho$: densità.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La geometria del centroide riassume la posizione media, senza modellare l’intera distribuzione della classe.\end{minipage}\end{lrbox}
+\MeasureBox{8-TitleBox}{\TitleBox}
+\MeasureBox{8-BodyBox}{\BodyBox}
+\MeasureBox{8-SideBox}{\SideBox}
+\MeasureBox{8-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide8}{}
+\bookmark[level=1,page=8]{Il centroide rappresenta la media di una classe}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Evidenza grafica};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont P11 · Classificare nuove stazioni sintetiche};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 8/17};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}La regola minimizza una distanza quadratica\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Un nuovo vettore standardizzato viene assegnato al centroide più vicino nella metrica euclidea a cinque dimensioni. Poiché la radice quadrata conserva l’ordine, il codice confronta direttamente le somme dei quadrati degli scarti. L’eventuale pareggio segue l’ordine alfabetico dichiarato delle classi. La decisione dipende quindi da scale, centroidi e convenzione di assegnazione, che devono essere tutti disponibili per riprodurre la previsione su un nuovo campione.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}\widehat y(\mathbf z)=\arg\min_k\sum_{j=1}^{5}(z_j-c_{kj})^2\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \input{tikz/P11/D03.tex}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont $z_j$: caratteristica standardizzata j; $c_{kj}$: coordinata j del centroide k; $\widehat y$: classe assegnata. Si confrontano cinque coordinate e tre classi.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La regola di classificazione è definita nello spazio trasformato, la cui metrica dipende dalle scale apprese.\end{minipage}\end{lrbox}
+\MeasureBox{9-TitleBox}{\TitleBox}
+\MeasureBox{9-BodyBox}{\BodyBox}
+\MeasureBox{9-SideBox}{\SideBox}
+\MeasureBox{9-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide9}{}
+\bookmark[level=1,page=9]{La regola minimizza una distanza quadratica}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Lettura del diagramma};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont P11 · Classificare nuove stazioni sintetiche};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 9/17};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Il confine fra due centroidi è un iperpiano\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Le osservazioni equidistanti da due centroidi soddisfano l’uguaglianza fra le due distanze quadratiche. Espandendo i quadrati, il termine comune nella norma dell’osservazione si elimina e rimane un’equazione lineare nel vettore standardizzato. Il confine è quindi un iperpiano, che diventa una retta in una rappresentazione bidimensionale. Con tre classi, ciascuna regione è determinata dal confronto simultaneo con gli altri centroidi; la struttura risultante dipende dalla metrica scelta e dalle posizioni delle medie di classe.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}2\mathbf z^T(\mathbf c_b-\mathbf c_a)=\|\mathbf c_b\|^2-\|\mathbf c_a\|^2\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont $\mathbf z\in\mathbb R^5$: osservazione standardizzata; $\mathbf c_a,\mathbf c_b$: centroidi di due classi. T indica la trasposta e $\|\mathbf v\|^2=\sum_{j=1}^5v_j^2$ la norma euclidea al quadrato. Se i centroidi sono distinti, l’equazione definisce un iperpiano. Trasformare le scale può modificare il confine nelle variabili originarie.\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La forma del confine deriva dalla regola matematica di distanza e non deve essere dedotta soltanto da una proiezione grafica.\end{minipage}\end{lrbox}
+\MeasureBox{10-TitleBox}{\TitleBox}
+\MeasureBox{10-BodyBox}{\BodyBox}
+\MeasureBox{10-SideBox}{\SideBox}
+\MeasureBox{10-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide10}{}
+\bookmark[level=1,page=10]{Il confine fra due centroidi è un iperpiano}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Sviluppo e interpretazione};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont P11 · Classificare nuove stazioni sintetiche};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 10/17};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}La proiezione conserva soltanto due coordinate\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Il diagramma rappresenta silice e ossido di calcio standardizzati, con punti per il train, triangoli per il test e croci per i centroidi. La separazione visibile aiuta a comprendere la struttura del campione sintetico, ma il classificatore utilizza anche magnesio, ferro e densità. La figura è dunque una proiezione del problema e non rappresenta tutte le distanze né i confini effettivi della decisione. Una sovrapposizione in questa vista potrebbe scomparire nello spazio completo, mentre una separazione apparente richiede comunque verifica numerica.\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \includegraphics[width=7.45cm]{figure/P11/F02.pdf}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont Proiezione SiO\textsubscript{2}–CaO: train, test e centroidi; decisione in cinque dimensioni.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Una proiezione grafica illustra la geometria senza sostituire il calcolo nello spazio completo dei predittori.\end{minipage}\end{lrbox}
+\MeasureBox{11-TitleBox}{\TitleBox}
+\MeasureBox{11-BodyBox}{\BodyBox}
+\MeasureBox{11-SideBox}{\SideBox}
+\MeasureBox{11-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide11}{}
+\bookmark[level=1,page=11]{La proiezione conserva soltanto due coordinate}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Evidenza grafica};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont P11 · Classificare nuove stazioni sintetiche};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 11/17};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Il modello conservato ricostruisce le decisioni\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Il file del modello contiene nomi e ordine delle variabili, medie, scale, centroidi e classi. Il frammento rilegge questi oggetti e calcola le previsioni senza stimare nuovi parametri, rendendo esplicito il passaggio dall’adattamento all’applicazione. Le classi osservate entrano soltanto nella tabella finale di confronto. La rilettura viene verificata rispetto all’oggetto salvato, poiché una ricostruzione parziale che omettesse l’ordine delle colonne potrebbe produrre distanze errate anche usando gli stessi valori numerici.\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \par\vspace{.25cm}\lstinputlisting[language=R]{estratti/P11/previsione.R}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Riprodurre una decisione richiede l’intera trasformazione e l’ordine delle caratteristiche, oltre ai soli centroidi.\end{minipage}\end{lrbox}
+\MeasureBox{12-TitleBox}{\TitleBox}
+\MeasureBox{12-BodyBox}{\BodyBox}
+\MeasureBox{12-SideBox}{\SideBox}
+\MeasureBox{12-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide12}{}
+\bookmark[level=0,page=12]{Prestazione e limiti dell’interpretazione}
+\bookmark[level=1,page=12]{Il modello conservato ricostruisce le decisioni}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Implementazione in R};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont P11 · Classificare nuove stazioni sintetiche};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 12/17};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}La matrice di confusione conserva i conteggi\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Tutti i trenta campioni di test vengono assegnati alla classe osservata, con dieci casi sulla diagonale per ciascuna litologia. L’accuratezza risulta quindi pari a uno in questo campione. La matrice conserva i denominatori e rende controllabile l’assenza di errori fra coppie di classi, senza trasformare l’esito in una garanzia universale. I trenta provini provengono soltanto da tre stazioni e dallo stesso generatore sintetico, condizioni che limitano l’interpretazione rispetto a un’applicazione su rocce reali.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}Acc=\frac1{30}\sum_{i\in test}\mathbf1\{\widehat y_i=y_i\}=1\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \includegraphics[width=7.45cm]{figure/P11/F04.pdf}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont $y_i$: classe osservata; $\widehat y_i$: prevista; $\mathbf1$: vale 1 se coincidono, 0 altrimenti. Are.: Arenaria; Bas.: Basalto; Cal.: Calcare.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Un’accuratezza perfetta nel campione disponibile non dimostra assenza di errore nella popolazione di applicazione.\end{minipage}\end{lrbox}
+\MeasureBox{13-TitleBox}{\TitleBox}
+\MeasureBox{13-BodyBox}{\BodyBox}
+\MeasureBox{13-SideBox}{\SideBox}
+\MeasureBox{13-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide13}{}
+\bookmark[level=1,page=13]{La matrice di confusione conserva i conteggi}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Evidenza grafica};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont P11 · Classificare nuove stazioni sintetiche};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 13/17};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Il confronto quantifica il contributo delle variabili\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont L’accuratezza passa da un terzo per la previsione costante a uno per il classificatore dei centroidi. Entrambe le procedure sono valutate sugli stessi trenta campioni, così che il confronto conservi il medesimo denominatore. Il guadagno è coerente con la separazione costruita nel generatore sintetico e dimostra il funzionamento del procedimento didattico. L’impiego su nuove stazioni reali richiederebbe dati indipendenti, verifiche delle unità e valutazione delle differenze fra distribuzione di adattamento e contesto operativo.\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \includegraphics[width=7.45cm]{figure/P11/F05.pdf}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont Accuratezze sullo stesso test: riferimento costante e centroidi.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La prestazione viene attribuita alla procedura e alla distribuzione effettivamente valutate.\end{minipage}\end{lrbox}
+\MeasureBox{14-TitleBox}{\TitleBox}
+\MeasureBox{14-BodyBox}{\BodyBox}
+\MeasureBox{14-SideBox}{\SideBox}
+\MeasureBox{14-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide14}{}
+\bookmark[level=1,page=14]{Il confronto quantifica il contributo delle variabili}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Evidenza grafica};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont P11 · Classificare nuove stazioni sintetiche};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 14/17};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Il margine misura una separazione geometrica\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont La differenza fra la seconda distanza quadratica più piccola e la prima misura quanto la decisione sia separata dalla classe concorrente più vicina. Nel campione tutti i margini sono positivi, coerentemente con assegnazioni senza pareggio. La distribuzione per classe descrive la geometria del classificatore e può aiutare a individuare decisioni più prossime al confine. Il margine non è una probabilità calibrata di correttezza e potrebbe essere ampio anche per un campione esterno al dominio rappresentato dalle tre classi note.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}\Delta_i=d^2_{i,(2)}-d^2_{i,(1)}\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \includegraphics[width=7.45cm]{figure/P11/F06.pdf}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont $d^2_{i,(1)},d^2_{i,(2)}$: prima e seconda distanza quadratica in ordine crescente. $\Delta_i$: margine per il campione i, adimensionale.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La distanza dal concorrente misura una proprietà geometrica; la probabilità di errore richiede una valutazione ulteriore.\end{minipage}\end{lrbox}
+\MeasureBox{15-TitleBox}{\TitleBox}
+\MeasureBox{15-BodyBox}{\BodyBox}
+\MeasureBox{15-SideBox}{\SideBox}
+\MeasureBox{15-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide15}{}
+\bookmark[level=1,page=15]{Il margine misura una separazione geometrica}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Evidenza grafica};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont P11 · Classificare nuove stazioni sintetiche};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 15/17};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}La scheda conserva dominio e condizioni d’uso\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont La scheda del modello registra bersaglio, origine sintetica, variabili e unità, numerosità per insieme, regola di standardizzazione, metrica, accuratezza e limiti. Il file JSON accompagna l’oggetto RDS e permette di interpretarlo senza ricostruire tutte le operazioni del laboratorio. La scheda dichiara inoltre il riuso didattico del test, l’assenza di validazione su rocce reali e l’impossibilità di riconoscere automaticamente classi non incluse nell’adattamento. Un campione nuovo richiede quindi anche una verifica di pertinenza al dominio.\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \input{tikz/P11/D04.tex}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Il modello conservato deve essere accompagnato dalle condizioni entro le quali la sua prestazione è stata osservata.\end{minipage}\end{lrbox}
+\MeasureBox{16-TitleBox}{\TitleBox}
+\MeasureBox{16-BodyBox}{\BodyBox}
+\MeasureBox{16-SideBox}{\SideBox}
+\MeasureBox{16-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide16}{}
+\bookmark[level=0,page=16]{Scheda del modello e consegna}
+\bookmark[level=1,page=16]{La scheda conserva dominio e condizioni d’uso}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Lettura del diagramma};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont P11 · Classificare nuove stazioni sintetiche};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 16/17};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Consegna: collegare geometria e validazione\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont La relazione presenta separazione delle stazioni, riferimento costante, standardizzazione, centroidi, matrice di confusione e scheda del modello. L’esercizio richiede di derivare il confine fra due centroidi e di spiegare perché medie e scale debbano essere stimate soltanto sul train. La discussione finale chiarisce perché trenta classificazioni corrette, provenienti da tre stazioni sintetiche, non siano sufficienti a dimostrare affidabilità generale. La conclusione distingue il risultato del caso didattico dalle evidenze ancora necessarie per un’applicazione geologica reale.\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont R/P11\_figure.R integra separazione, riferimento, classificatore e scheda. Il modello serializzato, i parametri di standardizzazione e le previsioni per identificativo sono conservati in risultati/P11. Il raccordo con M16 permette di approfondire validazione a gruppi, scelta dei modelli e calibrazione.\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La generalizzazione viene sostenuta dal disegno della verifica e dalla pertinenza dei dati al contesto di applicazione.\end{minipage}\end{lrbox}
+\MeasureBox{17-TitleBox}{\TitleBox}
+\MeasureBox{17-BodyBox}{\BodyBox}
+\MeasureBox{17-SideBox}{\SideBox}
+\MeasureBox{17-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide17}{}
+\bookmark[level=1,page=17]{Consegna: collegare geometria e validazione}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Sviluppo e interpretazione};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont P11 · Classificare nuove stazioni sintetiche};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 17/17};
+\end{tikzpicture}\end{frame}
+\end{document}

@@ -1,0 +1,46 @@
+source('R/stile.R')
+d<-leggi('estremi_v3.csv');x<-d$portata_massima_m3s;n<-length(x)
+gamma<-0.5772156649015329
+stima<-function(v)c(a=mean(v)-gamma*sd(v)*sqrt(6)/pi,b=sd(v)*sqrt(6)/pi)
+ab<-stima(x);a<-ab[['a']];b<-ab[['b']]
+FG<-function(q,a,b)exp(-exp(-(q-a)/b));QG<-function(p,a,b)a-b*log(-log(p))
+liv<-function(v,T=100){ab<-stima(v);QG(1-1/T,ab[['a']],ab[['b']])}
+salva('M14','F01',ggplot(d,aes(anno,portata_massima_m3s))+geom_line(colour='#B2C3C3',linewidth=.35)+geom_point(colour=geo[1],size=1.5)+scale_x_continuous(breaks=c(1920,1960,2000))+labs(x='Anno simulato',y='Massimo annuo (m³/s)'))
+ord<-sort(x,decreasing=TRUE);emp<-data.frame(q=ord,p=(1:n)/(n+1));emp$T<-1/emp$p
+salva('M14','F02',ggplot(emp,aes(T,q))+geom_point(colour=geo[1],size=1.7)+scale_x_log10(breaks=c(2,10,100),labels=c('2','10','100'))+labs(x='Ritorno empirico (anni)',y='Massimo annuo (m³/s)'))
+nn<-0:150;life<-data.frame(anni=nn,almeno_uno=1-(1-.01)^nn)
+salva('M14','F03',ggplot(life,aes(anni,almeno_uno))+geom_line(colour=geo[1],linewidth=.9)+geom_point(data=life[life$anni%in%c(50,100),],colour=geo[2],size=3)+scale_x_continuous(breaks=c(0,50,100,150))+scale_y_continuous(labels=fmt,breaks=c(0,.25,.5,.75),limits=c(0,1))+labs(x='Orizzonte (anni)',y='Probabilità di ≥ 1 evento'))
+set.seed(20261109);att<-rgeom(10000,.01)+1
+salva('M14','F04',ggplot(data.frame(attesa=att),aes(attesa))+geom_histogram(binwidth=25,boundary=1,fill=geo[1],colour=paper)+geom_vline(xintercept=100,colour=geo[2],linewidth=.8)+scale_x_continuous(breaks=c(0,250,500,750,1000))+labs(x='Attesa fino al primo evento (anni)',y='Simulazioni'))
+pp<-((1:n)-.5)/n;qq<-data.frame(teorico=QG(pp,a,b),osservato=sort(x))
+salva('M14','F05',ggplot(qq,aes(teorico,osservato))+geom_abline(slope=1,intercept=0,colour=geo[2],linewidth=.6)+geom_point(colour=geo[1],size=1.8)+scale_x_continuous(breaks=c(400,600,800))+labs(x='Quantile Gumbel (m³/s)',y='Quantile osservato (m³/s)'))
+grid<-data.frame(q=seq(min(x)-80,max(x)+100,length.out=300));grid$F<-FG(grid$q,a,b)
+salva('M14','F06',ggplot(grid,aes(q,F))+geom_step(data=data.frame(q=sort(x),F=(1:n)/n),colour=geo[1],linewidth=.6)+geom_line(colour=geo[2],linewidth=.8)+scale_y_continuous(breaks=c(0,.5,1),labels=fmt)+scale_x_continuous(breaks=c(400,600,800))+labs(x='Massimo annuo (m³/s)',y='Probabilità cumulata'))
+ret<-data.frame(T=exp(seq(log(2),log(500),length.out=250)));ret$livello<-QG(1-1/ret$T,a,b)
+salva('M14','F07',ggplot(ret,aes(T,livello))+annotate('rect',xmin=100,xmax=500,ymin=-Inf,ymax=Inf,fill=geo[2],alpha=.09)+geom_line(colour=geo[1],linewidth=.9)+geom_point(data=emp,aes(T,q),colour=geo[6],size=1.2)+geom_vline(xintercept=100,linetype=2,colour=geo[2])+scale_x_log10(breaks=c(2,10,100,500),labels=c('2','10','100','500'))+labs(x='Tempo di ritorno (anni)',y='Livello (m³/s)'))
+set.seed(20261109);boots<-replicate(1999,liv(sample(x,replace=TRUE)))
+salva('M14','F08',ggplot(data.frame(livello=boots),aes(livello))+geom_histogram(bins=24,fill=geo[1],colour=paper)+geom_vline(xintercept=liv(x),colour=geo[2],linewidth=.8)+labs(x='Livello centennale (m³/s)',y='Ricampionamenti'))
+pref<-data.frame(n=seq(20,100,20));pref$q<-sapply(pref$n,function(k)liv(x[1:k]))
+salva('M14','F09',ggplot(pref,aes(n,q))+geom_line(colour=geo[1],linewidth=.7)+geom_point(colour=geo[2],size=3)+scale_x_continuous(breaks=c(20,60,100))+labs(x='Lunghezza del record (anni)',y='Livello centennale (m³/s)'))
+QGEV<-function(p,mu=480,sigma=90,xi=0){if(abs(xi)<1e-10)mu-sigma*log(-log(p)) else mu+sigma*expm1(-xi*log(-log(p)))/xi}
+gev<-do.call(rbind,lapply(c(-.15,0,.15),function(xi)data.frame(T=ret$T,q=QGEV(1-1/ret$T,xi=xi),forma=factor(xi))))
+salva('M14','F10',ggplot(gev,aes(T,q,colour=forma))+geom_line(linewidth=.85)+scale_colour_manual(values=geo[1:3],labels=c('ξ = −0,15','ξ = 0','ξ = 0,15'))+scale_x_log10(breaks=c(2,10,100,500),labels=c('2','10','100','500'))+labs(x='Tempo di ritorno (anni)',y='Livello di scenario (m³/s)'))
+q<-c(2,3,4,12,14,11,5,4,3,2,3,12,15,13,5,4,2,1,3,2);ex<-q>10;inizio<-ex&!c(FALSE,head(ex,-1));grp<-cumsum(inizio);pics<-aggregate(q~gr,data.frame(q=q[ex],gr=grp[ex]),max)
+salva('M14','F11',ggplot(data.frame(giorno=seq_along(q),q,ex),aes(giorno,q))+geom_line(colour=geo[6],linewidth=.7)+geom_point(aes(colour=ex),size=2.4)+scale_colour_manual(values=c(geo[6],geo[2]),guide='none')+geom_hline(yintercept=10,linetype=2,colour=geo[1])+scale_x_continuous(breaks=c(1,5,10,15,20))+labs(x='Giorno sintetico',y='Portata (u.a.)'))
+loss<-data.frame(classe=factor(c('Moderata','Alta','Molto alta'),levels=c('Moderata','Alta','Molto alta')),p=c(.08,.015,.005),danno=c(1e4,1e5,1e6));loss$attesa<-loss$p*loss$danno
+salva('M14','F12',ggplot(loss,aes(classe,attesa,fill=classe))+geom_col(width=.65)+scale_fill_manual(values=geo[1:3],guide='none')+scale_x_discrete(labels=c('Moderata','Alta','Molto\nalta'))+labs(x='Classe mutuamente esclusiva',y='Perdita attesa (u.m.)'))
+verifica('Un massimo per anno e sequenza completa',n==100&&!anyDuplicated(d$anno)&&all(diff(d$anno)==1)&&all(is.finite(x)))
+verifica('CDF empirica e superamento complementari',abs(mean(x<=600)+mean(x>600)-1)<1e-12)
+verifica('Gumbel: scala positiva e inversione',b>0&&max(abs(FG(QG(c(.1,.5,.9,.99),a,b),a,b)-c(.1,.5,.9,.99)))<1e-12)
+verifica('Vita utile: complemento del modello binomiale',abs((1-.99^50)-(1-dbinom(0,50,.01)))<1e-12)
+verifica('Attesa geometrica: supporto e sopravvivenza',all(att>=1)&&abs(pgeom(9,.01)-(1-.99^10))<1e-12)
+verifica('Livelli di ritorno crescenti',all(diff(ret$livello)>0))
+verifica('GEV: limite per forma nulla',max(abs(QGEV(c(.5,.9,.99),xi=1e-8)-QGEV(c(.5,.9,.99),xi=0)))<1e-4)
+verifica('GEV: supporto nei quantili calcolati',all(vapply(c(-.15,.15),function(k)all(1+k*(QGEV(c(.5,.9,.99),xi=k)-480)/90>0),TRUE)))
+verifica('Sei superamenti in due episodi',sum(ex)==6&&sum(inizio)==2&&identical(pics$q,c(14,15)))
+verifica('Perdita attesa su classi esclusive',sum(loss$p)==.1&&sum(loss$attesa)==7300)
+verifica('Bootstrap: stime finite',length(boots)==1999&&all(is.finite(boots)))
+y<-x;y[which.max(y)]<-max(y)*1.3
+out<-'risultati/M14';dir.create(out,recursive=TRUE,showWarnings=FALSE)
+write.csv(ret,file.path(out,'livelli_ritorno.csv'),row.names=FALSE);write.csv(gev,file.path(out,'scenari_GEV.csv'),row.names=FALSE);write.csv(loss,file.path(out,'perdita_scenario.csv'),row.names=FALSE);write.csv(data.frame(livello=boots),file.path(out,'bootstrap_centennale.csv'),row.names=FALSE)
+jsonlite::write_json(list(parametri=as.list(ab),massimo=max(x),livello100=liv(x),livello500=liv(x,500),bootstrap_quantili=unname(quantile(boots,c(.025,.5,.975))),prob50=1-.99^50,prob100=1-.99^100,attesa_mediana=qgeom(.5,.01)+1,livello100_massimo_aumentato=liv(y),perdita_attesa=7300),file.path(out,'valori.json'),auto_unbox=TRUE,pretty=TRUE,digits=12)

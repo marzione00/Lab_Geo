@@ -1,0 +1,25 @@
+source('R/stile.R')
+d<-leggi('fossili_simulati.csv');x<-d$diametro_tot_um;g<-d$morfotipo=='Spiky'
+salva('M06','F01',ggplot(d,aes(morfotipo,diametro_tot_um,colour=morfotipo))+geom_point(position=position_jitter(width=.13,height=0,seed=601),alpha=.6,size=1.5)+stat_summary(fun=mean,geom='point',shape=18,size=5)+scale_colour_manual(values=geo[1:2],guide='none')+labs(x=NULL,y='Diametro (µm)'))
+stat<-function(g)mean(x[g])-mean(x[!g]);obs<-stat(g);set.seed(602);B<-4000;tp<-replicate(B,stat(sample(g)))
+salva('M06','F02',ggplot(data.frame(tp),aes(tp))+geom_histogram(binwidth=.04,boundary=0,fill=geo[1],colour=paper)+geom_vline(xintercept=c(-abs(obs),abs(obs)),colour=geo[2],linetype=2)+labs(x='Differenza permutata (µm)',y='Conteggio'))
+z<-data.frame(n=seq(10,250,by=5));z$potenza<-vapply(z$n,function(n)power.t.test(n=n,delta=.3,sd=1,sig.level=.05,type='two.sample',alternative='two.sided',strict=TRUE)$power,0.0)
+salva('M06','F03',ggplot(z,aes(n,potenza))+geom_line(colour=geo[1],linewidth=1.1)+geom_hline(yintercept=.8,colour=geo[2],linetype=2)+scale_y_continuous(limits=c(0,1))+labs(x='Numerosità per gruppo',y='Potenza'))
+set.seed(604);pv<-2*pnorm(-abs(rnorm(5000)))
+salva('M06','F04',ggplot(data.frame(pv),aes(pv,after_stat(density)))+geom_histogram(binwidth=.1,boundary=0,fill=geo[1],colour=paper)+geom_hline(yintercept=1,colour=geo[2],linetype=2)+labs(x='p-value sotto H₀',y='Densità'))
+a<-leggi('misure_appaiate_simulate.csv');long<-rbind(data.frame(id=a$id,tempo='Prima',val=a$prima),data.frame(id=a$id,tempo='Dopo',val=a$dopo));long$tempo<-factor(long$tempo,levels=c('Prima','Dopo'))
+salva('M06','F05',ggplot(long,aes(tempo,val,group=id))+geom_line(colour=geo[1],alpha=.55)+geom_point(colour=geo[2],size=1.7)+labs(x=NULL,y='Misura (u.c.)'))
+u<-seq(-6,6,length.out=600);z<-rbind(data.frame(u,y=dnorm(u),sigma='σ = 1'),data.frame(u,y=dnorm(u,0,2),sigma='σ = 2'))
+salva('M06','F06',ggplot(z,aes(u,y,colour=sigma))+geom_line(linewidth=1.1)+scale_colour_manual(values=geo[1:2])+labs(x='Valore',y='Densità'))
+tab<-matrix(c(18,12,9,21),2,byrow=TRUE,dimnames=list(Sito=c('A','B'),Esito=c('Presenza','Assenza')));z<-as.data.frame(as.table(tab));z$p<-z$Freq/30
+salva('M06','F07',ggplot(z,aes(Sito,p,fill=Esito))+geom_col(width=.6)+scale_fill_manual(values=geo[1:2])+scale_y_continuous(labels=function(v)paste0(100*v,'%'))+labs(x='Sito (n = 30 ciascuno)',y='Proporzione'))
+z<-data.frame(m=1:30);z$rischio<-1-.95^z$m
+salva('M06','F08',ggplot(z,aes(m,rischio))+geom_line(colour=geo[1],linewidth=1.1)+geom_point(data=z[z$m==10,],colour=geo[2],size=3)+labs(x='Numero dei test',y='Almeno un falso rifiuto'))
+w<-t.test(x[g],x[!g]);n1<-sum(g);n2<-sum(!g);v1<-var(x[g])/n1;v2<-var(x[!g])/n2;se<-sqrt(v1+v2);df<-(v1+v2)^2/(v1^2/(n1-1)+v2^2/(n2-1));ci<-obs+c(-1,1)*qt(.975,df)*se
+verifica('Welch statistica',abs(obs/se-unname(w$statistic))<1e-12)
+verifica('Welch intervallo',max(abs(ci-w$conf.int))<1e-12)
+verifica('Welch gradi di libertà',abs(df-unname(w$parameter))<1e-10)
+verifica('test appaiato equivalente',abs(t.test(a$dopo-a$prima)$p.value-t.test(a$dopo,a$prima,paired=TRUE)$p.value)<1e-14)
+verifica('Holm',max(abs(p.adjust(c(.003,.018,.041,.2),'holm')-c(.012,.054,.082,.2)))<1e-14)
+verifica('attesi contingenza',max(abs(chisq.test(tab,correct=FALSE)$expected-matrix(c(13.5,16.5,13.5,16.5),2,byrow=TRUE)))<1e-14)
+verifica('livello test z',abs(mean(pv<=.05)-.05)<6*sqrt(.05*.95/length(pv)))

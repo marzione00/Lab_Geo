@@ -1,0 +1,41 @@
+# Hillshade: cambiare luce senza cambiare terreno
+# Laboratorio R autonomo; eseguire dalla radice del progetto.
+
+# Nessuna installazione automatica durante l'analisi.
+find_root <- function(start=getwd()) {
+  p<-normalizePath(start,mustWork=TRUE)
+  repeat {
+    if(file.exists(file.path(p,'.geologia-v3'))) return(p)
+    q<-dirname(p);if(identical(p,q)) stop('Aprire il progetto Corso_Geologia.Rproj.');p<-q
+  }
+}
+root<-find_root();out<-file.path(root,'risultati','R','M12_N12')
+dir.create(out,recursive=TRUE,showWarnings=FALSE)
+need<-function(pkg) {if(!requireNamespace(pkg,quietly=TRUE)) stop(paste('Installare prima il pacchetto',pkg))}
+read_data<-function(name) read.csv(file.path(root,'dati',name),stringsAsFactors=FALSE,check.names=FALSE)
+d<-read_data('raster_v3.csv')
+casuali<-read_data('casuali_comuni_v3.csv');u<-casuali$u;z<-casuali$z
+set.seed(20261104)
+cat('Input:',file.path(root,'dati','raster_v3.csv'),'\nOutput:',out,'\n')
+
+
+
+# Analisi principale: Hillshade: cambiare luce senza cambiare terreno
+Z<-matrix(d$quota_m,24,byrow=TRUE);gx<-(Z[2:23,3:30]-Z[2:23,1:28])/60;gy<-(Z[3:24,2:29]-Z[1:22,2:29])/60
+s<-atan(sqrt(gx^2+gy^2));a<-atan2(-gx,-gy)
+# La matrice precede lo zero: pmax ne conserva righe e colonne.
+f<-function(az)pmax(cos(pi/4)*cos(s)+sin(pi/4)*sin(s)*cos(az*pi/180-a),0)
+h1<-f(315);h2<-f(135);risultato<-data.frame(az=c(315,135),media=c(mean(h1),mean(h2)));image(t(h1),col=gray.colors(30));stopifnot(all(h1>=0 & h1<=1))
+for(az in c(315,135)){
+ luce<-c(sin(az*pi/180)*cos(pi/4),cos(az*pi/180)*cos(pi/4),sin(pi/4))
+ attesa<-(-gx*luce[1]-gy*luce[2]+luce[3])/sqrt(1+gx^2+gy^2)
+ attesa[attesa<0]<-0
+ stopifnot(identical(dim(f(az)),c(22L,28L)),max(abs(f(az)-attesa))<1e-12)
+}
+
+
+print(risultato)
+write.csv(risultato,file.path(out,'risultato.csv'),row.names=FALSE,na='')
+
+
+writeLines(capture.output(sessionInfo()),file.path(out,'sessione_R.txt'))

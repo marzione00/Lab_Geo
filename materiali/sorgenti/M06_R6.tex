@@ -1,0 +1,768 @@
+\documentclass[12pt,aspectratio=1610]{beamer}
+\geometry{paperwidth=20cm,paperheight=12.5cm}
+\usepackage[italian,provide=*]{babel}
+\usepackage{lmodern,fontspec}
+\setsansfont{NimbusSans-Regular.otf}[Path=sorgenti/font/,BoldFont=NimbusSans-Bold.otf,ItalicFont=NimbusSans-Italic.otf]
+\setmainfont{NimbusSans-Regular.otf}[Path=sorgenti/font/,BoldFont=NimbusSans-Bold.otf,ItalicFont=NimbusSans-Italic.otf]
+\setmonofont{lmmono10-regular.otf}[Path=sorgenti/font/,Scale=.88]
+\usefonttheme{professionalfonts}
+\usepackage{amsmath,amssymb,booktabs,array,tabularx,graphicx,tikz,listings,bookmark}
+\usetikzlibrary{calc,arrows.meta,positioning}
+\definecolor{Paper}{HTML}{F8F6F1}
+\definecolor{Ink}{HTML}{253344}\definecolor{Navy}{HTML}{15283E}
+\definecolor{Quantum}{HTML}{5146A5}\definecolor{Classical}{HTML}{087C74}
+\definecolor{Measure}{HTML}{A05B10}\definecolor{Rose}{HTML}{9B4564}
+\definecolor{Muted}{HTML}{657180}\definecolor{Rule}{HTML}{D6DAD9}
+\definecolor{Wash}{HTML}{EAE7F6}\definecolor{Night}{HTML}{112236}
+\definecolor{Lilac}{HTML}{ABB5FF}\definecolor{Mint}{HTML}{72D8C8}\definecolor{Gold}{HTML}{EEC184}
+\setbeamercolor{background canvas}{bg=Paper}\setbeamercolor{normal text}{fg=Ink}
+\setbeamertemplate{navigation symbols}{}\setbeamertemplate{headline}{}\setbeamertemplate{footline}{}
+\setbeamersize{text margin left=0pt,text margin right=0pt}\setbeameroption{hide notes}
+\newsavebox{\BodyBox}\newsavebox{\SideBox}\newsavebox{\RecallBox}\newsavebox{\TitleBox}
+\newcommand{\MeasureBox}[2]{\typeout{GEOBOX:#1:\the\wd#2:\the\ht#2:\the\dp#2}}
+\lstset{language=R,basicstyle=\ttfamily\fontsize{10.2}{13.4}\selectfont,
+columns=fullflexible,keepspaces=true,showstringspaces=false,breaklines=true,breakatwhitespace=false,
+commentstyle=\color{Muted},keywordstyle=\color{Classical},stringstyle=\color{Quantum},
+aboveskip=0pt,belowskip=0pt,xleftmargin=0pt,xrightmargin=0pt,tabsize=2}
+\hypersetup{colorlinks=true,linkcolor=Classical,urlcolor=Classical,pdfpagemode=UseOutlines,pdfstartview=Fit,bookmarksopen=true,bookmarksopenlevel=0}
+\bookmarksetup{open,openlevel=0,depth=2}
+\tikzset{arr/.style={-{Stealth[length=2mm]},line width=.8pt,draw=Classical}}
+\hypersetup{pdftitle={Campionamento, stima e incertezza},pdfauthor={},pdfsubject={Corso di statistica e data science per Geologia, primo anno; modulo 05}}
+\usetikzlibrary{decorations.pathreplacing,fit,backgrounds,matrix}\hypersetup{pdftitle={M06 · Confrontare gruppi e valutare ipotesi},pdfsubject={Revisione integrale R6}}\begin{document}
+\begin{frame}[plain]\hypertarget{slide1}{}\begin{tikzpicture}[remember picture,overlay]\fill[Night] (current page.south west) rectangle (current page.north east);\draw[Mint,line width=2pt] ([xshift=1.05cm,yshift=-1.35cm]current page.north west)--([xshift=3cm,yshift=-1.35cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=1.05cm,yshift=-1.7cm]current page.north west){\color{Mint}\bfseries\fontsize{11}{14}\selectfont M06 · REVISIONE R6};
+\node[anchor=north west,inner sep=0] at ([xshift=1.05cm,yshift=-2.65cm]current page.north west){\begin{minipage}{15.8cm}\raggedright\color{white}\bfseries\fontsize{31}{38}\selectfont Confrontare gruppi e valutare ipotesi\end{minipage}};
+\node[anchor=north west,inner sep=0] at ([xshift=1.05cm,yshift=-6.4cm]current page.north west){\begin{minipage}{15.8cm}\raggedright\color{Lilac}\fontsize{15}{21}\selectfont Contrasti, distribuzioni di riferimento e interpretazione dell’evidenza\end{minipage}};
+\node[anchor=north west,inner sep=0] at ([xshift=1.05cm,yshift=-8.6cm]current page.north west){\begin{minipage}{16.5cm}\color{white}\fontsize{11}{15}\selectfont 35 slide · teoria, derivazioni, figure e applicazioni in R.\par\smallskip Provenienza dei dati e sorgenti nei materiali allegati.\end{minipage}};
+\node[anchor=south east,inner sep=0] at ([xshift=18.95cm,yshift=-11.35cm]current page.north west){\color{Lilac!45}\bfseries\fontsize{64}{68}\selectfont M06};
+\end{tikzpicture}\end{frame}
+\begin{frame}[plain]\hypertarget{slide2}{}\bookmark[level=0,page=2]{Indice}\begin{tikzpicture}[remember picture,overlay]\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.65cm]current page.north west){\color{Navy}\bfseries\fontsize{22}{27}\selectfont Percorso del modulo};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.23cm]current page.north west){\color{Classical}\bfseries\fontsize{13}{16}\selectfont 3};
+\node[anchor=north west,inner sep=0] at ([xshift=2.0cm,yshift=-2.23cm]current page.north west){\begin{minipage}{7.25cm}\raggedright\color{Navy}\bfseries\fontsize{12.4}{15.5}\selectfont\hyperlink{slide3}{Disegno, contrasto e ipotesi}\end{minipage}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-3.5300000000000002cm]current page.north west){\color{Classical}\bfseries\fontsize{13}{16}\selectfont 6};
+\node[anchor=north west,inner sep=0] at ([xshift=2.0cm,yshift=-3.5300000000000002cm]current page.north west){\begin{minipage}{7.25cm}\raggedright\color{Navy}\bfseries\fontsize{12.4}{15.5}\selectfont\hyperlink{slide6}{Permutazione e scambiabilità}\end{minipage}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-4.83cm]current page.north west){\color{Classical}\bfseries\fontsize{13}{16}\selectfont 9};
+\node[anchor=north west,inner sep=0] at ([xshift=2.0cm,yshift=-4.83cm]current page.north west){\begin{minipage}{7.25cm}\raggedright\color{Navy}\bfseries\fontsize{12.4}{15.5}\selectfont\hyperlink{slide9}{P-value e contenuto dell’evidenza}\end{minipage}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-6.130000000000001cm]current page.north west){\color{Classical}\bfseries\fontsize{13}{16}\selectfont 12};
+\node[anchor=north west,inner sep=0] at ([xshift=2.0cm,yshift=-6.130000000000001cm]current page.north west){\begin{minipage}{7.25cm}\raggedright\color{Navy}\bfseries\fontsize{12.4}{15.5}\selectfont\hyperlink{slide12}{Errori, potenza e pianificazione}\end{minipage}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-7.43cm]current page.north west){\color{Classical}\bfseries\fontsize{13}{16}\selectfont 16};
+\node[anchor=north west,inner sep=0] at ([xshift=2.0cm,yshift=-7.43cm]current page.north west){\begin{minipage}{7.25cm}\raggedright\color{Navy}\bfseries\fontsize{12.4}{15.5}\selectfont\hyperlink{slide16}{Due medie indipendenti: Welch}\end{minipage}};
+\node[anchor=north west,inner sep=0] at ([xshift=10.299999999999999cm,yshift=-2.23cm]current page.north west){\color{Classical}\bfseries\fontsize{13}{16}\selectfont 19};
+\node[anchor=north west,inner sep=0] at ([xshift=11.35cm,yshift=-2.23cm]current page.north west){\begin{minipage}{7.25cm}\raggedright\color{Navy}\bfseries\fontsize{12.4}{15.5}\selectfont\hyperlink{slide19}{Confronti appaiati}\end{minipage}};
+\node[anchor=north west,inner sep=0] at ([xshift=10.299999999999999cm,yshift=-3.5300000000000002cm]current page.north west){\color{Classical}\bfseries\fontsize{13}{16}\selectfont 22};
+\node[anchor=north west,inner sep=0] at ([xshift=11.35cm,yshift=-3.5300000000000002cm]current page.north west){\begin{minipage}{7.25cm}\raggedright\color{Navy}\bfseries\fontsize{12.4}{15.5}\selectfont\hyperlink{slide22}{Ranghi e ipotesi sulla distribuzione}\end{minipage}};
+\node[anchor=north west,inner sep=0] at ([xshift=10.299999999999999cm,yshift=-4.83cm]current page.north west){\color{Classical}\bfseries\fontsize{13}{16}\selectfont 26};
+\node[anchor=north west,inner sep=0] at ([xshift=11.35cm,yshift=-4.83cm]current page.north west){\begin{minipage}{7.25cm}\raggedright\color{Navy}\bfseries\fontsize{12.4}{15.5}\selectfont\hyperlink{slide26}{Conteggi e associazione fra categorie}\end{minipage}};
+\node[anchor=north west,inner sep=0] at ([xshift=10.299999999999999cm,yshift=-6.130000000000001cm]current page.north west){\color{Classical}\bfseries\fontsize{13}{16}\selectfont 29};
+\node[anchor=north west,inner sep=0] at ([xshift=11.35cm,yshift=-6.130000000000001cm]current page.north west){\begin{minipage}{7.25cm}\raggedright\color{Navy}\bfseries\fontsize{12.4}{15.5}\selectfont\hyperlink{slide29}{Più gruppi e confronti multipli}\end{minipage}};
+\node[anchor=north west,inner sep=0] at ([xshift=10.299999999999999cm,yshift=-7.43cm]current page.north west){\color{Classical}\bfseries\fontsize{13}{16}\selectfont 34};
+\node[anchor=north west,inner sep=0] at ([xshift=11.35cm,yshift=-7.43cm]current page.north west){\begin{minipage}{7.25cm}\raggedright\color{Navy}\bfseries\fontsize{12.4}{15.5}\selectfont\hyperlink{slide34}{Relazione e verifica del confronto}\end{minipage}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.55cm]current page.north west){\begin{minipage}{18cm}\color{Muted}\fontsize{10}{13}\selectfont I numeri indicano le pagine iniziali; i titoli sono cliccabili. Codice, figure e verifiche sono inclusi nel progetto.\end{minipage}};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Il contrasto formalizza la domanda scientifica\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Il confronto fra gruppi richiede una quantità che rappresenti la differenza di interesse. Nel caso dei fossili sintetici, il contrasto è definito come diametro medio degli Spiky meno diametro medio dei Rounded, così che il segno mantenga un’interpretazione costante. L’ipotesi nulla stabilisce un valore di riferimento, mentre l’alternativa delimita gli scostamenti pertinenti alla domanda. La scelta della direzione deve precedere la lettura dell’esito, poiché modifica la procedura e la distribuzione delle decisioni.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}\Delta=\mu_S-\mu_R,\qquad H_0:\Delta=0\\ H_1:\Delta\ne0\quad\text{oppure}\quad H_1:\Delta>0\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont Nel modulo si utilizza principalmente l’alternativa bilaterale. Le unità del contrasto sono micrometri; le ipotesi riguardano medie di popolazioni descritte dal modello, mentre la differenza campionaria ne fornisce una stima.\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Definizione, verso e unità del contrasto devono precedere il calcolo del test.\end{minipage}\end{lrbox}
+\MeasureBox{3-TitleBox}{\TitleBox}
+\MeasureBox{3-BodyBox}{\BodyBox}
+\MeasureBox{3-SideBox}{\SideBox}
+\MeasureBox{3-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide3}{}
+\bookmark[level=0,page=3]{Disegno, contrasto e ipotesi}
+\bookmark[level=1,page=3]{Il contrasto formalizza la domanda scientifica}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Sviluppo e interpretazione};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M06 · Confrontare gruppi e valutare ipotesi};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 3/35};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Il disegno stabilisce la struttura della dipendenza\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Due campioni indipendenti e due misure sugli stessi provini contengono relazioni differenti fra le osservazioni. Nel disegno appaiato, l’identificativo permette di calcolare una differenza entro ogni coppia, eliminando la componente comune del livello individuale. Nei dati raggruppati per sito può esistere invece dipendenza anche fra provini distinti. Il diagramma distingue queste strutture, mostrando perché la numerosità delle righe debba essere interpretata rispetto alle unità indipendenti effettivamente disponibili.\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \input{tikz/M06/R6_D01.tex}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont Schema illustrativo: unità indipendenti, coppie e provini raggruppati per sito.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La procedura deve rispettare abbinamenti, raggruppamenti e unità indipendenti del disegno.\end{minipage}\end{lrbox}
+\MeasureBox{4-TitleBox}{\TitleBox}
+\MeasureBox{4-BodyBox}{\BodyBox}
+\MeasureBox{4-SideBox}{\SideBox}
+\MeasureBox{4-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide4}{}
+\bookmark[level=1,page=4]{Il disegno stabilisce la struttura della dipendenza}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Lettura del diagramma};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M06 · Confrontare gruppi e valutare ipotesi};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 4/35};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}La distribuzione osservata precede il test\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Il grafico dei diametri conserva le osservazioni individuali e le medie dei due morfotipi. La differenza stimata è circa 0,582 µm, mentre le distribuzioni mostrano una sovrapposizione consistente. Il confronto inferenziale valuterà l’incertezza della differenza delle medie sotto le ipotesi dichiarate, anziché trasformare la separazione grafica in una regola di classificazione dei singoli fossili. La natura sintetica dei dati delimita inoltre l’interpretazione geologica dell’esempio.\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \includegraphics[width=7.45cm]{figure/M06/F01.pdf}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont Ottanta fossili sintetici per morfotipo. I rombi indicano le medie; il lieve jitter orizzontale separa i punti.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La differenza fra medie e la separazione fra individui descrivono proprietà diverse.\end{minipage}\end{lrbox}
+\MeasureBox{5-TitleBox}{\TitleBox}
+\MeasureBox{5-BodyBox}{\BodyBox}
+\MeasureBox{5-SideBox}{\SideBox}
+\MeasureBox{5-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide5}{}
+\bookmark[level=1,page=5]{La distribuzione osservata precede il test}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Evidenza grafica};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M06 · Confrontare gruppi e valutare ipotesi};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 5/35};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}La permutazione costruisce un riferimento nullo\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Se le osservazioni provengono dalla stessa distribuzione e sono indipendenti, le etichette dei gruppi sono scambiabili sotto l’ipotesi nulla. La permutazione mantiene i valori osservati e riassegna le etichette, ricostruendo le differenze compatibili con tale riferimento. In un esperimento randomizzato, la distribuzione delle assegnazioni può derivare direttamente dal disegno. La sola uguaglianza delle medie, in presenza di varianze o distribuzioni diverse, è invece insufficiente a giustificare la permutazione semplice della differenza non standardizzata.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}T_{\rm obs}=\bar x_S-\bar x_R,\qquad T^\pi=\bar x_S^\pi-\bar x_R^\pi\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \input{tikz/M06/R6_D02.tex}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont Esempio con quattro valori: R, Rounded; S, Spiky. Il contrasto è sempre S meno R.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La validità della permutazione deriva dalla scambiabilità o dalla randomizzazione prevista nel disegno.\end{minipage}\end{lrbox}
+\MeasureBox{6-TitleBox}{\TitleBox}
+\MeasureBox{6-BodyBox}{\BodyBox}
+\MeasureBox{6-SideBox}{\SideBox}
+\MeasureBox{6-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide6}{}
+\bookmark[level=0,page=6]{Permutazione e scambiabilità}
+\bookmark[level=1,page=6]{La permutazione costruisce un riferimento nullo}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Lettura del diagramma};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M06 · Confrontare gruppi e valutare ipotesi};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 6/35};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Il confronto con le permutazioni\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont La distribuzione delle differenze permutate descrive lo scostamento che può emergere riassegnando gruppi della stessa numerosità. Per un confronto bilaterale basato sul valore assoluto, si contano le repliche almeno altrettanto estreme del risultato osservato. Se vengono campionate B permutazioni casuali, l’aggiunta dell’assegnazione osservata conduce alla forma con uno al numeratore e al denominatore, evitando di attribuire probabilità nulla soltanto perché il campionamento numerico ha trovato poche code.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}\widehat p=\frac{1+\sum_{b=1}^B\mathbf1(|T_b^\pi|\ge|T_{\rm obs}|)}{B+1}\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \includegraphics[width=7.45cm]{figure/M06/F02.pdf}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont 4.000 permutazioni. $T^\pi$: media Spiky meno media Rounded dopo riassegnazione. Tratteggi: $\pm|T_{\rm obs}|$, con $T_{\rm obs}=0{,}582$ µm.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Il numero delle permutazioni limita la risoluzione del p-value Monte Carlo.\end{minipage}\end{lrbox}
+\MeasureBox{7-TitleBox}{\TitleBox}
+\MeasureBox{7-BodyBox}{\BodyBox}
+\MeasureBox{7-SideBox}{\SideBox}
+\MeasureBox{7-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide7}{}
+\bookmark[level=1,page=7]{Il confronto con le permutazioni}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Evidenza grafica};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M06 · Confrontare gruppi e valutare ipotesi};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 7/35};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Bootstrap e permutazione hanno riferimenti diversi\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Nel bootstrap si ricampiona per approssimare la variabilità di uno stimatore rispetto a una distribuzione stimata dai dati. Nella permutazione si ricostruisce invece una distribuzione di riferimento attraverso riassegnazioni ammesse sotto l’ipotesi nulla. Il codice conserva la numerosità dei gruppi e calcola sempre il contrasto nello stesso verso. Per dati appaiati, temporali o raggruppati, una riassegnazione libera delle righe può distruggere la struttura che il disegno richiede di conservare.\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \par\vspace{.25cm}\lstinputlisting[language=R]{estratti/M06/permutazione.R}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La procedura di ricampionamento deve corrispondere alla distribuzione che si intende approssimare.\end{minipage}\end{lrbox}
+\MeasureBox{8-TitleBox}{\TitleBox}
+\MeasureBox{8-BodyBox}{\BodyBox}
+\MeasureBox{8-SideBox}{\SideBox}
+\MeasureBox{8-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide8}{}
+\bookmark[level=1,page=8]{Bootstrap e permutazione hanno riferimenti diversi}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Implementazione in R};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M06 · Confrontare gruppi e valutare ipotesi};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 8/35};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Il p-value è calcolato sotto un riferimento\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Il p-value misura la probabilità, nel modello nullo e secondo una regola di estremità prefissata, di ottenere una statistica almeno altrettanto estrema di quella osservata. La probabilità è quindi condizionata al riferimento utilizzato nel calcolo. Attribuire tale numero all’ipotesi nulla richiederebbe un diverso impianto inferenziale, con una distribuzione sulle ipotesi. La lettura frequentista deve mantenere esplicite le condizioni del modello, poiché una discrepanza può dipendere anche dalla loro inadeguatezza.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}p=P_{H_0}\{S(T)\ge S(T_{\rm obs})\}\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \input{tikz/M06/R6_D03.tex}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont Esempio: sotto $H_0$, $T\sim N(0,1)$; $T_{\rm obs}=2$ e $S(T)=|T|$. L’area delle due code vale circa 0,0455.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La probabilità del p-value riguarda la statistica nel modello di riferimento.\end{minipage}\end{lrbox}
+\MeasureBox{9-TitleBox}{\TitleBox}
+\MeasureBox{9-BodyBox}{\BodyBox}
+\MeasureBox{9-SideBox}{\SideBox}
+\MeasureBox{9-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide9}{}
+\bookmark[level=0,page=9]{P-value e contenuto dell’evidenza}
+\bookmark[level=1,page=9]{Il p-value è calcolato sotto un riferimento}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Lettura del diagramma};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M06 · Confrontare gruppi e valutare ipotesi};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 9/35};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Ampiezza dell’effetto e precisione\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Una differenza molto piccola può produrre un p-value ridotto quando viene stimata con elevata precisione, mentre una differenza rilevante può rimanere incerta in un campione poco informativo. La figura mantiene un effetto fissato e mostra come la potenza cambi con la numerosità nel modello assunto. La comunicazione deve pertanto riportare la stima nelle unità scientifiche, il suo intervallo e il contesto di campionamento, così che rilevabilità statistica e rilevanza geologica possano essere valutate separatamente.\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \includegraphics[width=7.45cm]{figure/M06/F03.pdf}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont Test t bilaterale a due campioni normali: α = 0,05, effetto 0,3 e deviazione standard 1. Asse orizzontale: n per gruppo.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Stima, precisione e rilevanza scientifica contribuiscono a interpretazioni complementari.\end{minipage}\end{lrbox}
+\MeasureBox{10-TitleBox}{\TitleBox}
+\MeasureBox{10-BodyBox}{\BodyBox}
+\MeasureBox{10-SideBox}{\SideBox}
+\MeasureBox{10-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide10}{}
+\bookmark[level=1,page=10]{Ampiezza dell’effetto e precisione}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Evidenza grafica};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M06 · Confrontare gruppi e valutare ipotesi};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 10/35};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Una soglia non esaurisce la conclusione\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont P-value pari a 0,049 e 0,051 descrivono livelli di compatibilità molto vicini, sebbene ricadano su lati diversi di una soglia convenzionale. Quando un test non rifiuta il riferimento, la conclusione deve considerare quali effetti rimangano compatibili con l’intervallo stimato. Per sostenere un’equivalenza pratica occorrono margini scientificamente motivati e una procedura dedicata; l’assenza di rifiuto dell’uguaglianza lascia invece aperta la possibilità di informazione insufficiente.\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont Una relazione può indicare: differenza stimata, intervallo al livello dichiarato, metodo, numerosità e limiti del disegno. L’eventuale decisione rispetto ad α viene presentata come un passaggio della procedura, conservando il valore numerico e l’incertezza dell’effetto.\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La conclusione deve essere proporzionata all’intervallo degli effetti ancora compatibili con i dati.\end{minipage}\end{lrbox}
+\MeasureBox{11-TitleBox}{\TitleBox}
+\MeasureBox{11-BodyBox}{\BodyBox}
+\MeasureBox{11-SideBox}{\SideBox}
+\MeasureBox{11-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide11}{}
+\bookmark[level=1,page=11]{Una soglia non esaurisce la conclusione}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Sviluppo e interpretazione};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M06 · Confrontare gruppi e valutare ipotesi};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 11/35};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Errori nelle ripetizioni della procedura\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont L’errore di primo tipo consiste nel rifiutare una specificazione nulla vera, mentre l’errore di secondo tipo riguarda il mancato rifiuto sotto una particolare alternativa. Il livello α controlla il primo rischio entro le condizioni della procedura; $\beta(\Delta)$ è il secondo rischio per l’effetto $\Delta$ e $\pi(\Delta)$ la potenza, dipendente anche da dispersione e disegno. La matrice distingue lo stato del modello dalla decisione ottenuta, evitando di interpretare il livello prefissato come probabilità che una conclusione specifica sia errata.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}P_{H_0}(\text{rifiuto})\le\alpha,\qquad\pi(\Delta)=1-\beta(\Delta)\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \input{tikz/M06/D04.tex}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont Schema per un riferimento semplice con livello effettivo α e una specifica alternativa.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La potenza va riferita a un effetto alternativo definito, con unità e condizioni del modello.\end{minipage}\end{lrbox}
+\MeasureBox{12-TitleBox}{\TitleBox}
+\MeasureBox{12-BodyBox}{\BodyBox}
+\MeasureBox{12-SideBox}{\SideBox}
+\MeasureBox{12-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide12}{}
+\bookmark[level=0,page=12]{Errori, potenza e pianificazione}
+\bookmark[level=1,page=12]{Errori nelle ripetizioni della procedura}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Lettura del diagramma};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M06 · Confrontare gruppi e valutare ipotesi};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 12/35};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}La validità vincola i p-value sotto H0\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Per un test continuo esatto, il p-value è uniforme sotto l’ipotesi nulla. Più in generale, una procedura valida produce probabilità di p-value inferiori alla soglia non maggiori della soglia stessa; la discrezione può rendere il test conservativo. Simulando molte esecuzioni sotto un riferimento noto, si può quindi controllare la frequenza dei rifiuti e confrontarla con il livello nominale, tenendo conto della variabilità Monte Carlo del controllo.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}P_{H_0}(p\le u)\le u,\quad 0\le u\le1\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \includegraphics[width=7.45cm]{figure/M06/F04.pdf}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont P-value di 5.000 test z bilaterali simulati sotto una normale standard. La linea indica la densità uniforme.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La frequenza dei rifiuti sotto un modello noto verifica un aspetto operativo della procedura.\end{minipage}\end{lrbox}
+\MeasureBox{13-TitleBox}{\TitleBox}
+\MeasureBox{13-BodyBox}{\BodyBox}
+\MeasureBox{13-SideBox}{\SideBox}
+\MeasureBox{13-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide13}{}
+\bookmark[level=1,page=13]{La validità vincola i p-value sotto H0}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Evidenza grafica};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M06 · Confrontare gruppi e valutare ipotesi};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 13/35};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}La pianificazione collega effetto e numerosità\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Per due gruppi normali indipendenti con varianza comune nota, una formula approssimata associa la numerosità per gruppo a effetto minimo, livello e potenza desiderata. L’effetto viene espresso nelle unità della risposta e la dispersione deve provenire da informazioni pertinenti al disegno previsto. La formula costituisce un riferimento iniziale: raggruppamenti, perdite e varianze differenti richiedono una pianificazione coerente con tali strutture, eventualmente mediante simulazione.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}n\simeq\frac{2\sigma^2(z_{1-\alpha/2}+z_{1-\beta})^2}{\Delta^2}\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont Nella formula, $\sigma$ è la deviazione standard comune, $\Delta$ l’effetto minimo, $\alpha$ il livello e $1-\beta$ la potenza richiesta; $z_p$ indica il quantile p della normale standard. Si può pianificare anche la larghezza dell’intervallo. In entrambi i casi restano da valutare dipendenza e distorsioni del disegno.\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Effetto minimo e precisione desiderata devono derivare dalla domanda scientifica.\end{minipage}\end{lrbox}
+\MeasureBox{14-TitleBox}{\TitleBox}
+\MeasureBox{14-BodyBox}{\BodyBox}
+\MeasureBox{14-SideBox}{\SideBox}
+\MeasureBox{14-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide14}{}
+\bookmark[level=1,page=14]{La pianificazione collega effetto e numerosità}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Sviluppo e interpretazione};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M06 · Confrontare gruppi e valutare ipotesi};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 14/35};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}La regola di arresto appartiene al disegno\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Ripetere il test dopo ogni nuova osservazione e arrestarsi quando il p-value scende sotto la soglia modifica la probabilità complessiva di rifiuto. Una procedura calibrata per una numerosità fissata perde quindi il proprio riferimento se viene utilizzata con una regola sequenziale diversa. Il diagramma mostra la selezione introdotta dall’arresto; un’analisi sequenziale valida richiede invece una regola progettata e calibrata per le occasioni di esame previste.\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \input{tikz/M06/D05.tex}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Numero delle analisi intermedie e regola di arresto devono essere inclusi nella procedura.\end{minipage}\end{lrbox}
+\MeasureBox{15-TitleBox}{\TitleBox}
+\MeasureBox{15-BodyBox}{\BodyBox}
+\MeasureBox{15-SideBox}{\SideBox}
+\MeasureBox{15-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide15}{}
+\bookmark[level=1,page=15]{La regola di arresto appartiene al disegno}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Lettura del diagramma};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M06 · Confrontare gruppi e valutare ipotesi};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 15/35};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}La varianza del contrasto combina due contributi\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont La varianza della differenza fra due medie indipendenti somma i contributi dei gruppi. Le varianze campionarie stimano quindi l’errore standard usato da Welch, che ammette dispersioni differenti. La statistica rapporta lo scostamento dal valore nullo alla sua incertezza. Sotto normalità, la distribuzione t con gradi di libertà di Welch–Satterthwaite fornisce un riferimento approssimato.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}\widehat\Delta=\bar x_1-\bar x_2,\quad SE=\sqrt{\frac{s_1^2}{n_1}+\frac{s_2^2}{n_2}}\\ t_W=\frac{\widehat\Delta-\Delta_0}{SE}\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont $n_g$, $\bar x_g$ e $s_g$ sono numerosità, media e deviazione standard campionaria del gruppo g; $\Delta_0$ è il valore nullo. Nel caso fossile, 1 indica Spiky e 2 Rounded. Si richiede indipendenza entro e fra gruppi; provini dello stesso sito possono richiedere un modello del raggruppamento.\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Welch ammette varianze differenti, mantenendo necessarie le ipotesi sulla dipendenza.\end{minipage}\end{lrbox}
+\MeasureBox{16-TitleBox}{\TitleBox}
+\MeasureBox{16-BodyBox}{\BodyBox}
+\MeasureBox{16-SideBox}{\SideBox}
+\MeasureBox{16-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide16}{}
+\bookmark[level=0,page=16]{Due medie indipendenti: Welch}
+\bookmark[level=1,page=16]{La varianza del contrasto combina due contributi}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Sviluppo e interpretazione};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M06 · Confrontare gruppi e valutare ipotesi};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 16/35};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}I gradi di libertà riflettono la stima della variabilità\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont La correzione di Welch–Satterthwaite combina i contributi delle varianze campionarie, attribuendo maggiore influenza ai termini che dominano l’errore standard. I gradi di libertà possono essere non interi, poiché derivano da un’approssimazione della distribuzione del denominatore. L’intervallo bilaterale viene costruito aggiungendo e sottraendo alla differenza il quantile t moltiplicato per l’errore standard. Test e intervallo risultano coerenti quando utilizzano lo stesso contrasto, livello e modello.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}\nu=\frac{(s_1^2/n_1+s_2^2/n_2)^2}{\frac{(s_1^2/n_1)^2}{n_1-1}+\frac{(s_2^2/n_2)^2}{n_2-1}}\\ IC_{1-\alpha}:\ \widehat\Delta\pm t_{\nu,1-\alpha/2}SE\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \input{tikz/M06/D06.tex}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont Gruppi 1 = Spiky e 2 = Rounded; $n_g$ conta gli individui e $s_g^2$ è la varianza campionaria. Intervallo 95\% con SE = 0,152 µm.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont L’intervallo esprime l’incertezza della differenza nelle unità della risposta.\end{minipage}\end{lrbox}
+\MeasureBox{17-TitleBox}{\TitleBox}
+\MeasureBox{17-BodyBox}{\BodyBox}
+\MeasureBox{17-SideBox}{\SideBox}
+\MeasureBox{17-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide17}{}
+\bookmark[level=1,page=17]{I gradi di libertà riflettono la stima della variabilità}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Lettura del diagramma};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M06 · Confrontare gruppi e valutare ipotesi};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 17/35};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Il risultato viene letto nel verso dichiarato\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Nel dataset sintetico, il diametro medio degli Spiky supera quello dei Rounded di circa 0,582 µm; l’intervallo di Welch al 95\% va da 0,282 a 0,882 µm. Il test restituisce t circa 3,831, con 156,89 gradi di libertà e p circa 0,000184. Questi numeri descrivono il confronto entro il modello di osservazioni indipendenti. La rilevanza della differenza e la sua trasferibilità a un contesto geologico richiederebbero informazioni ulteriori sul processo di raccolta e sulle popolazioni rappresentate.\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \par\vspace{.25cm}\lstinputlisting[language=R]{estratti/M06/welch.R}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont L’ordine degli argomenti della funzione determina il segno della differenza riportata.\end{minipage}\end{lrbox}
+\MeasureBox{18-TitleBox}{\TitleBox}
+\MeasureBox{18-BodyBox}{\BodyBox}
+\MeasureBox{18-SideBox}{\SideBox}
+\MeasureBox{18-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide18}{}
+\bookmark[level=1,page=18]{Il risultato viene letto nel verso dichiarato}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Implementazione in R};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M06 · Confrontare gruppi e valutare ipotesi};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 18/35};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}La differenza entro coppia diventa la risposta\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Per ciascun provino misurato prima e dopo, il cambiamento viene definito sottraendo la prima misura dalla seconda. L’analisi riguarda quindi una variabile per coppia, la cui distribuzione dipende dalla covarianza fra le due misure. Una correlazione positiva può ridurre la variabilità delle differenze rispetto a quella che si otterrebbe ignorando l’abbinamento. La validità del confronto richiede tuttavia che le coppie siano indipendenti secondo il disegno considerato.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}D_i=Y_{i,\mathrm{dopo}}-Y_{i,\mathrm{prima}}\\ \operatorname{Var}(D)=\operatorname{Var}(Y_d)+\operatorname{Var}(Y_p)-2\operatorname{Cov}(Y_d,Y_p)\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \includegraphics[width=7.45cm]{figure/M06/F05.pdf}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont Ventiquattro provini sintetici, misure in unità convenzionali (u.c.). Ogni segmento collega lo stesso identificativo.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La chiave della coppia deve essere conservata durante importazione, filtri e ordinamenti.\end{minipage}\end{lrbox}
+\MeasureBox{19-TitleBox}{\TitleBox}
+\MeasureBox{19-BodyBox}{\BodyBox}
+\MeasureBox{19-SideBox}{\SideBox}
+\MeasureBox{19-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide19}{}
+\bookmark[level=0,page=19]{Confronti appaiati}
+\bookmark[level=1,page=19]{La differenza entro coppia diventa la risposta}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Evidenza grafica};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M06 · Confrontare gruppi e valutare ipotesi};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 19/35};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Il test appaiato è un test sulla media delle differenze\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Quando le differenze sono indipendenti e normalmente distribuite, la media standardizzata segue esattamente una t con n−1 gradi di libertà sotto il valore nullo. L’esame delle condizioni riguarda quindi le differenze, mentre le distribuzioni marginali di prima e dopo possono avere caratteristiche diverse. In assenza di normalità, l’approssimazione richiede una valutazione della numerosità e della forma, soprattutto se pochi cambiamenti estremi dominano la stima.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}t=\frac{\bar D-\Delta_0}{s_D/\sqrt n}\sim t_{n-1}\ \text{sotto }H_0\\ IC:\ \bar D\pm t_{n-1{,}1-\alpha/2}\frac{s_D}{\sqrt n}\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \input{tikz/M06/D07.tex}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont $D_i$ è Dopo meno Prima; n conta le coppie, $s_D$ è la deviazione standard delle differenze e $\Delta_0$ il cambiamento medio nullo.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Le condizioni del test appaiato riguardano il vettore delle differenze entro coppia.\end{minipage}\end{lrbox}
+\MeasureBox{20-TitleBox}{\TitleBox}
+\MeasureBox{20-BodyBox}{\BodyBox}
+\MeasureBox{20-SideBox}{\SideBox}
+\MeasureBox{20-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide20}{}
+\bookmark[level=1,page=20]{Il test appaiato è un test sulla media delle differenze}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Lettura del diagramma};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M06 · Confrontare gruppi e valutare ipotesi};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 20/35};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}L’identità fra due chiamate verifica il calcolo\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont L’analisi diretta delle differenze e la chiamata con paired=TRUE devono produrre lo stesso confronto, purché gli argomenti mantengano ordine e corrispondenza. Nei ventiquattro provini, il cambiamento medio è circa 0,03573 unità convenzionali (u.c.), con intervallo al 95\% da 0,02278 a 0,04868 u.c.. Il codice controlla l’unicità degli identificativi e l’accordo fra le due implementazioni, collegando la definizione matematica al comportamento della funzione.\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \par\vspace{.25cm}\lstinputlisting[language=R]{estratti/M06/appaiato.R}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Un controllo equivalente permette di verificare abbinamento, segno e specificazione della procedura.\end{minipage}\end{lrbox}
+\MeasureBox{21-TitleBox}{\TitleBox}
+\MeasureBox{21-BodyBox}{\BodyBox}
+\MeasureBox{21-SideBox}{\SideBox}
+\MeasureBox{21-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide21}{}
+\bookmark[level=1,page=21]{L’identità fra due chiamate verifica il calcolo}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Implementazione in R};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M06 · Confrontare gruppi e valutare ipotesi};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 21/35};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Il confronto dei ranghi usa l’ordinamento congiunto\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Il test rank-sum confronta la posizione dei valori di un gruppo nell’ordinamento dell’insieme. Sotto il riferimento di distribuzioni identiche e osservazioni indipendenti, le etichette sono scambiabili rispetto ai ranghi. La statistica può essere espressa attraverso il numero di confronti a coppie nei quali un valore del primo gruppo supera uno del secondo, attribuendo metà contributo ai pareggi. L’interpretazione di posizione richiede forme coerenti fra gruppi.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}U=\sum_{i=1}^{n_1}\sum_{j=1}^{n_2}\left[\mathbf1(x_i>y_j)+\tfrac12\mathbf1(x_i=y_j)\right]\\ \widehat\theta=\frac{U}{n_1n_2}\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont X e Y sono osservazioni indipendenti dei due gruppi, di numerosità $n_1$ e $n_2$. La stima $\widehat\theta$ riguarda $\theta=P(X>Y)+\tfrac12P(X=Y)$. Il test usuale è calibrato sull’uguaglianza delle distribuzioni; la sola condizione $\theta=1/2$, con forme differenti, richiede un’altra valutazione della calibrazione.\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La misura basata sui ranghi deve essere associata all’ipotesi per cui il test è calibrato.\end{minipage}\end{lrbox}
+\MeasureBox{22-TitleBox}{\TitleBox}
+\MeasureBox{22-BodyBox}{\BodyBox}
+\MeasureBox{22-SideBox}{\SideBox}
+\MeasureBox{22-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide22}{}
+\bookmark[level=0,page=22]{Ranghi e ipotesi sulla distribuzione}
+\bookmark[level=1,page=22]{Il confronto dei ranghi usa l’ordinamento congiunto}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Sviluppo e interpretazione};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M06 · Confrontare gruppi e valutare ipotesi};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 22/35};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}La mediana comune lascia indeterminata la forma\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Due distribuzioni possono condividere la mediana e differire per dispersione o asimmetria. La figura mostra un esempio simmetrico con la stessa posizione centrale e scale differenti, nel quale l’ordinamento complessivo contiene informazioni ulteriori rispetto alle mediane. Il rank-sum non costituisce un test universale capace di rilevare ogni differenza di forma; in particolare, differenze di scala simmetriche possono lasciare invariata la probabilità di superiorità. La scelta del confronto deve quindi partire dalla caratteristica scientifica da esaminare.\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \includegraphics[width=7.45cm]{figure/M06/F06.pdf}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont Due densità normali teoriche con mediana zero e deviazioni standard 1 e 2. Per simmetria, P(X>Y)=1/2.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont L’uguaglianza delle mediane e l’uguaglianza delle distribuzioni sono ipotesi distinte.\end{minipage}\end{lrbox}
+\MeasureBox{23-TitleBox}{\TitleBox}
+\MeasureBox{23-BodyBox}{\BodyBox}
+\MeasureBox{23-SideBox}{\SideBox}
+\MeasureBox{23-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide23}{}
+\bookmark[level=1,page=23]{La mediana comune lascia indeterminata la forma}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Evidenza grafica};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M06 · Confrontare gruppi e valutare ipotesi};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 23/35};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Il signed-rank richiede simmetria delle differenze\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Nel confronto appaiato basato sui ranghi, si ordinano i valori assoluti delle differenze e si sommano i ranghi associati a un segno. Il riferimento usuale richiede differenze indipendenti e simmetriche rispetto al centro nullo. La gestione di zeri e pareggi modifica il calcolo della distribuzione e delle approssimazioni; versione del software e opzioni devono quindi accompagnare il risultato. Quando interessa soltanto la probabilità di un cambiamento positivo, un test sui segni risponde a una domanda più specifica, utilizzando meno informazione sulle ampiezze.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}W^+=\sum_{i:D_i>0}\operatorname{rank}(|D_i|)\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \input{tikz/M06/D08.tex}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont D indica la differenza entro coppia; rank ordina i valori assoluti non nulli. Esempio senza pareggi: i ranghi positivi sono 1 e 3.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Il riferimento del signed-rank riguarda la simmetria delle differenze attorno al centro nullo.\end{minipage}\end{lrbox}
+\MeasureBox{24-TitleBox}{\TitleBox}
+\MeasureBox{24-BodyBox}{\BodyBox}
+\MeasureBox{24-SideBox}{\SideBox}
+\MeasureBox{24-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide24}{}
+\bookmark[level=1,page=24]{Il signed-rank richiede simmetria delle differenze}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Lettura del diagramma};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M06 · Confrontare gruppi e valutare ipotesi};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 24/35};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}La procedura viene scelta prima del risultato\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Provare più test e selezionare quello con il p-value più piccolo introduce una selezione che il singolo p-value riportato non rappresenta. Un’analisi di sensibilità può invece confrontare procedure motivate, dichiarando la differenza fra le quantità e le ipotesi esaminate. Il codice specifica l’approssimazione normale e la correzione di continuità del rank-sum, affiancando una misura di superiorità probabilistica che rende leggibile il contenuto dell’ordinamento.\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \par\vspace{.25cm}\lstinputlisting[language=R]{estratti/M06/ranghi.R}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Le analisi alternative devono essere motivate e riportate insieme alle rispettive ipotesi.\end{minipage}\end{lrbox}
+\MeasureBox{25-TitleBox}{\TitleBox}
+\MeasureBox{25-BodyBox}{\BodyBox}
+\MeasureBox{25-SideBox}{\SideBox}
+\MeasureBox{25-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide25}{}
+\bookmark[level=1,page=25]{La procedura viene scelta prima del risultato}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Implementazione in R};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M06 · Confrontare gruppi e valutare ipotesi};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 25/35};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}I conteggi attesi derivano dall’indipendenza\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Una tabella di contingenza conserva i conteggi congiunti e i totali marginali. Sotto indipendenza fra categorie, la quota attesa in una cella è il prodotto delle quote marginali, dal quale si ricava il conteggio atteso. La statistica di Pearson somma gli scarti quadratici fra osservati e attesi, standardizzati per il valore atteso. L’approssimazione chi-quadrato richiede condizioni sulle frequenze e sul disegno di campionamento, oltre all’indipendenza delle unità osservate.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}E_{ij}=\frac{n_{i+}n_{+j}}n,\qquad X^2=\sum_{i,j}\frac{(O_{ij}-E_{ij})^2}{E_{ij}}\\ df=(r-1)(c-1)\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont $O_{ij}$ è il conteggio osservato, $E_{ij}$ quello atteso; $n_{i+}$ e $n_{+j}$ sono i totali di riga e colonna, n il totale. La tabella ha r righe e c colonne. Nel caso 2×2, la correzione di continuità cambia la statistica; conteggi piccoli richiedono una calibrazione esatta o simulata pertinente.\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Il test usa conteggi e struttura della tabella, mentre le percentuali ne facilitano l’interpretazione.\end{minipage}\end{lrbox}
+\MeasureBox{26-TitleBox}{\TitleBox}
+\MeasureBox{26-BodyBox}{\BodyBox}
+\MeasureBox{26-SideBox}{\SideBox}
+\MeasureBox{26-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide26}{}
+\bookmark[level=0,page=26]{Conteggi e associazione fra categorie}
+\bookmark[level=1,page=26]{I conteggi attesi derivano dall’indipendenza}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Sviluppo e interpretazione};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M06 · Confrontare gruppi e valutare ipotesi};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 26/35};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Le percentuali si accompagnano ai conteggi\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Nel sito A si osservano diciotto presenze su trenta unità e nel sito B nove su trenta, corrispondenti al 60\% e al 30\%. Il totale delle presenze è ventisette e, sotto indipendenza con uguali numerosità di sito, il conteggio atteso delle presenze è 13,5 in ciascun sito. La figura mostra le quote conservando i denominatori, mentre il confronto statistico viene eseguito sulla tabella dei conteggi. Un’associazione osservata richiede ancora una valutazione delle condizioni ambientali e della selezione dei siti.\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \includegraphics[width=7.45cm]{figure/M06/F07.pdf}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont Esempio costruito: trenta unità per sito. I segmenti rappresentano le proporzioni di presenza e assenza.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La differenza nelle frequenze deve essere interpretata rispetto al disegno e alle possibili variabili condivise.\end{minipage}\end{lrbox}
+\MeasureBox{27-TitleBox}{\TitleBox}
+\MeasureBox{27-BodyBox}{\BodyBox}
+\MeasureBox{27-SideBox}{\SideBox}
+\MeasureBox{27-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide27}{}
+\bookmark[level=1,page=27]{Le percentuali si accompagnano ai conteggi}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Evidenza grafica};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M06 · Confrontare gruppi e valutare ipotesi};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 27/35};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Il riferimento esatto condiziona sui margini\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Nel test esatto di Fisher per una tabella 2×2, il riferimento usuale considera le tabelle compatibili con i margini osservati sotto l’ipotesi nulla di odds ratio unitario. Questa costruzione differisce dall’approssimazione chi-quadrato, per cui risultati numerici diversi possono derivare da riferimenti e convenzioni differenti. Il codice rende visibile la tabella attesa e specifica l’assenza della correzione di continuità nel confronto di Pearson, consentendo di ricostruire ciascun calcolo.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}P(A=a\mid\text{margini})=\frac{\binom{n_{+1}}a\binom{n_{+2}}{n_{1+}-a}}{\binom n{n_{1+}}}\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \par\vspace{.25cm}\lstinputlisting[language=R]{estratti/M06/contingenza.R}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont A è la cella (1,1), n il totale; il segno + nel pedice indica una somma di riga o colonna. I margini sono fissati.\end{minipage}\end{lrbox}
+\MeasureBox{28-TitleBox}{\TitleBox}
+\MeasureBox{28-BodyBox}{\BodyBox}
+\MeasureBox{28-SideBox}{\SideBox}
+\MeasureBox{28-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide28}{}
+\bookmark[level=1,page=28]{Il riferimento esatto condiziona sui margini}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Implementazione in R};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M06 · Confrontare gruppi e valutare ipotesi};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 28/35};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}L’ANOVA scompone la variabilità totale\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Con errori indipendenti, normali e omoscedastici, l’ANOVA confronta la variabilità delle medie con la dispersione interna. La somma quadratica totale si scompone nei contributi fra ed entro gruppi. Sotto l’uguaglianza delle medie, il rapporto fra quadrati medi segue una distribuzione F. Un rifiuto globale segnala che almeno una media differisce; i contrasti successivi richiedono controllo della molteplicità.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}SS_T=SS_B+SS_W,\qquad SS_B=\sum_g n_g(\bar x_g-\bar x)^2\\ SS_W=\sum_g\sum_i(x_{gi}-\bar x_g)^2\\ F=\frac{SS_B/(G-1)}{SS_W/(N-G)}\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \input{tikz/M06/R6_D09.tex}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont G = 2 gruppi, N = 4 unità; $n_g=2$. $\bar x_g$: media del gruppo; $\bar x$: media globale. Esempio: $SS_T=13=9+4$.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Il confronto globale riguarda l’uguaglianza delle medie sotto le condizioni del modello.\end{minipage}\end{lrbox}
+\MeasureBox{29-TitleBox}{\TitleBox}
+\MeasureBox{29-BodyBox}{\BodyBox}
+\MeasureBox{29-SideBox}{\SideBox}
+\MeasureBox{29-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide29}{}
+\bookmark[level=0,page=29]{Più gruppi e confronti multipli}
+\bookmark[level=1,page=29]{L’ANOVA scompone la variabilità totale}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Lettura del diagramma};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M06 · Confrontare gruppi e valutare ipotesi};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 29/35};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Il confronto globale può ammettere varianze diverse\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont L’estensione di Welch a più gruppi utilizza pesi inversamente proporzionali alla varianza stimata delle medie. La media di riferimento attribuisce quindi peso maggiore ai gruppi con stime più precise, mentre una correzione della statistica e dei gradi di libertà tiene conto della stima delle varianze. In R, oneway.test con var.equal=FALSE implementa questa procedura. L’interpretazione continua a riguardare le medie e richiede una struttura di indipendenza coerente con i dati.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}w_g=\frac{n_g}{s_g^2},\qquad \bar x_w=\frac{\sum_g w_g\bar x_g}{\sum_gw_g}\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont Per il gruppo g, $n_g$ è la numerosità, $s_g^2$ la varianza campionaria e $\bar x_g$ la media. Nel laboratorio: oneway.test(densita ~ litologia\_generatrice, data=d, var.equal=FALSE). I contrasti successivi devono derivare dalla domanda e dalla famiglia dichiarata.\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La scelta fra ANOVA omoscedastica e Welch richiede una valutazione del modello della variabilità.\end{minipage}\end{lrbox}
+\MeasureBox{30-TitleBox}{\TitleBox}
+\MeasureBox{30-BodyBox}{\BodyBox}
+\MeasureBox{30-SideBox}{\SideBox}
+\MeasureBox{30-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide30}{}
+\bookmark[level=1,page=30]{Il confronto globale può ammettere varianze diverse}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Sviluppo e interpretazione};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M06 · Confrontare gruppi e valutare ipotesi};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 30/35};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}La famiglia dei test determina il rischio complessivo\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Con m test indipendenti, tutti sotto ipotesi nulle vere e ciascuno di livello α, la probabilità di almeno un rifiuto è uno meno la probabilità che nessun test rifiuti. Per dieci confronti al 5\%, il rischio ideale è circa 40,1\%. La formula richiede indipendenza e livelli effettivi esatti; in altri casi la dipendenza modifica il calcolo. Definire la famiglia dei test permette di stabilire quale rischio complessivo debba essere controllato.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}FWER=1-(1-\alpha)^m\\ 1-0{,}95^{10}\simeq0{,}4013\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \includegraphics[width=7.45cm]{figure/M06/F08.pdf}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont FWER: probabilità di almeno un falso rifiuto nella famiglia. Curva per test indipendenti di livello 0,05 con tutte le ipotesi nulle vere.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Il numero delle domande esaminate appartiene alla descrizione dell’evidenza.\end{minipage}\end{lrbox}
+\MeasureBox{31-TitleBox}{\TitleBox}
+\MeasureBox{31-BodyBox}{\BodyBox}
+\MeasureBox{31-SideBox}{\SideBox}
+\MeasureBox{31-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide31}{}
+\bookmark[level=1,page=31]{La famiglia dei test determina il rischio complessivo}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Evidenza grafica};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M06 · Confrontare gruppi e valutare ipotesi};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 31/35};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Holm confronta p-value ordinati con soglie crescenti\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont La procedura di Holm ordina i p-value dal più piccolo al più grande e li confronta con soglie α diviso il numero delle ipotesi ancora considerate. Si procede finché un confronto non soddisfa la soglia, arrestando i rifiuti successivi. Il metodo controlla fortemente la probabilità di almeno un falso rifiuto quando i p-value marginali sono validi, anche con dipendenza fra i test. Il diagramma mostra la sequenza delle soglie per una famiglia di quattro ipotesi.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}p_{(j)}\le\frac\alpha{m-j+1},\quad j=1,\ldots,m\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \input{tikz/M06/D10.tex}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont m è il numero di ipotesi; $p_{(j)}$ è il j-esimo p-value in ordine crescente. Esempio con m = 4.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La famiglia deve includere le domande rispetto alle quali si intende controllare l’errore complessivo.\end{minipage}\end{lrbox}
+\MeasureBox{32-TitleBox}{\TitleBox}
+\MeasureBox{32-BodyBox}{\BodyBox}
+\MeasureBox{32-SideBox}{\SideBox}
+\MeasureBox{32-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide32}{}
+\bookmark[level=1,page=32]{Holm confronta p-value ordinati con soglie crescenti}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Lettura del diagramma};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M06 · Confrontare gruppi e valutare ipotesi};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 32/35};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Il risultato corretto conserva la famiglia originaria\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Per i p-value 0,003, 0,018, 0,041 e 0,2, Holm restituisce valori corretti 0,012, 0,054, 0,082 e 0,2. Al livello familiare del 5\% viene quindi rifiutata soltanto la prima ipotesi. La correzione deve essere applicata alla famiglia definita, includendo anche risultati poco favorevoli alla conclusione attesa. Un’analisi esplorativa può esaminare molte variabili, purché il percorso venga documentato e le verifiche successive siano progettate tenendo conto della selezione delle ipotesi.\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \par\vspace{.25cm}\lstinputlisting[language=R]{estratti/M06/holm.R}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La selezione dei soli risultati favorevoli altera il significato della correzione per molteplicità.\end{minipage}\end{lrbox}
+\MeasureBox{33-TitleBox}{\TitleBox}
+\MeasureBox{33-BodyBox}{\BodyBox}
+\MeasureBox{33-SideBox}{\SideBox}
+\MeasureBox{33-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide33}{}
+\bookmark[level=1,page=33]{Il risultato corretto conserva la famiglia originaria}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Implementazione in R};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M06 · Confrontare gruppi e valutare ipotesi};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 33/35};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}La relazione ricostruisce una catena di argomenti\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont La consegna presenta una domanda, il contrasto con verso e unità, la struttura del campione e la rappresentazione dei dati. Il metodo viene motivato attraverso le ipotesi che ne sostengono la calibrazione, mentre il risultato combina stima, intervallo e p-value con una discussione della rilevanza. Le analisi di sensibilità devono dichiarare quali scelte cambino e quali quantità restino confrontabili. La lettura critica verifica infine se la conclusione rispetti il disegno e l’informazione effettivamente disponibile.\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont Scegliere un confronto indipendente, appaiato o categoriale. Consegnare script, tabella dei risultati e figura; indicare eventuale famiglia di test e correzione. La verifica deve riprodurre almeno un risultato mediante un calcolo equivalente e distinguere osservazioni campionarie, ipotesi del modello e conclusioni.\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La qualità del confronto dipende dalla coerenza fra disegno, quantità stimata e conclusione.\end{minipage}\end{lrbox}
+\MeasureBox{34-TitleBox}{\TitleBox}
+\MeasureBox{34-BodyBox}{\BodyBox}
+\MeasureBox{34-SideBox}{\SideBox}
+\MeasureBox{34-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide34}{}
+\bookmark[level=0,page=34]{Relazione e verifica del confronto}
+\bookmark[level=1,page=34]{La relazione ricostruisce una catena di argomenti}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Sviluppo e interpretazione};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M06 · Confrontare gruppi e valutare ipotesi};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 34/35};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Riferimenti per test e interpretazione\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont La documentazione di t.test, wilcox.test, chisq.test, fisher.test, oneway.test e p.adjust precisa ipotesi, opzioni e convenzioni delle procedure utilizzate. La dichiarazione dell’American Statistical Association sui p-value sviluppa i limiti delle interpretazioni fondate esclusivamente su una soglia. Nel progetto, gli script associano i confronti ai dati distribuiti e verificano formule mediante risultati delle funzioni, conservando versione dell’ambiente e specifiche dei calcoli.\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont R Core Team: documentazione delle funzioni stats richiamate nel modulo.
+
+Wasserstein e Lazar, 2016: The ASA Statement on p-Values: Context, Process, and Purpose.
+
+URL e registro delle verifiche sono inclusi nei materiali del corso.\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Ipotesi e opzioni del metodo devono restare accessibili insieme al risultato numerico.\end{minipage}\end{lrbox}
+\MeasureBox{35-TitleBox}{\TitleBox}
+\MeasureBox{35-BodyBox}{\BodyBox}
+\MeasureBox{35-SideBox}{\SideBox}
+\MeasureBox{35-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide35}{}
+\bookmark[level=1,page=35]{Riferimenti per test e interpretazione}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Sviluppo e interpretazione};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M06 · Confrontare gruppi e valutare ipotesi};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont R Core Team · ASA};
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 35/35};
+\end{tikzpicture}\end{frame}
+\end{document}

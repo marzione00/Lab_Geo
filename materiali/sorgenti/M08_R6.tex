@@ -1,0 +1,719 @@
+\documentclass[12pt,aspectratio=1610]{beamer}
+\geometry{paperwidth=20cm,paperheight=12.5cm}
+\usepackage[italian,provide=*]{babel}
+\usepackage{lmodern,fontspec}
+\setsansfont{NimbusSans-Regular.otf}[Path=sorgenti/font/,BoldFont=NimbusSans-Bold.otf,ItalicFont=NimbusSans-Italic.otf]
+\setmainfont{NimbusSans-Regular.otf}[Path=sorgenti/font/,BoldFont=NimbusSans-Bold.otf,ItalicFont=NimbusSans-Italic.otf]
+\setmonofont{lmmono10-regular.otf}[Path=sorgenti/font/,Scale=.88]
+\usefonttheme{professionalfonts}
+\usepackage{amsmath,amssymb,booktabs,array,tabularx,graphicx,tikz,listings,bookmark}
+\usetikzlibrary{calc,arrows.meta,positioning}
+\definecolor{Paper}{HTML}{F8F6F1}
+\definecolor{Ink}{HTML}{253344}\definecolor{Navy}{HTML}{15283E}
+\definecolor{Quantum}{HTML}{5146A5}\definecolor{Classical}{HTML}{087C74}
+\definecolor{Measure}{HTML}{A05B10}\definecolor{Rose}{HTML}{9B4564}
+\definecolor{Muted}{HTML}{657180}\definecolor{Rule}{HTML}{D6DAD9}
+\definecolor{Wash}{HTML}{EAE7F6}\definecolor{Night}{HTML}{112236}
+\definecolor{Lilac}{HTML}{ABB5FF}\definecolor{Mint}{HTML}{72D8C8}\definecolor{Gold}{HTML}{EEC184}
+\setbeamercolor{background canvas}{bg=Paper}\setbeamercolor{normal text}{fg=Ink}
+\setbeamertemplate{navigation symbols}{}\setbeamertemplate{headline}{}\setbeamertemplate{footline}{}
+\setbeamersize{text margin left=0pt,text margin right=0pt}\setbeameroption{hide notes}
+\newsavebox{\BodyBox}\newsavebox{\SideBox}\newsavebox{\RecallBox}\newsavebox{\TitleBox}
+\newcommand{\MeasureBox}[2]{\typeout{GEOBOX:#1:\the\wd#2:\the\ht#2:\the\dp#2}}
+\lstset{language=R,basicstyle=\ttfamily\fontsize{10.2}{13.4}\selectfont,
+columns=fullflexible,keepspaces=true,showstringspaces=false,breaklines=true,breakatwhitespace=false,
+commentstyle=\color{Muted},keywordstyle=\color{Classical},stringstyle=\color{Quantum},
+aboveskip=0pt,belowskip=0pt,xleftmargin=0pt,xrightmargin=0pt,tabsize=2}
+\hypersetup{colorlinks=true,linkcolor=Classical,urlcolor=Classical,pdfpagemode=UseOutlines,pdfstartview=Fit,bookmarksopen=true,bookmarksopenlevel=0}
+\bookmarksetup{open,openlevel=0,depth=2}
+\tikzset{arr/.style={-{Stealth[length=2mm]},line width=.8pt,draw=Classical}}
+\hypersetup{pdftitle={Campionamento, stima e incertezza},pdfauthor={},pdfsubject={Corso di statistica e data science per Geologia, primo anno; modulo 05}}
+\usetikzlibrary{decorations.pathreplacing,fit,backgrounds,matrix}\hypersetup{pdftitle={M08 · Analisi multivariata dei campioni},pdfsubject={Revisione integrale R6}}\begin{document}
+\begin{frame}[plain]\hypertarget{slide1}{}\begin{tikzpicture}[remember picture,overlay]\fill[Night] (current page.south west) rectangle (current page.north east);\draw[Mint,line width=2pt] ([xshift=1.05cm,yshift=-1.35cm]current page.north west)--([xshift=3cm,yshift=-1.35cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=1.05cm,yshift=-1.7cm]current page.north west){\color{Mint}\bfseries\fontsize{11}{14}\selectfont M08 · REVISIONE R6};
+\node[anchor=north west,inner sep=0] at ([xshift=1.05cm,yshift=-2.65cm]current page.north west){\begin{minipage}{15.8cm}\raggedright\color{white}\bfseries\fontsize{31}{38}\selectfont Analisi multivariata dei campioni\end{minipage}};
+\node[anchor=north west,inner sep=0] at ([xshift=1.05cm,yshift=-6.4cm]current page.north west){\begin{minipage}{15.8cm}\raggedright\color{Lilac}\fontsize{15}{21}\selectfont Geometria della PCA, partizioni e interpretazione geologica\end{minipage}};
+\node[anchor=north west,inner sep=0] at ([xshift=1.05cm,yshift=-8.6cm]current page.north west){\begin{minipage}{16.5cm}\color{white}\fontsize{11}{15}\selectfont 33 slide · teoria, derivazioni, figure e applicazioni in R.\par\smallskip Provenienza dei dati e sorgenti nei materiali allegati.\end{minipage}};
+\node[anchor=south east,inner sep=0] at ([xshift=18.95cm,yshift=-11.35cm]current page.north west){\color{Lilac!45}\bfseries\fontsize{64}{68}\selectfont M08};
+\end{tikzpicture}\end{frame}
+\begin{frame}[plain]\hypertarget{slide2}{}\bookmark[level=0,page=2]{Indice}\begin{tikzpicture}[remember picture,overlay]\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.65cm]current page.north west){\color{Navy}\bfseries\fontsize{22}{27}\selectfont Percorso del modulo};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.23cm]current page.north west){\color{Classical}\bfseries\fontsize{13}{16}\selectfont 3};
+\node[anchor=north west,inner sep=0] at ([xshift=2.0cm,yshift=-2.23cm]current page.north west){\begin{minipage}{7.25cm}\raggedright\color{Navy}\bfseries\fontsize{12.4}{15.5}\selectfont\hyperlink{slide3}{Campioni, variabili e scale}\end{minipage}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-3.5300000000000002cm]current page.north west){\color{Classical}\bfseries\fontsize{13}{16}\selectfont 7};
+\node[anchor=north west,inner sep=0] at ([xshift=2.0cm,yshift=-3.5300000000000002cm]current page.north west){\begin{minipage}{7.25cm}\raggedright\color{Navy}\bfseries\fontsize{12.4}{15.5}\selectfont\hyperlink{slide7}{Ridondanza e composizioni}\end{minipage}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-4.83cm]current page.north west){\color{Classical}\bfseries\fontsize{13}{16}\selectfont 10};
+\node[anchor=north west,inner sep=0] at ([xshift=2.0cm,yshift=-4.83cm]current page.north west){\begin{minipage}{7.25cm}\raggedright\color{Navy}\bfseries\fontsize{12.4}{15.5}\selectfont\hyperlink{slide10}{Geometria delle componenti principali}\end{minipage}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-6.130000000000001cm]current page.north west){\color{Classical}\bfseries\fontsize{13}{16}\selectfont 16};
+\node[anchor=north west,inner sep=0] at ([xshift=2.0cm,yshift=-6.130000000000001cm]current page.north west){\begin{minipage}{7.25cm}\raggedright\color{Navy}\bfseries\fontsize{12.4}{15.5}\selectfont\hyperlink{slide16}{Interpretazione e calcolo della PCA}\end{minipage}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-7.43cm]current page.north west){\color{Classical}\bfseries\fontsize{13}{16}\selectfont 19};
+\node[anchor=north west,inner sep=0] at ([xshift=2.0cm,yshift=-7.43cm]current page.north west){\begin{minipage}{7.25cm}\raggedright\color{Navy}\bfseries\fontsize{12.4}{15.5}\selectfont\hyperlink{slide19}{Partizioni mediante K-means}\end{minipage}};
+\node[anchor=north west,inner sep=0] at ([xshift=10.299999999999999cm,yshift=-2.23cm]current page.north west){\color{Classical}\bfseries\fontsize{13}{16}\selectfont 23};
+\node[anchor=north west,inner sep=0] at ([xshift=11.35cm,yshift=-2.23cm]current page.north west){\begin{minipage}{7.25cm}\raggedright\color{Navy}\bfseries\fontsize{12.4}{15.5}\selectfont\hyperlink{slide23}{Numero dei gruppi e silhouette}\end{minipage}};
+\node[anchor=north west,inner sep=0] at ([xshift=10.299999999999999cm,yshift=-3.5300000000000002cm]current page.north west){\color{Classical}\bfseries\fontsize{13}{16}\selectfont 26};
+\node[anchor=north west,inner sep=0] at ([xshift=11.35cm,yshift=-3.5300000000000002cm]current page.north west){\begin{minipage}{7.25cm}\raggedright\color{Navy}\bfseries\fontsize{12.4}{15.5}\selectfont\hyperlink{slide26}{Gerarchie e criterio di Ward}\end{minipage}};
+\node[anchor=north west,inner sep=0] at ([xshift=10.299999999999999cm,yshift=-4.83cm]current page.north west){\color{Classical}\bfseries\fontsize{13}{16}\selectfont 29};
+\node[anchor=north west,inner sep=0] at ([xshift=11.35cm,yshift=-4.83cm]current page.north west){\begin{minipage}{7.25cm}\raggedright\color{Navy}\bfseries\fontsize{12.4}{15.5}\selectfont\hyperlink{slide29}{Robustezza e significato geologico}\end{minipage}};
+\node[anchor=north west,inner sep=0] at ([xshift=10.299999999999999cm,yshift=-6.130000000000001cm]current page.north west){\color{Classical}\bfseries\fontsize{13}{16}\selectfont 32};
+\node[anchor=north west,inner sep=0] at ([xshift=11.35cm,yshift=-6.130000000000001cm]current page.north west){\begin{minipage}{7.25cm}\raggedright\color{Navy}\bfseries\fontsize{12.4}{15.5}\selectfont\hyperlink{slide32}{Laboratorio e riferimenti}\end{minipage}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.55cm]current page.north west){\begin{minipage}{18cm}\color{Muted}\fontsize{10}{13}\selectfont I numeri indicano le pagine iniziali; i titoli sono cliccabili. Codice, figure e verifiche sono inclusi nel progetto.\end{minipage}};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Ogni riga rappresenta un campione identificabile\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Una descrizione multivariata associa a ciascun campione un insieme di misure, le cui definizioni determinano quali somiglianze possano essere riconosciute. Il caso guida comprende novanta rocce sintetiche, generate in tre gruppi di trenta individui. Le otto colonne utilizzate combinano frazioni di ossidi, densità, granulometria e indici convenzionali di colore e presenza di fossili. L’identificativo resta associato alla riga, mentre l’etichetta litologica generatrice viene esclusa dal calcolo e recuperata soltanto per interpretare l’esperimento.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}X=(x_{ij})\in\mathbb R^{90\times8}\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \input{tikz/M08/D01.tex}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont $x_{ij}$: misura della variabile j sul campione i; 90 righe e 8 colonne. ID ed etichetta litologica restano esclusi dalla matrice X.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Unità, scala e significato delle variabili precedono la scelta dell’algoritmo.\end{minipage}\end{lrbox}
+\MeasureBox{3-TitleBox}{\TitleBox}
+\MeasureBox{3-BodyBox}{\BodyBox}
+\MeasureBox{3-SideBox}{\SideBox}
+\MeasureBox{3-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide3}{}
+\bookmark[level=0,page=3]{Campioni, variabili e scale}
+\bookmark[level=1,page=3]{Ogni riga rappresenta un campione identificabile}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Lettura del diagramma};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M08 · Analisi multivariata dei campioni};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 3/33};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Una distanza incorpora una scelta di rilevanza\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont La distanza euclidea combina gli scostamenti coordinata per coordinata, attribuendo maggiore peso numerico alle colonne che variano su scale più ampie. Nel dataset, l’ampiezza della variabilità dipende sia dalle proprietà simulate sia dalle unità adottate: una conversione da millimetri a micrometri cambierebbe la distanza grezza pur lasciando invariata la proprietà fisica. La standardizzazione costituisce pertanto una scelta interpretativa, attraverso la quale una deviazione standard diviene l’unità di confronto in ogni colonna.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}d(\mathbf x_i,\mathbf x_h)=\sqrt{\sum_{j=1}^p(x_{ij}-x_{hj})^2}\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \includegraphics[width=7.45cm]{figure/M08/F01.pdf}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont i e h: due campioni; p = 8 variabili. Dispersioni nelle rispettive unità: ossidi \%, densità g/cm³, grana mm, colore e fossili indici convenzionali.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La distanza grezza può cambiare con le unità, se le colonne vengono convertite in modo differente.\end{minipage}\end{lrbox}
+\MeasureBox{4-TitleBox}{\TitleBox}
+\MeasureBox{4-BodyBox}{\BodyBox}
+\MeasureBox{4-SideBox}{\SideBox}
+\MeasureBox{4-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide4}{}
+\bookmark[level=1,page=4]{Una distanza incorpora una scelta di rilevanza}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Evidenza grafica};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M08 · Analisi multivariata dei campioni};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 4/33};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Centrare e ridimensionare conservando i parametri\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont La trasformazione z-score sottrae la media e divide per la deviazione standard, purché positiva. Le colonne risultanti hanno media nulla e varianza unitaria, mentre asimmetrie e dipendenze rimangono riconoscibili. Per collocare un nuovo campione si riutilizzano medie e scale originarie, poiché ricalcolarle modificherebbe il sistema di riferimento. Eventuali valori mancanti richiedono una procedura dichiarata prima delle distanze.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}z_{ij}=\frac{x_{ij}-\bar x_j}{s_j},\quad s_j>0\\ z_{\mathrm{nuovo},j}=\frac{x_{\mathrm{nuovo},j}-\bar x_j}{s_j}\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont $x_{ij}$ è la misura i nella colonna j; $\bar x_j$ e $s_j$ sono media e deviazione standard della colonna di riferimento. Scarti di 10 punti percentuali di SiO\textsubscript{2} e 0,3 g/cm³ di densità diventano confrontabili rispetto alla variabilità campionaria dopo la divisione per le rispettive scale.\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Le medie e le scale fanno parte dell’oggetto stimato e devono accompagnare il risultato.\end{minipage}\end{lrbox}
+\MeasureBox{5-TitleBox}{\TitleBox}
+\MeasureBox{5-BodyBox}{\BodyBox}
+\MeasureBox{5-SideBox}{\SideBox}
+\MeasureBox{5-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide5}{}
+\bookmark[level=1,page=5]{Centrare e ridimensionare conservando i parametri}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Sviluppo e interpretazione};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M08 · Analisi multivariata dei campioni};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 5/33};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}La selezione esplicita protegge la matrice di analisi\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Selezionare le variabili per nome permette di escludere identificativi, etichette generatrici e colonne che derivano da altre misure. Il codice verifica completezza e variabilità positiva prima della standardizzazione, rendendo visibili due condizioni necessarie per il laboratorio. In un dataset reale, la scelta potrebbe richiedere trasformazioni di variabili fortemente asimmetriche, trattamento dei limiti di rilevabilità o una distanza adatta a caratteri qualitativi. Ogni modifica va motivata rispetto alla domanda sulla somiglianza dei campioni.\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \par\vspace{.25cm}\lstinputlisting[language=R]{estratti/M08/matrice.R}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Una matrice numerica formalmente valida può ancora contenere variabili scientificamente inappropriate.\end{minipage}\end{lrbox}
+\MeasureBox{6-TitleBox}{\TitleBox}
+\MeasureBox{6-BodyBox}{\BodyBox}
+\MeasureBox{6-SideBox}{\SideBox}
+\MeasureBox{6-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide6}{}
+\bookmark[level=1,page=6]{La selezione esplicita protegge la matrice di analisi}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Implementazione in R};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M08 · Analisi multivariata dei campioni};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 6/33};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Duplicare una variabile ne aumenta il peso implicito\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Due colonne molto correlate rappresentano in parte la stessa informazione. La loro inclusione simultanea nella distanza euclidea può quindi enfatizzare una proprietà rispetto alle altre, anche quando entrambe siano standardizzate. Se una colonna viene duplicata esattamente, il relativo scarto quadratico compare due volte. La scelta di pesi espliciti rende riconoscibile questa decisione, mentre l’esclusione di una misura ridondante può essere valutata attraverso un’analisi di sensibilità della partizione.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}d_w^2(i,h)=\sum_j w_j(z_{ij}-z_{hj})^2,\qquad w_j\geq0\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \input{tikz/M08/D02.tex}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont $z_{ij}$: valore standardizzato; $w_j$: peso della colonna j. Se lo scarto è 2, il contributo quadratico è 4; duplicando la colonna diventa 8.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont L’equilibrio fra proprietà dipende anche dalla ridondanza delle colonne.\end{minipage}\end{lrbox}
+\MeasureBox{7-TitleBox}{\TitleBox}
+\MeasureBox{7-BodyBox}{\BodyBox}
+\MeasureBox{7-SideBox}{\SideBox}
+\MeasureBox{7-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide7}{}
+\bookmark[level=0,page=7]{Ridondanza e composizioni}
+\bookmark[level=1,page=7]{Duplicare una variabile ne aumenta il peso implicito}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Lettura del diagramma};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M08 · Analisi multivariata dei campioni};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 7/33};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Il vincolo di chiusura delle composizioni\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Quando le parti sommano a una costante, l’aumento di una quota impone una compensazione nelle altre. Il vincolo di chiusura introduce quindi una dipendenza che condiziona le correlazioni. Le quattro frazioni di ossidi del laboratorio rappresentano una parte della composizione, la cui somma viene completata dalla colonna resto. La PCA sulle otto misure combina proprietà di natura differente e conserva una finalità geometrica esplorativa.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}\sum_{j=1}^D x_j=100,\quad x_j\geq0\\ \operatorname{Var}\!\left(\sum_jX_j\right)=0\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \input{tikz/M08/D03.tex}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont D conta tutte le parti. Formula in percentuali; triangolo illustrativo in frazioni, con A + B + C = 1. Il resto completa gli ossidi al 100\%.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La composizione e il sottoinsieme di parti analizzato devono essere dichiarati.\end{minipage}\end{lrbox}
+\MeasureBox{8-TitleBox}{\TitleBox}
+\MeasureBox{8-BodyBox}{\BodyBox}
+\MeasureBox{8-SideBox}{\SideBox}
+\MeasureBox{8-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide8}{}
+\bookmark[level=1,page=8]{Il vincolo di chiusura delle composizioni}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Lettura del diagramma};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M08 · Analisi multivariata dei campioni};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 8/33};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}I log-rapporti descrivono relazioni fra parti positive\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Il logaritmo del rapporto fra parti positive rimane invariato quando tutte vengono moltiplicate per uno stesso fattore. La trasformazione centrata confronta ciascuna parte con la media geometrica. Le coordinate sommano a zero, per cui la covarianza è singolare e lo spazio ha dimensione D meno uno. Zeri strutturali, arrotondamenti e concentrazioni sotto il limite analitico richiedono trattamenti distinti.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}\operatorname{clr}(\mathbf x)_j=\log\frac{x_j}{g(\mathbf x)},\qquad g(\mathbf x)=\left(\prod_{j=1}^D x_j\right)^{1/D}\\ \sum_j\operatorname{clr}(\mathbf x)_j=0\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont D è il numero delle parti positive; g è la loro media geometrica. Sostituire gli zeri con una costante modifica i rapporti, soprattutto per le parti meno abbondanti. Il laboratorio mantiene l’analisi esplorativa dichiarata; un’analisi composizionale richiede parti e processo di misura definiti in modo specifico.\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont I rapporti richiedono positività e una scelta scientificamente motivata delle parti.\end{minipage}\end{lrbox}
+\MeasureBox{9-TitleBox}{\TitleBox}
+\MeasureBox{9-BodyBox}{\BodyBox}
+\MeasureBox{9-SideBox}{\SideBox}
+\MeasureBox{9-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide9}{}
+\bookmark[level=1,page=9]{I log-rapporti descrivono relazioni fra parti positive}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Sviluppo e interpretazione};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M08 · Analisi multivariata dei campioni};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 9/33};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}La direzione di massima varianza\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont La PCA cerca direzioni di massima variabilità nella nuvola centrata. La proiezione di ciascun campione su un vettore unitario v è il prodotto scalare della sua riga con v; la varianza delle coordinate è una forma quadratica della covarianza. Il massimo corrisponde a un autovettore del maggiore autovalore. Le componenti successive impongono l’ortogonalità alle direzioni già individuate.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}S=\frac{Z^\top Z}{n-1},\qquad\max_{\|\mathbf v\|=1}\mathbf v^\top S\mathbf v\\ S\mathbf v_k=\lambda_k\mathbf v_k,\quad\lambda_1\geq\cdots\geq\lambda_p\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \input{tikz/M08/R6_D04.tex}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont Z: dati standardizzati, n = 90, p = 8; S: covarianza; $\lambda_k$: varianza della componente. Esempio geometrico con direzioni ortonormali prefissate.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La PCA ottimizza la rappresentazione della varianza sulla scala prescelta.\end{minipage}\end{lrbox}
+\MeasureBox{10-TitleBox}{\TitleBox}
+\MeasureBox{10-BodyBox}{\BodyBox}
+\MeasureBox{10-SideBox}{\SideBox}
+\MeasureBox{10-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide10}{}
+\bookmark[level=0,page=10]{Geometria delle componenti principali}
+\bookmark[level=1,page=10]{La direzione di massima varianza}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Lettura del diagramma};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M08 · Analisi multivariata dei campioni};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 10/33};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Autovettori, scores e valori singolari\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Riunendo gli autovettori nelle colonne di V si ottiene una rotazione ortogonale. Le coordinate dei campioni nel nuovo riferimento, dette scores, sono raccolte nella matrice T. La decomposizione ai valori singolari fornisce una via numericamente stabile per ricavare la stessa rappresentazione, poiché i quadrati dei valori singolari, divisi per n meno uno, coincidono con gli autovalori di S. Questa relazione permette una verifica algebrica del calcolo di prcomp.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}Z=UDV^\top,\qquad T=ZV=UD\\ V^\top V=I,\quad\lambda_k=\frac{d_k^2}{n-1}\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont Z e U hanno dimensione $90\times8$; D e V, $8\times8$. U ha colonne ortonormali; D è diagonale con valori singolari $d_k$. T contiene gli scores dei campioni. In R, rotation restituisce V, x restituisce T e sdev le radici degli autovalori; n = 90.\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Scores e coefficienti della rotazione hanno ruoli diversi e dimensioni matriciali differenti.\end{minipage}\end{lrbox}
+\MeasureBox{11-TitleBox}{\TitleBox}
+\MeasureBox{11-BodyBox}{\BodyBox}
+\MeasureBox{11-SideBox}{\SideBox}
+\MeasureBox{11-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide11}{}
+\bookmark[level=1,page=11]{Autovettori, scores e valori singolari}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Sviluppo e interpretazione};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M08 · Analisi multivariata dei campioni};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 11/33};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}L’ortogonalità elimina la covarianza fra scores\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont La covarianza delle coordinate principali è diagonale, come si ricava sostituendo la rotazione nella definizione di covarianza campionaria. Le componenti risultano quindi incorrelate nel campione utilizzato per costruirle. L’indipendenza probabilistica richiede condizioni ulteriori e non segue dalla sola ortogonalità; inoltre, nuovi campioni possono presentare covarianze residue quando la distribuzione differisce da quella di addestramento. La proprietà geometrica deve essere riferita alla matrice sulla quale la PCA è stata stimata.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}\operatorname{Cov}(T)=V^\top S V=\operatorname{diag}(\lambda_1,\ldots,\lambda_p)\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \input{tikz/M08/D05.tex}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont T: scores; V: autovettori; S: covarianza di Z; $\lambda_k$: varianze principali. Gli elementi fuori diagonale sono nulli nel campione di stima.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Incorrelazione e indipendenza esprimono proprietà differenti.\end{minipage}\end{lrbox}
+\MeasureBox{12-TitleBox}{\TitleBox}
+\MeasureBox{12-BodyBox}{\BodyBox}
+\MeasureBox{12-SideBox}{\SideBox}
+\MeasureBox{12-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide12}{}
+\bookmark[level=1,page=12]{L’ortogonalità elimina la covarianza fra scores}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Lettura del diagramma};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M08 · Analisi multivariata dei campioni};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 12/33};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Varianza conservata ed errore di ricostruzione\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont La quota di una componente è il suo autovalore diviso per la somma degli autovalori. Conservando q componenti si ottiene una ricostruzione di rango q che minimizza l’errore quadratico nella scala analizzata. Gli autovalori esclusi quantificano la perdita, sebbene una quota elevata conservata possa ancora trascurare caratteristiche geologicamente rilevanti. La scelta di q dipende quindi anche dall’uso successivo delle coordinate.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}Q_q=\frac{\sum_{k=1}^q\lambda_k}{\sum_{k=1}^p\lambda_k},\qquad\widehat Z_q=T_qV_q^\top\\ \|Z-\widehat Z_q\|_F^2=(n-1)\sum_{k>q}\lambda_k\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \includegraphics[width=7.45cm]{figure/M08/F02.pdf}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont q componenti su p = 8; n = 90. $T_q,V_q$: prime q colonne; $\|\cdot\|_F^2$: somma dei quadrati. Barre: quote singole; linea: cumulata.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La varianza rappresentata riguarda la scala scelta e deve comparire sugli assi della PCA.\end{minipage}\end{lrbox}
+\MeasureBox{13-TitleBox}{\TitleBox}
+\MeasureBox{13-BodyBox}{\BodyBox}
+\MeasureBox{13-SideBox}{\SideBox}
+\MeasureBox{13-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide13}{}
+\bookmark[level=1,page=13]{Varianza conservata ed errore di ricostruzione}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Evidenza grafica};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M08 · Analisi multivariata dei campioni};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 13/33};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Il piano principale rende visibile una proiezione\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Nel piano delle prime due componenti ogni punto corrisponde a un campione, del quale si conservano due coordinate delle otto disponibili. La distanza nel piano è sempre minore o uguale alla distanza completa nello spazio standardizzato, perché parte degli scarti può ricadere nelle componenti omesse. Il colore recupera le etichette generatrici soltanto dopo la stima. Una separazione visiva favorevole descrive il caso sintetico e deve essere valutata insieme alla quota di varianza rappresentata.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}\sum_{k=1}^2(t_{ik}-t_{hk})^2\leq\|\mathbf z_i-\mathbf z_h\|^2\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \includegraphics[width=7.45cm]{figure/M08/F03.pdf}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont $\mathbf z_i$: riga standardizzata; $t_{ik}$: score i sulla componente k. PCA su otto misure; le etichette litologiche sono escluse dalla stima.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Punti vicini in proiezione possono essere separati nelle componenti escluse.\end{minipage}\end{lrbox}
+\MeasureBox{14-TitleBox}{\TitleBox}
+\MeasureBox{14-BodyBox}{\BodyBox}
+\MeasureBox{14-SideBox}{\SideBox}
+\MeasureBox{14-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide14}{}
+\bookmark[level=1,page=14]{Il piano principale rende visibile una proiezione}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Evidenza grafica};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M08 · Analisi multivariata dei campioni};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 14/33};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}L’orientamento dell’asse è arbitrario\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Moltiplicando un autovettore per meno uno si ottiene un autovettore altrettanto valido, al quale corrispondono scores con segno invertito. Le distanze, le varianze e la ricostruzione rimangono invariate, purché l’inversione venga applicata congiuntamente ai coefficienti e alle coordinate. Con autovalori coincidenti può variare anche la scelta degli assi entro il sottospazio. L’interpretazione riguarda le relazioni fra variabili e campioni, poiché il segno isolato è arbitrario.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}(\mathbf t_k,\mathbf v_k)\mapsto(-\mathbf t_k,-\mathbf v_k)\\ \mathbf t_k\mathbf v_k^\top=(-\mathbf t_k)(-\mathbf v_k)^\top\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \input{tikz/M08/D06.tex}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Le verifiche fra implementazioni devono ammettere inversioni di segno e sottospazi equivalenti.\end{minipage}\end{lrbox}
+\MeasureBox{15-TitleBox}{\TitleBox}
+\MeasureBox{15-BodyBox}{\BodyBox}
+\MeasureBox{15-SideBox}{\SideBox}
+\MeasureBox{15-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide15}{}
+\bookmark[level=1,page=15]{L’orientamento dell’asse è arbitrario}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Lettura del diagramma};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M08 · Analisi multivariata dei campioni};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 15/33};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}I coefficienti descrivono come si costruisce un asse\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Ogni score è una combinazione lineare delle variabili centrate e ridimensionate, i cui pesi sono gli elementi dell’autovettore. Coefficienti dello stesso segno indicano contributi concordi alla componente, mentre segni opposti descrivono un contrasto fra proprietà. Il nome attribuito all’asse deve essere fondato sull’insieme dei pesi e sulle definizioni delle misure. Tornare ai campioni estremi e ai loro valori fisici permette di verificare se una denominazione, per esempio relativa alla composizione mafica, sia sostenibile.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}t_{ik}=\sum_j z_{ij}v_{jk},\qquad\sum_jv_{jk}^2=1\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \includegraphics[width=7.45cm]{figure/M08/F04.pdf}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont Pesi di PC1 (verde) e PC2 (viola).}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Il nome di una componente è un’interpretazione motivata dei coefficienti e dei campioni.\end{minipage}\end{lrbox}
+\MeasureBox{16-TitleBox}{\TitleBox}
+\MeasureBox{16-BodyBox}{\BodyBox}
+\MeasureBox{16-SideBox}{\SideBox}
+\MeasureBox{16-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide16}{}
+\bookmark[level=0,page=16]{Interpretazione e calcolo della PCA}
+\bookmark[level=1,page=16]{I coefficienti descrivono come si costruisce un asse}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Evidenza grafica};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M08 · Analisi multivariata dei campioni};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 16/33};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Coefficienti e correlazioni richiedono scale distinte\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Per variabili standardizzate, la correlazione fra la variabile j e la componente k è il coefficiente della rotazione moltiplicato per la radice del relativo autovalore. Coefficienti e correlazioni rappresentano quindi quantità differenti. Il quadrato della correlazione misura la frazione di varianza ricostruita dalla componente; la somma sulle componenti conservate valuta la qualità della rappresentazione. Gli angoli richiedono questa parametrizzazione e una proiezione adeguata.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}\operatorname{Cor}(Z_j,T_k)=\sqrt{\lambda_k}\,v_{jk}\\ R^2_{j,q}=\sum_{k=1}^q\lambda_kv_{jk}^2\leq1\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont j indica la variabile, k la componente, q il numero conservato; $v_{jk}$ è il coefficiente e $\lambda_k$ la varianza della componente. Un peso elevato su una componente poco variabile può accompagnare una modesta qualità di rappresentazione. Per un campione, si confronta la somma dei primi q scores al quadrato con la norma quadratica della riga.\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La qualità della proiezione deve essere valutata per le variabili e per i campioni di interesse.\end{minipage}\end{lrbox}
+\MeasureBox{17-TitleBox}{\TitleBox}
+\MeasureBox{17-BodyBox}{\BodyBox}
+\MeasureBox{17-SideBox}{\SideBox}
+\MeasureBox{17-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide17}{}
+\bookmark[level=1,page=17]{Coefficienti e correlazioni richiedono scale distinte}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Sviluppo e interpretazione};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M08 · Analisi multivariata dei campioni};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 17/33};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}L’oggetto PCA conserva la trasformazione\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont La chiamata a prcomp specifica centratura e ridimensionamento, evitando che le impostazioni predefinite decidano implicitamente la geometria dell’analisi. L’oggetto risultante conserva medie, scale, rotazione e scores, così che nuovi campioni possano essere proiettati mediante predict. Le quote di varianza si ricavano dai quadrati di sdev. Per documentare il risultato si esportano le coordinate insieme agli identificativi e si riportano, nella figura, le quote associate agli assi mostrati.\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \par\vspace{.25cm}\lstinputlisting[language=R]{estratti/M08/pca.R}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Il risultato riproducibile comprende le trasformazioni che definiscono lo spazio delle componenti.\end{minipage}\end{lrbox}
+\MeasureBox{18-TitleBox}{\TitleBox}
+\MeasureBox{18-BodyBox}{\BodyBox}
+\MeasureBox{18-SideBox}{\SideBox}
+\MeasureBox{18-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide18}{}
+\bookmark[level=1,page=18]{L’oggetto PCA conserva la trasformazione}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Implementazione in R};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M08 · Analisi multivariata dei campioni};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont R: prcomp};
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 18/33};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}K-means minimizza la dispersione entro i gruppi\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Fissato un numero k, K-means cerca una partizione dei campioni che renda piccola la somma delle distanze quadratiche dai rispettivi centroidi. Il centroide è la media delle righe assegnate al gruppo, per cui la funzione obiettivo dipende dalla scala e privilegia aggregazioni compatte. Il numero di gruppi viene fornito all’algoritmo e scelto confrontando stabilità, dimensioni e plausibilità delle soluzioni.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}W(\mathcal C)=\sum_{g=1}^k\sum_{i\in C_g}\|\mathbf z_i-\boldsymbol\mu_g\|^2\\ \boldsymbol\mu_g=\frac1{|C_g|}\sum_{i\in C_g}\mathbf z_i\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \input{tikz/M08/D07.tex}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont $C_g$: insieme dei campioni del gruppo g; $|C_g|$: sua numerosità; $\boldsymbol\mu_g$: centroide. $\mathbf z_i$ è il campione standardizzato.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La funzione obiettivo deve essere interpretata nella scala sulla quale viene minimizzata.\end{minipage}\end{lrbox}
+\MeasureBox{19-TitleBox}{\TitleBox}
+\MeasureBox{19-BodyBox}{\BodyBox}
+\MeasureBox{19-SideBox}{\SideBox}
+\MeasureBox{19-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide19}{}
+\bookmark[level=0,page=19]{Partizioni mediante K-means}
+\bookmark[level=1,page=19]{K-means minimizza la dispersione entro i gruppi}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Lettura del diagramma};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M08 · Analisi multivariata dei campioni};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 19/33};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Assegnazione e aggiornamento spiegano la ricerca\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Un procedimento alternato assegna ciascun campione al centroide più vicino e ricalcola i centroidi come medie dei gruppi ottenuti. Ogni passaggio riduce o conserva la funzione obiettivo, ma può condurre a un minimo locale dipendente dall’inizializzazione. Questa costruzione illustra l’algoritmo di Lloyd; l’impostazione predefinita di kmeans in R utilizza Hartigan–Wong, che ricerca la stessa funzione obiettivo mediante aggiornamenti differenti. Ripetere gli avvii consente di esplorare più soluzioni senza garantire l’ottimo globale.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}g_i\leftarrow\arg\min_g\|\mathbf z_i-\boldsymbol\mu_g\|^2\\ \boldsymbol\mu_g\leftarrow\operatorname{media}_{i:g_i=g}(\mathbf z_i)\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \input{tikz/M08/D08.tex}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont $g_i$: gruppo assegnato al campione i. argmin sceglie il gruppo con distanza minima dal centroide $\boldsymbol\mu_g$. Schema dell’algoritmo di Lloyd.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Il seme rende ripetibile una ricerca; gli avvii multipli ne migliorano l’esplorazione.\end{minipage}\end{lrbox}
+\MeasureBox{20-TitleBox}{\TitleBox}
+\MeasureBox{20-BodyBox}{\BodyBox}
+\MeasureBox{20-SideBox}{\SideBox}
+\MeasureBox{20-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide20}{}
+\bookmark[level=1,page=20]{Assegnazione e aggiornamento spiegano la ricerca}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Lettura del diagramma};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M08 · Analisi multivariata dei campioni};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 20/33};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Dallo spazio completo al piano principale\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont La partizione del laboratorio viene stimata sulle otto variabili standardizzate e successivamente mostrata nel piano principale. Un confine apparentemente ambiguo nella figura può dipendere da componenti escluse dalla rappresentazione, mentre colori nettamente separati descrivono soltanto la proiezione scelta. Il confronto con centroidi e profili consente di comprendere quali proprietà sostengano i gruppi. In presenza di forme allungate, densità differenti o strutture non convesse, la somma quadratica può produrre suddivisioni poco aderenti alla domanda geologica.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}\text{stima in }\mathbb R^8\quad\longrightarrow\quad\text{figura in }\mathbb R^2\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \includegraphics[width=7.45cm]{figure/M08/F09.pdf}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont K-means con k = 3 e 50 avvii sulle otto colonne standardizzate. La PCA viene usata esclusivamente per la rappresentazione.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La dimensione del grafico e la dimensione dello spazio di stima devono essere indicate separatamente.\end{minipage}\end{lrbox}
+\MeasureBox{21-TitleBox}{\TitleBox}
+\MeasureBox{21-BodyBox}{\BodyBox}
+\MeasureBox{21-SideBox}{\SideBox}
+\MeasureBox{21-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide21}{}
+\bookmark[level=1,page=21]{Dallo spazio completo al piano principale}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Evidenza grafica};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M08 · Analisi multivariata dei campioni};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 21/33};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}La riproducibilità richiede più del numero dei gruppi\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Il codice conserva variabili, trasformazione, seme e numero di avvii, così che la ricerca possa essere ripetuta nelle stesse condizioni. Le dimensioni dei gruppi permettono di riconoscere eventuali partizioni sostenute da pochissimi casi, mentre i centroidi standardizzati ne descrivono i profili. Ripetere la procedura con semi diversi verifica la sensibilità alla ricerca numerica; modificare una variabile o la standardizzazione valuta invece la sensibilità della domanda quantitativa posta ai dati.\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \par\vspace{.25cm}\lstinputlisting[language=R]{estratti/M08/kmeans.R}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Instabilità numerica e sensibilità alla definizione delle variabili richiedono verifiche distinte.\end{minipage}\end{lrbox}
+\MeasureBox{22-TitleBox}{\TitleBox}
+\MeasureBox{22-BodyBox}{\BodyBox}
+\MeasureBox{22-SideBox}{\SideBox}
+\MeasureBox{22-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide22}{}
+\bookmark[level=1,page=22]{La riproducibilità richiede più del numero dei gruppi}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Implementazione in R};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M08 · Analisi multivariata dei campioni};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 22/33};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}WSS e numero dei gruppi\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Aumentando k, l’ottimo teorico della somma quadratica interna può soltanto diminuire o restare invariato, poiché una soluzione con più gruppi può suddividere una partizione precedente. La riduzione ottenuta deve essere valutata rispetto all’aumento di complessità. Il cosiddetto gomito identifica visivamente un cambio di pendenza, ma può risultare sfumato o dipendere dall’intervallo di k considerato. Se gli avvii conducono a minimi locali differenti, le WSS calcolate possono inoltre discostarsi dalla monotonia dell’ottimo teorico.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}W^*_{k+1}\leq W^*_k,\qquad W^*_n=0\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \includegraphics[width=7.45cm]{figure/M08/F05.pdf}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont WSS: somma quadratica interna; $W_k^*$: ottimo con k gruppi; n = 90. Valori ottenuti con 50 avvii per k da 2 a 7.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Il gomito fornisce un criterio esplorativo, la cui evidenza può essere ambigua.\end{minipage}\end{lrbox}
+\MeasureBox{23-TitleBox}{\TitleBox}
+\MeasureBox{23-BodyBox}{\BodyBox}
+\MeasureBox{23-SideBox}{\SideBox}
+\MeasureBox{23-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide23}{}
+\bookmark[level=0,page=23]{Numero dei gruppi e silhouette}
+\bookmark[level=1,page=23]{WSS e numero dei gruppi}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Evidenza grafica};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M08 · Analisi multivariata dei campioni};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 23/33};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}La silhouette confronta coesione e separazione\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Per un campione i, a è la distanza media dagli altri membri del suo gruppo, mentre b è la minore distanza media verso un gruppo diverso. La silhouette combina queste quantità in un indice compreso fra meno uno e uno: valori positivi elevati indicano maggiore vicinanza al gruppo assegnato, valori prossimi a zero descrivono confini incerti e valori negativi suggeriscono un’assegnazione discutibile rispetto alla metrica. Per gruppi composti da un solo elemento si adotta convenzionalmente silhouette nulla.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}s_i=\frac{b_i-a_i}{\max(a_i,b_i)},\qquad -1\leq s_i\leq1\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \input{tikz/M08/D09.tex}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont Esempio: $a_i=1$, $b_i=3$ danno $s_i=2/3$. a misura la coesione interna; b usa il gruppo alternativo mediamente più vicino.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Una silhouette media favorevole può nascondere singoli campioni con assegnazione incerta.\end{minipage}\end{lrbox}
+\MeasureBox{24-TitleBox}{\TitleBox}
+\MeasureBox{24-BodyBox}{\BodyBox}
+\MeasureBox{24-SideBox}{\SideBox}
+\MeasureBox{24-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide24}{}
+\bookmark[level=1,page=24]{La silhouette confronta coesione e separazione}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Lettura del diagramma};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M08 · Analisi multivariata dei campioni};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 24/33};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}La scelta di k richiede confronti convergenti\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Il confronto delle silhouette medie offre un criterio complementare alla riduzione della WSS, perché considera la separazione rispetto alla coesione dei gruppi. Nel caso sintetico le strutture sono state generate in modo relativamente netto; nei dati reali il massimo può essere debole oppure favorire una suddivisione troppo grossolana per l’uso previsto. La scelta viene quindi documentata insieme ad almeno una soluzione alternativa, alle dimensioni dei gruppi e all’ispezione dei casi con silhouette bassa.\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \includegraphics[width=7.45cm]{figure/M08/F06.pdf}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont Silhouette media sulle stesse distanze standardizzate impiegate per il confronto dei gruppi.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Una partizione va motivata attraverso indici, stabilità, profili e finalità dell’analisi.\end{minipage}\end{lrbox}
+\MeasureBox{25-TitleBox}{\TitleBox}
+\MeasureBox{25-BodyBox}{\BodyBox}
+\MeasureBox{25-SideBox}{\SideBox}
+\MeasureBox{25-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide25}{}
+\bookmark[level=1,page=25]{La scelta di k richiede confronti convergenti}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Evidenza grafica};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M08 · Analisi multivariata dei campioni};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 25/33};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Il criterio di fusione di Ward\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Il clustering agglomerativo parte da gruppi costituiti da un solo campione e procede mediante fusioni irreversibili. Il criterio di Ward sceglie, a ogni passaggio, la fusione che produce il minore incremento della dispersione quadratica interna. Tale incremento dipende dalla distanza fra centroidi e dalle numerosità dei due gruppi, come si ricava decomponendo gli scarti rispetto al nuovo centroide comune. La procedura costruisce una gerarchia, dalla quale si ricavano partizioni mediante tagli a livelli differenti.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}\Delta W(A,B)=\frac{n_A n_B}{n_A+n_B}\|\bar{\mathbf z}_A-\bar{\mathbf z}_B\|^2\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \input{tikz/M08/D10.tex}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont $n_A,n_B$: numerosità; $\bar{\mathbf z}_A,\bar{\mathbf z}_B$: centroidi. $\Delta W$ è l’incremento della somma quadratica interna dovuto alla fusione.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Il criterio di fusione comprende sia le distanze fra centroidi sia le numerosità.\end{minipage}\end{lrbox}
+\MeasureBox{26-TitleBox}{\TitleBox}
+\MeasureBox{26-BodyBox}{\BodyBox}
+\MeasureBox{26-SideBox}{\SideBox}
+\MeasureBox{26-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide26}{}
+\bookmark[level=0,page=26]{Gerarchie e criterio di Ward}
+\bookmark[level=1,page=26]{Il criterio di fusione di Ward}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Lettura del diagramma};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M08 · Analisi multivariata dei campioni};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 26/33};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Le altezze del dendrogramma di Ward\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Con distanze euclidee fornite a hclust e metodo ward.D2, R eleva internamente al quadrato le dissimilarità durante gli aggiornamenti. Le altezze restituite corrispondono alla radice di due volte l’incremento della WSS, relazione verificata nello script per ogni fusione del dataset. Il taglio tratteggiato produce tre gruppi. La posizione orizzontale delle foglie serve a disegnare i rami senza incroci e può cambiare mediante rotazioni, senza modificare la struttura delle fusioni.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}\texttt{hclust(dist(Z), method="ward.D2")}\\ h_r=\sqrt{2\,\Delta W_r}\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \includegraphics[width=7.45cm]{figure/M08/F07.pdf}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont Dendrogramma Ward.D2. L’asse orizzontale riporta posizioni delle foglie, non distanze fra campioni consecutivi.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Fornire distanze già elevate al quadrato a ward.D2 cambierebbe la geometria del criterio.\end{minipage}\end{lrbox}
+\MeasureBox{27-TitleBox}{\TitleBox}
+\MeasureBox{27-BodyBox}{\BodyBox}
+\MeasureBox{27-SideBox}{\SideBox}
+\MeasureBox{27-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide27}{}
+\bookmark[level=1,page=27]{Le altezze del dendrogramma di Ward}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Evidenza grafica};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M08 · Analisi multivariata dei campioni};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont R: hclust};
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 27/33};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Confrontare partizioni e allineare le etichette\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont I numeri assegnati ai gruppi sono etichette prive di ordinamento. Due partizioni identiche possono quindi apparire differenti se si confrontano direttamente i vettori numerici, mentre una tabella di contingenza rende visibile la corrispondenza. Un confronto indipendente dai nomi considera le coppie di campioni che risultano nello stesso gruppo. Le discordanze fra Ward e K-means meritano un esame dei profili e dei casi di confine, poiché i metodi cercano strutture secondo vincoli diversi.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}A_{ih}=\mathbf1\{g_i=g_h\}\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \par\vspace{.25cm}\lstinputlisting[language=R]{estratti/M08/ward.R}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont A vale 1 se i campioni i e h hanno la stessa etichetta di gruppo g, e 0 altrimenti; il confronto ignora i nomi dei gruppi.\end{minipage}\end{lrbox}
+\MeasureBox{28-TitleBox}{\TitleBox}
+\MeasureBox{28-BodyBox}{\BodyBox}
+\MeasureBox{28-SideBox}{\SideBox}
+\MeasureBox{28-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide28}{}
+\bookmark[level=1,page=28]{Confrontare partizioni e allineare le etichette}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Implementazione in R};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M08 · Analisi multivariata dei campioni};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 28/33};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}I profili collegano i gruppi alle proprietà misurate\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Zero e uno rappresentano media e deviazione standard complessive di ogni variabile. Le medie standardizzate dei gruppi mostrano quali proprietà siano relativamente elevate o ridotte rispetto al campione complessivo. La lettura congiunta dei profili permette di motivare un nome descrittivo e di riconoscere eventuali contrasti dominati da una sola misura. Per una conclusione geologica occorre poi tornare alle unità originarie e ai singoli campioni, poiché un centroide può combinare valori che nessun individuo possiede. I nomi delle litologie generatrici restano un riferimento didattico del simulatore.\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \includegraphics[width=7.45cm]{figure/M08/F08.pdf}\par\vspace{.16cm}{\fontsize{9.5}{12.6}\selectfont Centroidi K-means standardizzati, k = 3.}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Un gruppo matematico acquista significato mediante proprietà, campioni e informazioni indipendenti.\end{minipage}\end{lrbox}
+\MeasureBox{29-TitleBox}{\TitleBox}
+\MeasureBox{29-BodyBox}{\BodyBox}
+\MeasureBox{29-SideBox}{\SideBox}
+\MeasureBox{29-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide29}{}
+\bookmark[level=0,page=29]{Robustezza e significato geologico}
+\bookmark[level=1,page=29]{I profili collegano i gruppi alle proprietà misurate}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Evidenza grafica};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M08 · Analisi multivariata dei campioni};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 29/33};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Le diverse fonti di instabilità della partizione\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont La ripetizione degli avvii esamina la ricerca dell’algoritmo, mentre ricampionare individui o perturbare misure valuta altre fonti di variabilità. Per confrontare le soluzioni ricampionate si può registrare quanto spesso una coppia di individui, quando entrambi siano presenti, venga assegnata allo stesso gruppo. Tale frequenza descrive la stabilità rispetto allo schema adottato e deve essere interpretata insieme alla numerosità delle occasioni di confronto. Variare una colonna ridondante o una scala può rivelare dipendenze strutturali della partizione.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}\widehat\pi_{ih}=\frac{\sum_b I_{ih}^{(b)}\mathbf1\{g_i^{(b)}=g_h^{(b)}\}}{\sum_b I_{ih}^{(b)}}\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont b indica la replica; $g_i^{(b)}$ il gruppo del campione i; I vale 1 se i e h sono entrambi presenti, 0 altrimenti. La frequenza è definita solo con denominatore positivo. Nel bootstrap occorre dichiarare il trattamento di duplicati e assenze. Il risultato riguarda le perturbazioni effettivamente introdotte.\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Lo schema di perturbazione stabilisce quale stabilità venga misurata.\end{minipage}\end{lrbox}
+\MeasureBox{30-TitleBox}{\TitleBox}
+\MeasureBox{30-BodyBox}{\BodyBox}
+\MeasureBox{30-SideBox}{\SideBox}
+\MeasureBox{30-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide30}{}
+\bookmark[level=1,page=30]{Le diverse fonti di instabilità della partizione}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Sviluppo e interpretazione};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M08 · Analisi multivariata dei campioni};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 30/33};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}L’indipendenza dell’evidenza di validazione\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont L’accordo con le etichette del simulatore conferma che la procedura può recuperare la struttura costruita nell’esperimento, ma lascia aperta la trasferibilità a campioni reali. Densità, colore e granulometria, se già usati nella distanza, contribuiscono a descrivere i gruppi e non costituiscono una verifica esterna. Una valutazione geologica può invece coinvolgere osservazioni petrografiche indipendenti, contesti stratigrafici o nuovi campioni, purché la relazione con le variabili iniziali sia resa esplicita.\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont \input{tikz/M08/D11.tex}\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont La validità geologica richiede evidenza che ecceda il criterio utilizzato per costruire i gruppi.\end{minipage}\end{lrbox}
+\MeasureBox{31-TitleBox}{\TitleBox}
+\MeasureBox{31-BodyBox}{\BodyBox}
+\MeasureBox{31-SideBox}{\SideBox}
+\MeasureBox{31-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide31}{}
+\bookmark[level=1,page=31]{L’indipendenza dell’evidenza di validazione}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Lettura del diagramma};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M08 · Analisi multivariata dei campioni};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 31/33};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}La consegna conserva campioni, alternative e limiti\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont Il laboratorio richiede una matrice con otto variabili dichiarate, una PCA con quote di varianza, il confronto fra k da due a sette, una partizione K-means e una gerarchia di Ward. Una tabella finale mantiene identificativo, coordinate principali e appartenenze ai gruppi, così che ogni risultato possa essere ricondotto al campione. La relazione discute una soluzione alternativa e almeno un caso ambiguo, motivando trasformazioni, esclusioni e limiti della simulazione. La permutazione delle righe deve preservare l’interpretazione, una volta riallineati gli identificativi.\par\vspace{.28cm}{\centering\fontsize{13}{17}\selectfont\(\displaystyle\begin{gathered}\text{ID}\ \leftrightarrow\ (\text{scores},\ \text{gruppi},\ \text{misure})\end{gathered}\)\par}\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont Verifica proposta: ricostruire Z con tutte le componenti e controllare l’errore numerico; ricostruirla con due componenti e confrontare la somma degli scarti quadratici con gli autovalori omessi. Gli script delle figure eseguono entrambi i controlli e verificano anche le altezze di Ward.\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Una figura interpretabile deve essere accompagnata dalla trasformazione e dai risultati per campione.\end{minipage}\end{lrbox}
+\MeasureBox{32-TitleBox}{\TitleBox}
+\MeasureBox{32-BodyBox}{\BodyBox}
+\MeasureBox{32-SideBox}{\SideBox}
+\MeasureBox{32-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide32}{}
+\bookmark[level=0,page=32]{Laboratorio e riferimenti}
+\bookmark[level=1,page=32]{La consegna conserva campioni, alternative e limiti}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Sviluppo e interpretazione};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M08 · Analisi multivariata dei campioni};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont };
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 32/33};
+\end{tikzpicture}\end{frame}
+\begin{lrbox}{\TitleBox}\begin{minipage}[t]{18.2cm}\raggedright\sloppy\color{Ink}\fontsize{20.7}{24}\selectfont \bfseries\color{Navy}Riferimenti per geometria e implementazione\end{minipage}\end{lrbox}
+\begin{lrbox}{\BodyBox}\begin{minipage}[t]{10.25cm}\raggedright\sloppy\color{Ink}\fontsize{12.4}{16.4}\selectfont La documentazione di prcomp precisa la decomposizione ai valori singolari, il divisore della varianza e l’arbitrarietà dei segni; le pagine di kmeans e hclust definiscono algoritmi, parametri e convenzioni delle distanze. Per la geometria multivariata si può consultare Mardia, Kent e Bibby, Multivariate Analysis; per il trattamento delle composizioni, Aitchison, The Statistical Analysis of Compositional Data. La distinzione fra le convenzioni di Ward è discussa da Murtagh e Legendre nel loro confronto degli algoritmi agglomerativi.\end{minipage}\end{lrbox}
+\begin{lrbox}{\SideBox}\begin{minipage}[t]{7.45cm}\raggedright\sloppy\color{Ink}\fontsize{12.2}{16.1}\selectfont Documentazione R: prcomp, kmeans, hclust e silhouette del pacchetto cluster. Gli indirizzi completi, le versioni dei pacchetti e le verifiche numeriche sono raccolti nei materiali del corso. I grafici R di questo modulo derivano dai dati sintetici allegati.\end{minipage}\end{lrbox}
+\begin{lrbox}{\RecallBox}\begin{minipage}[t]{16.45cm}\raggedright\sloppy\color{Ink}\fontsize{10.1}{13.2}\selectfont Le convenzioni del software devono essere dichiarate quando modificano il significato dei risultati.\end{minipage}\end{lrbox}
+\MeasureBox{33-TitleBox}{\TitleBox}
+\MeasureBox{33-BodyBox}{\BodyBox}
+\MeasureBox{33-SideBox}{\SideBox}
+\MeasureBox{33-RecallBox}{\RecallBox}
+\begin{frame}[plain]\hypertarget{slide33}{}
+\bookmark[level=1,page=33]{Riferimenti per geometria e implementazione}
+\begin{tikzpicture}[remember picture,overlay]\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-0.16cm]current page.north west){\color{Classical}\fontsize{8}{10}\selectfont\hyperlink{slide2}{Indice}};
+\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-0.62cm]current page.north west){\usebox{\TitleBox}};
+\draw[Classical,line width=1.3pt] ([xshift=.95cm,yshift=-1.68cm]current page.north west)--([xshift=2.25cm,yshift=-1.68cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-2.12cm]current page.north west){\usebox{\BodyBox}};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.1cm]current page.north west){\color{Quantum}\bfseries\fontsize{11.5}{14}\selectfont Sviluppo e interpretazione};
+\node[anchor=north west,inner sep=0] at ([xshift=11.6cm,yshift=-2.75cm]current page.north west){\usebox{\SideBox}};
+\draw[Rule,line width=.5pt] ([xshift=.95cm,yshift=-10.43cm]current page.north west)--([xshift=19.05cm,yshift=-10.43cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-10.66cm]current page.north west){\color{Classical}\bfseries\fontsize{9.4}{12}\selectfont Richiami};
+\node[anchor=north west,inner sep=0] at ([xshift=2.6cm,yshift=-10.64cm]current page.north west){\usebox{\RecallBox}};
+\draw[Rule,line width=.35pt] ([xshift=.95cm,yshift=-11.92cm]current page.north west)--([xshift=19.05cm,yshift=-11.92cm]current page.north west);\node[anchor=north west,inner sep=0] at ([xshift=0.95cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont M08 · Analisi multivariata dei campioni};
+\node[anchor=north east,inner sep=0] at ([xshift=17.65cm,yshift=-12.06cm]current page.north west){\color{Classical}\fontsize{7.3}{9.1}\selectfont R; Mardia et al.; Aitchison};
+\node[anchor=north east,inner sep=0] at ([xshift=19.05cm,yshift=-12.06cm]current page.north west){\color{Muted}\fontsize{7.7}{9.3}\selectfont 33/33};
+\end{tikzpicture}\end{frame}
+\end{document}

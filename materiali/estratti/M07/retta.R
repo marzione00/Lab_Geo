@@ -1,0 +1,7 @@
+d <- read.csv('dati/fossili_simulati.csv')
+fit <- lm(diametro_int_um~diametro_tot_um,d)
+coef(fit)
+summary(fit)
+nuovo <- data.frame(diametro_tot_um=6)
+predict(fit,nuovo,interval='confidence')
+range(d$diametro_tot_um)

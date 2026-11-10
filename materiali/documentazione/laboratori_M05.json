@@ -1,0 +1,202 @@
+[
+  {
+    "id": "N01",
+    "titolo": "Parametro, campione e statistica",
+    "pagine": "4–6",
+    "obiettivo": "Distinguere il parametro dal valore osservato dello stimatore.",
+    "consegna": "Eseguire il campionamento esponenziale, riportare parametro, numerosità e media osservata. Ripetere con un altro seme, spiegando quale oggetto cambi e quale rimanga fissato.",
+    "soluzione": "Il parametro è la media teorica 1 della distribuzione esponenziale. La numerosità è 40 e la stima varia con il campione. Il cambiamento del seme seleziona un’altra realizzazione del procedimento; non modifica il parametro del modello.",
+    "espressioni": "c(parametro=parametro,n=length(campione),stima=stima)",
+    "variazione": "Confrontare media e mediana dello stesso campione, indicando i rispettivi parametri."
+  },
+  {
+    "id": "N02",
+    "titolo": "Media cumulativa e convergenza",
+    "pagine": "30",
+    "obiettivo": "Interpretare la convergenza senza attribuirle monotonicità.",
+    "consegna": "Rappresentare i quattro percorsi della media cumulativa e individuare tratti nei quali una nuova osservazione allontani la media da 1. Esplicitare la disuguaglianza di Chebyshev utilizzata nelle slide.",
+    "soluzione": "La convergenza in probabilità riguarda la probabilità di uno scostamento superiore a una tolleranza, quando n aumenta. Un singolo percorso può oscillare e allontanarsi temporaneamente. Il limite 1/(n epsilon²) deriva dalla varianza unitaria e dall’indipendenza.",
+    "espressioni": "tail(lln[lln$percorso==1,],3)",
+    "variazione": "Modificare la distribuzione esponenziale con rate=2 e aggiornare il parametro di riferimento."
+  },
+  {
+    "id": "N03",
+    "titolo": "Distribuzione delle medie",
+    "pagine": "22–26",
+    "obiettivo": "Identificare la media come unità rappresentata nell’istogramma.",
+    "consegna": "Confrontare le 6000 medie per n=5 e n=40. Calcolarne media e deviazione standard e confrontarle con 1 e 1/sqrt(n).",
+    "soluzione": "Le distribuzioni delle medie sono centrate vicino a 1. Le deviazioni standard simulate sono 0,440 e 0,158, vicine ai valori teorici 0,447 e 0,158. Le differenze residue riflettono una simulazione finita.",
+    "espressioni": "rbind(n5=c(media=mean(medie5),sd=sd(medie5)),n40=c(media=mean(medie40),sd=sd(medie40)))",
+    "variazione": "Aggiungere n=15 mantenendo lo stesso numero di simulazioni."
+  },
+  {
+    "id": "N04",
+    "titolo": "Standardizzazione e dipendenza",
+    "pagine": "27–33",
+    "obiettivo": "Collegare il limite centrale alla scala della statistica e la dipendenza alla sua varianza.",
+    "consegna": "Calcolare centro e dispersione delle medie standardizzate. Ricostruire la varianza di una media con sei blocchi indipendenti di quattro unità e ICC=0,6, usando sia la formula sia la matrice Sigma.",
+    "soluzione": "Le medie standardizzate hanno centro vicino a zero e dispersione vicina a uno. Nel modello a blocchi, la varianza è 0,1166667, DEFF è 2,8 e n effettivo è 8,5714. I due calcoli della varianza coincidono; le ipotesi di equicorrelazione e indipendenza fra blocchi sono essenziali.",
+    "espressioni": "c(var_matrice=sum(Sigma)/24^2,var_formula=(1+3*.6)/24,DEFF=V$deff,n_eff=V$neff)",
+    "variazione": "Sostituire ICC=0,3 e confrontare la variazione di n effettivo."
+  },
+  {
+    "id": "N05",
+    "titolo": "Dispersione dei dati ed errore standard",
+    "pagine": "34–38, 43",
+    "obiettivo": "Calcolare e interpretare SD, SE e barre di incertezza.",
+    "consegna": "Per Rounded calcolare numerosità, media, SD e SE. Spiegare quale quantità si dimezzi se la numerosità indipendente quadruplica a varianza invariata.",
+    "soluzione": "La media è 6,064 µm, SD è 1,000 µm e SE è 0,112 µm. Il raddoppio della radice della numerosità dimezza SE, mentre la variabilità individuale resta descritta da sigma. Le barre ± SD, ± SE e IC hanno significati differenti.",
+    "espressioni": "c(n=n,media=xb,SD=s,SE=se)",
+    "variazione": "Calcolare l’errore standard teorico di una proporzione per n=40 e p=0,1; discutere il caso di zero successi osservati."
+  },
+  {
+    "id": "N06",
+    "titolo": "Intervallo di Student",
+    "pagine": "44–48, 50–52",
+    "obiettivo": "Derivare e verificare i limiti dell’intervallo per una media.",
+    "consegna": "Calcolare il quantile critico, la semiampiezza e i limiti per Rounded. Confrontare il risultato con t.test(x) e distinguere l’intervallo per la media da quello predittivo.",
+    "soluzione": "Il quantile t è 1,990 e l’IC per la media è [5,841; 6,286] µm. L’intervallo predittivo sotto normalità IID è [4,060; 8,067] µm, poiché include la variabilità della nuova osservazione. Il test numerico confronta i limiti calcolati esplicitamente con quelli di R.",
+    "espressioni": "list(quantile=critico,IC=ic_t,IC_R=unname(t.test(x)$conf.int),predittivo=ip_t)",
+    "variazione": "Passare dal livello 95% al 99% e spiegare l’aumento della semiampiezza."
+  },
+  {
+    "id": "N07",
+    "titolo": "Copertura della procedura",
+    "pagine": "49, 97–98",
+    "obiettivo": "Interpretare una probabilità di copertura e il suo errore Monte Carlo.",
+    "consegna": "Calcolare la frazione di intervalli contenenti la media 5 nei 2000 campioni. Confrontarla con 0,95 e con l’errore Monte Carlo teorico.",
+    "soluzione": "In questa esecuzione 1900 intervalli su 2000 contengono il parametro. La copertura empirica è 0,95 e il SE Monte Carlo teorico è circa 0,00487. L’uguaglianza fra valore empirico e nominale è un esito di questa simulazione, non una necessità.",
+    "espressioni": "c(inclusioni=sum(copre),K=length(copre),copertura=mean(copre),SE_MC=V$coverage_mcse)",
+    "variazione": "Generare dati esponenziali e confrontare la copertura t con quella dell’esperimento normale, senza attribuirle validità esatta."
+  },
+  {
+    "id": "N08",
+    "titolo": "Precisione, selezione e popolazione finita",
+    "pagine": "12, 15–21, 39",
+    "obiettivo": "Separare precisione e distorsione e verificare una varianza di disegno.",
+    "consegna": "Confrontare i due scenari di selezione per n=10,40,160. Enumerare inoltre tutti i campioni di due unità dalla popolazione 2,4,6,8,10 e confrontare la varianza delle medie con la correzione finita.",
+    "soluzione": "La selezione centrata sul valore 1 resta distorta rispetto al parametro territoriale 0, anche quando la distribuzione si restringe. Nell’esempio finito esistono dieci campioni equiprobabili; la varianza esatta delle loro medie è 3, uguale alla formula con fattore 1−n/N.",
+    "espressioni": "c(var_enumerazione=var_design,var_formula=var_fpc,numero_campioni=ncol(combinazioni))",
+    "variazione": "Portare la numerosità del campione finito a tre e ripetere l’enumerazione."
+  },
+  {
+    "id": "N09",
+    "titolo": "Pesi, precisione richiesta e conclusione",
+    "pagine": "9–10, 40–41, 92–94",
+    "obiettivo": "Motivare ponderazione e numerosità in relazione all’estimando.",
+    "consegna": "Confrontare la media equiponderata delle stazioni con lo scenario che assegna peso quattro ai provini A1. Calcolare n per sigma pilota 0,8 µm e semiampiezza desiderata 0,2 µm al 95%.",
+    "soluzione": "La media equiponderata è 2,599 g/cm³ e quella ponderata è 2,628 g/cm³. La numerosità orientativa è 62 unità indipendenti. La formula di pianificazione non incorpora automaticamente dipendenza, perdite o distorsione di selezione.",
+    "espressioni": "c(media_stazioni=V$media_st,media_pesata=V$media_pesata,n_progetto=V$n_progetto)",
+    "variazione": "Risolvere l’esercizio delle due stazioni con numerosità 2 e 8 e medie 2,4 e 2,8."
+  },
+  {
+    "id": "N10",
+    "titolo": "Distribuzione empirica e informazione",
+    "pagine": "55–56, 85",
+    "obiettivo": "Descrivere l’oggetto condizionato costruito dal bootstrap.",
+    "consegna": "Identificare supporto e probabilità della distribuzione empirica Rounded. Calcolare il numero atteso di individui distinti in una replica di ottanta estrazioni.",
+    "soluzione": "Ogni indice ha probabilità 1/80 a ogni estrazione. La probabilità che un individuo compaia almeno una volta è 1−(79/80)^80, per cui il numero atteso di distinti è circa 50,75. Il numero delle estrazioni resta 80 e il numero di nuove osservazioni reali è zero.",
+    "espressioni": "c(n=length(x),supporto_distinto=length(unique(x)),distinti_attesi=V$unici_attesi)",
+    "variazione": "Confrontare la proporzione attesa di distinti per n=4,20,80 e 1000."
+  },
+  {
+    "id": "N11",
+    "titolo": "Una replica osservata negli indici",
+    "pagine": "56–58",
+    "obiettivo": "Ricostruire una replica con indici e molteplicità equivalenti.",
+    "consegna": "Con il seme 311 estrarre ottanta indici. Contare gli individui distinti e verificare che la media dei valori selezionati coincida con la media ponderata dalle molteplicità.",
+    "soluzione": "La replica contiene 55 individui distinti e ha media 6,229 µm. La somma delle molteplicità è 80; la formula sum(frequenze*x)/80 coincide con mean(replica). L’equivalenza permette di controllare che indice, unità e valore rimangano collegati.",
+    "espressioni": "c(distinti=length(unique(indici)),media_indici=mean(replica),media_pesi=sum(frequenze*x)/n)",
+    "variazione": "Estrarre una nuova replica e individuare i cinque indici con maggiore molteplicità."
+  },
+  {
+    "id": "N12",
+    "titolo": "Bootstrap della media di un gruppo",
+    "pagine": "61–66",
+    "obiettivo": "Confrontare simulazione e momenti condizionati esatti.",
+    "consegna": "Calcolare media delle repliche, SE bootstrap e quantili percentili per Rounded. Confrontare SE simulato con sqrt((n−1)*var(x)/n^2).",
+    "soluzione": "Il SE simulato è 0,112 µm e quello condizionato esatto è circa 0,11115 µm. I limiti percentili sono [5,843; 6,286] µm. Per la media, il valore atteso condizionato è esattamente la media osservata; un piccolo scarto numerico fra le due medie deriva da B finito.",
+    "espressioni": "c(media_originale=mean(x),media_boot=mean(b_R),SE=sd(b_R),SE_esatto=V$boot_R_se_esatto,q95(b_R))",
+    "variazione": "Usare B=500 e confrontare la precisione numerica con B=10000."
+  },
+  {
+    "id": "N13",
+    "titolo": "Pooled e quote casuali",
+    "pagine": "69, 72",
+    "obiettivo": "Riconoscere la variabilità della composizione nel ricampionamento pooled.",
+    "consegna": "Calcolare la media e la deviazione standard del numero di Spiky nelle repliche. Confrontarle con 80 e sqrt(40), quindi riportare l’IC della media pooled.",
+    "soluzione": "Nel pooled il conteggio Spiky segue condizionatamente una binomiale con 160 estrazioni e probabilità 0,5. La media pooled osservata è 6,355 µm; SE è 0,079 µm e l’IC percentile è [6,201; 6,506] µm. Le quote fluttuano fra repliche.",
+    "espressioni": "c(media_nS=mean(b_pool[\"quota\",]),SD_nS=sd(b_pool[\"quota\",]),SE=sd(b_pool[\"media\",]),q95(b_pool[\"media\",]))",
+    "variazione": "Separare il contributo entro morfotipo da quello fra morfotipi usando la varianza empirica con denominatore n."
+  },
+  {
+    "id": "N14",
+    "titolo": "Bootstrap stratificato",
+    "pagine": "70–73",
+    "obiettivo": "Conservare le quote del generatore e i pesi dell’estimando.",
+    "consegna": "Eseguire il bootstrap entro i due gruppi e confrontare SE e intervallo con quelli pooled. Esplicitare perché la media osservata coincida.",
+    "soluzione": "Le quote sono fissate a 80/80 e i pesi a 1/2. Il SE stratificato è 0,077 µm e l’IC è [6,201; 6,504] µm. La media coincide con quella pooled perché il campione osservato è bilanciato; le repliche seguono però disegni diversi.",
+    "espressioni": "rbind(pooled=c(SE=sd(b_pool[\"media\",]),q95(b_pool[\"media\",])),stratificato=c(SE=sd(b_strat),q95(b_strat)))",
+    "variazione": "Definire un estimando con pesi 0,3 e 0,7, mantenendo esplicita la differenza fra pesi e quote campionarie."
+  },
+  {
+    "id": "N15",
+    "titolo": "Contrasti indipendenti e coppie",
+    "pagine": "51–52, 74–75",
+    "obiettivo": "Mantenere l’orientamento del contrasto e l’appaiamento.",
+    "consegna": "Riportare il bootstrap del contrasto Spiky meno Rounded. Per Rounded, calcolare inoltre la differenza totale meno interno e ricampionare le differenze individuali.",
+    "soluzione": "Il contrasto fra morfotipi è 0,582 µm con IC [0,286; 0,881] µm. La differenza appaiata Rounded è 0,857 µm, con SE bootstrap 0,027 µm. L’indipendenza fra gruppi e la dipendenza entro coppia richiedono algoritmi diversi.",
+    "espressioni": "list(indipendenti=c(stima=V$delta,q95(b_delta)),appaiati=c(stima=mean(diff_coppie),SE=sd(b_paired)))",
+    "variazione": "Calcolare la differenza fra le varianze ottenute conservando o eliminando il termine di covarianza entro coppia."
+  },
+  {
+    "id": "N16",
+    "titolo": "Provini e medie di stazione",
+    "pagine": "77–79, 81",
+    "obiettivo": "Collegare l’unità di ricampionamento alla gerarchia.",
+    "consegna": "Confrontare gli errori standard del bootstrap per righe e per stazioni. Mostrare l’equivalenza della stima osservata nel disegno bilanciato e discutere le ipotesi di indipendenza.",
+    "soluzione": "La stima osservata è 2,599 g/cm³. I SE sono 0,014 per righe e 0,024 per stazioni. Il secondo schema assume sei medie locali IID; la numerosità ridotta e la selezione dei siti limitano l’inferenza. Con numerosità diseguali occorre ridefinire esplicitamente i pesi.",
+    "espressioni": "c(stima=V$media_st,SE_righe=sd(b_righe),SE_stazioni=sd(b_stazioni),q95(b_stazioni))",
+    "variazione": "Confrontare percentile e t sulle sei medie, riportando le rispettive ipotesi."
+  },
+  {
+    "id": "N17",
+    "titolo": "Contrasto fra affioramenti",
+    "pagine": "80",
+    "obiettivo": "Conservare gli affioramenti come strati di stazioni.",
+    "consegna": "Ricampionare tre medie di stazione entro A e tre entro B. Calcolare il contrasto A meno B e l’intervallo percentile.",
+    "soluzione": "Il contrasto è 0,097 g/cm³ e il percentile va da 0,042 a 0,150 g/cm³. Ogni replica mantiene l’appartenenza all’affioramento, ma i tre siti per strato offrono una base molto limitata per la valutazione delle code.",
+    "espressioni": "c(contrasto=V$AB,nA=length(st_A),nB=length(st_B),q95(b_AB))",
+    "variazione": "Invertire il contrasto e verificare che gli estremi cambino segno e ordine."
+  },
+  {
+    "id": "N18",
+    "titolo": "Precisione Monte Carlo e registrazione",
+    "pagine": "86–89",
+    "obiettivo": "Distinguere B da n e documentare l’esecuzione.",
+    "consegna": "Confrontare dodici esecuzioni per B=200,1000,5000. Rappresentare separatamente SE e i due estremi percentili. Registrare versione di R, algoritmo RNG e semi.",
+    "soluzione": "L’aumento di B riduce la dispersione numerica fra corse, mentre il campione conserva ottanta individui. La linea di riferimento del SE è il valore condizionato esatto. La variabilità degli estremi non deve essere interpretata come nuova incertezza della popolazione.",
+    "espressioni": "aggregate(cbind(se,basso,alto)~B,mc,sd)",
+    "variazione": "Ripetere l’analisi con 24 corse per B, conservando in tabella anche il seme di ciascuna corsa."
+  },
+  {
+    "id": "N19",
+    "titolo": "Reinserimento e bootstrap enumerato",
+    "pagine": "60–61",
+    "obiettivo": "Verificare esattamente il procedimento su un campione piccolo.",
+    "consegna": "Enumerare tutte le 256 sequenze ordinate estratte con reinserimento da 4,5,7,8. Calcolare i momenti delle medie e confrontarli con quelli ottenuti permutando tutti e quattro i valori.",
+    "soluzione": "La media condizionata è 6 e la varianza condizionata è 0,625, uguale a 3*var(piccolo)/16. Le permutazioni complete conservano la media 6, per cui la loro varianza è zero. I due procedimenti generano distribuzioni differenti.",
+    "espressioni": "c(numero=length(medie_esatte),media=mean(medie_esatte),varianza=V$toy_var,formula=3*var(piccolo)/16)",
+    "variazione": "Ripetere il calcolo esatto con il campione 1,1,2,10 e discutere l’effetto del valore elevato."
+  },
+  {
+    "id": "N20",
+    "titolo": "Mediana e confronto fra statistiche",
+    "pagine": "68",
+    "obiettivo": "Descrivere la distribuzione bootstrap di una statistica non lineare.",
+    "consegna": "Calcolare mediana osservata, distribuzione bootstrap e IC percentile per Rounded. Confrontare la forma con quella della distribuzione delle medie.",
+    "soluzione": "La mediana osservata è 6,270 µm e l’IC va da 5,957 a 6,452 µm. La distribuzione bootstrap può presentare gradini o concentrazioni perché la mediana dipende dall’ordinamento e può assumere valori ripetuti. Piccoli campioni e distribuzioni irregolari possono compromettere la copertura.",
+    "espressioni": "c(mediana=median(x),SE=sd(b_mediana),q95(b_mediana))",
+    "variazione": "Eseguire il bootstrap della mediana sul campione 4,5,7,8 e confrontare la discrezione del risultato."
+  }
+]

@@ -1,0 +1,27 @@
+source('R/stile.R');d<-leggi('estremi_v3.csv');x<-d$portata_massima_m3s;n<-length(x);out<-'risultati/P09';dir.create(out,recursive=TRUE,showWarnings=FALSE)
+gamma<-0.5772156649015329
+stima<-function(v)c(a=mean(v)-gamma*sd(v)*sqrt(6)/pi,b=sd(v)*sqrt(6)/pi)
+QG<-function(p,a,b)a-b*log(-log(p));FG<-function(q,a,b)exp(-exp(-(q-a)/b));ab<-stima(x)
+liv<-function(v,T=100){q<-stima(v);QG(1-1/T,q[1],q[2])}
+verifica('cento massimi annuali completi',n==100&&!anyDuplicated(d$anno)&&all(diff(d$anno)==1)&&all(is.finite(x)&x>0))
+salva('P09','F01',ggplot(d,aes(anno,portata_massima_m3s))+geom_line(colour='#B2C3C3',linewidth=.4)+geom_point(colour=geo[1],size=1.6)+scale_x_continuous(breaks=c(1920,1960,2000))+labs(x='Anno simulato',y='Massimo annuo (m³/s)'))
+emp<-data.frame(q=sort(x,decreasing=TRUE),T=(n+1)/(1:n))
+salva('P09','F02',ggplot(emp,aes(T,q))+geom_point(colour=geo[1],size=2)+scale_x_log10(breaks=c(2,10,100),labels=c('2','10','100'))+labs(x='Ritorno empirico (anni)',y='Massimo (m³/s)'))
+pp<-((1:n)-.5)/n;qq<-data.frame(teorico=QG(pp,ab[1],ab[2]),osservato=sort(x));lims<-range(unlist(qq))
+salva('P09','F03',ggplot(qq,aes(teorico,osservato))+geom_abline(slope=1,intercept=0,colour=geo[2],linetype=2)+geom_point(colour=geo[1],size=1.8)+coord_equal()+scale_x_continuous(breaks=c(400,600,800),limits=lims)+scale_y_continuous(breaks=c(400,600,800),limits=lims)+labs(x='Quantile Gumbel (m³/s)',y='Quantile empirico (m³/s)'))
+ret<-data.frame(T=exp(seq(log(2),log(500),length.out=250)));ret$q<-QG(1-1/ret$T,ab[1],ab[2])
+salva('P09','F04',ggplot(ret,aes(T,q))+annotate('rect',xmin=100,xmax=500,ymin=-Inf,ymax=Inf,fill=geo[2],alpha=.09)+geom_line(colour=geo[1],linewidth=.9)+geom_point(data=emp,colour=geo[6],size=1.3)+geom_vline(xintercept=100,linetype=2,colour=geo[2])+scale_x_log10(breaks=c(2,10,100,500),labels=c('2','10','100','500'),expand=expansion(mult=c(.05,.12)))+labs(x='Tempo di ritorno (anni)',y='Livello (m³/s)'))
+set.seed(20261109);B<-1999;plans<-replicate(B,sample.int(n,n,replace=TRUE));boots<-apply(plans,2,function(i)liv(x[i]));ci<-unname(quantile(boots,c(.025,.5,.975)))
+salva('P09','F05',ggplot(data.frame(q=boots),aes(q))+geom_histogram(bins=24,fill=geo[1],colour=paper)+geom_vline(xintercept=liv(x),colour=geo[2],linewidth=.9)+scale_x_continuous(breaks=c(750,850,950))+labs(x='Livello centennale (m³/s)',y='Ricampionamenti'))
+life<-data.frame(anni=0:100);life$p<-1-(1-.01)^life$anni
+salva('P09','F06',ggplot(life,aes(anni,p))+geom_line(colour=geo[1],linewidth=.9)+geom_point(data=life[life$anni%in%c(50,100),],colour=geo[2],size=3)+scale_x_continuous(breaks=c(0,25,50,75,100))+scale_y_continuous(breaks=c(0,.2,.4,.6),labels=fmt)+labs(x='Orizzonte (anni)',y='Probabilità cumulata'))
+QGEV<-function(p,xi){if(abs(xi)<1e-10)QG(p,ab[1],ab[2]) else ab[1]+ab[2]*expm1(-xi*log(-log(p)))/xi}
+sens<-do.call(rbind,lapply(c(-.15,0,.15),function(k)data.frame(T=ret$T,q=QGEV(1-1/ret$T,k),forma=factor(k))))
+salva('P09','F07',ggplot(sens,aes(T,q,colour=forma))+geom_line(linewidth=.9)+scale_colour_manual(values=geo[1:3],labels=c('ξ = −0,15','ξ = 0','ξ = 0,15'))+guides(colour=guide_legend(nrow=2))+scale_x_log10(breaks=c(2,10,100,500),labels=c('2','10','100','500'),expand=expansion(mult=c(.05,.12)))+labs(x='Tempo di ritorno (anni)',y='Livello di scenario (m³/s)'))
+verifica('scala positiva e inversione della CDF',ab[2]>0&&max(abs(FG(QG(c(.1,.5,.9,.99),ab[1],ab[2]),ab[1],ab[2])-c(.1,.5,.9,.99)))<1e-12)
+verifica('quantili crescenti e livello centennale',all(diff(ret$q)>0)&&abs(FG(liv(x),ab[1],ab[2])-.99)<1e-12)
+verifica('piani ricampionati e stime finite',all(dim(plans)==c(100,1999))&&all(plans%in%1:100)&&all(is.finite(boots)))
+verifica('rischio su cinquanta anni',abs(life$p[life$anni==50]-(1-dbinom(0,50,.01)))<1e-12)
+verifica('limite GEV a forma nulla',max(abs(QGEV(c(.9,.99),1e-8)-QGEV(c(.9,.99),0)))<1e-4)
+write.csv(t(plans),file.path(out,'bootstrap_indici.csv'),row.names=FALSE);write.csv(data.frame(q100=boots),file.path(out,'bootstrap_livello.csv'),row.names=FALSE);write.csv(ret,file.path(out,'livelli.csv'),row.names=FALSE);write.csv(sens,file.path(out,'sensibilita_forma.csv'),row.names=FALSE)
+jsonlite::write_json(list(n=n,parametri=as.list(ab),massimo=max(x),q100=liv(x),q500=liv(x,500),bootstrap_quantili=ci,B=B,rischio50=1-.99^50,rischio100=1-.99^100,q500_forme=sapply(c(-.15,0,.15),function(k)QGEV(.998,k))),file.path(out,'valori.json'),auto_unbox=TRUE,pretty=TRUE,digits=12)

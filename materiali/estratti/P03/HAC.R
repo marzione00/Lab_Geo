@@ -1,0 +1,6 @@
+source('R/covarianze.R')
+d <- read.csv('dati/progetti/nile.csv')
+d$post <- as.integer(d$year>=1898)
+f <- lm(volume_1e8_m3~post,d)
+V <- hac_cov(model.matrix(f),resid(f),3)
+intervallo(coef(f)[2],sqrt(V[2,2]))

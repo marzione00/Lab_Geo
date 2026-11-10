@@ -1,0 +1,6 @@
+d <- read.csv('dati/campioni_modulo1.csv')
+stopifnot(nrow(d)==24L)
+stopifnot(anyDuplicated(d$id)==0L)
+str(d)
+colSums(is.na(d))
+table(d$affioramento,d$stazione)

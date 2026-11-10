@@ -1,0 +1,47 @@
+source('R/stile.R')
+d<-leggi('rocce_simulate.csv');vars<-c('SiO2','CaO','MgO','FeO','densita','grana_mm','colore','fossili');X<-as.matrix(d[vars]);Z<-scale(X);pc<-prcomp(X,scale.=TRUE);lam<-pc$sdev^2;prop<-lam/sum(lam)
+set.seed(808);km<-kmeans(Z,centers=3,nstart=50);hc<-hclust(dist(Z),method='ward.D2');cl<-cutree(hc,3)
+nomi<-c(SiO2='SiO₂',CaO='CaO',MgO='MgO',FeO='FeO',densita='Densità',grana_mm='Grana',colore='Colore',fossili='Fossili')
+z<-data.frame(Variabile=factor(vars,levels=rev(vars)),SD=apply(X,2,sd))
+salva('M08','F01',ggplot(z,aes(SD,Variabile))+geom_point(colour=geo[1],size=3)+scale_x_log10(breaks=c(.1,1,10))+scale_y_discrete(labels=nomi)+labs(x='Deviazione standard (scala log)',y=NULL))
+z<-data.frame(PC=1:8,Quota=prop*100,Cumulata=cumsum(prop)*100)
+salva('M08','F02',ggplot(z,aes(PC,Quota))+geom_col(fill=geo[1],width=.65)+geom_line(aes(y=Cumulata),colour=geo[2],linewidth=1)+geom_point(aes(y=Cumulata),colour=geo[2],size=2)+scale_x_continuous(breaks=1:8)+scale_y_continuous(breaks=c(0,50,100))+labs(x='Componente',y='Varianza (%)'))
+z<-data.frame(pc$x[,1:2],Litologia=d$litologia_generatrice,Cluster=factor(km$cluster))
+p<-ggplot(z,aes(PC1,PC2))+geom_point(aes(colour=Litologia),size=2.2,alpha=.8)+scale_colour_manual(values=geo[1:3])+labs(x=sprintf('PC1 (%.1f%%)',100*prop[1]),y=sprintf('PC2 (%.1f%%)',100*prop[2]))
+salva('M08','F03',p+guides(colour=guide_legend(nrow=2)))
+z<-data.frame(Variabile=factor(rep(vars,2),levels=rev(vars)),PC=rep(c('PC1','PC2'),each=8),Peso=as.vector(pc$rotation[,1:2]))
+salva('M08','F04',ggplot(z,aes(Peso,Variabile,colour=PC))+geom_vline(xintercept=0,colour=geo[6])+geom_point(position=position_dodge(width=.5),size=2.4)+scale_colour_manual(values=geo[1:2])+scale_x_continuous(breaks=c(-.5,0,.5))+scale_y_discrete(labels=nomi)+labs(x='Coefficiente della rotazione',y=NULL),h=4.5)
+zz<-data.frame(k=2:7,WSS=NA_real_,Silhouette=NA_real_)
+for(i in seq_len(nrow(zz))){set.seed(820+i);q<-kmeans(Z,zz$k[i],nstart=50);zz$WSS[i]<-q$tot.withinss;zz$Silhouette[i]<-mean(cluster::silhouette(q$cluster,dist(Z))[,3])}
+salva('M08','F05',ggplot(zz,aes(k,WSS))+geom_line(colour=geo[1],linewidth=1)+geom_point(colour=geo[1],size=2.8)+scale_x_continuous(breaks=2:7)+labs(x='Numero di gruppi k',y='Dispersione interna'))
+salva('M08','F06',ggplot(zz,aes(k,Silhouette))+geom_line(colour=geo[2],linewidth=1)+geom_point(colour=geo[2],size=2.8)+scale_x_continuous(breaks=2:7)+labs(x='Numero di gruppi k',y='Silhouette media'))
+# Segmenti del dendrogramma derivati direttamente dalle fusioni di hclust.
+xs<-numeric(nrow(X)-1);ys<-hc$height;pos<-match(1:nrow(X),hc$order);sg<-data.frame()
+for(i in seq_len(nrow(hc$merge))){ab<-hc$merge[i,];xx<-vapply(ab,function(j)if(j<0)pos[-j] else xs[j],0.0);yy<-vapply(ab,function(j)if(j<0)0 else ys[j],0.0);xs[i]<-mean(xx);sg<-rbind(sg,data.frame(x=c(xx,xx[1]),xend=c(xx,xx[2]),y=c(yy,ys[i]),yend=rep(ys[i],3)))}
+salva('M08','F07',ggplot(sg)+geom_segment(aes(x,y,xend=xend,yend=yend),colour=geo[1],linewidth=.45)+geom_hline(yintercept=mean(tail(hc$height,3)[1:2]),colour=geo[2],linetype=2)+scale_x_continuous(breaks=c(1,30,60,90))+labs(x='Posizione della foglia',y='Altezza Ward.D2'))
+z<-data.frame(Variabile=factor(rep(vars,each=3),levels=vars),Gruppo=factor(rep(1:3,8)),Media=as.vector(km$centers))
+salva('M08','F08',ggplot(z,aes(Variabile,Media,colour=Gruppo,group=Gruppo))+geom_line(linewidth=.6)+geom_point(size=1.8)+geom_hline(yintercept=0,linetype=2)+scale_colour_manual(values=geo[1:3])+coord_flip()+scale_y_continuous(breaks=c(-1,0,1))+scale_x_discrete(labels=nomi)+labs(x=NULL,y='Media standardizzata'),h=4.5)
+z<-data.frame(pc$x[,1:2],Gruppo=factor(km$cluster))
+salva('M08','F09',ggplot(z,aes(PC1,PC2,colour=Gruppo))+geom_point(size=2.3,alpha=.8)+scale_colour_manual(values=geo[1:3])+labs(x=sprintf('PC1 (%.1f%%)',100*prop[1]),y=sprintf('PC2 (%.1f%%)',100*prop[2])))
+T<-Z%*%pc$rotation;Z2<-T[,1:2]%*%t(pc$rotation[,1:2]);sv<-svd(Z)
+verifica('standardizzazione',max(abs(colMeans(Z)))<1e-12 && max(abs(apply(Z,2,sd)-1))<1e-12)
+verifica('autovalori e SVD',max(abs(lam-sv$d^2/(nrow(Z)-1)))<1e-12)
+verifica('ortogonalità',max(abs(crossprod(pc$rotation)-diag(8)))<1e-12)
+verifica('scores e rotazione',max(abs(T-pc$x))<1e-12)
+verifica('varianze e covarianze scores',max(abs(cov(T)-diag(lam)))<1e-12)
+verifica('errore ricostruzione',abs(sum((Z-Z2)^2)-sum(sv$d[-(1:2)]^2))<1e-10)
+verifica('correlazioni variabili scores',max(abs(cor(Z,T)-sweep(pc$rotation,2,pc$sdev,'*')))<1e-10)
+manuale<-sum(vapply(1:3,function(k)sum(sweep(Z[km$cluster==k,,drop=FALSE],2,km$centers[k,],'-')^2),0.0));verifica('WSS esplicita',abs(manuale-km$tot.withinss)<1e-10)
+# Ward: verifica incremento SSE in ogni fusione, senza assumere convenzioni implicite.
+gruppi<-vector('list',nrow(hc$merge));delta<-numeric(length(gruppi))
+for(i in seq_along(gruppi)){ab<-lapply(hc$merge[i,],function(j)if(j<0)-j else gruppi[[j]]);A<-ab[[1]];B<-ab[[2]];delta[i]<-length(A)*length(B)/(length(A)+length(B))*sum((colMeans(Z[A,,drop=FALSE])-colMeans(Z[B,,drop=FALSE]))^2);gruppi[[i]]<-c(A,B)}
+verifica('altezze Ward.D2',max(abs(hc$height^2/2-delta))<1e-9)
+a<-km$cluster;b<-c(3,1,2)[a];verifica('etichette arbitrarie',identical(outer(a,a,'=='),outer(b,b,'==')))
+dir.create('risultati/M08',recursive=TRUE,showWarnings=FALSE)
+write.csv(data.frame(id=d$id,pc$x[,1:2],kmeans=km$cluster,ward=cl),'risultati/M08/campioni.csv',row.names=FALSE)
+write.csv(zz,'risultati/M08/scelta_k.csv',row.names=FALSE)
+cat('Quote PC:',prop,'\n');cat('Medie silhouette:',zz$Silhouette,'\n')
+
+# Geometria del diagramma R6_D04, verificata nella scala euclidea.
+v1<-c(.8,.6);v2<-c(-.6,.8);z0<-c(2,1);t1<-sum(z0*v1);r0<-z0-t1*v1
+verifica('diagramma proiezione',abs(sum(v1*v2))<1e-14 && abs(t1-2.2)<1e-14 && abs(sum(r0*v1))<1e-14)

@@ -1,0 +1,8 @@
+d <- read.csv('dati/progetti/co2_weekly.csv')
+d$ym <- format(as.Date(d$date),'%Y-%m')
+d$valido <- as.integer(!is.na(d$co2_ppm))
+a <- aggregate(co2_ppm~ym,d,mean)
+n <- aggregate(valido~ym,d,sum)
+m <- merge(n,a,by='ym',all.x=TRUE)
+z <- subset(m,ym>='1985-01' & ym<='2000-12')
+stopifnot(nrow(z)==192,all(z$valido>=3))

@@ -1,0 +1,31 @@
+suppressPackageStartupMessages(library(jsonlite));source('R/lab-common.R');cat<-fromJSON('content/experiments.json',simplifyVector=FALSE)$activities;names(cat)<-vapply(cat,function(a)a$id,character(1))
+run<-function(id,override=list()){a<-cat[[id]];p<-setNames(lapply(a$controls,function(c)c$value),vapply(a$controls,function(c)c$key,character(1)));p[names(override)]<-override;e<-new.env(parent=globalenv());e$p<-p;set.seed(p$seed);eval(parse(text=a$code),e);e}
+close<-function(x,y,tol=1e-10)stopifnot(max(abs(x-y))<tol)
+# Analytic benchmarks independent of rendered labels.
+e<-run('m14-ritorno');close(e$data$y[50],1-.99^50);close(e$data$y[100],1-.99^100)
+e<-run('m14-gev',list(xi=0));close(e$qgev(100,0),480-90*log(-log(.99)));close(e$qgev(100,1e-9),e$qgev(100,0));stopifnot(e$qgev(500,-.3)<480-90/(-.3))
+e<-run('m14-conseguenze');close(sum(e$data$valore),7300)
+e<-run('m12-pendenza');close(mean(e$dx),.12);close(mean(e$dy),.08);close(mean(e$slope),atan(sqrt(.12^2+.08^2))*180/pi);stopifnot(length(e$slope)==324)
+e<-run('m12-pendenza',list(gx=0,gy=0));stopifnot(is.na(e$aspect));close(mean(e$slope),0)
+for(k in c('1','2','4','8')){e<-run('m12-ricampionamento',list(block=k));close(mean(e$data$z),mean(e$a$z));close(min(e$a$x)-as.numeric(k)/2,.5);close(max(e$a$x)+as.numeric(k)/2,32.5)}
+e<-run('m11-vicinati');close(sum(e$w),224);stopifnot(min(e$deg)==2,max(e$deg)==4)
+e<-run('m11-variogramma');stopifnot(nrow(e$pairs)==2016,all(e$pairs$semivarianza>=0),sum(e$data$coppie)==2016)
+xy<-matrix(c(0,0,1,0,0,1),ncol=2,byrow=TRUE);z<-c(2,4,8);close(idw(xy,z,xy),z);close(idw(xy,z,matrix(c(.3,.4),nrow=1),power=0),mean(z))
+e<-run('m11-kriging');close(sum(e$w),1);stopifnot(e$variance>=-1e-8,all(is.finite(e$w)))
+e<-run('m01-disegno',list(design='grid',n=60));close(mean(e$data$z),14);stopifnot(nrow(e$data)==60)
+e<-run('m02-join',list(duplicate='yes'));stopifnot(nrow(e$data)==4);close(mean(e$data$misura),5.25)
+e<-run('m08-pca-geometria');stopifnot(var(e$score)<=e$pc$sdev[1]^2+1e-10)
+for(k in 1:3){e<-run('m08-pca-ricostruzione',list(k=k));if(k==3)close(as.vector(e$xc),as.vector(e$rec),1e-10)}
+e<-run('m06-permutazione');stopifnot(e$pv>=1/(e$p$B+1),e$pv<=1)
+e<-run('m13-interpolazione',list(depth=180));stopifnot(is.na(e$age))
+e<-run('m13-durate',list(rho=.9,B=1000));stopifnot(abs(sd(e$data$durata)-sqrt(80^2+100^2-2*.9*80*100))<6)
+e<-run('m05-intervalli',list(rho=0,B=1000));stopifnot(mean(e$data$copre)>.9,mean(e$data$copre)<.985)
+e<-run('m05-intervalli',list(rho=.3,B=1000));stopifnot(mean(e$data$copre)<.6)
+e<-run('m05-dipendenza',list(rho=0));close(e$actual,1/sqrt(e$p$n));e<-run('m05-dipendenza',list(rho=.8));stopifnot(e$actual>4/sqrt(e$p$n))
+e<-run('m12-indici',list(nir=0,red=0));stopifnot(is.na(e$ndvi))
+e<-run('m15-casualita',list(skip=0));stopifnot(identical(e$a,e$b));e<-run('m15-casualita',list(skip=2));stopifnot(!identical(e$a,e$b))
+e<-run('m16-metriche');stopifnot(e$tp+e$fp+e$tn+e$fn==300)
+# Prediction invariance and purity of leaf probabilities.
+tree<-cart_fit(matrix(c(0,1,2,3,0,1,2,3),ncol=2),c(0,0,1,1),minleaf=1);prob<-cart_predict(tree,matrix(c(0,1,2,3,0,1,2,3),ncol=2));close(prob,c(0,0,1,1))
+write_json(list(esito='superato',famiglie=23,R=R.version.string,descrizione='Identità analitiche, vincoli geometrici, benchmark e comportamento Monte Carlo, indipendenti dalle etichette dell’interfaccia.'),'qa/experiments-invariants.json',auto_unbox=TRUE,pretty=TRUE)
+cat('Invarianti scientifiche: 23 famiglie superate\n')

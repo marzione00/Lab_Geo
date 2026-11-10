@@ -1,0 +1,7 @@
+d <- read.csv('dati/fossili_simulati.csv')
+d$morfotipo <- relevel(factor(d$morfotipo),'Rounded')
+a <- lm(diametro_int_um~diametro_tot_um+morfotipo,d)
+b <- lm(diametro_int_um~diametro_tot_um*morfotipo,d)
+coef(a)
+coef(b)
+colnames(model.matrix(b))

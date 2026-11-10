@@ -1,0 +1,7 @@
+d <- read.csv('dati/fossili_simulati.csv')
+d$spiky <- as.integer(d$morfotipo=='Spiky')
+g <- glm(spiky~diametro_tot_um,d,family=binomial())
+nuovi <- data.frame(diametro_tot_um=c(5,6,7))
+predict(g,nuovi,type='response')
+exp(coef(g))
+stopifnot(all(fitted(g)>0 & fitted(g)<1))
