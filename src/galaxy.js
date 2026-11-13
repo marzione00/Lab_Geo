@@ -1,52 +1,69 @@
-/* Galaxy navigation: presentation derives from the shared course/planet catalogues. */
+/* One navigator: galaxy → stellar system → world → course module. */
 (function(){
-  'use strict';
-  const positions={T00:[19,76],M01:[30,63],M02:[13,51],M03:[18,29],M04:[33,21],M05:[38,39],M06:[49,15],M07:[64,20],M08:[76,30],M09:[87,44],M10:[83,63],M11:[70,76],M12:[57,84],M13:[44,74],M14:[59,59],M15:[64,39],M16:[43,55]};
-  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  let hoverTimer;
-  const cleanup=()=>clearTimeout(hoverTimer);
-  function mount(main){
-    cleanup();
-    const worlds=window.GeoPlanets, modules=window.GEO_CATALOG.modules;
-    let selected='M01';
-    const node=p=>'<button type="button" class="galaxy-node" data-destination="'+p.id+'" style="--gx:'+positions[p.id][0]+'%;--gy:'+positions[p.id][1]+'%;--world-color:'+p.atmosphere+'" aria-pressed="false" aria-controls="destination-detail" aria-label="'+esc(p.id+' · '+p.name+' · '+modules.find(m=>m.id===p.id).title)+'"><span class="galaxy-orbit"><span class="planet-slot '+(p.rings?'ringed':'')+'" data-planet="'+p.id+'" aria-hidden="true"></span></span><span class="galaxy-node-label"><small>'+p.id+'</small> '+esc(p.name)+'</span></button>';
-    main.innerHTML='<section class="galaxy-home" aria-labelledby="galaxy-title"><div class="galaxy-heading"><div><p class="eyebrow">STATISTICA E CODING R / SCIENZE DELLA TERRA</p><h1 id="galaxy-title">La galassia del corso<span>.</span></h1><p>Ogni pianeta, un laboratorio. Scegli una destinazione e comincia a esplorare.</p></div><a class="galaxy-index" href="#catalogo">Indice dei moduli <span aria-hidden="true">↗</span></a></div><div class="galaxy-navigation"><div class="galaxy-chart" role="group" aria-label="Seleziona un pianeta del corso"><div class="galaxy-art" aria-hidden="true"></div><svg class="galaxy-grid" viewBox="0 0 1000 700" preserveAspectRatio="none" aria-hidden="true"><ellipse cx="500" cy="350" rx="390" ry="235"/><ellipse cx="500" cy="350" rx="275" ry="165"/><ellipse cx="500" cy="350" rx="150" ry="90"/><path d="M 500 30 V 670 M 40 350 H 960"/><path class="galaxy-course-route" d="'+worlds.planets.map(p=>positions[p.id]).map(([x,y],i)=>(i?'L':'M')+' '+x*10+' '+y*7).join(' ')+'"/><path id="galaxy-selected-route"/></svg>'+worlds.sectors.map((sector,i)=>'<span class="galaxy-region region-'+i+'">'+String(i+1).padStart(2,'0')+' / '+esc(sector)+'</span>').join('')+''+worlds.planets.map(node).join('')+'<div class="galaxy-map-caption"><span>'+worlds.planets.length+' DESTINAZIONI DISPONIBILI</span><span>MAPPA ILLUSTRATIVA · ROTTA LIBERA</span></div></div><aside id="destination-detail" class="destination-detail" aria-labelledby="destination-name"><div class="destination-signal"><span></span> DESTINAZIONE SELEZIONATA</div><div class="destination-portrait" aria-hidden="true"><div class="portrait-orbit"></div><div id="destination-planet" class="planet-slot" data-planet="M01"></div></div><p class="destination-sector" id="destination-sector"></p><h2 id="destination-name"></h2><p class="destination-type" id="destination-type"></p><div class="destination-subject"><h3 id="destination-title"></h3><p id="destination-description"></p></div><div class="destination-meta"><span><strong id="destination-count"></strong> esperimenti</span><span>R + ggplot2</span></div><a id="galaxy-travel" class="galaxy-travel" href="#modulo-M01">Viaggia <span aria-hidden="true">↗</span></a><p class="galaxy-help">Passa su un pianeta o selezionalo con un tocco. Premi Viaggia per aprire il modulo.</p><button class="galaxy-return" type="button">Scegli un altro pianeta ↑</button></aside></div><div class="galaxy-footer"><p><span class="galaxy-beacon"></span> '+window.GeoLabs.activities.length+' esperimenti interattivi <span class="galaxy-separator">/</span> R eseguito nel browser</p><a href="#progetti">Le '+Object.keys(window.GeoLabs.missions).length+' spedizioni applicative <span aria-hidden="true">→</span></a></div></section>';
-    const get=id=>main.querySelector('#'+id);
-    function select(id){
-      cleanup();
-      const p=worlds.byId[id],m=modules.find(x=>x.id===id); if(!p||!m)return;
-      selected=id;
-      main.querySelectorAll('[data-destination]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.destination===id)));
-      get('destination-sector').textContent=p.sector+' / '+id;
-      get('destination-name').textContent=p.name;
-      get('destination-type').textContent=p.description;
-      get('destination-title').textContent=m.title;
-      get('destination-description').textContent=m.subtitle;
-      get('destination-count').textContent=window.GeoLabs.count(id);
-      get('galaxy-travel').setAttribute('href','#modulo-'+id);
-      get('galaxy-travel').setAttribute('aria-label','Viaggia verso '+p.name+': '+m.title);
-      const portrait=get('destination-planet');portrait.dataset.planet=id;portrait.classList.toggle('ringed',Boolean(p.rings));
-      const [x,y]=positions[id];
-      get('galaxy-selected-route').setAttribute('d','M '+x*10+' '+y*7+' L '+Math.min(970,x*10+65)+' '+(y*7-55)+' H 980');
-      window.GeoSpace?.refresh();
-    }
-    main.querySelectorAll('[data-destination]').forEach(button=>{
-      button.addEventListener('pointerenter',e=>{cleanup();if(e.pointerType!=='touch')hoverTimer=setTimeout(()=>{if(button.isConnected)select(button.dataset.destination);},180);});
-      button.addEventListener('pointerleave',cleanup);
-      button.addEventListener('focus',()=>select(button.dataset.destination));
-      button.addEventListener('click',()=>{select(button.dataset.destination);if(window.matchMedia('(max-width: 540px)').matches)get('destination-detail').scrollIntoView({block:'nearest',behavior:'instant'});});
-      button.addEventListener('keydown',e=>{
-        const keys=['ArrowRight','ArrowDown','ArrowLeft','ArrowUp','Home','End'];if(!keys.includes(e.key))return;
-        e.preventDefault();e.stopPropagation();const nodes=[...main.querySelectorAll('[data-destination]')],i=nodes.indexOf(button);
-        nodes[e.key==='Home'?0:e.key==='End'?nodes.length-1:(i+(e.key==='ArrowLeft'||e.key==='ArrowUp'?-1:1)+nodes.length)%nodes.length].focus();
-      });
-    });
-    get('galaxy-travel').addEventListener('click',e=>{
-      if(e.button!==0||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey||!window.GeoSpace)return;
-      e.preventDefault();window.GeoSpace.travel(selected,main.querySelector('[data-destination="'+selected+'"] .planet-slot'));
-    });
-    main.querySelector('.galaxy-return').addEventListener('click',()=>{const node=main.querySelector('[data-destination="'+selected+'"]');node.focus({preventScroll:true});main.querySelector('.galaxy-chart').scrollIntoView({block:'start',behavior:'instant'});});
-    select(selected);
+ 'use strict';
+ const A=window.GeoAstro,N=window.GeoNarrative,esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const n=(v,d=2)=>v.toLocaleString('it-IT',{maximumFractionDigits:d,minimumFractionDigits:0});
+ let scene=null,hoverTimer=0;const variants=new Map();
+ const getModule=id=>window.GEO_CATALOG.modules.find(m=>m.id===id);
+ const stat=(label,value,unit)=>`<div><dt>${label}</dt><dd>${value} <small>${unit}</small></dd></div>`;
+ const footer=()=>`<div class="galaxy-footer"><p><span class="galaxy-beacon"></span>17 sistemi · 85 pianeti esplorabili <span class="galaxy-separator">/</span> 139 esperimenti R</p><a href="#catalogo">Indice dei moduli →</a></div>`;
+ const note='<p class="model-note">Sistemi immaginari · dimensioni e distanze grafiche non in scala.</p>';
+ function cleanup(){clearTimeout(hoverTimer);scene?.dispose();scene=null;}
+ function starFacts(s){return `<dl class="astro-stats">${stat('Temperatura effettiva',n(s.star.temperature,0),'K')}${stat('Massa stellare',n(s.star.mass),'M☉')}${stat('Raggio stellare',n(s.star.radius),'R☉')}${stat('Luminosità',n(s.star.luminosity,3),'L☉')}</dl>`;}
+ function mount(main){
+  cleanup();let selected='M05';const systems=A.systems.map(s=>A.generate(s.id,variants.get(s.id)||0));
+  main.innerHTML=`<section class="galaxy-home" aria-labelledby="galaxy-title"><div class="galaxy-heading"><div><p class="eyebrow">ATLANTE SCIENTIFICO / CARTOGRAFIA STELLARE</p><h1 id="galaxy-title">${esc(N.data.home.title)}</h1><p>Una spedizione nella conoscenza, fra astronomia, statistica e codice R.</p></div><a class="galaxy-index" href="#catalogo">Indice del corso ↗</a></div>
+   ${N.home()}<div class="exploration-steps"><span class="active">01 <b>Galassia</b></span><span>02 Sistema stellare</span><span>03 Pianeta e laboratorio</span></div>
+   <div class="galaxy-navigation"><div class="galaxy-chart" role="group" aria-label="Galassia tridimensionale e sistemi stellari">
+    <canvas id="galaxy-viewport" tabindex="0" role="img" aria-label="Galassia ruotabile. Trascina o usa le frecce; più e meno regolano lo zoom. Seleziona un punto stellare per entrare nel sistema."></canvas>
+    <svg class="galaxy-leaders" aria-hidden="true">${systems.map(s=>`<g data-leader="${s.id}"><path class="leader-line"/><circle class="leader-pin" r="2.4"/><circle class="leader-target"/></g>`).join('')}</svg><div class="galaxy-corners" aria-hidden="true"></div>
+    <div class="galaxy-chart-heading"><span class="galaxy-beacon"></span><span>ATLANTE GALATTICO<small>17 SISTEMI / SEQUENZA PRINCIPALE</small></span></div>
+    <div class="galaxy-camera" aria-label="Controlli della camera"><button type="button" data-camera="in" aria-label="Avvicina la camera">+</button><button type="button" data-camera="out" aria-label="Allontana la camera">−</button><button type="button" data-camera="reset" aria-label="Ripristina la vista della galassia">↺</button></div>
+    ${systems.map(s=>`<button class="galaxy-node" type="button" data-destination="${s.id}" aria-pressed="false" aria-controls="destination-detail" aria-label="Esplora il sistema ${s.name}, modulo ${s.id}: ${esc(getModule(s.id).title)}"><span class="galaxy-node-label"><span class="galaxy-node-name"><small>${s.id}</small><strong>${s.name}</strong><i>↗</i></span><span class="galaxy-node-subject">${s.star.type} · ${s.subject}</span></span></button>`).join('')}
+    <div class="galaxy-map-caption"><span>TRASCINA PER RUOTARE · CLICCA UN SISTEMA</span><span>MAPPA ILLUSTRATIVA</span></div><div class="galaxy-flight"><span>AVVICINAMENTO A <strong class="galaxy-flight-name"></strong></span><button class="galaxy-skip" type="button">Entra nel sistema →</button></div>
+   </div><aside id="destination-detail" class="destination-detail system-preview" aria-labelledby="destination-name"></aside></div>${note}${footer()}</section>`;
+  function select(id){clearTimeout(hoverTimer);const s=A.generate(id,variants.get(id)||0);if(!s)return;selected=id;const m=getModule(id);
+   main.querySelectorAll('[data-destination]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.destination===id)));
+   main.querySelector('#destination-detail').innerHTML=`<p class="destination-signal"><span></span> SISTEMA SELEZIONATO</p><div class="spectral-emblem" style="--star-color:${s.star.color}" aria-hidden="true"><span>${s.star.type[0]}</span><i></i></div><p class="destination-sector">${id} / SEQUENZA PRINCIPALE</p><h2 id="destination-name">${s.name}</h2><p class="destination-type">Stella di classe ${s.star.type} · 5 pianeti</p><p class="stellar-abstract">${s.star.description}</p>${starFacts(s)}${N.destination(id)}<div class="module-destination"><small>DESTINAZIONE DEL CORSO</small><strong>${s.target.name}</strong><span>${esc(m.title)}</span></div><a id="galaxy-travel" class="galaxy-travel" href="#sistema-${id}">Esplora il sistema <span>↗</span></a><p class="galaxy-help">I punti luminosi indicano sistemi stellari. I pianeti diventano visibili durante l’avvicinamento.</p>`;
+   main.querySelector('#galaxy-travel').addEventListener('click',e=>{if(e.button||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)return;e.preventDefault();enter(id);});scene?.select(id);
   }
-  window.GeoGalaxy=Object.freeze({mount,cleanup});
+  function enter(id){select(id);const arrive=()=>{location.hash='#sistema-'+id;};if(scene)scene.travel(id,arrive);else arrive();}
+  const buttons=[...main.querySelectorAll('[data-destination]')];buttons.forEach((b,i)=>{
+   b.addEventListener('pointerenter',e=>{clearTimeout(hoverTimer);if(e.pointerType!=='touch')hoverTimer=setTimeout(()=>select(b.dataset.destination),220);});b.addEventListener('pointerleave',()=>clearTimeout(hoverTimer));b.addEventListener('focus',()=>select(b.dataset.destination));b.addEventListener('click',()=>enter(b.dataset.destination));
+   b.addEventListener('keydown',e=>{const k=e.key;if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'].includes(k))return;e.preventDefault();buttons[k==='Home'?0:k==='End'?buttons.length-1:(i+(['ArrowLeft','ArrowUp'].includes(k)?-1:1)+buttons.length)%buttons.length].focus();});
+  });scene=window.GeoGalaxyScene.create(main.querySelector('.galaxy-chart'),select,enter);select(selected);
+ }
+ function scientificNotes(){return `<section class="astro-learning" aria-labelledby="astro-learning-title"><div><p class="eyebrow">LEGGERE IL MODELLO</p><h2 id="astro-learning-title">Tre relazioni per esplorare un sistema.</h2><p>I valori mostrati nelle schede derivano da queste relazioni. Le orbite del modello sono circolari e la massa dei pianeti è trascurata nel calcolo del periodo.</p></div><div class="astro-equations">
+  <article><small>01 / RADIAZIONE</small><h3>Luminosità stellare</h3><p class="equation">L/L☉ = (R/R☉)² (T/5772 K)⁴</p><p>Il raggio e la temperatura effettiva determinano la potenza irradiata. L☉ e R☉ indicano luminosità e raggio solari.</p></article>
+  <article><small>02 / GRAVITAZIONE</small><h3>Periodo orbitale</h3><p class="equation">P/anno ≃ √[(a/UA)³ / (M/M☉)]</p><p>Aumentando il semiasse maggiore a, il periodo cresce. UA è l’unità astronomica; la massa M è quella della stella.</p></article>
+  <article><small>03 / BILANCIO ENERGETICO</small><h3>Temperatura di equilibrio</h3><p class="equation">T<sub>eq</sub> = 278,3 K [(L/L☉)(1 − A<sub>B</sub>)/(a/UA)²]<sup>¼</sup></p><p>A<sub>B</sub> è l’albedo di Bond. Il calcolo assume emissività unitaria e redistribuzione uniforme del calore; esclude effetto serra e calore interno.</p></article></div>
+  <details class="astro-method"><summary>Ipotesi, scale e fonti scientifiche</summary><p>Le stelle sono estratte con uguale probabilità fra quattro esempi sintetici di sequenza principale F, G, K e M. Questa scelta offre varietà didattica e non riproduce le frequenze stellari della galassia. Il seme iniziale è stabile; «Nuova configurazione» cambia l’estrazione nella sessione.</p><p>I nomi dei mondi identificano i moduli: anche Terra è qui una destinazione convenzionale, non una ricostruzione del Sistema solare. Superfici, raggi visivi e separazioni delle orbite sono illustrativi; i valori fisici si leggono nelle schede. Una sola scala temporale conserva i rapporti fra i periodi orbitali, mentre la rotazione delle superfici è illustrativa.</p><p>La temperatura di equilibrio non è la temperatura superficiale né un criterio sufficiente di abitabilità. Per stimare un clima occorrono atmosfera, nubi e altri processi.</p><ul><li><a href="https://science.nasa.gov/exoplanets/stars/" target="_blank" rel="noopener noreferrer">NASA · Classi stellari e pianeti</a></li><li><a href="https://science.nasa.gov/solar-system/orbits-and-keplers-laws/" target="_blank" rel="noopener noreferrer">NASA · Orbite e leggi di Keplero</a></li><li><a href="https://exoplanetarchive.ipac.caltech.edu/docs/pscp_calc.html" target="_blank" rel="noopener noreferrer">NASA Exoplanet Archive · Relazioni fra parametri fisici</a></li></ul></details></section>`;}
+ function system(main,id){
+  cleanup();const s=A.generate(id,variants.get(id)||0);if(!s)return;let selected='star';const m=getModule(id);
+  main.innerHTML=`<section class="galaxy-home stellar-home" aria-labelledby="system-title"><div class="galaxy-heading"><div><p class="eyebrow">${id} / SISTEMA PLANETARIO SINTETICO</p><h1 id="system-title" tabindex="-1">Sistema ${s.name}<span>.</span></h1><p>Cinque mondi attorno a una stella. Esplora le orbite e raggiungi ${s.target.name}.</p></div><a class="galaxy-index" href="#indice">← Torna alla galassia</a></div>
+   ${N.system(s)}<div class="exploration-steps"><a href="#indice">01 Galassia</a><span class="active">02 <b>Sistema stellare</b></span><span id="exploration-step">03 Pianeta e laboratorio</span></div>
+   <div class="galaxy-navigation system-navigation"><div class="system-stage"><div class="system-chart" role="group" aria-label="Sistema stellare ${s.name}">
+    <svg class="system-orbits" aria-hidden="true">${s.planets.map(()=>'<path/>').join('')}</svg><canvas id="system-viewport" tabindex="0" role="img" aria-label="Sistema tridimensionale: trascina o usa le frecce per ruotare. Seleziona un pianeta per avvicinarti; Home ripristina la vista."></canvas><div class="galaxy-corners" aria-hidden="true"></div>
+    <div class="galaxy-chart-heading"><span class="galaxy-beacon"></span><span>TELEMETRIA ORBITALE<small>${s.name.toUpperCase()} / CLASSE ${s.star.type}</small></span></div>
+    <div class="galaxy-camera"><button type="button" data-system-camera="in" aria-label="Avvicina la camera">+</button><button type="button" data-system-camera="out" aria-label="Allontana la camera">−</button><button type="button" data-system-camera="reset" aria-label="Vista completa del sistema">↺</button></div>
+    <button type="button" class="body-label star-label" data-body-label="star">${s.name}<small>${s.star.type}</small></button>
+    ${s.planets.map(p=>`<button type="button" class="body-label ${p.isTarget?'module-world':''}" data-body-label="${p.id}">${p.name}<small>${p.isTarget?'◆ MODULO '+id:n(p.axisAU,3)+' UA'}</small></button>`).join('')}
+    <div class="galaxy-map-caption"><span>TRASCINA · SELEZIONA UN PIANETA PER AVVICINARTI</span><span>ORBITA CIRCOLARE / e = 0</span></div></div>
+    <div class="system-bodies" aria-label="Corpi esplorabili"><button type="button" data-body="star" aria-pressed="true"><i style="--body-color:${s.star.color}">☉</i><span>${s.name}<small>STELLA ${s.star.type}</small></span></button>${s.planets.map(p=>`<button type="button" data-body="${p.id}" aria-pressed="false" class="${p.isTarget?'target-body':''}"><i style="--body-color:${p.atmosphere}">${p.label}</i><span>${p.name}<small>${p.isTarget?'DESTINAZIONE '+id:n(p.axisAU,3)+' UA'}</small></span></button>`).join('')}</div><div class="system-scale"><span>Tempo orbitale: 1 s ≈ ${n(s.yearsPerSecond*365.25,2)} giorni simulati</span><button type="button" id="new-system">↻ Nuova configurazione</button></div></div>
+    <aside id="body-detail" class="destination-detail body-detail" aria-labelledby="body-name"></aside></div>${note}${scientificNotes()}${footer()}</section>`;
+  function select(body,zoom=true){
+   const p=s.planets.find(p=>p.id===body);if(body!=='star'&&!p)return;selected=body;main.querySelectorAll('[data-body]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.body===body)));
+   main.querySelector('#exploration-step').classList.toggle('active',body!=='star');
+   main.querySelector('#body-detail').innerHTML=body==='star'?`<p class="destination-signal"><span></span> OSSERVAZIONE STELLARE</p><div class="spectral-class"><strong>${s.star.type[0]}</strong><span>CLASSE SPETTRALE<small>V · sequenza principale</small></span></div><h2 id="body-name">${s.name}</h2><p class="stellar-abstract">${s.star.description}</p>${starFacts(s)}<div class="spectral-scale" aria-label="Sequenza delle classi mostrate, da più calda a più fredda">${A.classes.map(c=>`<span class="${c.type===s.star.type?'current':''}" style="--star-color:${c.color}">${c.type[0]}<small>${n(c.temperature,0)} K</small></span>`).join('')}</div><p class="instrument-note">Temperatura effettiva: temperatura del corpo nero che emetterebbe la stessa potenza per unità di superficie.</p><button class="galaxy-travel" type="button" id="locate-module">Localizza ${s.target.name} <span>↗</span></button><p class="galaxy-help">Il modulo ${id}, «${esc(m.title)}», si trova su ${s.target.name}.</p>`:
+   `<p class="destination-signal"><span></span> ${p.isTarget?'DESTINAZIONE DEL MODULO '+id:'ESPLORAZIONE PLANETARIA'}</p><p class="destination-sector">${s.name} / ORBITA ${p.label.toUpperCase()}</p><h2 id="body-name">${p.name}</h2><p class="destination-type">${p.description}</p><dl class="astro-stats">${stat('Semiasse maggiore',n(p.axisAU,3),'UA')}${stat('Periodo orbitale',n(p.periodYears*365.25,1),'giorni')}${stat('Raggio del modello',n(p.radiusEarth),'R⊕')}${stat('T di equilibrio',n(p.temperature,0),'K')}${stat('Flusso incidente',n(p.flux,2),'S⊕')}${stat('Albedo di Bond',n(p.albedo),'')}</dl><div class="planet-lesson"><h3>${p.lesson.title}</h3><p>${p.lesson.text}</p></div>${N.planet(s,p)}${p.isTarget?`<div class="module-destination"><small>${window.GeoLabs.count(id)} ESPERIMENTI / R + GGPLOT2</small><strong>${esc(m.title)}</strong><span>${esc(m.subtitle)}</span></div><a class="galaxy-travel" id="enter-module" href="#modulo-${id}">Entra nel laboratorio <span>↗</span></a>`:`<button class="galaxy-travel secondary-travel" type="button" id="locate-module">Vai a ${s.target.name} <span>↗</span></button>`}<button class="system-overview" type="button" id="system-overview">← Vista completa del sistema</button><p class="instrument-note">R⊕: raggio terrestre. S⊕: flusso ricevuto dalla Terra. T di equilibrio: bilancio radiativo ideale, senza effetto serra.</p>`;
+   main.querySelector('#locate-module')?.addEventListener('click',()=>select(s.target.id));
+   main.querySelector('#system-overview')?.addEventListener('click',()=>select('star'));
+   main.querySelector('#enter-module')?.addEventListener('click',e=>{if(e.button||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)return;e.preventDefault();location.hash='#modulo-'+id;});
+   if(zoom){scene?.focus(body);const chart=main.querySelector('.system-chart');if(chart.getBoundingClientRect().top < -80)chart.scrollIntoView({block:'start',behavior:'instant'});}document.getElementById('annuncio').textContent=body==='star'?'Stella '+s.name:'Esplorazione di '+p.name;
+  }
+  main.querySelectorAll('[data-body], [data-body-label]').forEach(b=>b.addEventListener('click',()=>select(b.dataset.body||b.dataset.bodyLabel)));
+  main.querySelector('#new-system').addEventListener('click',()=>{variants.set(id,((variants.get(id)||0)+1)%10000);system(main,id);main.querySelector('#system-title').focus({preventScroll:true});document.getElementById('annuncio').textContent='Nuova configurazione del sistema '+s.name;});
+  scene=window.GeoSystemScene.create(main.querySelector('.system-chart'),s,select);select('star',false);
+ }
+ window.GeoGalaxy=Object.freeze({mount,system,cleanup,debug:()=>scene?.debug()||null});
 })();

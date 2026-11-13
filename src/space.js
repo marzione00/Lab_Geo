@@ -3,7 +3,7 @@
  let canvas=document.getElementById('space-canvas');const pause=document.getElementById('motion-toggle');
  const flightLayer=document.getElementById('flight-layer'),flightTitle=document.getElementById('flight-title');
  const reduced=window.matchMedia?window.matchMedia('(prefers-reduced-motion: reduce)'):{matches:false};
- let gl,cpu,program,locations,ready=false,failed=false,paused=false,frame=0,last=0,time=0,flight=null;
+ let gl,cpu,program,locations,ready=false,failed=false,paused=reduced.matches,frame=0,last=0,time=0,flight=null;
  let width=1,height=1,dpr=1,slots=[],currentId='M01',currentType='indice',flightTimer=0;
  const planet=window.GeoPlanets.byId;
  const rgb=hex=>[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16)/255);
@@ -48,7 +48,7 @@
  }
  function schedule(){if(frame)cancelAnimationFrame(frame);frame=0;last=0;render(performance.now());if(ready&&(!paused||flight)&&!document.hidden)frame=requestAnimationFrame(tick);}
  function resize(){width=Math.max(1,window.innerWidth);height=Math.max(1,window.innerHeight);dpr=Math.min(window.devicePixelRatio||1,1.5,1800/width);canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);render(performance.now());}
- function syncPause(){pause.textContent=paused?'Riprendi rotazione':'Pausa rotazione';pause.setAttribute('aria-pressed',String(paused));schedule();}
+ function syncPause(){pause.textContent=paused?'Riprendi rotazione':'Pausa rotazione';pause.setAttribute('aria-pressed',String(paused));document.dispatchEvent(new CustomEvent("geospace:pause",{detail:{paused}}));schedule();}
  function refresh(){slots=[...document.querySelectorAll('[data-planet]')];render(performance.now());}
  function cancelFlight(){clearTimeout(flightTimer);flight=null;document.body.classList.remove('in-flight');flightLayer.hidden=true;schedule();}
  function finishFlight(){if(!flight)return;const id=flight.id;cancelFlight();if(location.hash!=='#modulo-'+id)location.hash='#modulo-'+id;refresh();document.getElementById('contenuto').focus({preventScroll:true});document.getElementById('annuncio').textContent='Arrivo: '+id+' · '+planet[id].name;}
@@ -63,7 +63,7 @@
  }
  function onRoute(route){if(flight&&(route.id!==flight.id||route.type!=='module'))cancelFlight();currentType=route.type;if(route.id)currentId=route.id;else if(route.type==='indice')currentId='M01';document.body.dataset.page=route.type;document.body.dataset.world=currentId;refresh();}
  async function fallback(err){
-  if(!cpu){try{const next=canvas.cloneNode(false);canvas.replaceWith(next);canvas=next;cpu=window.GeoCPU.create(canvas);await cpu.ready;ready=true;failed=false;canvas.hidden=false;pause.disabled=false;document.body.dataset.space='canvas';refresh();resize();schedule();return;}catch(error){console.warn('GeoStat: rendering non disponibile.',error);}}
+  if(!cpu){try{const next=canvas.cloneNode(false);canvas.replaceWith(next);canvas=next;cpu=window.GeoCPU.create(canvas);await cpu.ready;ready=true;failed=false;canvas.hidden=false;pause.disabled=false;document.body.dataset.space='canvas';refresh();resize();syncPause();return;}catch(error){console.warn('GeoStat: rendering non disponibile.',error);}}
   failed=true;ready=false;canvas.hidden=true;pause.disabled=true;pause.textContent='Vista essenziale';document.body.classList.add('space-fallback');console.warn('GeoStat: grafica non disponibile.',err);
  }
  async function initialize(){try{
@@ -76,7 +76,7 @@
   locations={};['uResolution','uCenter','uRadius','uAngle','uTime','uKind','uSeed','uTilt','uRings','uOpacity','uHero','uLand','uDeep','uHigh','uAtmosphere'].forEach(n=>locations[n]=gl.getUniformLocation(program,n));
   const names=['Day','Surface','Night'];const images=await Promise.all(names.map(name=>new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=()=>reject(Error('Texture '+name+' non disponibile'));im.src='assets/space/'+name.toLowerCase()+'.webp';})));
   images.forEach((im,i)=>{const t=gl.createTexture();gl.activeTexture(gl.TEXTURE0+i);gl.bindTexture(gl.TEXTURE_2D,t);gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,false);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,gl.RGB,gl.UNSIGNED_BYTE,im);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.REPEAT);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);gl.uniform1i(gl.getUniformLocation(program,'u'+names[i]),i);});
-  gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);ready=true;failed=false;canvas.hidden=false;pause.disabled=false;document.body.classList.remove('space-fallback');document.body.dataset.space='ready';refresh();resize();schedule();
+  gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);ready=true;failed=false;canvas.hidden=false;pause.disabled=false;document.body.classList.remove('space-fallback');document.body.dataset.space='ready';refresh();resize();syncPause();
  }catch(e){fallback(e);}}
  document.addEventListener('click',event=>{const a=event.target.closest('a[href]');if(!a||event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey||a.target||a.hasAttribute('download'))return;const match=/^#modulo-(T00|M\d{2}|P\d{2})$/.exec(a.getAttribute('href'));if(!match||!planet[match[1]])return;event.preventDefault();travel(match[1],a.querySelector('[data-planet]')||a.closest('[data-world-card]')?.querySelector('[data-planet]'));});
  pause.addEventListener('click',()=>{paused=!paused;syncPause();});

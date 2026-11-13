@@ -21,6 +21,20 @@ const float PI=3.14159265359;
 float hash(vec3 p){return fract(sin(dot(p,vec3(127.1,311.7,74.7)))*43758.5453123);}
 float noise(vec3 p){vec3 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(mix(hash(i),hash(i+vec3(1,0,0)),f.x),mix(hash(i+vec3(0,1,0)),hash(i+vec3(1,1,0)),f.x),f.y),mix(mix(hash(i+vec3(0,0,1)),hash(i+vec3(1,0,1)),f.x),mix(hash(i+vec3(0,1,1)),hash(i+vec3(1,1,1)),f.x),f.y),f.z);}
 float fbm(vec3 p){float a=.5,s=0.;for(int i=0;i<5;i++){s+=a*noise(p);p=p*2.03+vec3(1.7,9.2,3.1);a*=.49;}return s;}
+// Multi-scale impact relief. Smooth spherical coordinates avoid UV seams.
+float impact(vec3 p){
+ vec3 cell=floor(p-.5);float relief=1.;
+ for(int z=0;z<2;z++)for(int y=0;y<2;y++)for(int x=0;x<2;x++){
+  vec3 c=cell+vec3(float(x),float(y),float(z));
+  float h=hash(c+uSeed);
+  vec3 centre=c+vec3(.18)+.64*vec3(h,hash(c+vec3(7,13,3)),hash(c+vec3(19,2,11)));
+  float radius=.13+.23*hash(c+vec3(12,4,9));
+  float d=length(p-centre)/radius;
+  float bowl=1.-smoothstep(.35,.94,d),rim=exp(-pow((d-1.)*9.,2.));
+  relief*=1.-bowl*.23+rim*.17;
+ }
+ return relief;
+}
 vec3 rx(vec3 p,float a){float c=cos(a),s=sin(a);return vec3(p.x,c*p.y-s*p.z,s*p.y+c*p.z);}
 vec3 ry(vec3 p,float a){float c=cos(a),s=sin(a);return vec3(c*p.x+s*p.z,p.y,-s*p.x+c*p.z);}
 vec3 rz(vec3 p,float a){float c=cos(a),s=sin(a);return vec3(c*p.x-s*p.y,s*p.x+c*p.y,p.z);}
@@ -66,30 +80,41 @@ void main(){
   }else{
    vec3 pos=q*3.3+uSeed;
    float terrain=fbm(pos),detail=fbm(pos*9.);
+   float grain=noise(q*185.+uSeed),micro=noise(q*410.+uSeed);
+   float ridges=pow(1.-abs(2.*fbm(pos*4.)-1.),5.);
    vec3 albedo=mix(uDeep,uLand,smoothstep(.27,.64,terrain));
    if(abs(uKind-4.)<.5||abs(uKind-10.)<.5){
     vec3 flowing=ry(q,uTime*.004*q.y);
     float latitude=flowing.y+(.09+uKind*.002)*(fbm(flowing*7.+uSeed)-.5);
     float bands=sin(latitude*24.+fbm(flowing*14.+uSeed)*2.3);
-    float fine=sin(latitude*180.+noise(flowing*60.)*5.);
+    float shear=fbm(flowing*28.+vec3(latitude*8.,uSeed,0.));
+    float fine=sin(latitude*260.+shear*12.);
+    float filaments=sin(latitude*510.+shear*24.+noise(flowing*110.)*3.);
     albedo=mix(uDeep,uLand,smoothstep(-.9,.8,bands));
     albedo=mix(albedo,uHigh,smoothstep(.45,.95,bands)*.65);
-    albedo*=.88+.07*fine+.13*detail;
+    albedo*=.87+.065*fine+.035*filaments+.15*detail;
     vec3 spot=normalize(vec3(.9,-.22,.28));
     float cyclone=exp(-pow(length((q-spot)*vec3(1.,2.,1.))*5.,2.));
     albedo=mix(albedo,uDeep,cyclone*(.65+.2*sin(length(q-spot)*150.+uTime*.08)));
    }else if(abs(uKind-14.)<.5){
-    float cracks=abs(fbm(pos*1.6)-.47);
+    float cracks=abs(fbm(pos*1.6+(fbm(pos*6.)-.5)*.2)-.47);
     emission=(1.-smoothstep(.008,.032,cracks))*smoothstep(.29,.65,terrain);
-    albedo=mix(uDeep,uLand,detail)*(.75+detail*.5);
+    albedo=mix(uDeep,uLand,detail)*(.63+detail*.55+grain*.18);
+    emission*=.7+.3*noise(q*180.+uSeed);
+    emission+=.12*(1.-smoothstep(.003,.012,abs(fbm(pos*6.)-.48)))*smoothstep(.5,.68,terrain);
    }else if(abs(uKind-9.)<.5){
     float cracks=abs(fbm(pos*2.)-.48);
     albedo=mix(uDeep,uHigh,smoothstep(.009,.043,cracks));
-    albedo=mix(albedo,uLand,detail*.5);
+    albedo=mix(albedo,uLand,detail*.42);
+    albedo*=.88+.15*grain+.07*micro;
    }else if(abs(uKind-5.)<.5||abs(uKind-6.)<.5||abs(uKind-8.)<.5){
     float limit=abs(uKind-5.)<.5?.57:.49;
     water=1.-smoothstep(limit-.01,limit+.01,terrain);
-    albedo=mix(mix(uLand,uHigh,smoothstep(.58,.76,terrain)),uDeep,water);
+    vec3 continent=mix(uLand,uHigh,smoothstep(.57,.74,terrain));
+    continent*=.72+.24*ridges+.18*grain;
+    float shore=exp(-pow((terrain-limit)*180.,2.));
+    albedo=mix(continent,uDeep,water);
+    albedo=mix(albedo,uHigh,shore*.34);
     float cloud=fbm(local(n,uAngle*1.022+.2)*8.+uSeed);
     cloudAlpha=smoothstep(.52,.72,cloud)*.7;
    }else if(abs(uKind-13.)<.5){
@@ -106,8 +131,10 @@ void main(){
    }else{
     albedo=mix(albedo,uHigh,smoothstep(.51,.72,terrain));
     albedo*=.6+detail*.8;
-    float crater=abs(noise(q*24.+uSeed)-.45);
-    albedo*=.72+.28*smoothstep(.01,.12,crater);
+    albedo*=impact(q*14.+uSeed)*impact(q*43.+uSeed)*(.85+.12*grain+.06*micro);
+   }
+   if(abs(uKind-4.)>.5&&abs(uKind-10.)>.5&&abs(uKind-9.)>.5&&abs(uKind-14.)>.5){
+    albedo*=.91+.1*grain+.035*micro;
    }
    surface=pow(albedo,vec3(2.2))*(vec3(1.,.93,.86)*sunlight*1.65+vec3(.027,.038,.055));
    surface+=vec3(1.,.16,.014)*emission*(1.3-sunlight*.3);

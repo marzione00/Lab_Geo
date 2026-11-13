@@ -30,32 +30,34 @@ assert.equal(d.querySelectorAll(".module-card").length,1);
 d.querySelector('[data-filter="moduli"]').click();assert.equal(d.querySelectorAll(".module-card").length,0);
 const catalog=w.GEO_CATALOG.modules;
 w.location.hash='#indice';await until(()=>d.querySelectorAll('.galaxy-node').length===17);
-const originalCoordinates=new Map([...d.querySelectorAll('.galaxy-node')].map(n=>[n.dataset.destination,[n.style.getPropertyValue('--gx'),n.style.getPropertyValue('--gy')]]));
+const originalCoordinates=JSON.stringify(w.GeoGalaxyModel.anchors);
 w.GeoPlanets.planets.reverse();w.GeoGalaxy.mount(d.querySelector('main'));
-for(const n of d.querySelectorAll('.galaxy-node'))assert.deepEqual([n.style.getPropertyValue('--gx'),n.style.getPropertyValue('--gy')],originalCoordinates.get(n.dataset.destination));
+assert.equal(JSON.stringify(w.GeoGalaxyModel.anchors),originalCoordinates);
+assert.equal(d.querySelectorAll('#galaxy-viewport').length,1);
 w.GeoPlanets.planets.reverse();w.GeoGalaxy.mount(d.querySelector('main'));
-for(const p of w.GeoPlanets.planets){
- const node=d.querySelector('[data-destination="'+p.id+'"]');node.click();
+for(const p of w.GeoAstro.systems){
+ const node=d.querySelector('[data-destination="'+p.id+'"]');node.focus();
  assert.equal(d.querySelector('#destination-name').textContent,p.name);
- assert.equal(d.querySelector('#galaxy-travel').getAttribute('href'),'#modulo-'+p.id);
+ assert.equal(d.querySelector('#galaxy-travel').getAttribute('href'),'#sistema-'+p.id);
  assert.equal(d.querySelectorAll('.galaxy-node[aria-pressed="true"]').length,1);
- assert.equal(d.querySelector('#destination-title').textContent,catalog.find(m=>m.id===p.id).title);
- assert.equal(d.querySelector('#destination-count').textContent,String(w.GeoLabs.count(p.id)));
 }
-d.querySelector('[data-destination="M14"]').dispatchEvent(new w.Event('pointerenter'));
-await until(()=>d.querySelector('#destination-name').textContent==='Ignis');
-d.querySelector('[data-destination="M14"]').dispatchEvent(new w.KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true}));
-assert.equal(d.activeElement.dataset.destination,'M15');
-assert.equal(d.querySelector('#destination-name').textContent,'Argenta');
-d.querySelector('[data-destination="M01"]').click();d.querySelector('#galaxy-travel').click();
-assert.equal(w.location.hash,'#modulo-M01');
-await until(()=>d.querySelector('.lab-module-header h1'));
-d.querySelector('#skip-flight').click();
-
-w.location.hash='#mappa';await until(()=>d.querySelectorAll('.world-card').length===17);
-d.querySelector('[data-sector="Inferenza"]').click();assert.equal(d.querySelectorAll('.world-card').length,4);
-assert([...d.querySelectorAll('.world-card')].every(a=>a.href.includes('modulo-M0')));
-d.querySelector('[data-sector="all"]').click();assert.equal(d.querySelectorAll('.world-card').length,17);
+d.querySelector('[data-destination="M01"]').click();
+await until(()=>d.querySelector('#system-title'));
+assert.equal(w.location.hash,'#sistema-M01');
+assert.equal(d.querySelectorAll('[data-body]').length,6);
+for(const p of w.GeoAstro.byId.M01.planets){d.querySelector('[data-body="'+p.id+'"]').click();assert.equal(d.querySelector('#body-name').textContent,p.name);assert.equal(Boolean(d.querySelector('#enter-module')),p.isTarget);}
+d.querySelector('#new-system').click();assert.equal(d.querySelectorAll('[data-body]').length,6);
+d.querySelector('#locate-module').click();assert.equal(d.querySelector('#enter-module').getAttribute('href'),'#modulo-M01');
+d.querySelector('#enter-module').click();await until(()=>d.querySelector('.lab-module-header h1'));
+assert.equal(w.GeoGalaxy.debug(),null,'Scene must be disposed after navigating away');
+for(const sys of w.GeoAstro.systems){
+ w.location.hash='#sistema-'+sys.id;await until(()=>d.querySelector('#system-title')?.textContent==='Sistema '+sys.name+'.');
+ assert.equal(d.querySelectorAll('[data-body]').length,6);
+ for(const body of sys.planets){d.querySelector('[data-body="'+body.id+'"]').click();assert.equal(d.querySelector('#body-name').textContent,body.name);assert.equal(Boolean(d.querySelector('#enter-module')),body.isTarget);}
+ d.querySelector('[data-body="star"]').click();d.querySelector('#locate-module').click();assert.equal(d.querySelector('#enter-module').getAttribute('href'),'#modulo-'+sys.id);
+}
+w.location.hash='#mappa';await until(()=>d.querySelectorAll('.galaxy-node').length===17);
+assert.equal(d.querySelectorAll('.star-grid').length,0,'Old navigation must be removed');
 await until(()=>w.GeoSpace.debug().ready);assert.equal(w.GeoSpace.debug().paused,false);
 for(const m of catalog){w.location.hash="#modulo-"+m.id;await until(()=>d.querySelector(".lab-module-header h1")?.textContent===m.title);if(m.category==='progetti')assert.equal(d.querySelectorAll(".mission-stage").length,3);else assert.equal(d.querySelectorAll(".experiment-card").length,w.GeoLabs.count(m.id));}
 snapshot("modulo");

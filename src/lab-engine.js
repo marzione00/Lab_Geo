@@ -4,7 +4,7 @@
  let runtime=null,opening=null,queue=Promise.resolve(),generation=0,latest=0,customRuntime=false;
  const S=root.GeoSecurity;
  const listeners=new Set();
- let state={phase:'idle',text:'Il motore R si avvia entrando in un laboratorio.'};
+ let state={phase:'idle',text:'Il motore R si avvia al primo calcolo.'};
  const notify=(phase,text)=>{state={phase,text};listeners.forEach(fn=>fn(state));};
  function subscribe(fn){listeners.add(fn);fn(state);return()=>listeners.delete(fn);}
  function reset(){generation++;latest++;customRuntime=false;if(runtime)try{runtime.close();}catch{}runtime=null;opening=null;queue=Promise.resolve();notify('idle','Calcolo interrotto. Puoi riavviare R.');}

@@ -3,13 +3,21 @@
 **Laboratori interattivi di statistica e coding R per le scienze della Terra**
 **Autore: Marzio De Corato** · Modulo didattico di [Topological Manifolds](https://marzione00.github.io/Personal_web_page/) ([repository del sito principale](https://github.com/marzione00/Personal_web_page)).
 
-Versione applicativa **3.2.4** · materiali didattici **R6** · lingua italiana
+Versione applicativa **3.5.0** · materiali didattici **R6** · lingua italiana
 
 GeoStat Lab accompagna lo studio dei metodi statistici attraverso 139 esperimenti nei quali, modificando parametri e ipotesi, si osservano le conseguenze sui dati simulati, sulle figure e sulle conclusioni. Ogni attività collega il problema scientifico al formalismo matematico e al programma R che ne produce i risultati. L’atlante di 17 pianeti rotanti organizza il percorso; le 11 spedizioni applicative riuniscono i metodi necessari ad affrontare un’indagine più articolata.
 
 Il progetto è un sito statico: l’interprete R opera nel browser mediante webR, mentre ggplot2 genera le rappresentazioni. La distribuzione comprende il motore di calcolo, i pacchetti R e MathJax, affinché l’esecuzione ordinaria non dipenda da CDN esterne. Le presentazioni conservano il template e i caratteri del corso.
 
 [Avvio rapido](#avvio-rapido) · [Pubblicazione su GitHub](#pubblicazione-su-github) · [Moduli](#moduli-e-spedizioni) · [Sicurezza](#sicurezza-e-modello-di-fiducia) · [Documentazione](#documentazione)
+
+## Narrazione e taccuino scientifico
+
+La cornice dell’atlante segue una spedizione che ricostruisce conoscenza a partire da osservazioni parziali. La pagina iniziale e i 17 sistemi presentano domande scientifiche specifiche. Su Pelago (M05), nove attività costituiscono una sequenza completa: scelta del bersaglio e selezione, incertezza, ricampionamento. Le altre 130 attività mantengono la prosa didattica precedente.
+
+Ogni laboratorio di Pelago apre con una situazione simulata, una domanda e una previsione; il primo calcolo richiede un’azione esplicita. Dopo l’esecuzione, il commento utilizza le metriche restituite da R. Il taccuino, accessibile dalla navigazione, conserva manualmente la configurazione corrente e gli eventuali due scenari di confronto per ciascuna attività, insieme agli appunti. Il salvataggio aggiorna la registrazione della stessa attività; l’esportazione JSON permette di custodire una copia. La sola visita non viene conteggiata come apprendimento.
+
+I testi sono mantenuti in `content/narrative.json` e `content/narrative-m05.json`; il primo contiene la cornice e i capitoli, il secondo le nove sequenze specifiche. `src/narrative.js` gestisce commenti e taccuino. Dati salvati corrotti, parametri fuori dominio e HTML nelle note sono gestiti dai controlli di validazione ed escaping; il codice personalizzato disabilita il commento del modello originale. Il taccuino non riceve né esegue codice R importato.
 
 ## Contenuti e funzioni
 
@@ -27,13 +35,17 @@ Il progetto è un sito statico: l’interprete R opera nel browser mediante webR
 
 Le simulazioni dichiarano le proprie ipotesi e impiegano dati sintetici. I risultati illustrano il comportamento dei metodi nelle condizioni specificate; l’applicazione a dati osservati richiede una valutazione del disegno di campionamento, della qualità delle misure e dell’adeguatezza del modello.
 
-## La galassia del corso
+## Atlante scientifico: galassia, sistemi e pianeti
 
-La pagina iniziale riunisce i 17 moduli in una galassia illustrativa originale. Passando il puntatore su un pianeta si apre la scheda con argomento, descrizione e numero di esperimenti; il pulsante **Viaggia** avvia la transizione verso il modulo. La scheda rimane selezionata quando il puntatore lascia il pianeta. Un breve ritardo esclude gli attraversamenti accidentali durante lo spostamento verso il pulsante.
+La navigazione parte da una galassia tridimensionale con quattro bracci e fino a 120.000 stelle. I segmenti collegano le etichette a 17 punti stellari, ciascuno associato a un sistema. Un clic avvicina la camera e apre una stella con cinque pianeti esplorabili: in totale 85 mondi, di cui 17 destinazioni dei moduli.
 
-Su schermi piccoli i pianeti sono disposti in tre colonne, con bersagli ampi: un tocco mostra la scheda e **Scegli un altro pianeta** riporta alla mappa. Tab e le frecce consentono di selezionare le destinazioni da tastiera. **Pausa rotazione** e la preferenza di sistema per il movimento ridotto restano disponibili. L’indice testuale conserva l’accesso diretto a tutti i fascicoli.
+Ogni sistema estrae una stella fra quattro esempi coerenti di sequenza principale F, G, K e M. Il seme iniziale è stabile; **Nuova configurazione** produce un’altra estrazione nella sessione. Le schede riportano massa, raggio, temperatura e luminosità stellare; per i pianeti, semiasse maggiore, periodo orbitale, raggio, albedo, flusso e temperatura di equilibrio. Le relazioni fisiche e le ipotesi sono spiegate nella pagina, insieme alle fonti NASA.
 
-L’illustrazione è generata da `scripts/generate-galaxy.py`, mediante Python e Pillow con seme deterministico. Il file WebP già incluso non richiede Python per la build. Le distanze e le velocità sono illustrative; le descrizioni dei moduli provengono dal catalogo condiviso.
+Il clic su un pianeta apre un primo piano della superficie rotante e una scheda astronomica. **Localizza** identifica il mondo che ospita il modulo, mentre **Entra nel laboratorio** conduce agli esperimenti esistenti. La voce **Mappa stellare** usa lo stesso navigatore della home; l’indice testuale resta disponibile in `#catalogo`. I sistemi hanno collegamenti diretti `#sistema-M01` e analoghi.
+
+La galassia e i sistemi sono modelli illustrativi: raggi visivi e distanze non sono in scala. Le orbite circolari conservano i rapporti fra i periodi con un’unica scala temporale. Le superfici dei mondi immaginari sono procedurali, rigenerate a 2048 × 1024 pixel. Anche Terra è un nome convenzionale della destinazione didattica; i sistemi non sono un catalogo astronomico osservato.
+
+WebGL usa sfere, particelle e texture locali, senza dipendenze grafiche esterne. Canvas 2D mantiene la proiezione tridimensionale, la selezione, le superfici rotanti e l’illuminazione stellare, con semplificazioni grafiche. I menu testuali funzionano anche senza renderer. Pausa e preferenza di movimento ridotto sono rispettate. Architettura e limiti sono descritti nella [guida dell’atlante](docs/ATLANTE_PLANETARIO.md).
 
 ## Avvio rapido
 
@@ -210,7 +222,7 @@ Dependabot propone aggiornamenti settimanali. Ogni modifica a webR, ai pacchetti
 - [DEPLOYMENT.md](DEPLOYMENT.md): pubblicazione, impostazioni GitHub e rollback.
 - [SECURITY.md](SECURITY.md): gestione e segnalazione delle vulnerabilità.
 - [CONTRIBUTING.md](CONTRIBUTING.md): modifiche al codice e ai contenuti scientifici.
-- [CHANGELOG.md](CHANGELOG.md): modifiche della versione 3.2.4.
+- [CHANGELOG.md](CHANGELOG.md): registro delle versioni.
 - [docs/SICUREZZA.md](docs/SICUREZZA.md): modello di minaccia e controlli.
 - [docs/REVISIONE_3_2_2.md](docs/REVISIONE_3_2_2.md): rilievi, correzioni, verifiche e limiti della revisione 3.2.2.
 - [docs/CORREZIONE_LAYOUT_3_1_2.md](docs/CORREZIONE_LAYOUT_3_1_2.md): correzione mobile e verifiche della versione 3.1.2.

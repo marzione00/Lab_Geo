@@ -14,7 +14,8 @@ GeoStat Lab è un’applicazione statica nella quale il browser esegue programmi
 | `scripts/labs/format-code.R` | Formatta il codice R e riallinea `content/experiments.json`, la copia per il collaudo nativo e `R/experiments/` |
 | `scripts/public_materials.py` | Prepara i materiali pubblicabili e i manifesti: rapporti e registri editoriali restano nei sorgenti; lo stesso criterio vale per il download didattico |
 | `config/site.json` | Autore, sito principale e indirizzi della pubblicazione; i richiami comuni sono compilati dalla build |
-| `src/planets.js`, `src/galaxy.js` | Identità dei mondi e mappa iniziale; i moduli preparatori delle spedizioni derivano invece dalle attività |
+| `src/planets.js`, `src/galaxy.js` | Identità dei mondi, schede e navigazione della pagina iniziale |
+| `src/galaxy-model.js`, `src/galaxy-scene.js` | Coordinate tridimensionali, particelle, camera prospettica, renderer WebGL e proiezione software |
 | `src/experiments.js` | Interfaccia dei laboratori e definizione delle tre fasi di ciascuna spedizione |
 | `scripts/update-module-guides.mjs` | Allinea le 28 schede README al catalogo e alle spedizioni effettivamente utilizzati dal sito |
 | `scripts/labs/package-downloads.py` | Rigenera entrambi gli archivi scaricabili e la mappa CSV; `--check` ne verifica membri e contenuti |
@@ -56,6 +57,6 @@ Dopo una modifica eseguire `npm test` e `npm run test:dom`; per le modifiche al 
 
 Un solo preparatore, `scripts/prepare-browser-harness.mjs`, genera la pagina temporanea di collaudo. `npm run test:browser` lo usa e rimuove i file al termine; per una verifica manuale aprire la pagina direttamente e impostare il viewport tramite gli strumenti del browser. Gli iframe non sono utilizzati, poiché la distribuzione con header completi vieta l’incorporamento.
 
-Il confronto delle metriche è condiviso tra Node e browser: richiede nomi univoci, uguale insieme di metriche, tipi compatibili, uguaglianza dei risultati testuali e una tolleranza esplicita per i numeri. Le differenze fanno fallire l’attività. Il [rapporto corrente](REVISIONE_3_2_2.md) distingue i nuovi collaudi dalle evidenze storiche.
+Il confronto delle metriche è condiviso tra Node e browser: richiede nomi univoci, uguale insieme di metriche, tipi compatibili, uguaglianza dei risultati testuali e una tolleranza esplicita per i numeri. Le differenze fanno fallire l’attività. Il [rapporto della revisione 3.2.2](REVISIONE_3_2_2.md) conserva le relative evidenze storiche; i nuovi interventi sono descritti nel [registro delle modifiche](../CHANGELOG.md).
 
 L’output `dist/` è ricostruibile e non deve contenere le pagine di collaudo nella pubblicazione. Le procedure operative sono mantenute in [DEPLOYMENT.md](../DEPLOYMENT.md); il modello di fiducia e i limiti dell’hosting sono in [SICUREZZA.md](SICUREZZA.md).

@@ -29,6 +29,7 @@ experiments.common=fs.readFileSync(path.join(root,"R/lab-common.R"),"utf8");
 experiments.packages=read("vendor/r-packages-lock.json");
 for(const a of experiments.activities){a.plotCount=fs.readdirSync(path.join(root,"assets/experiments")).filter(f=>f.startsWith(a.id+"-")&&f.endsWith(".svg")).length; if(!a.plotCount)throw Error("Anteprima R assente: "+a.id);}
 const safe=x=>JSON.stringify(x).replace(/</g,"\\u003c");
+fs.writeFileSync(path.join(out,"assets/narrative-data.js"),"window.GEO_NARRATIVE="+safe({...read('content/narrative.json'),activities:read('content/narrative-m05.json')})+";\n");
 fs.writeFileSync(path.join(out,"assets/experiments-data.js"),"window.GEO_LABS="+safe(experiments)+";\n");
 fs.writeFileSync(path.join(out,"assets/catalogue.js"),"window.GEO_CATALOG="+safe(catalogue)+";\n");
 fs.writeFileSync(path.join(out,"assets/site-config.js"),"window.GEO_CONFIG="+safe(config)+";\n");
@@ -37,7 +38,7 @@ for(const m of catalogue.modules){
   for(const slide of data.slides)delete slide.review;
   fs.writeFileSync(path.join(out,"assets/content",m.id+".js"),"window.GEO_MODULES=window.GEO_MODULES||{};window.GEO_MODULES."+m.id+"="+safe(data)+";\n");
 }
-for(const name of ["app.js","security.js","core.js","lab.css","planets.js","space.js","space-cpu.js","space.css","experiments.js","experiments.css","lab-engine.js","galaxy.js","galaxy.css"])fs.copyFileSync(path.join(root,"src",name),path.join(out,"assets",name));
+for(const name of ["app.js","security.js","core.js","lab.css","planets.js","space.js","space-cpu.js","space.css","experiments.js","experiments.css","lab-engine.js","astro-model.js","system-scene.js","galaxy-model.js","galaxy-scene.js","galaxy.js","galaxy.css","narrative.js","narrative.css"])fs.copyFileSync(path.join(root,"src",name),path.join(out,"assets",name));
 fs.writeFileSync(path.join(out,"assets/space-shaders.js"),"window.GEO_SHADERS="+safe({planet:fs.readFileSync(path.join(root,"src/planet.frag"),"utf8")})+";\n");
 const esc=s=>s.replace(/[&"<>]/g,c=>({"&":"&amp;",'"':"&quot;","<":"&lt;",">":"&gt;"}[c]));
 const meta=config.siteUrl?'<link rel="canonical" href="'+esc(config.siteUrl)+'"><meta name="robots" content="index,follow">':'<meta name="robots" content="noindex,nofollow">';
@@ -46,6 +47,19 @@ fs.writeFileSync(path.join(out,".nojekyll"),"");
 fs.writeFileSync(path.join(out,"robots.txt"),config.siteUrl?"User-agent: *\nAllow: /\n":"User-agent: *\nDisallow: /\n");
 if(config.siteUrl)fs.writeFileSync(path.join(out,"sitemap.xml"),'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>'+esc(config.siteUrl)+'</loc></url></urlset>');
 for(const f of ["THIRD_PARTY_NOTICES.md","LICENSE.md"])fs.copyFileSync(path.join(root,f),path.join(out,f));
+// Compact optional separator whitespace without changing any SVG coordinates,
+// colours, glyphs or precision. Keep the editable course assets untouched.
+let svgBytesSaved=0;
+for(const dir of ["assets/slides","assets/visuals"]){
+  for(const entry of fs.readdirSync(path.join(out,dir),{recursive:true})){
+    if(!entry.endsWith('.svg'))continue;
+    const file=path.join(out,dir,entry),source=fs.readFileSync(file,'utf8');
+    const compact=source.replace(/\b(?:fill|stroke|transform)="(?:rgb|matrix)\([^"<>]*\)"/g,value=>value.replace(/,\s+/g,','));
+    svgBytesSaved+=Buffer.byteLength(source)-Buffer.byteLength(compact);
+    if(compact!==source)fs.writeFileSync(file,compact);
+  }
+}
+console.log('SVG: '+svgBytesSaved+' byte risparmiati senza modifiche grafiche.');
 hardenBuild(out);
 execFileSync("python3",[path.join(root,"scripts/public_materials.py"),"--output",path.join(out,"materiali"),"--manifest-only"],{stdio:"inherit"});
-console.log("Build completata: 139 esperimenti R, 17 pianeti, 11 spedizioni; materiali originali conservati.");
+console.log("Build completata: 139 esperimenti R, 17 sistemi stellari, 85 pianeti e 11 spedizioni; materiali originali conservati.");

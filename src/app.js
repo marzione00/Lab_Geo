@@ -47,27 +47,12 @@
   }
   const worlds=window.GeoPlanets;
   function planetSlot(id,cls="",hero=0){const p=worlds.byId[id];return '<div class="planet-slot '+(p.rings?'ringed ':'')+cls+'" data-planet="'+id+'" data-hero="'+hero+'" aria-hidden="true"></div>';}
-  function worldCard(p){const m=catalog.find(m=>m.id===p.id),done=progress.done.filter(x=>x.startsWith(p.id+':')).length;
-    return '<a class="world-card" data-world-card="'+m.id+'" href="'+route(m.id)+'" aria-label="'+h(m.id+' · '+m.title+' · '+p.name)+'"><div class="world-orbit">'+planetSlot(p.id)+'</div><span class="world-name">'+m.id+' / '+h(p.name.toUpperCase())+'</span><h2>'+h(m.title)+'</h2><span class="world-type">'+h(p.description)+'</span>'+(done?'<span class="visited">'+done+' pagine studiate</span>':'')+'</a>';
-  }
-  function atlas(){
-    main.innerHTML='<div class="wrap"><section class="atlas-intro"><div><p class="eyebrow">ATLANTE / 17 DESTINAZIONI</p><h1>La mappa del corso.</h1><p class="lead">Ogni mondo ospita un laboratorio. Scegli una destinazione per modificare dati e ipotesi, osservare i risultati e ricostruire i calcoli in R.</p></div>'+link('#catalogo','Apri l’indice testuale ↗','button secondary')+'</section><div class="atlas-toolbar" aria-label="Regioni del corso">'+['Tutte le regioni',...worlds.sectors].map((name,i)=>'<button type="button" data-sector="'+(i?name:'all')+'" aria-pressed="'+(!i)+'">'+name+'</button>').join('')+'</div><div class="star-map"><svg class="star-routes" aria-hidden="true"></svg><div class="star-grid"></div></div><div class="map-note"><span>La rotta suggerita segue l’ordine T00 → M16. Tutte le destinazioni sono accessibili.</span>'+link('#progetti','Esplora le 11 spedizioni →')+'</div></div>';
-    function fill(sector){main.querySelector('.star-grid').innerHTML=worlds.planets.filter(p=>sector==='all'||p.sector===sector).map(worldCard).join('');main.querySelectorAll('[data-sector]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.sector===sector)));window.GeoSpace?.refresh();requestAnimationFrame(drawRoutes);}
-    main.querySelectorAll('[data-sector]').forEach(b=>b.addEventListener('click',()=>fill(b.dataset.sector)));fill('all');
-  }
-  function drawRoutes(){
-    const map=main.querySelector('.star-map'),svg=main.querySelector('.star-routes');if(!map||!svg)return;
-    const box=map.getBoundingClientRect(),nodes=[...map.querySelectorAll('.world-orbit')].map(el=>{const b=el.getBoundingClientRect();return {x:b.left+b.width/2-box.left,y:b.top+b.height/2-box.top};});
-    svg.setAttribute('viewBox','0 0 '+Math.max(1,box.width)+' '+Math.max(1,box.height));
-    svg.innerHTML=nodes.slice(1).map((b,i)=>{const a=nodes[i];if(b.x<a.x)return '';return '<path d="M '+a.x+' '+a.y+' C '+(a.x+70)+' '+(a.y-35)+', '+(b.x-70)+' '+(b.y-35)+', '+b.x+' '+b.y+'"/>';}).join('');
-  }
   function home(type){
     if(type!=='indice'){catalogueHome(type);if(type==='progetti'){
       const intro=document.createElement('section');intro.className='project-intro';intro.innerHTML='<p class="eyebrow">SPEDIZIONI APPLICATIVE</p><h1>Porta i metodi sul campo.</h1><p class="lead">Undici indagini collegano i moduli del corso a problemi geologici, ambientali e territoriali. Ogni spedizione riunisce dati, analisi e materiali riproducibili.</p>';main.querySelector('.catalogue').before(intro);
     }return;}
     window.GeoGalaxy.mount(main);
   }
-  window.addEventListener('resize',drawRoutes);
   function toc(m,page){
     let section="";
     return '<aside class="reader-sidebar" aria-label="Indice delle slide"><h2>'+m.id+' · Indice</h2><input type="search" id="cerca-slide" aria-label="Cerca nell’indice del modulo" placeholder="Cerca una slide">'+m.slides.map(s=>{
@@ -156,7 +141,9 @@
     try{
       if(current.type==="experiment")window.GeoLabs.experiment(main,window.GeoLabs.byId.get(current.activity),current.query);
       else if(current.type==="esperimenti")window.GeoLabs.index(main);
-      else if(current.type==="mappa")atlas();
+      else if(current.type==="mappa")window.GeoGalaxy.mount(main);
+      else if(current.type==="system")window.GeoGalaxy.system(main,current.id);
+      else if(current.type==="taccuino")window.GeoNarrative.journal(main);
       else if(["indice","catalogo","progetti"].includes(current.type))home(current.type);
       else if(current.type==="materiali")materials();
       else if(current.type==="notfound")main.innerHTML='<section class="error"><h1>Pagina non trovata</h1><p>Il collegamento non corrisponde a un modulo o a una slide del corso.</p>'+link("#indice","Torna all’indice","button")+'</section>';
@@ -170,7 +157,6 @@
       window.scrollTo({top:0,behavior:"instant"});
       window.GeoSpace?.onRoute(current);
       document.querySelectorAll(".site-header nav a").forEach(a=>{const active=a.getAttribute("href")==="#"+current.type;if(active)a.setAttribute("aria-current","page");else a.removeAttribute("aria-current");});
-      if(current.type==="mappa")requestAnimationFrame(drawRoutes);
     }catch(err){main.innerHTML='<section class="error"><h1>Il modulo non è disponibile</h1><p>'+h(err.message)+'</p><p>Verifica che l’intera cartella del sito sia stata copiata.</p>'+link("#indice","Torna all’indice","button")+'</section>';}
   }
   document.addEventListener("keydown",e=>{

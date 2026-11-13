@@ -1,5 +1,37 @@
 # Registro delle modifiche
 
+## 3.5.0 — Narrazione scientifica e ricognizione di Pelago
+
+La pagina iniziale introduce il motivo della spedizione e i 17 sistemi collegano la propria destinazione a una domanda scientifica. Il modulo M05 comprende nove sequenze narrative originali, articolate in tre fasi, con previsione prima del calcolo, interpretazioni riferite alle metriche R e raccordi fra attività. Le altre 130 attività conservano i testi didattici precedenti.
+
+Il taccuino di Pelago registra soltanto configurazioni eseguite e salvate esplicitamente dall’utente, con parametri, osservazioni e due eventuali scenari. Le registrazioni rimangono nel browser e sono esportabili. Cambiamenti di parametri o codice invalidano il commento corrente; il codice personalizzato sospende l’interpretazione automatica del modello originale.
+
+## 3.4.0 — Sistemi stellari e superfici planetarie
+
+- Navigazione unificata: punti nella galassia, zoom nel sistema, esplorazione dei cinque pianeti e ingresso nel modulo.
+- 17 sistemi sintetici e 85 pianeti, con stelle F/G/K/M estratte mediante seme riproducibile e nuova configurazione nella sessione.
+- Parametri coerenti di luminosità, periodo e bilancio radiativo, formule esplicite, scale dichiarate e fonti scientifiche.
+- Superfici procedurali rigenerate a 2048 × 1024; nuovi dettagli, campionamento bilineare e luce proveniente dalla stella nei sistemi.
+- Eliminata la seconda mappa a schede: home e voce Mappa stellare condividono il navigatore.
+- Verifiche dei modelli fisici, dei collegamenti dei 17 sistemi e delle 85 schede; shader compilati con EGL.
+
+## 3.3.1 · 13 novembre 2026
+
+- Ampliata la carta stellare e aumentata la popolazione da 24.000 a 120.000 stelle sul desktop; il modello per schermi stretti ne comprende 60.000. Aggiunte distribuzioni interbraccio, polveri più estese e maggiore varietà luminosa.
+- Sostituite le etichette sovrapposte ai pianeti con richiami a segmenti e due colonne distanziate. Ogni destinazione riporta nome, codice e argomento; selezione e puntamento sono evidenziati in ambra.
+- Ridisegnati cornice, controlli e scheda del modulo, con ritratto planetario e testi più grandi. La camera riserva spazio ai richiami e mantiene la rotazione dei mondi.
+- Ottimizzata la proiezione software e limitato il suo aggiornamento a circa 30 fotogrammi al secondo. Verificati determinismo delle particelle, separazione delle etichette e navigazione.
+- Riallineato il metadato di `symbol-tree` alla versione 3.2.4 del tarball già bloccato; aggiunto il controllo di coerenza fra versione e URL di ogni dipendenza npm.
+
+## 3.3.0 · 13 novembre 2026
+
+- Sostituita l’immagine della galassia con un modello tridimensionale: quattro bracci di particelle, nucleo volumetrico, pianeti sferici e anelli, con rotazioni indipendenti.
+- Aggiunti camera prospettica, trascinamento, zoom, comandi da tastiera, ripristino della vista e avvicinamento al pianeta prima dell’apertura del modulo.
+- Conservate le schede dei 17 moduli; aggiunto il menu delle destinazioni per raggiungere ogni pianeta anche in una vista affollata. La scena si adatta agli schermi stretti e rispetta la pausa e la preferenza per il movimento ridotto.
+- Alternativa Canvas con le stesse coordinate spaziali, campionamento che conserva tutti i bracci e aggiornamento delle texture in pausa. Risorse e animazioni della galassia vengono liberate uscendo dalla home.
+- Rimossi immagine e generatore della galassia precedente. Nessuna nuova dipendenza npm o CDN; asset locali, CSP e SRI rimangono in uso.
+- Verificati modello e proiezione, navigazione, formule e controlli di sicurezza. Compilati e collegati i sei shader in OpenGL ES. Il browser disponibile ha consentito il collaudo della modalità Canvas; la resa WebGL nel browser non è stata verificata in questo ambiente.
+
 ## 3.2.4 · 10 novembre 2026
 
 - Rigenerato `package-lock.json` dal registro pubblico npm mantenendo `jsdom@26.1.0`. Corretti la versione inesistente `@asamuzakjp/css-color@3.2.1` e il vincolo errato di `cssstyle@4.6.0`; la dipendenza risolta è `@asamuzakjp/css-color@3.2.0`.

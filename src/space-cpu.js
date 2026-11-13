@@ -3,18 +3,20 @@
 (function(root){
  'use strict';
  const TAU=Math.PI*2;
- function create(canvas){
+ function create(canvas,onTexture=()=>window.GeoSpace?.refresh()){
   const ctx=canvas.getContext('2d',{alpha:true}),textures=new Map(),pending=new Set(),cache=new Map();
   if(!ctx)throw Error('Canvas 2D non disponibile');
-  let cloud=null,night=null;
+  let cloud=null,night=null,disposed=false,cachePixels=0;
   function load(src){return new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>{const c=document.createElement('canvas');c.width=im.width;c.height=im.height;const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(im,0,0);resolve({w:c.width,h:c.height,p:x.getImageData(0,0,c.width,c.height).data});};im.onerror=reject;im.src=src;});}
-  function texture(id){if(textures.has(id))return textures.get(id);if(!pending.has(id)){pending.add(id);load('assets/space/'+(id==='M01'?'day':'p-'+id)+'.webp').then(t=>{textures.set(id,t);window.GeoSpace?.refresh();}).catch(()=>pending.delete(id));}return null;}
-  function projection(p,res,hero){
-   const key=p.id+':'+res+':'+hero;if(cache.has(key))return cache.get(key);
+  function texture(id){if(disposed)return null;if(textures.has(id))return textures.get(id);if(!pending.has(id)){pending.add(id);load('assets/space/'+(id==='M01'?'day':'p-'+id)+'.webp').then(t=>{if(disposed)return;textures.set(id,t);onTexture();}).catch(()=>pending.delete(id));}return null;}
+  function projection(p,res,hero,light){
+   const lightKey=light?light.map(v=>Math.round(v*32)/32).join(','):'default';
+   const key=p.id+':'+res+':'+hero+':'+lightKey;if(cache.has(key))return cache.get(key);
    const c=document.createElement('canvas');c.width=res;c.height=res;const x=c.getContext('2d');const im=x.createImageData(res,res);
    const indices=[],uv=[],lights=[],rims=[],specs=[];
    const axis=-p.tilt,ca=Math.cos(axis),sa=Math.sin(axis),cx=Math.cos(-.24),sx=Math.sin(-.24);
-   let lx=hero?-.42:-.6,ly=hero?.84:.65,lz=hero?-.36:.8;let len=Math.hypot(lx,ly,lz);lx/=len;ly/=len;lz/=len;
+   let lx=hero?-.42:-.6,ly=hero?.84:.65,lz=hero?-.36:.8;
+   if(light){[lx,ly,lz]=lightKey.split(',').map(Number);}let len=Math.hypot(lx,ly,lz)||1;lx/=len;ly/=len;lz/=len;
    const hx=lx,hy=ly,hz=lz+1,hn=Math.hypot(hx,hy,hz);
    for(let y=0;y<res;y++)for(let xx=0;xx<res;xx++){
     const nx=(xx+.5)/res*2-1,ny=1-(y+.5)/res*2,d=nx*nx+ny*ny;if(d>=1)continue;
@@ -26,17 +28,30 @@
     specs.push(Math.pow(Math.max(0,(nx*hx+ny*hy+nz*hz)/hn),100)*.5);
    }
    const result={c,x,im,indices:new Uint32Array(indices),uv:new Float32Array(uv),lights:new Float32Array(lights),rims:new Float32Array(rims),specs:new Float32Array(specs)};
-   if(cache.size>50)cache.delete(cache.keys().next().value);cache.set(key,result);return result;
+   while(cache.size&&(cachePixels+res*res>1400000||cache.size>=16)){const oldest=cache.keys().next().value;const removed=cache.get(oldest);cachePixels-=removed.c.width*removed.c.height;cache.delete(oldest);}cache.set(key,result);cachePixels+=res*res;return result;
   }
   function paint(p,g,time,opacity=1,offset=0){
-   const tex=texture(p.id);if(!tex)return;
-   const res=g.r>170?512:g.r>90?224:144,hero=g.hero>.4?1:0;
-   const a=projection(p,res,hero),out=a.im.data,angle=p.phase-time*p.speed+offset,shift=angle/TAU;
+   const tex=texture(p.textureId||p.id);if(!tex)return;
+   const res=g.r>170?640:g.r>90?320:g.r>35?160:80,hero=g.hero>.4?1:0;
+   const a=projection(p,res,hero,g.light),out=a.im.data;
+   // Keep smooth sphere placement at the display frame rate; resample surface at 20 Hz.
+   const sampleTime=Math.floor(time*20)/20,angle=p.phase-sampleTime*p.speed+offset,shift=angle/TAU;
+   const surfaceKey=[p.textureId||p.id,p.kind,p.phase,p.speed,sampleTime,offset,p.atmosphere,Boolean(cloud),Boolean(night)].join(':');
+   if(a.surfaceKey!==surfaceKey){
    const atm=[1,3,5].map(i=>parseInt(p.atmosphere.slice(i,i+2),16));
    for(let i=0;i<a.indices.length;i++){
     const v=a.uv[i*2+1],flow=(p.kind===4||p.kind===10)?time*.004*(1-2*v)/TAU:0;
     const u=(a.uv[i*2]+shift+flow)%1,un=u<0?u+1:u,idx=(Math.min(tex.h-1,Math.floor(v*tex.h))*tex.w+Math.min(tex.w-1,Math.floor(un*tex.w)))*4;
     let r=tex.p[idx],gg=tex.p[idx+1],b=tex.p[idx+2],light=a.lights[i],shade=.12+Math.max(0,light)*.91;
+    if(res>=320){
+     const tx=un*tex.w-.5,ty=Math.max(0,Math.min(tex.h-1,v*tex.h-.5));
+     const x0=(Math.floor(tx)+tex.w)%tex.w,x1=(x0+1)%tex.w,y0=Math.floor(ty),y1=Math.min(tex.h-1,y0+1),fx=tx-Math.floor(tx),fy=ty-y0;
+     const i0=(y0*tex.w+x0)*4,i1=(y0*tex.w+x1)*4,i2=(y1*tex.w+x0)*4,i3=(y1*tex.w+x1)*4;
+     const a0=(1-fx)*(1-fy),a1=fx*(1-fy),a2=(1-fx)*fy,a3=fx*fy;
+     r=tex.p[i0]*a0+tex.p[i1]*a1+tex.p[i2]*a2+tex.p[i3]*a3;
+     gg=tex.p[i0+1]*a0+tex.p[i1+1]*a1+tex.p[i2+1]*a2+tex.p[i3+1]*a3;
+     b=tex.p[i0+2]*a0+tex.p[i1+2]*a1+tex.p[i2+2]*a2+tex.p[i3+2]*a3;
+    }
     if(p.kind===14&&r>gg*1.8&&r>100){shade=Math.max(.8,shade);}
     let rr=r*shade,gc=gg*shade,bb=b*shade;
     if(p.kind===0&&cloud){
@@ -52,14 +67,14 @@
     if(p.kind===14&&r>gg*1.8&&r>100){rr*=1.3;gc*=1.4;bb*=1.5;}
     const o=a.indices[i],rim=a.rims[i];out[o]=Math.min(255,rr+atm[0]*rim);out[o+1]=Math.min(255,gc+atm[1]*rim);out[o+2]=Math.min(255,bb+atm[2]*rim);
    }
-   a.x.putImageData(a.im,0,0);ctx.save();ctx.globalAlpha=opacity;
-   const glow=ctx.createRadialGradient(g.x,g.y,g.r*.98,g.x,g.y,g.r*1.095);glow.addColorStop(0,p.atmosphere+'77');glow.addColorStop(.16,p.atmosphere+'35');glow.addColorStop(1,p.atmosphere+'00');ctx.fillStyle=glow;ctx.beginPath();ctx.arc(g.x,g.y,g.r*1.1,0,TAU);ctx.fill();
+   a.x.putImageData(a.im,0,0);a.surfaceKey=surfaceKey;}ctx.save();ctx.globalAlpha=opacity;
+   const glow=ctx.createRadialGradient(g.x,g.y,g.r*.995,g.x,g.y,g.r*1.035);glow.addColorStop(0,p.atmosphere+'44');glow.addColorStop(.16,p.atmosphere+'16');glow.addColorStop(1,p.atmosphere+'00');ctx.fillStyle=glow;ctx.beginPath();ctx.arc(g.x,g.y,g.r*1.04,0,TAU);ctx.fill();
    if(hero){const sunx=g.x-g.r*.452,suny=g.y-g.r*.905,sun=ctx.createRadialGradient(sunx,suny,0,sunx,suny,g.r*.07);sun.addColorStop(0,'#fff4dcff');sun.addColorStop(.06,'#ffe8bdc9');sun.addColorStop(.2,'#f4c0884d');sun.addColorStop(1,'#f4c08800');ctx.fillStyle=sun;ctx.beginPath();ctx.arc(sunx,suny,g.r*.07,0,TAU);ctx.fill();}
    function rings(front){ctx.save();ctx.translate(g.x,g.y);ctx.rotate(-.34);ctx.scale(1,.43);for(let k=0;k<30;k++){let radius=g.r*(1.22+k*.025);if(k>15&&k<18)continue;ctx.strokeStyle=p.high+(k%3?'72':'b0');ctx.lineWidth=g.r*.018;ctx.beginPath();ctx.arc(0,0,radius,front?0:0,front?Math.PI:TAU);ctx.stroke();}ctx.restore();}
    if(p.rings)rings(false);ctx.drawImage(a.c,g.x-g.r,g.y-g.r,g.r*2,g.r*2);if(p.rings)rings(true);ctx.restore();
   }
-  const ready=Promise.all([load('assets/space/day.webp').then(t=>textures.set('M01',t)),load('assets/space/surface.webp').then(t=>cloud=t),load('assets/space/night.webp').then(t=>night=t)]);
-  return {ctx,ready,paint,clear(w,h,dpr){ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,w,h);ctx.setTransform(dpr,0,0,dpr,0,0);}};
+  const ready=Promise.all([load('assets/space/day.webp').then(t=>{if(!disposed)textures.set('M01',t);}),load('assets/space/surface.webp').then(t=>{if(!disposed)cloud=t;}),load('assets/space/night.webp').then(t=>{if(!disposed)night=t;})]);
+  return {ctx,ready,paint,textureCount:()=>textures.size,clear(w,h,dpr){ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,w,h);ctx.setTransform(dpr,0,0,dpr,0,0);},dispose(){disposed=true;textures.clear();pending.clear();cache.clear();cachePixels=0;cloud=null;night=null;}};
  }
  root.GeoCPU=Object.freeze({create});
 })(globalThis);

@@ -4,7 +4,9 @@
   const clean = s => String(s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
   function parseRoute(hash, modules) {
     const key = String(hash || "#indice").replace(/^#/, "");
-    if (["indice", "mappa", "catalogo", "esperimenti", "progetti", "materiali", ""].includes(key)) return {type:key || "indice"};
+    if (["indice", "mappa", "catalogo", "esperimenti", "progetti", "materiali", "taccuino", ""].includes(key)) return {type:key || "indice"};
+    const system=/^sistema-(T00|M\d{2})$/.exec(key);
+    if(system)return modules.some(m=>m.id===system[1])?{type:'system',id:system[1]}:{type:'notfound'};
     const match = /^modulo-(T00|M\d{2}|P\d{2})(?:\/(slide|codici)(?:\/(\d+))?)?$/.exec(key);
     if (!match) return {type:"notfound"};
     const mod = modules.find(m => m.id === match[1]);

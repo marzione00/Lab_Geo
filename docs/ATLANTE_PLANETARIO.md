@@ -1,40 +1,75 @@
-# Atlante planetario di GeoStat Lab
+# Atlante scientifico di GeoStat Lab
 
-Il sito conserva integralmente i materiali didattici R6 e aggiunge una navigazione fra 17 mondi, ciascuno associato a un modulo, e 11 spedizioni applicative. La home mantiene la Terra rotante. La carta stellare permette di scegliere ogni destinazione e di filtrare cinque regioni tematiche.
+L’atlante organizza la navigazione su tre livelli: una galassia con 17 sistemi stellari, cinque pianeti in ciascun sistema e un mondo associato al modulo didattico. I contenuti del corso restano 139 esperimenti e 11 spedizioni applicative.
 
 ## Navigazione
 
-- `#indice`: pagina iniziale e ripresa dell'ultima lezione.
-- `#mappa`: 17 pianeti e cinque regioni tematiche.
-- `#catalogo`: indice testuale, ricerca e filtri.
-- `#progetti`: 11 spedizioni con collegamenti ai moduli pertinenti.
-- `#modulo-M14`: esempio di pagina di un modulo.
-- `#modulo-M14/slide/3`: slide originale, testo con formule e codice.
-- `#modulo-M14/codici`: script delle figure e laboratori scaricabili.
-- `#materiali`: documentazione, dati e archivio di lavoro.
+| Azione | Risultato |
+|---|---|
+| Passaggio del puntatore o fuoco su un richiamo galattico | Mostra la scheda del sistema |
+| Clic sul richiamo o sul punto stellare | Avvicina la camera e apre il sistema |
+| Esplora il sistema | Esegue lo stesso trasferimento |
+| Clic sul pianeta o sul suo nome nel menu | Apre il primo piano e la scheda scientifica |
+| Localizza la destinazione | Seleziona il pianeta che ospita il modulo |
+| Entra nel laboratorio | Apre gli esperimenti del modulo |
+| Vista completa del sistema | Riporta la camera alla vista orbitale |
+| Nuova configurazione | Estrae un’altra configurazione sintetica nella sessione |
+| Torna alla galassia | Ritorna ai 17 sistemi |
 
-Il trasferimento fra mondi dura 1,45 secondi e può essere saltato con il pulsante dedicato o con Esc. La rotazione prosegue nella mappa, nelle pagine dei moduli, nelle slide, nel testo e nei laboratori. Il comando Pausa rotazione è manuale. La preferenza di sistema per il movimento ridotto elimina i trasferimenti animati; resta disponibile il comando esplicito di pausa. La pagina sospende il lavoro grafico quando la scheda non è visibile.
+Il trascinamento e le frecce sul canvas controllano azimut e inclinazione; più, meno e rotella regolano lo zoom della vista generale. Home ripristina la camera. I menu dei corpi rimangono utilizzabili anche quando un altro oggetto nasconde un pianeta nella proiezione. I richiami galattici hanno spaziatura calcolata per evitare sovrapposizioni.
 
-## Rendering e personalizzazione
+`#indice` e `#mappa` aprono lo stesso navigatore. `#sistema-M01`, e gli altri identificatori del corso, aprono direttamente un sistema. Le rotte invalide sono rifiutate; `#catalogo` mantiene l’indice del corso. La nuova configurazione resta in memoria durante la sessione; ricaricare la pagina ripristina il seme iniziale. L’estrazione non modifica l’associazione fra modulo e pianeta.
 
-`src/planets.js` contiene identità, palette, inclinazione, fase, velocità e relazioni delle spedizioni. `src/planet.frag` descrive il rendering WebGL: rotazione della superficie, illuminazione fissa, atmosfera, emissione vulcanica, fasce gassose e anelli con occlusione e ombre. `src/space.js` gestisce l'unica superficie grafica, la navigazione e la continuità temporale.
+## Modello fisico e limiti
 
-Se il browser non dispone di WebGL, `src/space-cpu.js` proietta le texture su una sfera in Canvas 2D e aggiorna le longitudini nel tempo. La luce e il bordo del pianeta rimangono fissi anche in questo caso. Questa modalità usa una risoluzione inferiore, mantenendo leggibile l'interfaccia e attiva la rotazione. Alcuni dettagli di illuminazione differiscono dal rendering WebGL.
+I sistemi sono immaginari. La scelta uniforme delle classi F, G, K e M serve alla varietà didattica e non rappresenta la distribuzione galattica delle popolazioni stellari. I parametri seguenti sono esempi plausibili, non valori universali di classe.
 
-Le texture procedurali già incluse si possono rigenerare con `python3 scripts/bake-planets.py` in un ambiente Python con moderngl, numpy, Pillow e un contesto EGL. Queste dipendenze servono soltanto alla rigenerazione e al collaudo degli shader; la build ordinaria del sito richiede solo Node.
+| Classe | Massa M☉ | Raggio R☉ | Temperatura K |
+|---|---:|---:|---:|
+| F V | 1,30 | 1,30 | 6500 |
+| G V | 1,00 | 1,00 | 5772 |
+| K V | 0,75 | 0,72 | 4700 |
+| M V | 0,30 | 0,31 | 3400 |
 
-`src/space.css` definisce la scenografia. Le slide SVG, i PDF, i font didattici e i sorgenti del corso non vengono modificati. I pianeti sono illustrativi e la velocità è scelta per rendere osservabile il movimento.
+La luminosità è calcolata con `L/L☉ = (R/R☉)² (T/5772 K)⁴`. Il periodo segue `P/anno = √[(a/UA)³ / (M/M☉)]`, trascurando la massa planetaria. Le orbite sono circolari; una sola scala temporale per sistema conserva i rapporti dei periodi. La rotazione assiale delle superfici è illustrativa.
 
-## Materiali e stato locale
+La temperatura di equilibrio usa `278,3 K [(L/L☉)(1−A_B)/(a/UA)²]^(1/4)`. Ogni scheda espone la propria albedo di Bond. Si assumono emissività unitaria, redistribuzione uniforme del calore e assenza di effetto serra e calore interno. Il risultato non è una stima della temperatura superficiale e non determina l’abitabilità.
 
-L'archivio `assets/downloads/GeoStatLab_codice_dati_R6.zip` conserva la cartella `materiali/` con R, Python, dati, sorgenti, TikZ e documentazione per il lavoro locale. Le figure e i resoconti generati rimangono disponibili separatamente nel sito completo. Le pagine studiate e l'ultima lezione vengono salvate nel browser solo tramite le funzionalità previste; aprire un pianeta non segna un modulo come completato.
+I raggi grafici sono ingranditi e le separazioni orbitali sono scelte per la leggibilità; i valori fisici sono nelle schede. Le superfici sono illustrative e non permettono di dedurre composizione o età. Anche il nome Terra identifica qui un mondo didattico, non una ricostruzione del Sistema solare.
+
+### Fonti
+
+- [NASA — Stars in an Exoplanet World](https://science.nasa.gov/exoplanets/stars/)
+- [NASA — Orbits and Kepler’s Laws](https://science.nasa.gov/solar-system/orbits-and-keplers-laws/)
+- [NASA Exoplanet Archive — Calculated Parameters](https://exoplanetarchive.ipac.caltech.edu/docs/pscp_calc.html)
+
+## Sorgenti
+
+| File | Responsabilità |
+|---|---|
+| `src/astro-model.js` | Sistemi, estrazione deterministica, parametri e relazioni fisiche |
+| `src/galaxy-model.js` | Coordinate galattiche, particelle, proiezione e disposizione dei richiami |
+| `src/galaxy-scene.js` | Renderer condivisi WebGL/Canvas e camera della galassia |
+| `src/system-scene.js` | Orbite, luce stellare, camera e primi piani |
+| `src/galaxy.js` | Navigatore, schede, formule, fonti e collegamenti al corso |
+| `src/galaxy.css` | Impaginazione delle due viste e adattamento alle larghezze |
+| `src/planets.js` | Identità e caratterizzazione dei mondi didattici |
+| `src/space-cpu.js` | Proiezione software delle texture sulle sfere |
+| `src/space.js`, `src/planet.frag` | Pianeti nelle altre pagine del corso |
+| `scripts/bake-planets.py` | Generazione riproducibile delle texture procedurali |
+
+Le 27 superfici non terrestri sono rigenerate a 2048 × 1024, con dettagli aggiunti nel procedimento, non mediante interpolazione di un’immagine piccola. La Terra conserva le mappe 2048 × 1024 già attribuite a Solar System Scope. I 27 WebP procedurali occupano circa 7,0 MiB; vengono richiesti soltanto per i mondi rappresentati. La build ordinaria usa i file inclusi e non richiede Python o una GPU. La rigenerazione richiede moderngl, NumPy, Pillow e EGL.
+
+La galassia usa fino a 120.000 stelle WebGL (60.000 sugli schermi stretti); la vista software ne campiona un terzo preservando i quattro bracci. La scena dei sistemi ha un campo stellare più leggero. Le sfere WebGL hanno 96 × 64 suddivisioni e filtri mipmap. Canvas applica luce stellare, campionamento bilineare nei primi piani e aggiornamento delle superfici a 20 Hz; la cache geometrica è limitata. Le sue occlusioni e atmosfere sono semplificate rispetto a WebGL.
+
+Pausa, movimento ridotto e visibilità della scheda controllano l’animazione. La navigazione resta disponibile senza grafica. Lasciando una vista si eliminano frame, gestori e risorse del renderer. La perdita del contesto rende disponibili i comandi testuali; nella galassia il ripristino ricrea le risorse WebGL. Script, CSS e texture sono locali; le regole CSP/SRI e i vincoli della distribuzione restano attivi.
 
 ## Verifiche
 
-`npm test` controlla copertura del corso, conservazione dei materiali tramite SHA-256, corrispondenza dei laboratori, rotte, ricerca, stato locale, associazioni planetarie e risorse della distribuzione.
+`npm test` verifica i riferimenti fisici solari, la legge di Keplero, il bilancio radiativo, la riproducibilità, le 85 identità planetarie, l’unicità della destinazione di ciascun modulo, le rotte e la visibilità iniziale delle orbite a diverse larghezze, oltre ai controlli preesistenti.
 
-`npm run test:dom` verifica tutti i 28 fascicoli, la mappa e i filtri, pausa e ripresa, navigazione e 1.190 espressioni matematiche con MathJax. Richiede jsdom 26.1.0.
+`npm run test:dom` verifica i 17 sistemi e le 85 schede, l’accesso ai moduli e lo smontaggio delle scene. `npm run test:browser` include camera, pausa, trasferimento, pianeti e assenza di overflow a 320/390/430/768/1440 px. Il workflow GitHub esegue Chromium; non va confuso con un controllo eseguito localmente.
 
-`python3 scripts/check-planet-rendering.py` compila lo shader in un contesto OpenGL software, confronta due fotogrammi per tutte le 28 destinazioni e verifica che la superficie cambi mantenendo invariata la sagoma. Non sostituisce una verifica WebGL nel browser.
+`python3 scripts/check-galaxy-shaders.py` compila e collega gli shader condivisi in EGL/OpenGL ES. `python3 scripts/check-planet-rendering.py` verifica i pianeti procedurali nelle altre pagine.
 
-Il collaudo nel browser disponibile ha utilizzato Canvas 2D perché WebGL non era esposto. Sono stati controllati navigazione, viaggio, lettura, formule, pausa e adattamento a schermi stretti. I materiali R6 conservano i risultati delle precedenti verifiche numeriche; questa revisione riguarda l'interfaccia.
+Per la verifica interattiva di questa revisione il browser disponibile usa Canvas 2D. La compilazione WebGL è verificata separatamente con EGL; la resa WebGL nel browser richiede un dispositivo che lo esponga.

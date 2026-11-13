@@ -30,7 +30,11 @@ for (const tag of index.match(/<(?:script|link)\b[^>]*>/g) || []) {
  assert.equal(integrity[1],crypto.createHash('sha384').update(fs.readFileSync('dist/'+file[1])).digest('base64'));
 }
 const lock=JSON.parse(fs.readFileSync('package-lock.json'));
-for(const [name,p] of Object.entries(lock.packages)) if(name){assert(p.integrity&&p.resolved,'Unlocked npm dependency: '+name);assert.equal(new URL(p.resolved).origin,'https://registry.npmjs.org','Unexpected registry');}
+for(const [name,p] of Object.entries(lock.packages)) if(name){
+ assert(p.integrity&&p.resolved,'Unlocked npm dependency: '+name);
+ const url=new URL(p.resolved);assert.equal(url.origin,'https://registry.npmjs.org','Unexpected registry');
+ assert(url.pathname.endsWith('/'+name.split('/').at(-1)+'-'+p.version+'.tgz'),'Dependency version/tarball mismatch: '+name);
+}
 const secretPatterns = [/-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/, /gh[pousr]_[A-Za-z0-9]{36,}/, /github_pat_[A-Za-z0-9_]{60,}/, /AKIA[A-Z0-9]{16}/, /sk-(?:proj-)?[A-Za-z0-9_-]{40,}/];
 const roots=['src','config','scripts','tests','docs','.github','content','R','moduli'];
 let scanned=0;
