@@ -1,5 +1,13 @@
 # Registro delle modifiche
 
+## 3.6.0 — Paesaggio cosmico e terminale R
+
+- Sfondo procedurale condiviso: nebulose, polveri, stelle con parallasse e galassie lontane; generazione della texture in un worker locale.
+- Un solo comando di pausa per sfondo, pianeti e mappa, con rispetto del movimento ridotto e sospensione in background.
+- Sorgente visibile in tutti i 139 esperimenti, commenti per istruzione, numeri di riga, parametri sincronizzati e lettura per passi.
+- Download degli script completi con commenti, preservando le istruzioni R; spiegazioni del modello sospese per codice modificato.
+- Caratteri originali del corso conservati; disposizione affiancata su desktop ampi e sequenziale su mobile.
+
 ## 3.5.0 — Narrazione scientifica e ricognizione di Pelago
 
 La pagina iniziale introduce il motivo della spedizione e i 17 sistemi collegano la propria destinazione a una domanda scientifica. Il modulo M05 comprende nove sequenze narrative originali, articolate in tre fasi, con previsione prima del calcolo, interpretazioni riferite alle metriche R e raccordi fra attività. Le altre 130 attività conservano i testi didattici precedenti.

@@ -38,7 +38,7 @@ for(const m of catalogue.modules){
   for(const slide of data.slides)delete slide.review;
   fs.writeFileSync(path.join(out,"assets/content",m.id+".js"),"window.GEO_MODULES=window.GEO_MODULES||{};window.GEO_MODULES."+m.id+"="+safe(data)+";\n");
 }
-for(const name of ["app.js","security.js","core.js","lab.css","planets.js","space.js","space-cpu.js","space.css","experiments.js","experiments.css","lab-engine.js","astro-model.js","system-scene.js","galaxy-model.js","galaxy-scene.js","galaxy.js","galaxy.css","narrative.js","narrative.css"])fs.copyFileSync(path.join(root,"src",name),path.join(out,"assets",name));
+for(const name of ["app.js","security.js","core.js","lab.css","planets.js","space.js","space-cpu.js","space.css","experiments.js","experiments.css","lab-engine.js","astro-model.js","system-scene.js","galaxy-model.js","galaxy-scene.js","galaxy.js","galaxy.css","narrative.js","narrative.css","cosmos.js","cosmos-worker.js","code-terminal.js","code-terminal.css"])fs.copyFileSync(path.join(root,"src",name),path.join(out,"assets",name));
 fs.writeFileSync(path.join(out,"assets/space-shaders.js"),"window.GEO_SHADERS="+safe({planet:fs.readFileSync(path.join(root,"src/planet.frag"),"utf8")})+";\n");
 const esc=s=>s.replace(/[&"<>]/g,c=>({"&":"&amp;",'"':"&quot;","<":"&lt;",">":"&gt;"}[c]));
 const meta=config.siteUrl?'<link rel="canonical" href="'+esc(config.siteUrl)+'"><meta name="robots" content="index,follow">':'<meta name="robots" content="noindex,nofollow">';

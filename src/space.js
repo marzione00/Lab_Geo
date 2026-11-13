@@ -48,7 +48,7 @@
  }
  function schedule(){if(frame)cancelAnimationFrame(frame);frame=0;last=0;render(performance.now());if(ready&&(!paused||flight)&&!document.hidden)frame=requestAnimationFrame(tick);}
  function resize(){width=Math.max(1,window.innerWidth);height=Math.max(1,window.innerHeight);dpr=Math.min(window.devicePixelRatio||1,1.5,1800/width);canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);render(performance.now());}
- function syncPause(){pause.textContent=paused?'Riprendi rotazione':'Pausa rotazione';pause.setAttribute('aria-pressed',String(paused));document.dispatchEvent(new CustomEvent("geospace:pause",{detail:{paused}}));schedule();}
+ function syncPause(){pause.textContent=paused?'Riprendi movimento':'Pausa movimento';pause.setAttribute('aria-pressed',String(paused));document.dispatchEvent(new CustomEvent("geospace:pause",{detail:{paused}}));schedule();}
  function refresh(){slots=[...document.querySelectorAll('[data-planet]')];render(performance.now());}
  function cancelFlight(){clearTimeout(flightTimer);flight=null;document.body.classList.remove('in-flight');flightLayer.hidden=true;schedule();}
  function finishFlight(){if(!flight)return;const id=flight.id;cancelFlight();if(location.hash!=='#modulo-'+id)location.hash='#modulo-'+id;refresh();document.getElementById('contenuto').focus({preventScroll:true});document.getElementById('annuncio').textContent='Arrivo: '+id+' · '+planet[id].name;}
@@ -64,7 +64,7 @@
  function onRoute(route){if(flight&&(route.id!==flight.id||route.type!=='module'))cancelFlight();currentType=route.type;if(route.id)currentId=route.id;else if(route.type==='indice')currentId='M01';document.body.dataset.page=route.type;document.body.dataset.world=currentId;refresh();}
  async function fallback(err){
   if(!cpu){try{const next=canvas.cloneNode(false);canvas.replaceWith(next);canvas=next;cpu=window.GeoCPU.create(canvas);await cpu.ready;ready=true;failed=false;canvas.hidden=false;pause.disabled=false;document.body.dataset.space='canvas';refresh();resize();syncPause();return;}catch(error){console.warn('GeoStat: rendering non disponibile.',error);}}
-  failed=true;ready=false;canvas.hidden=true;pause.disabled=true;pause.textContent='Vista essenziale';document.body.classList.add('space-fallback');console.warn('GeoStat: grafica non disponibile.',err);
+  failed=true;ready=false;canvas.hidden=true;pause.disabled=false;syncPause();document.body.classList.add('space-fallback');console.warn('GeoStat: grafica non disponibile.',err);
  }
  async function initialize(){try{
   gl=canvas.getContext('webgl',{alpha:true,antialias:false,depth:false,premultipliedAlpha:false,powerPreference:'low-power'});
@@ -80,6 +80,7 @@
  }catch(e){fallback(e);}}
  document.addEventListener('click',event=>{const a=event.target.closest('a[href]');if(!a||event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey||a.target||a.hasAttribute('download'))return;const match=/^#modulo-(T00|M\d{2}|P\d{2})$/.exec(a.getAttribute('href'));if(!match||!planet[match[1]])return;event.preventDefault();travel(match[1],a.querySelector('[data-planet]')||a.closest('[data-world-card]')?.querySelector('[data-planet]'));});
  pause.addEventListener('click',()=>{paused=!paused;syncPause();});
+ reduced.addEventListener?.('change',e=>{if(e.matches){paused=true;syncPause();}});
  document.getElementById('skip-flight').addEventListener('click',finishFlight);
  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&flight){e.preventDefault();finishFlight();}});
  window.addEventListener('resize',resize);window.addEventListener('scroll',()=>{if(paused)render(performance.now());},{passive:true});

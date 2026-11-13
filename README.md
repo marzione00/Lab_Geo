@@ -3,7 +3,7 @@
 **Laboratori interattivi di statistica e coding R per le scienze della Terra**
 **Autore: Marzio De Corato** · Modulo didattico di [Topological Manifolds](https://marzione00.github.io/Personal_web_page/) ([repository del sito principale](https://github.com/marzione00/Personal_web_page)).
 
-Versione applicativa **3.5.0** · materiali didattici **R6** · lingua italiana
+Versione applicativa **3.6.0** · materiali didattici **R6** · lingua italiana
 
 GeoStat Lab accompagna lo studio dei metodi statistici attraverso 139 esperimenti nei quali, modificando parametri e ipotesi, si osservano le conseguenze sui dati simulati, sulle figure e sulle conclusioni. Ogni attività collega il problema scientifico al formalismo matematico e al programma R che ne produce i risultati. L’atlante di 17 pianeti rotanti organizza il percorso; le 11 spedizioni applicative riuniscono i metodi necessari ad affrontare un’indagine più articolata.
 
@@ -18,6 +18,14 @@ La cornice dell’atlante segue una spedizione che ricostruisce conoscenza a par
 Ogni laboratorio di Pelago apre con una situazione simulata, una domanda e una previsione; il primo calcolo richiede un’azione esplicita. Dopo l’esecuzione, il commento utilizza le metriche restituite da R. Il taccuino, accessibile dalla navigazione, conserva manualmente la configurazione corrente e gli eventuali due scenari di confronto per ciascuna attività, insieme agli appunti. Il salvataggio aggiorna la registrazione della stessa attività; l’esportazione JSON permette di custodire una copia. La sola visita non viene conteggiata come apprendimento.
 
 I testi sono mantenuti in `content/narrative.json` e `content/narrative-m05.json`; il primo contiene la cornice e i capitoli, il secondo le nove sequenze specifiche. `src/narrative.js` gestisce commenti e taccuino. Dati salvati corrotti, parametri fuori dominio e HTML nelle note sono gestiti dai controlli di validazione ed escaping; il codice personalizzato disabilita il commento del modello originale. Il taccuino non riceve né esegue codice R importato.
+
+## Sfondo cosmico e lettura del codice
+
+Il paesaggio laterale combina nebulose procedurali, polveri scure, stelle su più piani e due piccole galassie lontane. La scena è illustrativa: distanze, dimensioni e velocità non costituiscono una simulazione astrofisica. Le nebulose vengono calcolate da un worker locale; durante la lettura si riutilizza la texture già generata. Stelle e parallasse condividono con i pianeti il comando **Pausa movimento**. La preferenza di sistema per il movimento ridotto e le schede non visibili sospendono l’animazione. Se il worker non è disponibile, rimangono il campo stellare e lo sfondo essenziale.
+
+Tutti i 139 esperimenti espongono il proprio sorgente nel terminale R, con numeri di riga, commenti per istruzione, parametri sincronizzati e lettura per passi. Negli schermi ampi codice e risultati sono affiancati; nelle altre larghezze seguono l’ordine di lettura. **Modifica** apre l’editor esistente. Le spiegazioni del modello originale vengono sospese quando il programma è personalizzato. I passi guidano la lettura e non rappresentano l’esecuzione riga per riga di R.
+
+**Scarica R completo** include parametri commentati, funzioni comuni, corpo del programma e comandi di esportazione. I commenti vengono aggiunti senza cambiare le istruzioni eseguite. Il terminale usa gli stessi caratteri Nimbus e LMMono del corso, senza dipendenze esterne. La vista è mantenuta in `src/code-terminal.js` e `src/code-terminal.css`; `src/cosmos.js` e `src/cosmos-worker.js` gestiscono il paesaggio condiviso.
 
 ## Contenuti e funzioni
 
