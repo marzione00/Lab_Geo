@@ -18,6 +18,8 @@ const GENERATED = {
 const ON_DEMAND = {
   'experiments-details.js': ['GEO_LABS_DETAILS'],
   'solution-data.js': ['GEO_SOLUTIONS'],
+  'briefing.js': ['GEO_BRIEFING', 'GeoBriefing'],
+  'audio.js': ['GeoAudio'],
 };
 // assets/content/*.js add entries to window.GEO_MODULES, the cache that app.js creates.
 const HOSTS = new Set(['root', 'window', 'globalThis', 'self']);

@@ -3,7 +3,7 @@
 **Laboratori interattivi di statistica e coding R per le scienze della Terra**
 **Autore: Marzio De Corato** · Modulo didattico di [Topological Manifolds](https://marzione00.github.io/Personal_web_page/) ([repository del sito principale](https://github.com/marzione00/Personal_web_page)).
 
-Versione applicativa **4.0.0** · materiali didattici **R6** · lingua italiana
+Versione applicativa **4.1.0** · materiali didattici **R6** · lingua italiana
 
 GeoStat Lab accompagna lo studio dei metodi statistici attraverso 139 esperimenti nei quali, modificando parametri e ipotesi, si osservano le conseguenze sui dati simulati, sulle figure e sulle conclusioni. Ogni attività collega il problema scientifico al formalismo matematico e al programma R che ne produce i risultati. L’atlante di 17 pianeti rotanti organizza il percorso; le 11 spedizioni applicative riuniscono i metodi necessari ad affrontare un’indagine più articolata.
 
@@ -26,6 +26,12 @@ Il paesaggio laterale combina nebulose procedurali, polveri scure, stelle su pi�
 Tutti i 139 esperimenti espongono il proprio sorgente nel terminale R, con numeri di riga, commenti per istruzione, parametri sincronizzati e lettura per passi. Negli schermi ampi codice e risultati sono affiancati; nelle altre larghezze seguono l’ordine di lettura. **Modifica** apre l’editor esistente. Le spiegazioni del modello originale vengono sospese quando il programma è personalizzato. I passi guidano la lettura e non rappresentano l’esecuzione riga per riga di R.
 
 **Scarica R completo** include parametri commentati, funzioni comuni, corpo del programma e comandi di esportazione. I commenti vengono aggiunti senza cambiare le istruzioni eseguite. Il terminale usa gli stessi caratteri Nimbus e LMMono del corso, senza dipendenze esterne. La vista è mantenuta in `src/code-terminal.js` e `src/code-terminal.css`; `src/cosmos.js` e `src/cosmos-worker.js` gestiscono il paesaggio condiviso.
+
+## Briefing e audio di bordo
+
+Alla prima visita della home un briefing in cinque schede presenta mappa, navigazione, laboratori, taccuino e indice testuale; ogni scheda incornicia l’elemento reale a cui si riferisce. Si chiude con Esc o «Salta» e si riapre dal piè di pagina con «Rivedi il briefing». Chi arriva da un link diretto entra subito nella pagina; sistemi, moduli e laboratori mostrano una sola volta un suggerimento di una riga.
+
+L’audio è spento per impostazione predefinita. Si accende dalla prima scheda del briefing o dal pulsante nell’intestazione: tappeto sonoro, suoni dell’interfaccia, viaggio, arrivo e calcolo R sono sintetizzati nel browser con la Web Audio API, senza file audio e senza voce narrante. La scelta resta memorizzata nel browser.
 
 ## Soluzioni ragionate dei progetti
 
@@ -171,6 +177,8 @@ I CSV esportati neutralizzano le celle testuali che potrebbero essere interpreta
 | `src/` | Interfaccia, navigazione, grafica dei pianeti e gestione dei laboratori |
 | `src/security.js` | Validazione di configurazioni, parametri, risultati, SVG e CSV |
 | `src/html.js` | Escaping unico dell’HTML, template con escaping automatico e politica Trusted Types |
+| `src/briefing.js`, `content/briefing.json` | Briefing della prima visita e suggerimenti, caricati su richiesta |
+| `src/audio.js` | Audio sintetizzato con la Web Audio API, caricato soltanto dopo il consenso |
 | `content/experiments.json` | Catalogo scientifico, codice e controlli dei 139 esperimenti |
 | `content/catalogue.json` | Indice delle unità e dei materiali |
 | `moduli/` | Scheda e contenuto strutturato di ciascuna unità |
@@ -240,7 +248,7 @@ npm run test:browser
 
 I test browser producono schermate, esito JSON e una traccia in `qa/browser/`; GitHub conserva la diagnostica per sette giorni anche quando il collaudo fallisce. CodeQL è configurato per repository pubblici; nei repository privati richiede il relativo servizio GitHub e l’abilitazione esplicita tramite variabile `ENABLE_PRIVATE_CODEQL=true`.
 
-Dependabot propone aggiornamenti settimanali. Ogni modifica a webR, ai pacchetti R, alla CSP o a MathJax richiede un nuovo collaudo dei calcoli e delle formule, oltre all’aggiornamento motivato dei manifesti. Le impronte non devono essere rigenerate automaticamente per far passare una verifica fallita. Il controllo sistematico corrente è documentato in [docs/REVISIONE_4_0_0.md](docs/REVISIONE_4_0_0.md); le correzioni precedenti sono in [CHANGELOG.md](CHANGELOG.md); i rapporti storici conservano la propria data e il proprio ambito.
+Dependabot propone aggiornamenti settimanali. Ogni modifica a webR, ai pacchetti R, alla CSP o a MathJax richiede un nuovo collaudo dei calcoli e delle formule, oltre all’aggiornamento motivato dei manifesti. Le impronte non devono essere rigenerate automaticamente per far passare una verifica fallita. Il controllo sistematico corrente è documentato in [docs/REVISIONE_4_1_0.md](docs/REVISIONE_4_1_0.md), quello della qualità del codice in [docs/REVISIONE_4_0_0.md](docs/REVISIONE_4_0_0.md); le correzioni precedenti sono in [CHANGELOG.md](CHANGELOG.md); i rapporti storici conservano la propria data e il proprio ambito.
 
 ## Moduli e spedizioni
 
@@ -282,6 +290,8 @@ Dependabot propone aggiornamenti settimanali. Ogni modifica a webR, ai pacchetti
 - [CONTRIBUTING.md](CONTRIBUTING.md): modifiche al codice e ai contenuti scientifici.
 - [CHANGELOG.md](CHANGELOG.md): registro delle versioni.
 - [docs/SICUREZZA.md](docs/SICUREZZA.md): modello di minaccia e controlli.
+- [docs/REVISIONE_4_1_0.md](docs/REVISIONE_4_1_0.md): impianto grafico, impaginazione, briefing e audio, con misure prima e dopo.
+- [docs/REVISIONE_4_0_0.md](docs/REVISIONE_4_0_0.md): qualità del codice, prestazioni, accessibilità e controllo finale del pacchetto.
 - [docs/REVISIONE_3_9_1.md](docs/REVISIONE_3_9_1.md): controllo sistematico di coerenza, correzioni e limiti della copertura.
 - [docs/REVISIONE_3_2_2.md](docs/REVISIONE_3_2_2.md): rilievi, correzioni, verifiche e limiti della revisione 3.2.2.
 - [docs/CORREZIONE_LAYOUT_3_1_2.md](docs/CORREZIONE_LAYOUT_3_1_2.md): correzione mobile e verifiche della versione 3.1.2.

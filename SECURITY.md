@@ -2,7 +2,7 @@
 
 ## Ambito e versioni
 
-La versione applicativa mantenuta è **4.0.0**. La revisione documentata più recente riguarda **GeoStat Lab 4.0.0** ([docs/REVISIONE_4_0_0.md](docs/REVISIONE_4_0_0.md)); la revisione di sicurezza originaria riguarda **GeoStat Lab 3.2.1**, applicazione statica con R eseguito nel browser. La manutenzione va applicata alla versione corrente; non è previsto il mantenimento parallelo delle versioni precedenti. Le condizioni dei materiali didattici R6 restano quelle indicate in LICENSE.md.
+La versione applicativa mantenuta è **4.1.0**. La revisione documentata più recente riguarda **GeoStat Lab 4.1.0** ([docs/REVISIONE_4_1_0.md](docs/REVISIONE_4_1_0.md)), che non modifica la CSP: briefing e audio si caricano su richiesta con impronte SRI, l’audio è sintetizzato senza file e `media-src` resta `none`. La revisione della qualità del codice è in [docs/REVISIONE_4_0_0.md](docs/REVISIONE_4_0_0.md); la revisione di sicurezza originaria riguarda **GeoStat Lab 3.2.1**, applicazione statica con R eseguito nel browser. La manutenzione va applicata alla versione corrente; non è previsto il mantenimento parallelo delle versioni precedenti. Le condizioni dei materiali didattici R6 restano quelle indicate in LICENSE.md.
 
 Sono compresi nell’ambito gli ingressi dell’interfaccia, i file di configurazione importati, il rendering dei risultati, gli script di build, il server locale e i workflow GitHub. La sicurezza degli account GitHub, dei browser, del sistema operativo e del provider di hosting richiede interventi e aggiornamenti separati.
 

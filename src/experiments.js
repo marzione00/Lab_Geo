@@ -67,7 +67,7 @@
         .filter(m => m.category !== 'progetti')
         .map(m => '<option value="' + m.id + '">' + m.id + ' · ' + escape(m.title) + '</option>')
         .join('') +
-      '</select></div><p class="lab-count" id="experiment-count" role="status"></p><h2 class="sr-only">Elenco degli esperimenti</h2><div class="experiment-grid" id="experiment-grid"></div></div>';
+      '</select><div class="view-switch" role="group" aria-label="Presentazione"><button type="button" data-view="cards" aria-pressed="true">Schede</button><button type="button" data-view="list" aria-pressed="false">Elenco</button></div></div><p class="lab-count" id="experiment-count" role="status"></p><h2 class="sr-only">Elenco degli esperimenti</h2><div class="experiment-groups" id="experiment-grid"></div></div>';
     const fill = () => {
       const terms = norm(main.querySelector('#search-experiments').value).split(/\s+/).filter(Boolean),
         module = main.querySelector('#filter-experiments').value;
@@ -76,10 +76,53 @@
           (module === 'all' || a.module === module) &&
           terms.every(t => norm(a.module + ' ' + a.title + ' ' + a.goal + ' ' + a.sectionTitle).includes(t)),
       );
+      // Grouped by module; groups open only when a search or a module filter narrows the list.
+      const narrowed = terms.length > 0 || module !== 'all';
+      const groups = root.GEO_CATALOG.modules
+        .map(m => [m, found.filter(a => a.module === m.id)])
+        .filter(([, items]) => items.length);
       main.querySelector('#experiment-grid').innerHTML =
-        found.map(a => card(a)).join('') || '<p>Nessun esperimento corrisponde alla ricerca.</p>';
+        groups
+          .map(
+            ([m, items]) =>
+              '<details class="experiment-group"' +
+              (narrowed ? ' open' : '') +
+              '><summary><span class="hud-label">' +
+              m.id +
+              ' · ' +
+              escape(root.GeoPlanets.byId[m.id].name) +
+              '</span><strong>' +
+              escape(m.title) +
+              '</strong><span class="experiment-group-count">' +
+              items.length +
+              (items.length === 1 ? ' esperimento' : ' esperimenti') +
+              '</span></summary><div class="experiment-grid">' +
+              items.map(a => card(a)).join('') +
+              '</div></details>',
+          )
+          .join('') || '<p>Nessun esperimento corrisponde alla ricerca.</p>';
       main.querySelector('#experiment-count').textContent = found.length + ' esperimenti disponibili';
     };
+    const groupsBox = main.querySelector('#experiment-grid');
+    const setView = view => {
+      groupsBox.classList.toggle('is-list', view === 'list');
+      main
+        .querySelectorAll('[data-view]')
+        .forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === view)));
+      try {
+        localStorage.setItem('geostat:experiments-view', view);
+      } catch {
+        // Without storage the choice lasts for this visit only.
+      }
+    };
+    main.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
+    let savedView = 'cards';
+    try {
+      savedView = localStorage.getItem('geostat:experiments-view') === 'list' ? 'list' : 'cards';
+    } catch {
+      // Storage unavailable: cards by default.
+    }
+    setView(savedView);
     main.querySelector('#search-experiments').addEventListener('input', fill);
     main.querySelector('#filter-experiments').addEventListener('change', fill);
     fill();
@@ -687,18 +730,21 @@
         return;
       }
       markDirty();
+      root.GeoCore?.cue('r-start');
       try {
         await E.init();
         if (!active || token !== request) return;
         const r = await E.run(a, p, body);
         if (!active || token !== request) return;
         showResult(r, p, body, true);
+        root.GeoCore?.cue('r-done');
         try {
           localStorage.setItem('geostat-last-experiment', path(a));
         } catch {
           /* the resume link is optional */
         }
       } catch (err) {
+        root.GeoCore?.cue('r-error');
         if (active && token === request) error(err);
       }
     }

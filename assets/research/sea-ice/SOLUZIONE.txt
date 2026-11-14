@@ -1,0 +1,147 @@
+La memoria del ghiaccio
+
+GeoStat Lab · Marzio De Corato
+
+
+
+L’estensione artica possiede un ciclo stagionale che renderebbe ambiguo un confronto fra mesi diversi mescolati nella stessa regressione. La soluzione segue un mese alla volta, esprime il tasso di variazione in unità assolute e relative, quindi restituisce ai residui il loro ordine temporale.
+
+
+
+SUGGERIMENTI
+
+1. Seleziona dapprima settembre e mantieni la sequenza degli anni: quale componente stagionale elimini confrontando sempre lo stesso mese?
+
+2. Controlla il denominatore del tasso percentuale. La media 1981–2010 viene ricalcolata per il mese scelto, ma deve rimanere fissa quando cambi l’anno iniziale della regressione.
+
+3. Una sequenza di residui consecutivi dello stesso segno contiene un’informazione che un grafico privo dell’asse temporale renderebbe meno evidente.
+
+
+
+SOLUZIONE GUIDATA
+
+1. Costruire una sequenza temporalmente confrontabile
+
+La selezione trattiene il mese indicato e gli anni successivi al limite iniziale, escludendo estensioni non finite. L’ordinamento per year prepara una sequenza nella quale ogni osservazione corrisponde a una media mensile in milioni di chilometri quadrati. Il controllo sulla numerosità impedisce di proseguire con una finestra troppo breve rispetto a quella prevista dalla missione.
+
+
+
+# Confronta lo stesso mese tra anni: marzo e settembre non vengono mescolati.
+data <- observations[observations$month == as.integer(p$month) &
+  observations$year >= p$start_year & is.finite(observations$extent_million_km2), ]
+data <- data[order(data$year), ]
+stopifnot(nrow(data) >= 20)
+
+
+
+Settembre, dal 1979 al 2024 inclusi, produce 46 osservazioni annuali. Cambiare l’anno iniziale modifica la finestra analizzata; cambiare il mese modifica la fase del ciclo stagionale che viene confrontata.
+
+
+
+2. Stimare la tendenza e conservare gli scarti
+
+La regressione Eₜ = α + βt + εₜ riassume l’estensione Eₜ mediante una funzione lineare dell’anno t. La pendenza β è espressa in milioni di km² per anno; fitted e resid conservano, per ogni anno, la componente descritta dalla retta e lo scarto osservato. Questa scomposizione permette di valutare quanto la sintesi lineare lasci struttura nei residui.
+
+
+
+# La pendenza beta esprime milioni di km2 per anno; moltiplicarla per 10 dà il tasso decennale.
+fit <- lm(extent_million_km2 ~ year, data = data)
+data$fitted_million_km2 <- as.numeric(predict(fit))
+data$residual_million_km2 <- resid(fit)
+beta <- unname(coef(fit)['year'])
+
+
+
+Esamina contemporaneamente i valori stimati e i residui. Il segno della pendenza descrive la direzione della tendenza nella finestra scelta, mentre i residui mostrano le variazioni che la retta non rappresenta.
+
+
+
+3. Esprimere il tasso rispetto a un riferimento fisso
+
+La media di riferimento viene calcolata sulle osservazioni del medesimo mese comprese fra il 1981 e il 2010. Moltiplicando β per dieci si ottiene il tasso decennale; dividendo per la media e moltiplicando per cento lo si esprime come percentuale del riferimento per decennio. Conservare lo stesso riferimento durante il confronto fra finestre evita di cambiare simultaneamente numeratore e denominatore.
+
+
+
+# Il riferimento 1981-2010 usa sempre il medesimo mese, anche quando cambia l'inizio del periodo.
+reference <- observations[observations$month == as.integer(p$month) &
+  observations$year >= 1981 & observations$year <= 2010, ]
+baseline <- mean(reference$extent_million_km2, na.rm = TRUE)
+percent_decade <- 100 * 10 * beta / baseline
+
+
+
+Annota separatamente il tasso assoluto e quello percentuale. Marzo e settembre hanno riferimenti propri: una stessa variazione assoluta assumerebbe un significato relativo diverso rispetto alle rispettive estensioni medie.
+
+
+
+4. Esaminare la dipendenza residua
+
+L’autocorrelazione al ritardo uno confronta residui distanti un anno e fornisce un primo indicatore della loro persistenza. Il riepilogo affianca questa quantità ai tassi di variazione, così che la lettura della tendenza tenga conto anche della struttura temporale rimasta dopo la stima. Un singolo coefficiente non descrive tutti i ritardi possibili.
+
+
+
+# La correlazione al ritardo 1 segnala dipendenza residua; non costituisce una prova di indipendenza.
+lag1 <- as.numeric(acf(data$residual_million_km2, lag.max = 1, plot = FALSE)$acf[2])
+metrics <- metric('Anni osservati' = nrow(data),
+  'Pendenza [milioni km2 / decennio]' = f(10 * beta),
+  'Pendenza [% del riferimento / decennio]' = f(percent_decade),
+  'Riferimento 1981-2010 [milioni km2]' = f(baseline),
+  'Correlazione residua al ritardo 1' = f(lag1))
+month_name <- if (p$month == '3') 'Marzo' else 'Settembre'
+
+
+
+Nel riferimento iniziale la correlazione residua al ritardo uno è 0,149. Confrontala con il grafico cronologico e con l’esito ottenuto restringendo il periodo, evitando di trasformare un valore contenuto in una prova di indipendenza.
+
+
+
+5. Leggere insieme osservazioni, retta e residui
+
+La prima figura sovrappone osservazioni e retta entro il periodo effettivamente studiato; la seconda conserva l’ordine degli scarti rispetto alla stessa retta. Le due rappresentazioni rispondono a domande complementari: quanto vari l’estensione lungo il periodo e quali variazioni rimangano dopo averne sottratto la componente lineare.
+
+
+
+# Mostra osservazioni e retta stimata, limitando la rappresentazione all'intervallo studiato.
+g1 <- ggplot(data, aes(year, extent_million_km2)) +
+  geom_line(colour = '#A0ADB7', linewidth = 0.55) +
+  geom_point(colour = '#168B9C', size = 2.6) +
+  geom_line(aes(y = fitted_million_km2), colour = '#BC5B35', linewidth = 1.15) +
+  labs(title = paste('Estensione artica ·', month_name),
+    subtitle = 'NSIDC Sea Ice Index v4 · osservazioni e tendenza lineare',
+    x = 'Anno', y = 'Estensione [milioni di km2]')
+
+# I residui conservano l'ordine temporale, così eventuali sequenze rimangono visibili.
+g2 <- ggplot(data, aes(year, residual_million_km2)) +
+  geom_hline(yintercept = 0, colour = '#64748B', linetype = 2) +
+  geom_line(colour = '#7054A4', linewidth = 0.75) +
+  geom_point(colour = '#7054A4', size = 2.3) +
+  labs(title = 'Scarti dalla tendenza lineare',
+    subtitle = 'Diagnostica descrittiva: verificare struttura temporale e sensibilità al periodo',
+    x = 'Anno', y = 'Residuo [milioni di km2]')
+plots <- list(g1, g2)
+
+
+
+Cerca sequenze, cambiamenti di dispersione e anni lontani dalla retta. Quando confronti due finestre, conserva gli intervalli temporali insieme ai risultati, affinché la diversa pendenza possa essere interpretata nel proprio dominio.
+
+
+
+INTERPRETAZIONE
+
+Per settembre 1979–2024, il riferimento verificato in R 4.5.0 comprende 46 anni e una pendenza di −0,779 milioni di km² per decennio. Rispetto alla media di settembre 1981–2010, pari a circa 6,41 milioni di km², il tasso corrisponde a −12,1% del riferimento per decennio. La percentuale esprime una variazione rispetto a una base fissa; non rappresenta una perdita composta che venga applicata ogni anno alla quantità residua.
+
+La correlazione residua al ritardo uno è 0,149 nella configurazione iniziale. Il confronto richiesto dalla missione va completato eseguendo marzo e una finestra più recente, quindi discutendo insieme tassi assoluti, tassi relativi e residui. La regressione fornisce una sintesi descrittiva del periodo e del mese scelti; proiezioni e intervalli inferenziali richiederebbero ulteriori ipotesi sulla dinamica e sull’incertezza temporale.
+
+
+
+Una curva flessibile potrebbe descrivere deviazioni dalla linearità, purché la complessità venga scelta con un criterio dichiarato e la valutazione rispetti l’ordine temporale.
+
+Per discutere l’incertezza della pendenza si potrebbe introdurre un modello dei residui oppure un ricampionamento a blocchi, confrontando la sensibilità alle rispettive ipotesi.
+
+
+
+LIMITI E CONTROLLI
+
+Estensione, area e volume del ghiaccio sono grandezze differenti: una tendenza dell’estensione non quantifica direttamente la variazione del volume.
+
+La scelta retrospettiva della finestra che produce il tasso più marcato rende selettiva la conclusione; gli intervalli confrontati devono essere dichiarati e motivati.

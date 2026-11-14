@@ -7,7 +7,8 @@
     esc = window.GeoHTML.escape;
   const n = (v, d = 2) => v.toLocaleString('it-IT', { maximumFractionDigits: d, minimumFractionDigits: 0 });
   let scene = null,
-    hoverTimer = 0;
+    hoverTimer = 0,
+    focusSystem = null;
   const variants = new Map();
   const getModule = id => window.GEO_CATALOG.modules.find(m => m.id === id);
   const stat = (label, value, unit) => `<div><dt>${label}</dt><dd>${value} <small>${unit}</small></dd></div>`;
@@ -18,6 +19,7 @@
     clearTimeout(hoverTimer);
     scene?.dispose();
     scene = null;
+    focusSystem = null;
   }
   function starFacts(s) {
     return `<dl class="astro-stats">${stat('Temperatura effettiva', n(s.star.temperature, 0), 'K')}${stat('Massa stellare', n(s.star.mass), 'M☉')}${stat('Raggio stellare', n(s.star.radius), 'R☉')}${stat('Luminosità', n(s.star.luminosity, 3), 'L☉')}</dl>`;
@@ -27,7 +29,7 @@
     let selected = 'M05';
     const systems = A.systems.map(s => A.generate(s.id, variants.get(s.id) || 0));
     main.innerHTML = `<section class="galaxy-home" aria-labelledby="galaxy-title"><div class="galaxy-heading"><div><p class="eyebrow">ATLANTE SCIENTIFICO / CARTOGRAFIA STELLARE</p><h1 id="galaxy-title">${esc(N.data.home.title)}</h1><p>Una spedizione nella conoscenza, fra astronomia, statistica e codice R.</p></div><a class="galaxy-index" href="#catalogo">Indice del corso ↗</a></div>
-   ${N.home()}${window.GeoResearch.index()}<div class="exploration-steps"><span class="active">01 <b>Galassia</b></span><span>02 Sistema stellare</span><span>03 Pianeta e laboratorio</span></div>
+   <div class="exploration-steps"><span class="active">01 <b>Galassia</b></span><span>02 Sistema stellare</span><span>03 Pianeta e laboratorio</span></div>
    <div class="galaxy-navigation"><div class="galaxy-chart" role="group" aria-label="Galassia tridimensionale e sistemi stellari">
     <canvas id="galaxy-viewport" tabindex="0" role="img" aria-label="Galassia ruotabile. Trascina o usa le frecce; più e meno regolano lo zoom. Seleziona un punto stellare per entrare nel sistema."></canvas>
     <svg class="galaxy-leaders" aria-hidden="true">${systems.map(s => `<g data-leader="${s.id}"><path class="leader-line"/><circle class="leader-pin" r="2.4"/><circle class="leader-target"/></g>`).join('')}</svg><div class="galaxy-corners" aria-hidden="true"></div>
@@ -35,7 +37,8 @@
     <div class="galaxy-camera" aria-label="Controlli della camera"><button type="button" data-camera="in" aria-label="Avvicina la camera">+</button><button type="button" data-camera="out" aria-label="Allontana la camera">−</button><button type="button" data-camera="reset" aria-label="Ripristina la vista della galassia">↺</button></div>
     ${systems.map(s => `<button class="galaxy-node" type="button" data-destination="${s.id}" aria-pressed="false" aria-controls="destination-detail" aria-label="${s.id} ${s.name}, ${s.star.type} · ${esc(s.subject)}: esplora il sistema del modulo ${esc(getModule(s.id).title)}"><span class="galaxy-node-label"><span class="galaxy-node-name"><small>${s.id}</small> <strong>${s.name}</strong> <i aria-hidden="true">↗</i></span> <span class="galaxy-node-subject">${s.star.type} · ${s.subject}</span></span></button>`).join('')}
     <div class="galaxy-map-caption"><span>TRASCINA PER RUOTARE · CLICCA UN SISTEMA</span><span>MAPPA ILLUSTRATIVA</span></div><div class="galaxy-flight"><span>AVVICINAMENTO A <strong class="galaxy-flight-name"></strong></span><button class="galaxy-skip" type="button">Entra nel sistema →</button></div>
-   </div><aside id="destination-detail" class="destination-detail system-preview" aria-labelledby="destination-name"></aside></div>${P.legend()}${note}${footer()}</section>`;
+   </div><aside id="destination-detail" class="destination-detail system-preview hud-panel" data-tone="action" aria-labelledby="destination-name"></aside><a class="destination-dock" href="#sistema-${selected}"><span class="hud-label">Sistema selezionato</span><strong></strong><span class="destination-dock-go">Esplora ↗</span></a></div>
+   <section class="galaxy-dossier" aria-labelledby="dossier-title"><h2 id="dossier-title" class="hud-label">Dossier della spedizione</h2>${N.home()}${window.GeoResearch.index()}</section>${P.legend()}${note}${footer()}</section>`;
     function select(id) {
       clearTimeout(hoverTimer);
       const s = A.generate(id, variants.get(id) || 0);
@@ -52,16 +55,27 @@
         e.preventDefault();
         enter(id);
       });
+      const dock = main.querySelector('.destination-dock');
+      dock.href = '#sistema-' + id;
+      dock.querySelector('strong').textContent = `${id} ${s.name}`;
       scene?.select(id);
     }
     function enter(id) {
       select(id);
       const arrive = () => {
+        window.GeoCore?.cue('arrive');
         location.hash = '#sistema-' + id;
       };
-      if (scene) scene.travel(id, arrive);
-      else arrive();
+      if (scene) {
+        window.GeoCore?.cue('travel', { duration: 1.35 });
+        scene.travel(id, arrive);
+      } else arrive();
     }
+    main.querySelector('.destination-dock').addEventListener('click', e => {
+      if (e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      e.preventDefault();
+      enter(selected);
+    });
     const buttons = [...main.querySelectorAll('[data-destination]')];
     buttons.forEach((b, i) => {
       b.addEventListener('pointerenter', e => {
@@ -86,6 +100,7 @@
     });
     scene = window.GeoGalaxyScene.create(main.querySelector('.galaxy-chart'), select, enter);
     select(selected);
+    focusSystem = select;
   }
   function scientificNotes() {
     return `<section class="astro-learning" aria-labelledby="astro-learning-title"><div><p class="eyebrow">LEGGERE IL MODELLO</p><h2 id="astro-learning-title">Tre relazioni per esplorare un sistema.</h2><p>I valori mostrati nelle schede derivano da queste relazioni. Le orbite del modello sono circolari e la massa dei pianeti è trascurata nel calcolo del periodo.</p></div><div class="astro-equations">
@@ -172,5 +187,7 @@
     scene = window.GeoSystemScene.create(main.querySelector('.system-chart'), s, select);
     select('star', false);
   }
-  window.GeoGalaxy = Object.freeze({ mount, system, cleanup, debug: () => scene?.debug() || null });
+  // The briefing highlights a system without starting the flight.
+  const focus = id => focusSystem?.(id);
+  window.GeoGalaxy = Object.freeze({ mount, system, cleanup, focus, debug: () => scene?.debug() || null });
 })();

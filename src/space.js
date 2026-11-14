@@ -181,6 +181,7 @@
     if (!flight) return;
     const id = flight.id;
     cancelFlight();
+    window.GeoCore?.cue('arrive');
     if (location.hash !== '#modulo-' + id) location.hash = '#modulo-' + id;
     refresh();
     document.getElementById('contenuto').focus({ preventScroll: true });
@@ -207,6 +208,7 @@
     flightLayer.hidden = false;
     document.getElementById('annuncio').textContent = 'In viaggio verso ' + flightTitle.textContent;
     flightTimer = setTimeout(finishFlight, 1450);
+    window.GeoCore?.cue('travel', { duration: 1.45 });
     location.hash = '#modulo-' + id;
     document.getElementById('skip-flight').focus({ preventScroll: true });
     schedule();

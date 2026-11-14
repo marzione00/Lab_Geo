@@ -13,6 +13,9 @@ export function hardenBuild(out) {
     'vendor/mathjax/tex-svg.js',
     'assets/experiments-details.js',
     'assets/solution-data.js',
+    'assets/briefing.js',
+    'assets/briefing.css',
+    'assets/audio.js',
     ...fs.readdirSync(path.join(out, 'assets/content')).map(f => 'assets/content/' + f),
   ];
   fs.writeFileSync(

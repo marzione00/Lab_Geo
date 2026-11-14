@@ -331,21 +331,37 @@
         if (!disposed) invalidate();
       })
       .catch(() => {});
+    // The star field is the costly part of a CPU frame; it is drawn into a layer that is reused until the
+    // camera or the canvas size changes, so a selection or a hover repaints only the worlds.
+    const layer = document.createElement('canvas');
+    let layerKey = '';
+    function starField(state, vp, scale) {
+      const key = canvas.width + 'x' + canvas.height + ':' + vp.map(v => v.toFixed(5)).join(',');
+      if (key === layerKey) return;
+      layer.width = canvas.width;
+      layer.height = canvas.height;
+      const l = layer.getContext('2d');
+      l.setTransform(scale, 0, 0, scale, 0, 0);
+      l.globalCompositeOperation = 'lighter';
+      for (const p of rows) {
+        const q = M.project(p.p, vp, state.width, state.height);
+        if (!q.visible) continue;
+        const size = M.clamp((p.size * state.height * state.camera.f) / q.depth, 1.2, 70);
+        l.globalAlpha = M.clamp(p.a * (p.size < 0.3 ? 2.2 : 2.6), 0, 1);
+        l.drawImage(p.image, q.x - size / 2, q.y - size / 2, size, size);
+      }
+      layerKey = key;
+    }
     return {
       kind: 'canvas',
       draw(state) {
         const scale = canvas.width / state.width;
-        ctx.setTransform(scale, 0, 0, scale, 0, 0);
-        ctx.clearRect(0, 0, state.width, state.height);
-        ctx.globalCompositeOperation = 'lighter';
         const vp = M.multiply(state.camera.vp, M.rotation(state.angle));
-        for (const p of rows) {
-          const q = M.project(p.p, vp, state.width, state.height);
-          if (!q.visible) continue;
-          const size = M.clamp((p.size * state.height * state.camera.f) / q.depth, 1.2, 70);
-          ctx.globalAlpha = M.clamp(p.a * (p.size < 0.3 ? 2.2 : 2.6), 0, 1);
-          ctx.drawImage(p.image, q.x - size / 2, q.y - size / 2, size, size);
-        }
+        starField(state, vp, scale);
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(layer, 0, 0);
+        ctx.setTransform(scale, 0, 0, scale, 0, 0);
         ctx.globalAlpha = 1;
         ctx.globalCompositeOperation = 'source-over';
         const selected = state.worlds.find(p => p.id === state.selected);
@@ -502,7 +518,8 @@
       width = Math.max(1, r.width);
       height = Math.max(1, r.height);
       chart.dataset.compact = String(width < 580);
-      const dpr = Math.min(window.devicePixelRatio || 1, 1.5, 1600 / width);
+      // The CPU renderer paints at one device pixel per CSS pixel: its cost grows with the pixel count.
+      const dpr = Math.min(window.devicePixelRatio || 1, renderer?.kind === 'canvas' ? 1 : 1.5, 1600 / width);
       canvas.width = Math.round(width * dpr);
       canvas.height = Math.round(height * dpr);
       invalidate();
@@ -579,12 +596,15 @@
       }
       const dt = last ? Math.min((now - last) / 1000, 0.1) : 0;
       last = now;
-      if (!paused()) {
+      // The CPU renderer draws on demand (selection, drag, flight): a frame costs it a long task, and with the
+      // chart in the first screen a continuous rotation would keep the main thread busy.
+      const continuous = !paused() && renderer.kind !== 'canvas';
+      if (continuous) {
         time += dt;
         if (!hovering && !dragging && !flight) angle += dt * 0.018;
       }
       if (layout(now)) renderer.draw(state);
-      if (!paused() || flight) raf = requestAnimationFrame(tick);
+      if (continuous || flight) raf = requestAnimationFrame(tick);
       else last = 0;
     }
     function finish() {
@@ -786,6 +806,9 @@
       }
     });
     resize();
+    // Place the system buttons before the first paint: the chart is in the first screen, and waiting for
+    // the visibility observer would move them after they are drawn (layout shift).
+    if (renderer) layout(performance.now());
     return {
       select(id) {
         clearPick();

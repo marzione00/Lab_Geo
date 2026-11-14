@@ -1,0 +1,130 @@
+Dimensione e riflettività degli asteroidi
+
+GeoStat Lab · Marzio De Corato
+
+
+
+La relazione fra diametro e albedo viene osservata attraverso un catalogo nel quale la disponibilità delle misure può essere selettiva. La soluzione conserva perciò due denominatori: tutti gli asteroidi estratti e quelli che possiedono entrambe le grandezze richieste. Solo dopo questa distinzione applica il limite dimensionale e descrive l’associazione.
+
+
+
+SUGGERIMENTI
+
+1. Conta separatamente diametri utilizzabili e albedo utilizzabili, poi determina quante righe soddisfino entrambe le condizioni.
+
+2. La correlazione di Spearman confronta i ranghi: una trasformazione strettamente crescente del diametro, come il logaritmo sui valori positivi, ne conserva l’ordinamento.
+
+3. Quando elevi il diametro minimo, controlla il numero degli oggetti selezionati prima di confrontare la nuova correlazione con quella iniziale.
+
+
+
+SOLUZIONE GUIDATA
+
+1. Distinguere disponibilità e selezione
+
+has_diameter richiede un diametro finito e positivo, condizione necessaria anche per rappresentarlo su un asse logaritmico. has_albedo richiede una misura finita e non negativa. La congiunzione complete individua le coppie utilizzabili prima che sia applicata la soglia dimensionale, evitando che assenza della misura e piccolo diametro vengano confusi.
+
+
+
+# Valuta separatamente la disponibilità delle misure, prima di ogni filtro.
+has_diameter <- is.finite(observations$diameter) & observations$diameter > 0
+has_albedo <- is.finite(observations$albedo) & observations$albedo >= 0
+complete <- has_diameter & has_albedo
+
+
+
+Il campione originario comprende 2.500 asteroidi; 2.430 possiedono una coppia diametro–albedo utilizzabile. Queste quantità restano riferite al CSV originario anche quando cambia il limite di diametro.
+
+
+
+2. Valutare un’associazione di rango
+
+Dopo aver selezionato gli oggetti con diametro almeno pari alla soglia, cor con method = 'spearman' misura l’associazione fra gli ordinamenti delle due variabili. Il coefficiente descrive una tendenza monotona e può essere interpretato insieme alla dispersione dei punti; il filtro ridefinisce la popolazione osservata, per cui il suo effetto va distinto da una modifica del metodo di calcolo.
+
+
+
+# La soglia riguarda soltanto gli oggetti con entrambe le misure disponibili.
+keep <- complete & observations$diameter >= p$min_diameter
+keep[is.na(keep)] <- FALSE
+data <- observations[keep, , drop = FALSE]
+stopifnot(nrow(data) >= 3)
+rho <- cor(data$diameter, data$albedo, method = "spearman")
+metrics <- metric(
+  "Asteroidi estratti" = nrow(observations),
+  "Coppie disponibili prima della soglia" = sum(complete),
+  "Oggetti selezionati" = nrow(data),
+  "Correlazione di Spearman" = f(rho),
+  "Diametro mediano [km]" = f(median(data$diameter))
+)
+
+
+
+Al limite iniziale di 20 km rimangono 1.471 asteroidi, con diametro mediano 44,7 km e correlazione di Spearman −0,313. Confronta sempre correlazione e numerosità della stessa configurazione.
+
+
+
+3. Rendere confrontabili gli ordini di grandezza
+
+La trasformazione dell’asse orizzontale rende leggibili diametri molto diversi, conservando sull’asse le unità in chilometri. L’albedo geometrica è adimensionale; la sua dispersione verticale mostra quanto oggetti di dimensioni simili possano differire nella riflettività misurata. La scelta dell’asse migliora la lettura senza introdurre una regressione né modificare la correlazione già calcolata sui ranghi.
+
+
+
+# La scala logaritmica rende leggibili diametri di ordine di grandezza diverso.
+g1 <- ggplot(data, aes(x = diameter, y = albedo)) +
+  geom_point(colour = col_geo[1], size = 2.2, alpha = 0.60) +
+  scale_x_log10() +
+  labs(title = "Diametro e albedo geometrica",
+       subtitle = "NASA/JPL SBDB · asteroidi numerati selezionati",
+       x = "Diametro [km, scala logaritmica]", y = "Albedo geometrica [adimensionale]")
+
+
+
+Segui l’andamento complessivo della nube e individua regioni del diagramma nelle quali il catalogo appare poco popolato. L’assenza di punti può dipendere anche dalle modalità con cui gli oggetti sono stati osservati e caratterizzati.
+
+
+
+4. Conservare visibile ciò che manca
+
+La tabella availability riporta, per ciascuna grandezza, le misure utilizzabili e quelle assenti o non valide prima della selezione dimensionale. Il diagramma a colonne conserva quindi un’informazione che il solo grafico delle coppie complete perderebbe. Poiché i conteggi sono marginali, le due colonne non identificano direttamente quali asteroidi manchino di entrambe le misure.
+
+
+
+# Mostra la disponibilità originaria: il filtro dimensionale non modifica questi conteggi.
+availability <- data.frame(
+  misura = rep(c("Diametro", "Albedo"), each = 2),
+  stato = rep(c("Disponibile", "Assente/non valida"), times = 2),
+  conteggio = c(sum(has_diameter), sum(!has_diameter), sum(has_albedo), sum(!has_albedo))
+)
+g2 <- ggplot(availability, aes(x = misura, y = conteggio, fill = stato)) +
+  geom_col(position = "stack", width = 0.60) +
+  scale_fill_manual(values = c("Disponibile" = col_geo[1], "Assente/non valida" = col_geo[2])) +
+  labs(title = "Disponibilità delle misure nel CSV",
+       subtitle = "Conteggi prima della selezione per diametro",
+       x = NULL, y = "Numero di asteroidi")
+plots <- list(g1, g2)
+
+
+
+Verifica che le colonne della disponibilità restino invariate al cambiare della soglia, mentre il numero degli oggetti nel diagramma di dispersione può diminuire.
+
+
+
+INTERPRETAZIONE
+
+Il riferimento verificato in R 4.5.0 seleziona 1.471 oggetti sopra 20 km fra le 2.430 coppie utilizzabili; il diametro mediano è 44,7 km e la correlazione di Spearman è −0,313. Il segno negativo indica che, in questo sottoinsieme, ai ranghi maggiori del diametro tendono ad associarsi ranghi minori dell’albedo. La dispersione osservata rimane parte essenziale del risultato.
+
+Per stabilire quanto l’associazione dipenda dal limite dimensionale occorre ripetere l’analisi, conservando per ogni configurazione soglia, numerosità e coefficiente. Il confronto riguarda un catalogo delimitato di asteroidi numerati; la disponibilità selettiva delle misure e i metodi con cui esse sono ottenute impediscono di attribuire automaticamente l’associazione a un solo meccanismo fisico.
+
+
+
+Un confronto fra fasce di diametro definite prima dell’analisi permetterebbe di descrivere come cambi la distribuzione dell’albedo entro intervalli dimensionali distinti.
+
+Qualora si introduca un modello quantitativo delle misure, le incertezze dei diametri e il processo di selezione dovrebbero essere trattati esplicitamente, anziché dedotti dalla sola dispersione dei punti.
+
+
+
+LIMITI E CONTROLLI
+
+L’albedo geometrica del catalogo non coincide con l’albedo di Bond impiegata nel bilancio energetico dei pianeti dell’atlante.
+
+Una variazione della correlazione dopo aver ristretto l’intervallo dei diametri non dimostra da sola l’esistenza di popolazioni fisiche differenti.

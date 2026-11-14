@@ -47,6 +47,111 @@
   }
   const labDetails = () => loadData('experiments-details.js', () => !!window.GEO_LABS?.detailed);
   const solutions = () => loadData('solution-data.js', () => !!window.GEO_SOLUTIONS);
+  // Briefing: stylesheet and script, both with SRI, loaded only when the briefing or a hint is shown.
+  let briefingStyle = null;
+  function briefingAssets() {
+    briefingStyle ||= new Promise((resolve, reject) => {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'assets/briefing.css';
+      link.integrity = window.GEO_INTEGRITY['assets/briefing.css'];
+      link.crossOrigin = 'anonymous';
+      link.onload = resolve;
+      link.onerror = () => {
+        briefingStyle = null;
+        link.remove();
+        reject(new Error('Impossibile caricare briefing.css'));
+      };
+      document.head.append(link);
+    });
+    return Promise.all([briefingStyle, loadData('briefing.js', () => !!window.GeoBriefing)]);
+  }
+  // A key that cannot be read counts as seen: without storage the briefing would return on every visit.
+  const seen = key => {
+    try {
+      return localStorage.getItem(key) !== null;
+    } catch {
+      return true;
+    }
+  };
+  let replayBriefing = null;
+  function firstVisit(route) {
+    if (route.type === 'indice' && (replayBriefing || !seen('geostat:briefing:v1'))) {
+      const opener = replayBriefing;
+      replayBriefing = null;
+      briefingAssets()
+        .then(() => current === route && window.GeoBriefing.open({ opener }))
+        .catch(() => {});
+    } else if (['system', 'module', 'experiment'].includes(route.type) && !seen('geostat:hint:' + route.type)) {
+      briefingAssets()
+        .then(() => current === route && window.GeoBriefing.hint(route.type))
+        .catch(() => {});
+    }
+  }
+  // Audio: off unless the reader turns it on. The AudioContext is created inside the click that asks for
+  // sound, as browsers require; the synthesiser (audio.js) is loaded only then.
+  const audioToggle = document.getElementById('audio-toggle'),
+    audioVolume = document.getElementById('audio-volume');
+  let audioContext = null;
+  const store = (key, value) => {
+    try {
+      localStorage.setItem(key, value);
+    } catch {
+      // The choice lasts for this visit only.
+    }
+  };
+  const stored = key => {
+    try {
+      return localStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  };
+  function showAudio(on) {
+    audioToggle.setAttribute('aria-pressed', String(on));
+    audioVolume.hidden = !on;
+  }
+  function startAudio() {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    // 24 kHz halves the synthesis cost; the sounds have no content above 12 kHz.
+    audioContext ||= new AC({ latencyHint: 'balanced', sampleRate: 24000 });
+    audioContext.resume();
+    loadData('audio.js', () => !!window.GeoAudio)
+      .then(() => window.GeoAudio.enable(audioContext, audioVolume.value / 100))
+      .catch(() => showAudio(false));
+  }
+  function setAudio(on) {
+    store('geostat:audio', on ? 'on' : 'off');
+    showAudio(on);
+    if (on) startAudio();
+    else window.GeoAudio?.disable();
+  }
+  audioToggle.addEventListener('click', () => setAudio(audioToggle.getAttribute('aria-pressed') !== 'true'));
+  audioVolume.value = stored('geostat:audio-volume') ?? audioVolume.value;
+  audioVolume.addEventListener('input', () => {
+    store('geostat:audio-volume', audioVolume.value);
+    window.GeoAudio?.setVolume(audioVolume.value / 100);
+  });
+  document.addEventListener('geostat:audio-choice', e => setAudio(e.detail.enabled));
+  if (stored('geostat:audio') === 'on') {
+    // A previous visit chose sound: it starts with the first interaction on this page.
+    showAudio(true);
+    const first = () => {
+      document.removeEventListener('pointerdown', first, true);
+      document.removeEventListener('keydown', first, true);
+      if (audioToggle.getAttribute('aria-pressed') === 'true') startAudio();
+    };
+    document.addEventListener('pointerdown', first, true);
+    document.addEventListener('keydown', first, true);
+  }
+  document.addEventListener('click', e => {
+    const button = e.target.closest('[data-briefing]');
+    if (!button) return;
+    replayBriefing = button;
+    if (current?.type === 'indice') firstVisit(current);
+    else location.hash = '#indice';
+  });
   function loadModule(id) {
     if (moduleCache[id]) return Promise.resolve(moduleCache[id]);
     if (pending[id]) return pending[id];
@@ -612,12 +717,13 @@
       link('#indice', 'Torna all’indice', 'button') +
       '</section>';
   }
+  function cleanupViews() {
+    for (const view of [window.GeoResearch, window.GeoLabs, window.GeoGalaxy, window.GeoBriefing]) view?.cleanup();
+  }
   async function render() {
     const token = ++renderId;
     current = window.GeoLabs?.parseHash(location.hash) || C.parseRoute(location.hash, catalog);
-    window.GeoResearch?.cleanup();
-    window.GeoLabs?.cleanup();
-    window.GeoGalaxy?.cleanup();
+    cleanupViews();
     if (window.MathJax?.typesetClear) window.MathJax.typesetClear([main]);
     document.title =
       config.title + ' · ' + (current.id ? catalog.find(m => m.id === current.id).title : config.subtitle);
@@ -629,6 +735,7 @@
       window.scrollTo({ top: 0, behavior: 'instant' });
       window.GeoSpace?.onRoute(current);
       markNavigation(current);
+      firstVisit(current);
     } catch (err) {
       renderError(err);
     }

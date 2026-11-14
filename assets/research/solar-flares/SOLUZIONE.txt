@@ -1,0 +1,154 @@
+Quando il sensore raggiunge il limite
+
+GeoStat Lab · Marzio De Corato
+
+
+
+La durata di un brillamento dipende dalla definizione operativa con cui l’archivio ne identifica inizio e fine, mentre un picco saturato non costituisce una misura utilizzabile come gli altri. La soluzione rende visibili questi passaggi di selezione prima di descrivere l’associazione fra durata e irradiamento di picco.
+
+
+
+SUGGERIMENTI
+
+1. Ricava la durata sottraendo istanti espressi nello stesso fuso orario e controlla che sia finita e positiva prima di applicare il logaritmo.
+
+2. Distingui gli eventi che superano la soglia dagli eventi che possono entrare nella regressione: il controllo della saturazione modifica soltanto il secondo insieme.
+
+3. Il segnale di picco e l’energia integrata nel tempo rispondono a domande fisiche differenti. Controlla quale delle due quantità compare nella colonna xrsb_irrad.
+
+
+
+SOLUZIONE GUIDATA
+
+1. Ricostruire una durata operativa
+
+Gli istanti di inizio e fine vengono interpretati in UTC e sottratti con difftime, che restituisce la durata in minuti. La condizione valid richiede una durata positiva e un irradiamento finito e positivo, così che entrambe le variabili possano essere trasformate in logaritmi. Gli eventi privi dei requisiti vengono conteggiati prima delle ulteriori selezioni.
+
+
+
+# I tempi sono UTC; la durata termina secondo la definizione operativa dell'archivio GOES.
+data <- observations
+start <- as.POSIXct(data$start_time, format = '%Y-%m-%d %H:%M:%S', tz = 'UTC')
+end <- as.POSIXct(data$end_time, format = '%Y-%m-%d %H:%M:%S', tz = 'UTC')
+data$duration_minutes <- as.numeric(difftime(end, start, units = 'mins'))
+valid <- is.finite(data$duration_minutes) & data$duration_minutes > 0 &
+  is.finite(data$xrsb_irrad) & data$xrsb_irrad > 0
+missing_duration <- sum(!valid)
+
+
+
+Il file di riferimento contiene 3.662 eventi; 480 presentano durata o intensità non utilizzabile secondo questi criteri. Una durata mancante resta tale: sostituirla con zero introdurrebbe una misura che l’archivio non fornisce.
+
+
+
+2. Applicare soglia, sequenza e controllo della saturazione
+
+La soglia B, C oppure M corrisponde rispettivamente a 10⁻⁷, 10⁻⁶ oppure 10⁻⁵ W/m². L’opzione first conserva gli eventi contrassegnati come primi della sequenza, secondo l’identificatore dell’archivio. Il controllo peak_saturated viene applicato successivamente, conservando un conteggio dei picchi esclusi prima di calcolare i logaritmi della durata e dell’irradiamento.
+
+
+
+# La soglia di irradiamento seleziona un sottocampione; non corregge la completezza del catalogo.
+threshold <- switch(p$minimum_class, B = 1e-7, C = 1e-6, M = 1e-5)
+selection <- valid & data$xrsb_irrad >= threshold
+if (p$sequence == 'first') selection <- selection & data$sequential_flare_num == 1
+selected <- data[selection, ]
+
+# I picchi saturati rimangono visibili nel conteggio ma sono sempre esclusi dalla regressione.
+saturated <- selected[selected$peak_saturated == 1, ]
+data <- selected[!is.na(selected$peak_saturated) & selected$peak_saturated == 0, ]
+stopifnot(nrow(data) >= 10)
+data$log_duration <- log10(data$duration_minutes)
+data$log_irradiance <- log10(data$xrsb_irrad)
+
+
+
+Con soglia C e tutte le sequenze, il riferimento seleziona inizialmente 2.205 eventi; due picchi saturati vengono esclusi e il modello utilizza 2.203 osservazioni. La selezione dei primi eventi riduce una possibile fonte di dipendenza senza dimostrare, da sola, l’indipendenza del campione.
+
+
+
+3. Stimare una relazione in scala logaritmica
+
+Il modello descrive log₁₀ dell’irradiamento mediante log₁₀ della durata. La pendenza esprime quindi una variazione proporzionale: un incremento di un ordine di grandezza della durata corrisponde a β ordini di grandezza della previsione in scala logaritmica. La correlazione di Spearman aggiunge una sintesi dell’associazione di rango, mentre i residui conservano gli scarti rispetto alla retta.
+
+
+
+# La retta riassume l'associazione logaritmica; le osservazioni non identificano un rapporto causale.
+fit <- lm(log_irradiance ~ log_duration, data = data)
+data$fitted_log_irradiance <- as.numeric(predict(fit))
+data$residual_log_irradiance <- resid(fit)
+rho <- cor(data$duration_minutes, data$xrsb_irrad, method = 'spearman')
+metrics <- metric('Eventi nel file originale' = nrow(observations),
+  'Durata o intensità non utilizzabile' = missing_duration,
+  'Eventi selezionati prima del controllo saturazione' = nrow(selected),
+  'Picchi saturati esclusi dal modello' = nrow(saturated),
+  'Eventi nel modello' = nrow(data),
+  'Pendenza in scala log10' = f(unname(coef(fit)[2])),
+  'Correlazione di Spearman' = f(rho))
+
+
+
+Nel riferimento iniziale la pendenza è 0,432 e la correlazione di Spearman è 0,209. Sono quantità differenti: la prima dipende dalla regressione logaritmica, la seconda dall’ordinamento delle osservazioni.
+
+
+
+4. Rappresentare la dispersione su più ordini di grandezza
+
+Entrambi gli assi sono logaritmici, per cui distanze uguali rappresentano rapporti uguali. La retta viene calcolata nello spazio trasformato e riassume l’associazione dei soli picchi non saturati. L’assenza di una fascia di confidenza evita di attribuire al modello descrittivo un’incertezza già validata rispetto alla possibile dipendenza fra eventi.
+
+
+
+# Assi logaritmici mantengono visibili eventi che differiscono per diversi ordini di grandezza.
+g1 <- ggplot(data, aes(duration_minutes, xrsb_irrad)) +
+  geom_point(colour = '#BC5B35', alpha = 0.5, size = 1.9) +
+  geom_smooth(method = 'lm', formula = y ~ x, se = FALSE, colour = '#168B9C', linewidth = 1.1) +
+  scale_x_log10() + scale_y_log10() +
+  labs(title = 'Brillamenti solari · GOES 2003',
+    subtitle = 'Soli picchi non saturati · regressione descrittiva in scala logaritmica',
+    x = 'Durata [minuti; scala log10]', y = 'Irradiamento di picco [W/m2; scala log10]')
+
+
+
+Confronta la dispersione dei punti con l’andamento della retta. Un’associazione positiva può convivere con una capacità predittiva limitata quando, a durate simili, corrispondono irradiamenti molto diversi.
+
+
+
+5. Valutare ciò che la retta lascia irrisolto
+
+Il diagramma dei residui dispone gli scarti in scala logaritmica contro i valori stimati. Una struttura curva suggerirebbe che la forma lineare sia insufficiente; una dispersione che cambia con il valore previsto richiederebbe attenzione alla variabilità non costante. La diagnostica deve essere ripetuta quando una nuova soglia o la selezione delle sequenze modifica il campione.
+
+
+
+# Il grafico dei residui aiuta a riconoscere dispersione variabile e forme non lineari.
+g2 <- ggplot(data, aes(fitted_log_irradiance, residual_log_irradiance)) +
+  geom_hline(yintercept = 0, colour = '#64748B', linetype = 2) +
+  geom_point(colour = '#7054A4', alpha = 0.5, size = 1.9) +
+  labs(title = 'Diagnostica della relazione durata–irradiamento',
+    subtitle = 'Confrontare soglie e primi eventi di sequenza prima di interpretare la pendenza',
+    x = 'Valore stimato [log10 W/m2]', y = 'Residuo [log10 W/m2]')
+plots <- list(g1, g2)
+
+
+
+Esamina se gli scarti risultino distribuiti in modo simile lungo l’asse delle previsioni e conserva la configurazione usata. La presenza di una struttura residua orienta la revisione del modello, senza identificarne automaticamente la causa fisica.
+
+
+
+INTERPRETAZIONE
+
+La configurazione iniziale verificata in R 4.5.0, con soglia C e tutte le sequenze, utilizza 2.203 eventi dopo aver escluso due picchi saturati fra i 2.205 selezionati. I 480 record con durata o intensità non utilizzabile vengono conteggiati separatamente. Questa ricostruzione rende esplicito quali osservazioni sostengano la regressione e quali siano rimaste fuori.
+
+La pendenza logaritmica di riferimento è 0,432 e la correlazione di Spearman è 0,209: il campione mostra un’associazione positiva, la cui interpretazione richiede tuttavia di osservare dispersione e residui. Per rispondere alla domanda sulla stabilità occorre confrontare le configurazioni B, C e M e l’opzione dei primi eventi, documentando la diversa numerosità. Il risultato riguarda l’irradiamento di picco misurato nel 2003; non quantifica l’energia totale dei brillamenti né costituisce una previsione operativa.
+
+
+
+Un’analisi che raggruppi gli eventi per sequenza potrebbe esaminare esplicitamente la dipendenza interna, qualora identificatori e numerosità consentano di definire unità di ricampionamento adeguate.
+
+Per studiare l’energia sarebbe necessario un prodotto osservativo che descriva l’andamento temporale del flusso e una definizione dell’integrazione; durata e picco, da soli, non forniscono tale misura.
+
+
+
+LIMITI E CONTROLLI
+
+Un picco saturato non va trattato come una misura esatta soltanto perché il catalogo riporta un valore numerico.
+
+Il filtro sui casi con durata disponibile può essere selettivo rispetto alla fisica o al riconoscimento degli eventi; l’analisi delle sole righe complete non elimina questa possibile distorsione.

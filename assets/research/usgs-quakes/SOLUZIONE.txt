@@ -1,0 +1,120 @@
+Leggere un catalogo sismico
+
+GeoStat Lab · Marzio De Corato
+
+
+
+Il catalogo consente di descrivere gli eventi che soddisfano una selezione documentata. La soluzione separa quindi le decisioni che cambiano le osservazioni da quelle che ne modificano soltanto la rappresentazione, affinché l’effetto della soglia possa essere distinto dall’effetto delle classi dell’istogramma.
+
+
+
+SUGGERIMENTI
+
+1. Controlla quali condizioni compongono il vettore keep: una riga entra nel campione soltanto quando le soddisfa tutte.
+
+2. Prima di confrontare due istogrammi, annota numerosità e soglia. Il numero delle classi compare nella selezione delle righe oppure soltanto nella costruzione della figura?
+
+3. Nel diagramma profondità–magnitudo, confronta anche i colori: la colonna magType permette di riconoscere le scale di magnitudo presenti nella stessa estrazione.
+
+
+
+SOLUZIONE GUIDATA
+
+1. Delimitare gli eventi osservati
+
+Il vettore logico keep richiede magnitudo e profondità finite e applica la soglia scelta. L’operatore & impone che le condizioni siano soddisfatte congiuntamente; la selezione delle righe conserva poi tutte le colonne, comprese quelle necessarie per riconoscere provenienza e tipo di magnitudo. Le profondità negative rimangono ammesse, poiché una misura rispetto al riferimento del catalogo non può essere corretta arbitrariamente imponendole lo zero.
+
+
+
+# Conserva gli eventi con misure finite e magnitudo sopra la soglia scelta.
+keep <- is.finite(observations$mag) & is.finite(observations$depth) &
+  observations$mag >= p$min_mag
+data <- observations[keep, , drop = FALSE]
+stopifnot(nrow(data) >= 2)
+
+
+
+Leggi le prime righe della tabella selezionata e confrontane la numerosità con le 459 osservazioni del CSV. Elevando la soglia puoi soltanto escludere eventi dalla copia disponibile.
+
+
+
+2. Descrivere il campione con quantità leggibili
+
+Le mediane riassumono la posizione centrale delle distribuzioni senza richiedere un modello probabilistico. La profondità mediana resta espressa in chilometri, mentre la magnitudo mantiene la scala riportata nel catalogo. Affiancare le due numerosità rende visibile quanto della raccolta iniziale partecipi effettivamente al riepilogo.
+
+
+
+# Riassume il campione selezionato; la mediana conserva l’unità della variabile.
+metrics <- metric(
+  "Eventi nel CSV" = nrow(observations),
+  "Eventi selezionati" = nrow(data),
+  "Mediana magnitudo" = f(median(data$mag)),
+  "Mediana profondità [km]" = f(median(data$depth)),
+  "Soglia magnitudo" = p$min_mag
+)
+
+
+
+Con la soglia iniziale pari a 3, il riepilogo di riferimento contiene 459 eventi, magnitudo mediana 3,33 e profondità mediana 9,32 km. Dopo una nuova selezione, interpreta le metriche prodotte da quel calcolo.
+
+
+
+3. Separare frequenze e scelta delle classi
+
+geom_histogram suddivide l’asse delle magnitudo in intervalli e conta le osservazioni che vi ricadono. Modificare bins cambia i confini delle classi e l’altezza delle colonne; poiché data rimane identica, mediana e numerosità devono conservarsi quando la soglia è fissa. La frequenza di una classe dipende pertanto anche dalla sua ampiezza.
+
+
+
+# Il numero di classi cambia la rappresentazione, non le osservazioni selezionate.
+g1 <- ggplot(data, aes(x = mag)) +
+  geom_histogram(bins = p$bins, fill = col_geo[1], colour = "#F5F6F3") +
+  labs(title = "Magnitudo degli eventi selezionati",
+       subtitle = "Catalogo USGS · rettangolo californiano · anno 2024",
+       x = "Magnitudo riportata nel catalogo", y = "Numero di eventi")
+
+
+
+Confronta una rappresentazione con poche classi e una con molte classi, mantenendo la stessa soglia. Verifica quali irregolarità siano stabili e quali compaiano soltanto dopo il cambiamento della partizione.
+
+
+
+4. Riconoscere l’eterogeneità delle misure
+
+Il secondo grafico restituisce a ogni terremoto un punto, evitando che l’aggregazione in classi nasconda la dispersione delle profondità. Il colore identifica magType, per cui osservazioni ottenute con scale differenti restano distinguibili. La lista plots raccoglie entrambe le figure affinché la lettura delle frequenze possa essere affiancata a quella delle singole misure.
+
+
+
+# Colora le scale di magnitudo per rendere visibile l’eterogeneità del catalogo.
+types <- sort(unique(data$magType))
+g2 <- ggplot(data, aes(x = mag, y = depth, colour = magType)) +
+  geom_point(size = 2.3, alpha = 0.70) +
+  scale_colour_manual(values = setNames(rep(col_geo, length.out = length(types)), types)) +
+  labs(title = "Profondità e magnitudo", subtitle = "Ogni punto rappresenta un evento; il colore identifica magType",
+       x = "Magnitudo", y = "Profondità [km]")
+plots <- list(g1, g2)
+
+
+
+Esamina la sovrapposizione delle categorie magType e la dispersione verticale. Una concentrazione di punti descrive questa estrazione regionale del 2024; per trasformarla in una stima della sismicità occorrerebbe valutare anche completezza e dipendenza degli eventi.
+
+
+
+INTERPRETAZIONE
+
+La configurazione iniziale verificata in R 4.5.0, con soglia 3 e 15 classi, conserva tutti i 459 eventi; le mediane sono 3,33 per la magnitudo e 9,32 km per la profondità. Questi valori costituiscono il riferimento della copia pubblicata. Una diversa soglia definisce un altro insieme osservativo, mentre una diversa scelta delle classi conserva le medesime statistiche quando la selezione rimane fissa.
+
+La risposta alla domanda richiede due confronti separati: dapprima si modifica la soglia conservando il numero delle classi, quindi si varia la rappresentazione del medesimo campione. Si può così attribuire il cambiamento a una selezione delle osservazioni oppure alla loro aggregazione grafica. L’estrazione non permette, da sola, di prevedere un terremoto né di confrontare la pericolosità di territori diversi.
+
+
+
+Affiancare all’istogramma la funzione di distribuzione empirica permetterebbe di confrontare le soglie senza introdurre una scelta del numero delle classi.
+
+Un confronto separato per magType potrebbe rendere più omogenea la descrizione, purché la riduzione della numerosità e la diversa copertura delle scale vengano documentate.
+
+
+
+LIMITI E CONTROLLI
+
+L’aumento della magnitudo mediana dopo l’esclusione degli eventi più piccoli è coerente con il filtro applicato: non dimostra un cambiamento temporale del processo sismico.
+
+La soglia di interrogazione del catalogo e la magnitudo di completezza sono concetti distinti; la prima, già fissata nella copia a magnitudo 3, non determina automaticamente la seconda.

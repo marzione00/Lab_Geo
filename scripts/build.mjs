@@ -124,6 +124,14 @@ fs.writeFileSync(
     safe(details) +
     ';\n(function(L,D){if(!L||!D)return;for(const a of L.activities)Object.assign(a,D.activities[a.id]);L.common=D.common;L.packages=D.packages;L.detailed=true;})(window.GEO_LABS,window.GEO_LABS_DETAILS);\n',
 );
+// The briefing and its texts travel together: one file, loaded on demand on the first visit.
+fs.writeFileSync(
+  path.join(out, 'assets/briefing.js'),
+  'window.GEO_BRIEFING=' +
+    safe(read('content/briefing.json')) +
+    ';\n' +
+    fs.readFileSync(path.join(root, 'src/briefing.js'), 'utf8'),
+);
 fs.writeFileSync(path.join(out, 'assets/catalogue.js'), 'window.GEO_CATALOG=' + safe(catalogue) + ';\n');
 fs.writeFileSync(path.join(out, 'assets/site-config.js'), 'window.GEO_CONFIG=' + safe(config) + ';\n');
 for (const m of catalogue.modules) {
@@ -137,6 +145,8 @@ for (const m of catalogue.modules) {
 for (const name of [
   'html.js',
   'static.css',
+  'briefing.css',
+  'audio.js',
   'app.js',
   'security.js',
   'core.js',

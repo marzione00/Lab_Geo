@@ -1,5 +1,17 @@
 # Registro delle modifiche
 
+## 4.1.0: impianto grafico, briefing e audio di bordo
+
+- Scala tipografica di sette gradini in rem (minimo 12 px) al posto di 31 dimensioni in pixel; 199 colori del testo ridotti a otto toni, con ruoli e superfici nominati e un test di contrasto WCAG AA.
+- Intestazione da 190 a 102 px sui telefoni e da 151 a 105 px sui desktop; navigazione che scorre lateralmente; pulsante del movimento a icona.
+- Home con la mappa galattica nella prima schermata e il testo introduttivo nel «Dossier della spedizione»; barra del sistema selezionato sugli schermi stretti; nessuno spostamento del layout.
+- Catalogo degli esperimenti raggruppato per modulo (sul telefono da 34.646 a 2.728 px), barra degli strumenti visibile durante lo scorrimento, vista a elenco.
+- Testo corrente limitato a 60ch, da 58 a 75 caratteri per riga.
+- Briefing di cinque schede alla prima visita della home, con riquadro sull’elemento reale, tastiera, Esc e ritorno del focus; suggerimenti di una riga alla prima visita di sistemi, moduli e laboratori.
+- Audio sintetizzato con la Web Audio API, spento per impostazione predefinita, caricato solo dopo il consenso; CSP invariata.
+- Galassia con renderer CPU disegnata su richiesta, con campo stellare memorizzato: nessun task lungo a regime nella home.
+- Dettagli, misure e scelte in [docs/REVISIONE_4_1_0.md](docs/REVISIONE_4_1_0.md).
+
 ## 4.0.0: revisione della qualità del codice e del sito
 
 - Nessuno scorrimento laterale a 320 px; lo spostamento del layout al primo caricamento scende da 0,70–0,98 a non oltre 0,002.

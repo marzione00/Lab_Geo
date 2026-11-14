@@ -122,7 +122,12 @@
       return sorted[count >> 1] > limit;
     };
   }
+  // Sound cues: modules announce events by name. Only audio.js listens, and only after the reader's consent.
+  function cue(name, detail = {}) {
+    root.document?.dispatchEvent(new CustomEvent('geostat:cue', { detail: { ...detail, name } }));
+  }
   root.GeoCore = Object.freeze({
+    cue,
     clean,
     parseRoute,
     filterModules,

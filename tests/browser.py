@@ -8,6 +8,13 @@ with socket.socket() as s:s.bind(('127.0.0.1',0));port=s.getsockname()[1]
 server=subprocess.Popen(['node','scripts/serve.mjs'],cwd=ROOT,env=dict(os.environ,PORT=str(port)),stdout=subprocess.DEVNULL)
 url=f'http://127.0.0.1:{port}/'
 checks=[];errors=[];layouts=[];page=None;context=None
+def wait_true(pg,expr,arg=None,timeout=15000):
+ # Polls through DevTools evaluation: wait_for_function re-evaluates strings with eval, which the CSP blocks.
+ end=time.time()+timeout/1000
+ while time.time()<end:
+  if (pg.evaluate(expr,arg) if arg is not None else pg.evaluate(expr)):return
+  pg.wait_for_timeout(100)
+ raise AssertionError('Timeout: '+expr[:100])
 def assert_layout(label):
  result=page.evaluate("""async () => {
   await document.fonts.ready;
@@ -30,6 +37,14 @@ try:
  else:raise RuntimeError('Server locale non disponibile.')
  with sync_playwright() as pw:
   browser=pw.chromium.launch()
+  # Every context starts as a returning reader (briefing and hints seen) unless first_visit=True.
+  SEEN="try{localStorage.setItem('geostat:briefing:v1','seen');for(const k of ['system','module','experiment'])localStorage.setItem('geostat:hint:'+k,'seen')}catch(e){}"
+  _new_context=browser.new_context
+  def new_context(first_visit=False,**options):
+   c=_new_context(**options)
+   if not first_visit:c.add_init_script(SEEN)
+   return c
+  browser.new_context=new_context
   context=browser.new_context(viewport={'width':1440,'height':1000})
   context.tracing.start(screenshots=True,snapshots=True,sources=True)
   page=context.new_page()
@@ -37,7 +52,7 @@ try:
   page.on('console',lambda msg:errors.append(msg.text) if msg.type=='error' else None)
   try:
    page.goto(url+'#catalogo')
-   page.wait_for_function("document.querySelectorAll('.module-card').length===28")
+   wait_true(page,"document.querySelectorAll('.module-card').length===28")
    page.screenshot(path=str(OUT/'indice.png'),full_page=False)
    page.locator('#cerca-moduli').fill('P11')
    assert page.locator('.module-card').count()==1
@@ -49,10 +64,10 @@ try:
    # Stop automatic motion while targeting labels; camera controls stay active.
    page.locator('#motion-toggle').click()
    expect(page.locator('#motion-toggle')).to_have_attribute('aria-pressed','true')
-   page.wait_for_function("window.GeoGalaxy?.debug()?.worlds.every(p=>p.screen)")
+   wait_true(page,"window.GeoGalaxy?.debug()?.worlds.every(p=>p.screen)")
    before=page.evaluate('GeoGalaxy.debug().worlds.map(p=>p.screen.x)')
    page.locator('#galaxy-viewport').press('ArrowRight')
-   page.wait_for_function('(old)=>GeoGalaxy.debug().worlds.some((p,i)=>Math.abs(p.screen.x-old[i])>1)',arg=before)
+   wait_true(page,'(old)=>GeoGalaxy.debug().worlds.some((p,i)=>Math.abs(p.screen.x-old[i])>1)',before)
    page.get_by_role('button',name='Ripristina la vista della galassia',exact=True).click()
    for node in page.locator('.galaxy-node').all():
     node.hover()
@@ -86,7 +101,7 @@ try:
      expect(page.locator('.experiment-card')).to_have_count(sum(a['module']==m['id'] for a in activities))
     page.goto(url+'#modulo-'+m['id']+'/slide/3')
     expect(page.locator('.slide-frame img')).to_have_attribute('src','assets/slides/'+m['id']+'/003.svg')
-    page.wait_for_function("document.querySelector('.slide-frame img')?.complete && document.querySelector('.slide-frame img')?.naturalWidth>0")
+    wait_true(page,"document.querySelector('.slide-frame img')?.complete && document.querySelector('.slide-frame img')?.naturalWidth>0")
    checks.append('28 moduli e prima slide di contenuto')
    page.goto(url+'#esperimenti')
    expect(page.locator('.experiment-card')).to_have_count(len(activities))
@@ -200,14 +215,14 @@ try:
    assert worst['cls']<0.1,'Layout shift: '+json.dumps(worst,ensure_ascii=False)
    checks.append('Layout shift sotto 0,1 al primo caricamento su 7 rotte a 390 e 1440 px')
    budget=[]
-   for r in ['#sistema-M05','#modulo-M05']:
+   for r in ['#indice','#sistema-M05','#modulo-M05']:
     fresh=browser.new_context(viewport={'width':1440,'height':900})
     fresh.add_init_script("window.__long=[];new PerformanceObserver(l=>{for(const e of l.getEntries())window.__long.push(e.duration)}).observe({type:'longtask',buffered:true});")
     probe=fresh.new_page();probe.goto(url+r);probe.wait_for_timeout(3000);probe.evaluate('window.__long=[]');probe.wait_for_timeout(10000)
     budget.append(dict(route=r,longtask_ms=round(probe.evaluate('window.__long.reduce((a,b)=>a+b,0)')),space=probe.evaluate('window.GeoSpace?.debug().renderer')));fresh.close()
    (OUT/'main-thread.json').write_text(json.dumps(budget,ensure_ascii=False,indent=2))
    assert all(x['longtask_ms']<500 for x in budget),'Main thread: '+json.dumps(budget,ensure_ascii=False)
-   checks.append('Thread principale: meno di 500 ms di task lunghi in 10 s su sistema e modulo')
+   checks.append('Thread principale: meno di 500 ms di task lunghi in 10 s su home, sistema e modulo')
    fresh=browser.new_context(viewport={'width':1440,'height':900})
    fresh.add_init_script("try{localStorage.setItem('geostat:force-webgl','1')}catch(e){}")
    probe=fresh.new_page();probe.on('pageerror',lambda e:errors.append(str(e)))
@@ -227,6 +242,47 @@ try:
    fresh.close()
    checks.append('Percorso WebGL forzato: galassia in WebGL; viste di sistema e di modulo fluide o ripiegate sul canvas')
    axe=(ROOT/'node_modules/axe-core/axe.min.js').read_text(encoding='utf-8');violations={}
+   # Briefing: first visit to the home page only, Esc closes it and returns focus, axe with the dialog open.
+   for vw,vh in [(390,844),(1440,900)]:
+    fresh=browser.new_context(first_visit=True,viewport={'width':vw,'height':vh});probe=fresh.new_page()
+    probe.on('pageerror',lambda e:errors.append(str(e)))
+    probe.goto(url+'#indice');probe.wait_for_selector('dialog.briefing[open]',timeout=10000);probe.wait_for_timeout(800)
+    probe.evaluate(axe)
+    found=probe.evaluate("async()=>(await axe.run(document,{resultTypes:['violations']})).violations.map(v=>({id:v.id,nodes:v.nodes.map(n=>n.target.join(' '))}))")
+    assert not found,'Briefing accessibility at %d px: %s'%(vw,json.dumps(found,ensure_ascii=False))
+    probe.keyboard.press('Escape');probe.wait_for_timeout(300)
+    assert probe.evaluate("!document.querySelector('dialog.briefing') && document.activeElement.id==='contenuto'"),'Esc must close the briefing and return focus'
+    probe.reload();probe.wait_for_timeout(2500)
+    assert not probe.evaluate("!!document.querySelector('dialog.briefing')"),'Briefing shown twice'
+    fresh.close()
+   fresh=browser.new_context(first_visit=True,viewport={'width':1440,'height':900});probe=fresh.new_page()
+   probe.goto(url+'#laboratorio/m05-estimandi');probe.wait_for_timeout(3000)
+   assert not probe.evaluate("!!document.querySelector('dialog.briefing')"),'A deep link must open the page directly'
+   assert probe.evaluate("!!document.querySelector('.briefing-hint')"),'First-visit hint missing on the laboratory'
+   fresh.close()
+   # Audio: no AudioContext before consent; consent starts it; the choice survives a reload but waits for a gesture.
+   fresh=browser.new_context(first_visit=True,viewport={'width':1440,'height':900})
+   fresh.add_init_script("window.__ac=0;const A=window.AudioContext;window.AudioContext=class extends A{constructor(...a){super(...a);window.__ac++}};window.__long=[];new PerformanceObserver(l=>{for(const e of l.getEntries())window.__long.push(e.duration)}).observe({type:'longtask',buffered:true});")
+   probe=fresh.new_page();probe.on('pageerror',lambda e:errors.append(str(e)))
+   probe.goto(url+'#indice');probe.wait_for_selector('dialog.briefing[open]',timeout=10000)
+   assert probe.evaluate('window.__ac')==0,'AudioContext created before consent'
+   probe.click('[data-audio=on]');probe.wait_for_timeout(1500)
+   assert probe.evaluate('window.GeoAudio?.state().running'),'Audio did not start after consent'
+   probe.keyboard.press('Escape')
+   audio_budget={}
+   for r in ['#indice','#modulo-M05']:
+    probe.goto(url+r);probe.wait_for_timeout(2500);probe.evaluate('window.__long=[]');probe.wait_for_timeout(10000)
+    audio_budget[r]=round(probe.evaluate('window.__long.reduce((a,b)=>a+b,0)'))
+   assert all(v<500 for v in audio_budget.values()),'Main thread with audio: '+json.dumps(audio_budget)
+   probe.reload();probe.wait_for_timeout(1500)
+   assert probe.get_attribute('#audio-toggle','aria-pressed')=='true' and probe.evaluate('window.__ac')==0,'Audio must wait for a gesture after reload'
+   probe.mouse.click(5,5);probe.wait_for_timeout(1200)
+   assert probe.evaluate('window.GeoAudio?.state().running'),'Audio did not resume at the first interaction'
+   probe.click('#audio-toggle');probe.wait_for_timeout(900)
+   assert probe.evaluate("!window.GeoAudio.state().enabled && localStorage.getItem('geostat:audio')==='off'"),'Audio switch'
+   fresh.close()
+   (OUT/'briefing-audio.json').write_text(json.dumps(dict(audio_longtask_ms=audio_budget),indent=2))
+   checks.append('Briefing alla prima visita, Esc e focus, axe a 390 e 1440 px; audio solo dopo il consenso, scelta ricordata, task lunghi sotto 500 ms')
    for r in ['#indice','#catalogo','#esperimenti','#progetti','#materiali','#taccuino','#sistema-M05','#modulo-M05','#modulo-M05/slide/3','#laboratorio/m05-estimandi','#esplorazione/M05-b']:
     fresh=browser.new_context(viewport={'width':1440,'height':900});probe=fresh.new_page();probe.goto(url+r);probe.wait_for_timeout(2500);probe.evaluate(axe)
     found=probe.evaluate("async()=>(await axe.run(document,{resultTypes:['violations'],rules:{'label-content-name-mismatch':{enabled:true}}})).violations.map(v=>({id:v.id,impact:v.impact,nodes:v.nodes.map(n=>n.target.join(' '))}))")
