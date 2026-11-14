@@ -21,7 +21,7 @@ I 494 pannelli comprendono 262 impieghi di figure R e 232 diagrammi TikZ. Le fig
 
 ## Procedure correnti
 
-Questo rapporto conserva le evidenze del 9 novembre e non prescrive l’ambiente delle revisioni successive. Per installazione e comandi usare il [README](../README.md), per CI e pubblicazione [DEPLOYMENT.md](../DEPLOYMENT.md), per gli esiti aggiornati [CONSOLIDAMENTO_3_1_1.md](CONSOLIDAMENTO_3_1_1.md).
+Questo rapporto conserva le evidenze del 9 novembre e non prescrive l’ambiente delle revisioni successive. Per installazione e comandi usare il [README](../README.md), per CI e pubblicazione [DEPLOYMENT.md](../DEPLOYMENT.md), per gli esiti aggiornati [REVISIONE_3_9_1.md](REVISIONE_3_9_1.md).
 
 ## Limiti della verifica locale
 

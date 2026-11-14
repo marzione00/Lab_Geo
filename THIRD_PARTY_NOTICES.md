@@ -38,3 +38,9 @@ I 232 pannelli TikZ nella lettura testuale riutilizzano lo stesso SVG della slid
 Le dipendenze npm sono esclusivamente strumenti di sviluppo, fissati con integrità nel `package-lock.json`; non sono incluse nella distribuzione web. jsdom 26.1.0 è distribuito con licenza MIT; le licenze dei pacchetti transitivi sono indicate nei rispettivi package.json installati. Playwright 1.65.0 (Apache-2.0) e greenlet 3.5.6 (MIT e Python-2.0 per le componenti indicate dal progetto) sono fissati con hash in `security/requirements.txt`. I file dei workflow rimandano alle distribuzioni ufficiali delle azioni GitHub tramite commit completi.
 
 La build aggiunge CSP e SRI ai documenti generati e CSP con hash per gli script delle pagine HTML accessorie; i file distribuiti upstream di webR e MathJax restano invariati.
+
+## Osservazioni nei mini-progetti (3.8)
+
+I dati provengono da USGS Earthquake Hazards Program, NASA/JPL Small-Body Database, NOAA/NSIDC Sea Ice Index v4, NOAA/NCEI GOES XRS e NASA Exoplanet Archive (NASA Exoplanet Science Institute, Caltech/IPAC). I rispettivi `assets/research/<id>/provenance.json` conservano attribuzioni, condizioni indicate dal fornitore, query e riferimenti. Per JPL non viene attribuita una licenza CC inesistente; per gli esopianeti sono conservati i riferimenti alle pubblicazioni. Loghi e marchi dei fornitori non vengono impiegati come endorsement.
+
+Le tredici famiglie planetarie richiamano una convenzione ludica di varietà ambientale; nessuna texture, modello, audio o altro asset di Haegemonia o Mass Effect è incluso. Le albedo sono generate da `scripts/bake-research-planets.py`; documentazione in `docs/planet-family-assets.md`.

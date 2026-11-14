@@ -11,14 +11,23 @@ L’atlante organizza la navigazione su tre livelli: una galassia con 17 sistemi
 | Esplora il sistema | Esegue lo stesso trasferimento |
 | Clic sul pianeta o sul suo nome nel menu | Apre il primo piano e la scheda scientifica |
 | Localizza la destinazione | Seleziona il pianeta che ospita il modulo |
-| Entra nel laboratorio | Apre gli esperimenti del modulo |
+| Entra nel modulo | Apre gli esperimenti del modulo |
+| Avvia il mini-progetto / Accedi all’osservatorio | Apre la missione su dati osservati e la sua soluzione R |
 | Vista completa del sistema | Riporta la camera alla vista orbitale |
-| Nuova configurazione | Estrae un’altra configurazione sintetica nella sessione |
+| Nuova configurazione | Estrae un’altra configurazione sintetica e aggiorna il collegamento |
 | Torna alla galassia | Ritorna ai 17 sistemi |
 
 Il trascinamento e le frecce sul canvas controllano azimut e inclinazione; più, meno e rotella regolano lo zoom della vista generale. Home ripristina la camera. I menu dei corpi rimangono utilizzabili anche quando un altro oggetto nasconde un pianeta nella proiezione. I richiami galattici hanno spaziatura calcolata per evitare sovrapposizioni.
 
-`#indice` e `#mappa` aprono lo stesso navigatore. `#sistema-M01`, e gli altri identificatori del corso, aprono direttamente un sistema. Le rotte invalide sono rifiutate; `#catalogo` mantiene l’indice del corso. La nuova configurazione resta in memoria durante la sessione; ricaricare la pagina ripristina il seme iniziale. L’estrazione non modifica l’associazione fra modulo e pianeta.
+`#indice` e `#mappa` aprono lo stesso navigatore. `#sistema-M01`, e gli altri identificatori del corso, aprono direttamente un sistema. Le rotte invalide sono rifiutate; `#catalogo` mantiene l’indice del corso. La configurazione è conservata nel parametro `?v=`, da 0 a 9999; il collegamento di ritorno dall’esplorazione mantiene lo stesso valore. Senza parametro si usa la configurazione già visitata nella sessione, oppure quella iniziale. L’estrazione non modifica l’associazione fra modulo e pianeta.
+
+## Due percorsi, livelli indipendenti
+
+Il corso è identificato da ciano, doppio anello e codice del modulo; gli approfondimenti complementari da ambra, simbolo disciplinare ed etichetta «Esplorazione». Il colore non è l’unico segnale. Schede, collegamenti da tastiera e menu mobili espongono preparazione consigliata e livello; nessun prerequisito impedisce l’accesso.
+
+Le rotte `#esplorazione/M05-e?v=0` e analoghe conservano l’identificatore del mondo e la configurazione sintetica. I mondi principali vengono rifiutati da queste rotte, perché appartengono al percorso del corso. Le 68 destinazioni condividono cinque missioni su dati osservati, associate al livello didattico delle tredici famiglie planetarie. Ogni missione offre suggerimenti, soluzione ragionata, codice completo e pacchetto autonomo. Nei dettagli del modello sintetico restano sei temi astronomici di contesto: mondi rocciosi, vulcanici, temperati, gassosi, desertici e ghiacciati. I sei temi, i cinque progetti e le tredici famiglie descrivono aspetti differenti dell’atlante.
+
+Il taccuino `#taccuino-esplorazioni` utilizza la chiave `geostat-explorations-v1`. Una registrazione richiede una risposta e un salvataggio esplicito; il completamento è una autovalutazione separata. Il semplice accesso non scrive dati. I valori importati dallo storage sono validati e il testo viene escapato prima della visualizzazione. L’esportazione JSON permette di conservare il lavoro; non è previsto un caricamento di annotazioni da file. Il taccuino del corso mantiene la copertura M05 già disponibile, senza estenderla implicitamente a tutti i moduli.
 
 ## Modello fisico e limiti
 
@@ -52,6 +61,12 @@ I raggi grafici sono ingranditi e le separazioni orbitali sono scelte per la leg
 | `src/galaxy-scene.js` | Renderer condivisi WebGL/Canvas e camera della galassia |
 | `src/system-scene.js` | Orbite, luce stellare, camera e primi piani |
 | `src/galaxy.js` | Navigatore, schede, formule, fonti e collegamenti al corso |
+| `src/planet-families.js` | Tredici famiglie, livelli L1–L5 e selezione delle texture 2K/4K |
+| `src/research-projects.js` | Missioni osservate, controlli, esecuzione e download |
+| `src/solution-terminal.js` | Suggerimenti, passaggi scientifici e programmi completi |
+| `src/learning-paths.js` | Percorsi, livelli, preparazione, letture e fonti |
+| `src/explorations.js` | Confronti, annotazioni ed esportazioni delle esplorazioni |
+| `src/learning-paths.css` | Segnali visivi dei percorsi e pagine complementari |
 | `src/galaxy.css` | Impaginazione delle due viste e adattamento alle larghezze |
 | `src/planets.js` | Identità e caratterizzazione dei mondi didattici |
 | `src/space-cpu.js` | Proiezione software delle texture sulle sfere |
@@ -59,6 +74,8 @@ I raggi grafici sono ingranditi e le separazioni orbitali sono scelte per la leg
 | `scripts/bake-planets.py` | Generazione riproducibile delle texture procedurali |
 
 Le 27 superfici non terrestri sono rigenerate a 2048 × 1024, con dettagli aggiunti nel procedimento, non mediante interpolazione di un’immagine piccola. La Terra conserva le mappe 2048 × 1024 già attribuite a Solar System Scope. I 27 WebP procedurali occupano circa 7,0 MiB; vengono richiesti soltanto per i mondi rappresentati. La build ordinaria usa i file inclusi e non richiede Python o una GPU. La rigenerazione richiede moderngl, NumPy, Pillow e EGL.
+
+Le famiglie complementari aggiungono tredici superfici originali in 2K e 4K; il primo piano WebGL desktop può caricare progressivamente il dettaglio maggiore. Mobile e rendering software usano il livello 2K. Provenienza e generazione sono descritte in [planet-family-assets.md](planet-family-assets.md).
 
 La galassia usa fino a 120.000 stelle WebGL (60.000 sugli schermi stretti); la vista software ne campiona un terzo preservando i quattro bracci. La scena dei sistemi ha un campo stellare più leggero. Le sfere WebGL hanno 96 × 64 suddivisioni e filtri mipmap. Canvas applica luce stellare, campionamento bilineare nei primi piani e aggiornamento delle superfici a 20 Hz; la cache geometrica è limitata. Le sue occlusioni e atmosfere sono semplificate rispetto a WebGL.
 
@@ -72,4 +89,4 @@ Pausa, movimento ridotto e visibilità della scheda controllano l’animazione. 
 
 `python3 scripts/check-galaxy-shaders.py` compila e collega gli shader condivisi in EGL/OpenGL ES. `python3 scripts/check-planet-rendering.py` verifica i pianeti procedurali nelle altre pagine.
 
-Per la verifica interattiva di questa revisione il browser disponibile usa Canvas 2D. La compilazione WebGL è verificata separatamente con EGL; la resa WebGL nel browser richiede un dispositivo che lo esponga.
+I rapporti di revisione indicano il renderer e l’ambiente effettivamente verificati. Il controllo tramite Canvas 2D e la compilazione degli shader con EGL non equivalgono a una verifica visiva WebGL su un dispositivo fisico.

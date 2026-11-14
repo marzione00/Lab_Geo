@@ -1,0 +1,586 @@
+{
+  "P01": {
+    "title": "Geometria dei pori e permeabilità: quale unità si confronta?",
+    "introduction": "Le 48 sezioni del dataset storico rock descrivono immagini di pori alle quali è associata la permeabilità del campione. Poiché quattro sezioni condividono lo stesso valore di permeabilità, l’analisi aggrega le immagini in 12 gruppi prima di stimare l’associazione. L’identificativo di carota è stato ricostruito per blocchi consecutivi: la sua plausibilità, verificata sui valori, non sostituisce la conferma mediante i metadati primari. Il progetto mostra quanto la conclusione dipenda dall’unità di osservazione e dalla rappresentazione dell’incertezza.",
+    "hints": [
+      "Calcolare 100 × area_pixels / 65536 e verificare che si ottenga una percentuale di area, distinta da una misura volumetrica di porosità.",
+      "Contare le carote dopo aggregate(): la regressione utilizza 12 righe, mentre le 48 immagini rimangono utili per descrivere la variabilità interna.",
+      "Confrontare l’intervallo t e quello bootstrap rispetto allo zero, quindi esaminare le pendenze ottenute escludendo una carota alla volta."
+    ],
+    "stages": [
+      {
+        "title": "Dalle immagini all’unità di analisi",
+        "explanation": "I controlli iniziali confrontano il CSV con datasets::rock, verificano le quattro sezioni per gruppo e la permeabilità costante entro gruppo. La frazione areale viene espressa in percentuale; successivamente si calcolano la media per carota e il logaritmo decimale della permeabilità, che costituiscono le variabili del modello.",
+        "fromLine": 1,
+        "toLine": 6,
+        "observe": "Dopo l’aggregazione devono rimanere 12 unità. La variabile pore_area_pct misura punti percentuali di area dell’immagine."
+      },
+      {
+        "title": "Stimare l’associazione sulla scala logaritmica",
+        "explanation": "I primi grafici rendono visibile il passaggio dalle sezioni alle carote. Il modello log10(k) = α + βx + ε attribuisce a β la variazione del logaritmo della permeabilità per un punto percentuale di area porosa. La fascia attorno alla retta rappresenta l’incertezza della media condizionata, secondo le ipotesi del modello lineare.",
+        "fromLine": 7,
+        "toLine": 11,
+        "observe": "La pendenza stimata è circa −0,0855; la fascia della retta non è un intervallo predittivo per una nuova carota."
+      },
+      {
+        "title": "Ricampionamento e influenza delle carote",
+        "explanation": "Il bootstrap utilizza un piano archiviato di 4.000 campioni di 12 carote, mantenendo l’unità di ricampionamento coerente con l’analisi. La distribuzione delle pendenze viene affiancata ai residui e alle stime ottenute lasciando fuori una carota per volta, così da distinguere incertezza da sensibilità a singoli campioni.",
+        "fromLine": 12,
+        "toLine": 18,
+        "observe": "Le pendenze dopo esclusione di una carota variano approssimativamente da −0,1337 a −0,0671; il campione resta comunque di dimensione ridotta."
+      },
+      {
+        "title": "Verifiche numeriche e confronto degli intervalli",
+        "explanation": "Le identità della regressione verificano ortogonalità dei residui e rapporto fra covarianza e varianza. Un ulteriore controllo documenta l’incompatibilità della colonna shape_original con la formula esaminata, ragione per cui essa non entra nel modello. L’esportazione conserva le tabelle e accosta gli intervalli t e bootstrap senza imporre che conducano alla stessa conclusione.",
+        "fromLine": 19,
+        "toLine": 25,
+        "observe": "L’intervallo t comprende lo zero, mentre quello bootstrap percentile è interamente negativo: questa discordanza deve comparire nella discussione."
+      }
+    ],
+    "interpretation": [
+      "La stima β = −0,08554 corrisponde al fattore 10^β = 0,8212 sulla permeabilità per un punto percentuale aggiuntivo di frazione areale, condizionatamente al modello. L’associazione negativa osservata in questi campioni non autorizza una legge generale sul trasporto nei pori: una misura bidimensionale non descrive da sola connessione e geometria della rete tridimensionale.",
+      "L’intervallo t al 95% è [−0,22565; 0,05458], mentre il bootstrap percentile restituisce [−0,20194; −0,00893]; R² è circa 0,156. Con 12 gruppi ricostruiti, la differenza fra metodi rende necessaria una conclusione prudente, nella quale siano dichiarate sia l’incertezza inferenziale sia quella relativa alla struttura del campionamento."
+    ],
+    "pitfalls": [
+      "Trattare le 48 sezioni come 48 carote indipendenti produrrebbe pseudoreplicazione; core_id è un identificativo ricostruito, non un metadato originale.",
+      "Scegliere soltanto l’intervallo che esclude lo zero occultando l’altro, oppure chiamare porosità efficace la frazione areale, altererebbe il significato del risultato."
+    ],
+    "localRequirements": [
+      "R installato localmente con i pacchetti ggplot2 e jsonlite.",
+      "Avviare lo script dalla cartella che contiene R/ e dati/, conservando la struttura dell’archivio e i file di provenienza.",
+      "Dispositivo grafico Cairo disponibile; il carattere Nimbus Sans riproduce la tipografia originale. Le cartelle figure/ e risultati/ devono essere scrivibili.",
+      "Conservare dati/progetti/rock.csv e il piano piani_ricampionamento/rock_cores.csv; gli indici del piano sono già numerati da 1 per R."
+    ]
+  },
+  "P02": {
+    "title": "Foraminiferi: un confronto stagionale entro campagna",
+    "introduction": "L’estratto osservativo PANGAEA.902776, attribuito a Mikis e collaboratori, contiene 36 coppe di una trappola sedimentaria a 170 m presso la Penisola Antartica occidentale. Ogni riga riporta sintesi dei diametri massimi dei gusci di Neogloboquadrina pachyderma, senza misure individuali. Per confrontare ottobre–marzo con aprile–settembre si utilizzano le quattro campagne che rappresentano entrambe le fasce: il confronto riguarda dunque campagne appaiate, con pesi uguali, entro un calendario definito esplicitamente.",
+    "hints": [
+      "Controllare quali delle sei campagne possiedono entrambe le fasce: soltanto quattro entrano nel confronto appaiato.",
+      "Ricostruire una differenza come media Ott–Mar meno media Apr–Set, senza confondere diametro massimo medio della coppa e massimo fra le coppe.",
+      "Enumerare le 16 combinazioni dei segni di quattro differenze e confrontarne la risoluzione con quella di un test t."
+    ],
+    "stages": [
+      {
+        "title": "Riconoscere il supporto temporale delle coppe",
+        "explanation": "Il codice controlla identificativi, profondità e ordinamento delle sintesi morfometriche. La data centrale assegna ogni coppa a una fascia del calendario; una serie temporale e una tabella di copertura mostrano quali confronti siano sostenuti dai dati. La durata della raccolta e il numero di gusci non intervengono come pesi, poiché l’estratto non fornisce le informazioni necessarie.",
+        "fromLine": 1,
+        "toLine": 6,
+        "observe": "Sono presenti 36 coppe distribuite in sei campagne, con copertura stagionale diseguale."
+      },
+      {
+        "title": "Costruire quattro differenze comparabili",
+        "explanation": "Le coppe vengono mediate entro campagna e fascia; si conservano quindi le campagne complete e si forma una differenza per ciascuna. Il test t a un campione sulle differenze esprime lo stesso confronto del test appaiato. I grafici rendono visibili sia il livello delle due medie sia il segno e l’ampiezza della differenza.",
+        "fromLine": 7,
+        "toLine": 11,
+        "observe": "Una campagna presenta circa +57,35 µm, mentre due hanno differenze leggermente negative: la media complessiva deve essere letta insieme a questa eterogeneità."
+      },
+      {
+        "title": "Esaminare la risoluzione dell’inferenza",
+        "explanation": "Il bootstrap ricampiona le quattro campagne secondo un piano condiviso. L’enumerazione di tutti i cambiamenti di segno costruisce poi una distribuzione nulla discreta, appropriata sotto l’ipotesi di simmetria delle differenze attorno a zero. Poiché si tratta di dati osservativi, tale ipotesi deve essere argomentata e non discende da un’assegnazione sperimentale delle stagioni.",
+        "fromLine": 12,
+        "toLine": 18,
+        "observe": "Il valore p bilaterale ottenuto dai 16 cambiamenti di segno è 0,5; la minima risoluzione bilaterale considerata è 2/16."
+      },
+      {
+        "title": "Confrontare unità analitiche e influenza",
+        "explanation": "L’esclusione di una campagna alla volta misura la sensibilità della media. Il confronto con un test non appaiato sulle coppe mostra come cambino domanda e pesatura quando le unità sono trattate diversamente. I controlli finali verificano l’identità della differenza media ed esportano i risultati necessari a discutere la scelta metodologica.",
+        "fromLine": 19,
+        "toLine": 26,
+        "observe": "Il test sulle coppe restituisce una differenza di circa 36,66 µm; quello sulle campagne complete stima circa 14,99 µm."
+      }
+    ],
+    "interpretation": [
+      "La differenza media Ott–Mar meno Apr–Set è 14,99 µm; l’intervallo t al 95% è [−31,30; 61,28] µm e quello bootstrap è [−3,98; 42,41] µm. Questi risultati non sostengono una separazione stagionale precisa nelle quattro campagne complete, mentre mostrano quanto possa pesare una singola campagna.",
+      "Il valore p di circa 0,004 del confronto non appaiato sulle coppe non costituisce una conferma indipendente: quel calcolo utilizza una diversa unità e risente della copertura sbilanciata. La soluzione deve riferirsi alle sintesi per coppa effettivamente disponibili, mantenendo distinti la fascia calendario, l’ambiente vissuto dagli organismi e la distribuzione dei diametri individuali, che qui non è osservabile."
+    ],
+    "pitfalls": [
+      "Ricostruire conteggi o distribuzioni individuali da medie, minimi e massimi introdurrebbe dati non presenti nella fonte.",
+      "Attribuire uguale indipendenza alle coppe della stessa campagna, oppure chiamare effetto stagionale causale una differenza osservativa, supererebbe il disegno disponibile."
+    ],
+    "localRequirements": [
+      "R installato localmente con i pacchetti ggplot2 e jsonlite.",
+      "Avviare lo script dalla cartella che contiene R/ e dati/, conservando la struttura dell’archivio e i file di provenienza.",
+      "Dispositivo grafico Cairo disponibile; il carattere Nimbus Sans riproduce la tipografia originale. Le cartelle figure/ e risultati/ devono essere scrivibili.",
+      "Conservare foraminiferi.csv, paleo_years.csv e l’attribuzione PANGAEA.902776/CC BY 4.0 contenuta nei metadati originali."
+    ]
+  },
+  "P03": {
+    "title": "Il Nilo: contrasto storico e dipendenza dei residui",
+    "introduction": "La serie storica Nile contiene 100 volumi annuali ad Aswan, dal 1871 al 1970, espressi in 10⁸ m³. Il progetto confronta i periodi separati dalla soglia del 1898, suggerita dalla documentazione del caso, e analizza quanto l’incertezza cambi quando si ammette dipendenza temporale. L’oggetto misurato è un volume annuo: né un’altezza idrometrica né una portata istantanea. La soglia storica consente una descrizione del cambiamento, senza identificare da sola il meccanismo che lo ha prodotto.",
+    "hints": [
+      "Verificare che il coefficiente della variabile post coincida con media dopo il 1898 meno media precedente.",
+      "Confrontare l’ACF dei residui con la serie originale: la dipendenza pertinente alla covarianza del modello è quella rimasta dopo il contrasto.",
+      "Ripetere il calcolo sia variando il ritardo HAC sia spostando la soglia dal 1896 al 1900, poiché le due verifiche riguardano scelte diverse."
+    ],
+    "stages": [
+      {
+        "title": "Definire misura, calendario e soglia",
+        "explanation": "Il CSV viene confrontato con datasets::Nile e verificato come sequenza annuale completa. La variabile post distingue 27 anni precedenti al 1898 e 73 anni dal 1898 in avanti. Serie temporale e distribuzioni dei due periodi consentono di riconoscere la struttura del contrasto prima di quantificarlo.",
+        "fromLine": 1,
+        "toLine": 7,
+        "observe": "Le medie sono circa 1.097,67 e 853,40, entrambe espresse in 10⁸ m³ annui."
+      },
+      {
+        "title": "Stimare il contrasto con covarianza HAC",
+        "explanation": "Il modello volume = α + β post + ε stima la differenza fra le due medie. Al consueto intervallo t viene affiancata una covarianza HAC con ritardo massimo 3; il codice ne controlla simmetria e positività. L’esame dei residui e della loro autocorrelazione chiarisce quali dipendenze possano incidere sulla precisione della stima.",
+        "fromLine": 8,
+        "toLine": 14,
+        "observe": "Il coefficiente β è circa −244,27; i residui al primo ritardo hanno autocorrelazione di circa 0,132."
+      },
+      {
+        "title": "Distinguere sensibilità della precisione e del contrasto",
+        "explanation": "Il confronto fra intervalli viene seguito da due analisi: variando il ritardo HAC cambia la stima dell’incertezza, mentre spostando la soglia cambia la definizione dei due periodi e quindi il coefficiente. Leggere separatamente questi esperimenti evita di attribuire al metodo di covarianza variazioni che derivano dalla domanda storica.",
+        "fromLine": 15,
+        "toLine": 20,
+        "observe": "Fra le soglie 1896–1900 il contrasto rimane negativo, approssimativamente fra −247,78 e −234,84 × 10⁸ m³."
+      },
+      {
+        "title": "Documentare pesi e quantità esportate",
+        "explanation": "Il grafico dei pesi di Bartlett rende esplicito il progressivo attenuarsi dei contributi a ritardi maggiori. L’ultimo controllo verifica le numerosità dei periodi; tabelle e JSON conservano stime, covarianze e analisi di sensibilità, affinché la discussione possa essere ricostruita a partire dai dati annuali.",
+        "fromLine": 21,
+        "toLine": 25,
+        "observe": "Il ritardo massimo delimita i contributi alla covarianza HAC; non equivale a eliminare osservazioni dalla serie."
+      }
+    ],
+    "interpretation": [
+      "La riduzione stimata è di 244,27 × 10⁸ m³ annui, pari a circa il 22,25% della media precedente alla soglia. L’intervallo HAC con ritardo 3 è [−306,39; −182,15] × 10⁸ m³, mentre quello t è [−302,43; −186,11]. Per questa specificazione entrambi descrivono un contrasto negativo marcato.",
+      "La stabilità rispetto alle soglie esaminate rafforza la descrizione del cambiamento, ma non ne stabilisce la causa. La scelta del 1898 deriva dalla conoscenza della serie; inoltre una covarianza robusta modifica l’incertezza dei coefficienti senza correggere eventuali variabili omesse, trend residui o cambiamenti nella generazione dei dati."
+    ],
+    "pitfalls": [
+      "Interpretare l’unità 10⁸ m³ come m³/s o come livello del fiume comporterebbe una conclusione fisicamente errata.",
+      "Presentare la soglia storica come preregistrata indipendentemente dal dataset, o la robustezza HAC come prova causale, attribuirebbe al calcolo garanzie che non possiede."
+    ],
+    "localRequirements": [
+      "R installato localmente con i pacchetti ggplot2 e jsonlite.",
+      "Avviare lo script dalla cartella che contiene R/ e dati/, conservando la struttura dell’archivio e i file di provenienza.",
+      "Dispositivo grafico Cairo disponibile; il carattere Nimbus Sans riproduce la tipografia originale. Le cartelle figure/ e risultati/ devono essere scrivibili.",
+      "La cartella R/ deve includere covarianze.R; il CSV nile.csv è una copia locale della serie storica, sufficiente per eseguire l’analisi senza rete."
+    ]
+  },
+  "P04": {
+    "title": "Un geyser: dalla retta alla previsione verificata",
+    "introduction": "Le 272 coppie osservate del dataset faithful descrivono la durata di un’eruzione di Old Faithful e l’attesa fino alla successiva, entrambe in minuti. Un piano conservato nell’archivio assegna 190 eventi all’adattamento e 82 alla verifica. Il percorso distingue la stima di un’associazione, l’incertezza della media e la previsione di un singolo evento, utilizzando la media del campione di adattamento come riferimento semplice. L’assenza di date limita la verifica alla generalizzazione interna dello split disponibile.",
+    "hints": [
+      "Caricare il piano faithful_split.csv anziché estrarre una nuova suddivisione: soltanto così si ricostruiscono esattamente i risultati archiviati.",
+      "Confrontare predict(..., interval='confidence') e predict(..., interval='prediction') sugli stessi valori di durata.",
+      "Calcolare l’RMSE sul test sia per la retta sia per la media del train e osservare le pendenze entro i due gruppi di durata."
+    ],
+    "stages": [
+      {
+        "title": "Conservare la separazione fra adattamento e verifica",
+        "explanation": "Il codice controlla la corrispondenza con datasets::faithful, la completezza del piano e l’assenza di sovrapposizioni. I grafici iniziali utilizzano soltanto il train: la distribuzione delle durate e la struttura a gruppi aiutano a valutare che cosa una retta complessiva possa riassumere.",
+        "fromLine": 1,
+        "toLine": 6,
+        "observe": "Il train contiene 190 eventi e il test 82; nessun identificativo appartiene a entrambi."
+      },
+      {
+        "title": "Separare inferenza sui coefficienti e previsione",
+        "explanation": "La pendenza viene stimata con lm e confrontata mediante covarianza classica e HC3. Le due fasce prodotte da predict distinguono la media condizionata da una nuova osservazione; la seconda include anche la variabilità individuale. HC3 riguarda qui l’inferenza sul coefficiente: le fasce di predict rimangono quelle classiche del modello lineare.",
+        "fromLine": 7,
+        "toLine": 13,
+        "observe": "La pendenza è circa 10,90 min/min; in ogni punto della griglia l’intervallo predittivo è più ampio di quello della media."
+      },
+      {
+        "title": "Misurare l’errore fuori dal campione di adattamento",
+        "explanation": "Le previsioni sui 82 eventi esclusi vengono confrontate con il riferimento costante e valutate mediante RMSE e MAE. Il grafico osservato–previsto mostra la posizione rispetto alla diagonale. La successiva divisione del train a tre minuti esamina quanto la pendenza globale dipenda dalla separazione dei gruppi di durata.",
+        "fromLine": 14,
+        "toLine": 20,
+        "observe": "L’RMSE scende da circa 12,77 minuti per la media train a 5,85 per la retta; le pendenze entro gruppo risultano più contenute."
+      },
+      {
+        "title": "Controllare copertura e conservare le previsioni",
+        "explanation": "Gli eventi del test vengono ordinati per previsione per rendere leggibile la copertura degli intervalli. Il confronto finale degli intervalli della pendenza e l’esportazione delle previsioni mantengono distinti l’incertezza di β e l’errore del singolo evento. La copertura osservata è una proprietà di questo test finito, soggetta a variabilità campionaria.",
+        "fromLine": 21,
+        "toLine": 26,
+        "observe": "80 eventi su 82 ricadono negli intervalli predittivi, con copertura osservata del 97,56%."
+      }
+    ],
+    "interpretation": [
+      "La retta ottiene sul test RMSE = 5,85 minuti e MAE = 4,94 minuti, rispetto a 12,77 e 11,02 del riferimento costante. Questo miglioramento documenta l’utilità predittiva della durata all’interno dello split considerato; R² = 0,819, calcolato sul train, descrive invece l’adattamento e non sostituisce la verifica esterna al train.",
+      "La pendenza complessiva è 10,898 min/min, mentre entro le durate inferiori a tre minuti e quelle maggiori o uguali a tre minuti le stime sono circa 5,588 e 4,328. Parte dell’associazione globale dipende dunque dalla separazione fra gruppi. Senza date e senza un campione prospettico, il risultato non dimostra prestazioni operative su eruzioni future né autorizza un’interpretazione causale."
+    ],
+    "pitfalls": [
+      "Usare la fascia di confidenza della media per prevedere un singolo evento sottostimerebbe la variabilità pertinente alla previsione.",
+      "Chiamare robusti HC3 gli intervalli predittivi di predict, o riutilizzare ripetutamente il test per scegliere il modello, confonderebbe procedure distinte."
+    ],
+    "localRequirements": [
+      "R installato localmente con i pacchetti ggplot2 e jsonlite.",
+      "Avviare lo script dalla cartella che contiene R/ e dati/, conservando la struttura dell’archivio e i file di provenienza.",
+      "Dispositivo grafico Cairo disponibile; il carattere Nimbus Sans riproduce la tipografia originale. Le cartelle figure/ e risultati/ devono essere scrivibili.",
+      "Conservare covarianze.R e dati/progetti/piani_ricampionamento/faithful_split.csv insieme al CSV originale."
+    ]
+  },
+  "P05": {
+    "title": "CO₂: copertura del calendario, stagionalità e tendenza",
+    "introduction": "Il file locale conserva lo storico settimanale di Mauna Loa distribuito da statsmodels e attribuito a Keeling e Whorf/CDIAC. Comprende 2.284 date fra il 1958 e il 2001, con 59 valori mancanti preservati. L’analisi costruisce medie delle settimane disponibili e seleziona il periodo 1985–2000, nel quale tutti i 192 mesi hanno almeno tre misure. Il progetto riguarda questa serie storica e questa aggregazione; non utilizza il prodotto mensile ufficiale NOAA né osservazioni aggiornate.",
+    "hints": [
+      "Verificare il numero di settimane valide per mese prima di calcolare la tendenza: aprile 1984 conserva una sola misura e rimane nell’audit.",
+      "Interpretare il fattore mese come controllo della stagionalità e il tempo centrato come variabile espressa in anni.",
+      "Confrontare l’ACF residua e gli intervalli HAC per più ritardi, quindi esaminare quanto una componente quadratica cambi il tasso locale."
+    ],
+    "stages": [
+      {
+        "title": "Aggregare soltanto ciò che è osservato",
+        "explanation": "Le date settimanali vengono verificate, i mancanti mantenuti e le medie mensili affiancate ai conteggi delle settimane valide. L’audit 1980–2000 documenta anche la copertura insufficiente esterna alla finestra analitica. Il filtro 1985–2000 e la codifica del tempo centrato preparano un calendario completo senza interpolare misure mancanti.",
+        "fromLine": 1,
+        "toLine": 9,
+        "observe": "La serie analitica contiene 192 mesi; la scarsa copertura di aprile 1984 è visibile e non viene mascherata."
+      },
+      {
+        "title": "Separare il calendario stagionale dal trend",
+        "explanation": "Gli scarti rispetto alla media del rispettivo anno mostrano la struttura stagionale. Il modello CO₂ = α + βt + effetto del mese + ε stima quindi il trend controllando per il calendario. Il rango della matrice del modello viene verificato; serie adattata, residui e ACF permettono di riconoscere la dipendenza rimasta dopo questa decomposizione.",
+        "fromLine": 10,
+        "toLine": 17,
+        "observe": "β è circa 1,537 ppm/anno, mentre l’autocorrelazione residua al primo mese è circa 0,914."
+      },
+      {
+        "title": "Valutare memoria residua e curvatura",
+        "explanation": "La sensibilità HAC varia il ritardo massimo da 0 a 24 mesi. Separatamente, un termine quadratico produce una curva il cui tasso locale è la derivata β₁ + 2β₂t. Il confronto delle curve riguarda la forma della media; quello delle covarianze riguarda la precisione dei coefficienti per una specificazione data.",
+        "fromLine": 18,
+        "toLine": 24,
+        "observe": "Con HAC a 12 mesi l’intervallo della pendenza è circa [1,478; 1,596] ppm/anno; il modello quadratico descrive tassi locali variabili."
+      },
+      {
+        "title": "Rendere verificabile la trasformazione mensile",
+        "explanation": "Un controllo conferma che gli scarti annuali abbiano media nulla. L’esportazione conserva sia il calendario dell’audit sia la serie modellata, insieme alla covarianza HAC e alla sensibilità ai ritardi. Questi file permettono di ricostruire ogni passaggio dall’osservazione settimanale al risultato sul trend.",
+        "fromLine": 25,
+        "toLine": 27,
+        "observe": "La presenza dei conteggi mensili rende esplicito il supporto osservativo di ciascuna media."
+      }
+    ],
+    "interpretation": [
+      "Il trend lineare controllato per il mese è 1,5369 ppm/anno. L’intervallo t, [1,5144; 1,5594], è sensibilmente più stretto di quello HAC a 12 mesi, [1,4776; 1,5962], coerentemente con la forte dipendenza residua. R² = 0,9909 non elimina questa dipendenza e non dimostra che tutti i meccanismi della serie siano stati rappresentati.",
+      "L’aggiunta della curvatura produce tassi locali compresi fra circa 1,375 e 1,699 ppm/anno, con uno scarto massimo fra le due curve adattate di circa 0,426 ppm. Tale confronto descrive una sensibilità della forma del trend nel periodo selezionato; non costituisce una previsione climatica né una stima del tasso contemporaneo di crescita della CO₂."
+    ],
+    "pitfalls": [
+      "Presentare il CSV come serie mensile ufficiale NOAA o come dato aggiornato ne falserebbe provenienza e periodo di riferimento.",
+      "Trattare le medie mensili come misure indipendenti, oppure interpolare tacitamente i mancanti, altererebbe la base dell’inferenza."
+    ],
+    "localRequirements": [
+      "R installato localmente con i pacchetti ggplot2 e jsonlite.",
+      "Avviare lo script dalla cartella che contiene R/ e dati/, conservando la struttura dell’archivio e i file di provenienza.",
+      "Dispositivo grafico Cairo disponibile; il carattere Nimbus Sans riproduce la tipografia originale. Le cartelle figure/ e risultati/ devono essere scrivibili.",
+      "Conservare covarianze.R e co2_weekly.csv con i mancanti originali. Nessuna connessione a servizi climatici è richiesta per questa riproduzione."
+    ]
+  },
+  "P06": {
+    "title": "Struttura spaziale e previsione su una fascia esclusa",
+    "introduction": "Il reticolo sintetico contiene 64 punti a distanza regolare di 250 m, con coordinate locali fittizie e concentrazione in unità arbitrarie. Dopo aver definito un vicinato, il progetto misura l’associazione spaziale mediante l’indice di Moran e valuta una previsione IDW su un’intera fascia orientale esclusa dall’adattamento. La domanda predittiva riguarda quindi il trasferimento nello spazio, in una configurazione nella quale i valori della fascia di verifica possono superare quelli osservati nel train.",
+    "hints": [
+      "Controllare la matrice W: la soglia di 260 m collega i vicini del reticolo e deve escludere la diagonale.",
+      "Confrontare il massimo del train con quello della fascia orientale prima di interpretare una sottostima sistematica dell’IDW.",
+      "Mantenere separati il test di permutazione sull’indice di Moran e l’errore predittivo sulla fascia esclusa: rispondono a domande differenti."
+    ],
+    "stages": [
+      {
+        "title": "Specificare il vicinato prima della statistica",
+        "explanation": "Si verificano identificativi e geometria del reticolo, quindi si costruisce W con legami binari per distanze positive non superiori a 260 m. L’indice di Moran usa i valori centrati e questa precisa matrice; i grafici mostrano sia la concentrazione sia i collegamenti, rendendo controllabile il significato del vicinato adottato.",
+        "fromLine": 1,
+        "toLine": 9,
+        "observe": "La matrice è simmetrica, ha diagonale nulla e contiene 224 legami orientati, corrispondenti a 112 coppie non orientate."
+      },
+      {
+        "title": "Confrontare la struttura osservata con etichette permutate",
+        "explanation": "Le 999 permutazioni riassegnano i valori alle posizioni mantenendo invariata la geometria. Il valore p unilaterale include la correzione con un caso aggiunto al numeratore e al denominatore. La funzione IDW viene poi definita come media ponderata per distanza, con gestione esplicita della coincidenza fra punto richiesto e punto disponibile.",
+        "fromLine": 10,
+        "toLine": 12,
+        "observe": "I = 0,7195 e p = 0,001 indicano una struttura positiva rispetto alla specifica nullità di etichette scambiabili."
+      },
+      {
+        "title": "Prevedere dove non si è adattato",
+        "explanation": "I 40 punti con x < 1.250 m costituiscono il train, mentre gli altri 24 formano il test spaziale. Le mappe degli errori e il grafico osservato–previsto mostrano la direzione del bias. La variazione dell’esponente IDW da 1 a 3 è presentata come sensibilità sullo stesso test, senza ricavarne una nuova valutazione indipendente.",
+        "fromLine": 13,
+        "toLine": 18,
+        "observe": "Per p = 2, l’errore osservato meno previsto ha media positiva: la fascia orientale viene prevalentemente sottostimata."
+      },
+      {
+        "title": "Verificare i vincoli della previsione",
+        "explanation": "Il codice controlla numerosità, finitezza e appartenenza delle previsioni all’intervallo dei valori train, conseguenza dei pesi positivi normalizzati. La risoluzione Monte Carlo del valore p viene verificata prima di esportare previsioni, permutazioni e sensibilità, così che geometria e casualità restino riproducibili.",
+        "fromLine": 19,
+        "toLine": 23,
+        "observe": "Le previsioni IDW non possono superare il massimo train di circa 20,35 u.a., mentre il test raggiunge circa 23,77 u.a."
+      }
+    ],
+    "interpretation": [
+      "La struttura spaziale positiva è evidente rispetto al vicinato scelto, ma non assicura trasferibilità predittiva. Con esponente IDW 2, RMSE = 3,8078 u.a., MAE = 3,2571 u.a. e bias, definito come osservato meno previsto, = 3,1753 u.a. Il vincolo di combinazione convessa aiuta a spiegare la sottostima nella fascia con valori più elevati.",
+      "Gli RMSE per esponenti 1, 2 e 3 sono rispettivamente circa 4,270, 3,808 e 3,429 u.a. Poiché il confronto usa la medesima fascia, l’eventuale scelta di p = 3 consumerebbe quel test come strumento di selezione: una valutazione successiva richiederebbe un altro blocco o uno schema di validazione appropriato. Il campo è simulato e non descrive una contaminazione reale."
+    ],
+    "pitfalls": [
+      "Interpretare p = 0,001 come probabilità che il campo sia casuale, oppure riportare p = 0, confonderebbe il test e la sua risoluzione finita.",
+      "Attribuire all’IDW capacità di estrapolare oltre l’intervallo train o certificare il valore di p scelto sullo stesso test produrrebbe una valutazione troppo favorevole."
+    ],
+    "localRequirements": [
+      "R installato localmente con i pacchetti ggplot2 e jsonlite.",
+      "Avviare lo script dalla cartella che contiene R/ e dati/, conservando la struttura dell’archivio e i file di provenienza.",
+      "Dispositivo grafico Cairo disponibile; il carattere Nimbus Sans riproduce la tipografia originale. Le cartelle figure/ e risultati/ devono essere scrivibili.",
+      "Conservare spazio_v3.csv e PROVENIENZA_V3.json. Le coordinate sono locali e non richiedono servizi cartografici esterni."
+    ]
+  },
+  "P07": {
+    "title": "Un terreno sintetico fra celle, pendenze e blocchi",
+    "introduction": "Il terreno didattico è disponibile sia come tabella di 720 celle sia come GeoTIFF di 24 righe per 30 colonne, con passo di 30 m. La doppia rappresentazione permette di verificare orientamento e risoluzione prima di derivare pendenze e sintesi zonali. Il riferimento UTM del file è fittizio e non identifica un rilievo reale. Il progetto tratta inoltre la scala del ricampionamento, utilizzando 12 blocchi spaziali invece di assumere che tutte le celle costituiscano repliche indipendenti.",
+    "hints": [
+      "Confrontare la matrice CSV con quella del GeoTIFF tenendo conto dell’inversione delle righe fra ordinamento locale e raster.",
+      "Nelle differenze centrate usare 60 m al denominatore: i due vicini impiegati distano due passi di griglia.",
+      "Verificare che ogni blocco contenga 60 celle e che la media delle 12 medie di blocco coincida con la media dell’intero raster."
+    ],
+    "stages": [
+      {
+        "title": "Controllare il supporto geometrico del raster",
+        "explanation": "La tabella viene ordinata e trasformata in matrice; terra legge il GeoTIFF, che deve concordare con essa dopo l’inversione delle righe. Risoluzione, dimensioni e tolleranza numerica vengono verificate prima della mappa delle quote. Il controllo evita che un errore di orientamento venga scambiato per una caratteristica del terreno.",
+        "fromLine": 1,
+        "toLine": 7,
+        "observe": "Il raster contiene 720 celle di 30 × 30 m; l’estensione complessiva corrisponde a 64,8 ettari."
+      },
+      {
+        "title": "Derivare una pendenza con unità esplicite",
+        "explanation": "Le differenze centrate approssimano le derivate lungo x e y soltanto nelle celle interne. Dal modulo del gradiente si ricavano l’angolo mediante arctan e la pendenza percentuale mediante moltiplicazione per 100. Il grafico della trasformazione chiarisce perché gradi e percentuale non siano scale linearmente intercambiabili.",
+        "fromLine": 8,
+        "toLine": 12,
+        "observe": "Le celle interne sono 616; una pendenza di 45° equivale al 100%, non al 45%."
+      },
+      {
+        "title": "Confrontare zone e costruire blocchi di uguale area",
+        "explanation": "Le due zone sintetiche vengono descritte mediante distribuzioni delle quote, media, deviazione standard e area. Il reticolo viene poi suddiviso in 12 blocchi, ciascuno composto da 60 celle. Le etichette sulla mappa rendono visibile il supporto delle medie che saranno ricampionate.",
+        "fromLine": 13,
+        "toLine": 17,
+        "observe": "Le zone A e B coprono entrambe 32,4 ha, ma hanno quote medie e dispersioni differenti."
+      },
+      {
+        "title": "Esplorare la variabilità fra blocchi",
+        "explanation": "Il bootstrap estrae con rimpiazzo 12 medie di blocco per 1.999 repliche. I controlli verificano uguale numerosità, conservazione della media e area totale. L’intervallo risultante va riferito allo schema di blocchi adottato, che costituisce una scelta di modellazione della dipendenza e non una proprietà universale del raster.",
+        "fromLine": 18,
+        "toLine": 22,
+        "observe": "L’intervallo percentile delle medie ricampionate è circa [990,28; 1.038,96] m."
+      }
+    ],
+    "interpretation": [
+      "La quota media del terreno è 1.015,31 m; le zone A e B hanno medie di 986,02 e 1.044,60 m. Gli angoli di pendenza nelle 616 celle interne variano fra circa 0,49° e 28,53°. I bordi non sono inclusi in questa derivazione, perché la formula centrata impiegata richiede vicini su entrambi i lati.",
+      "Il bootstrap a blocchi rappresenta la variabilità di una media sotto uno schema di ricampionamento spaziale dichiarato. La media del raster completo è già nota per questo terreno sintetico: l’intervallo non esprime un errore nel conteggio delle celle né, in assenza di un modello di misura, un’incertezza strumentale delle quote. La sua interpretazione inferenziale richiede che i blocchi rappresentino unità adeguate al processo considerato."
+    ],
+    "pitfalls": [
+      "Confondere il CRS fittizio con una localizzazione realmente rilevata, o ignorare l’inversione delle righe, produrrebbe mappe geograficamente fuorvianti.",
+      "Ricampionare tutte le celle come indipendenti o presentare il bootstrap a blocchi come misura dell’errore del sensore introdurrebbe ipotesi non giustificate."
+    ],
+    "localRequirements": [
+      "R installato localmente con i pacchetti ggplot2 e jsonlite.",
+      "Avviare lo script dalla cartella che contiene R/ e dati/, conservando la struttura dell’archivio e i file di provenienza.",
+      "Dispositivo grafico Cairo disponibile; il carattere Nimbus Sans riproduce la tipografia originale. Le cartelle figure/ e risultati/ devono essere scrivibili.",
+      "Installare anche terra, con le librerie geospaziali native richieste dalla propria piattaforma; conservare sia raster_v3.csv sia raster_v3.tif."
+    ]
+  },
+  "P08": {
+    "title": "Il massimo di un proxy e la cronologia che lo colloca",
+    "introduction": "Sei ancore cronologiche sintetiche collegano profondità ed età; 81 valori di un proxy sono osservazioni simulate lungo lo stesso dominio. Le età sono espresse in cal BP, riferite al 1950, mentre le deviazioni standard definiscono scenari didattici e non incertezze di datazioni reali. Il progetto segue la trasformazione dalla profondità al tempo, propaga la variabilità delle ancore e confronta una cronologia continua con un’ipotesi esplicita di hiatus, mantenendo visibile il limite rappresentato dal bordo del campionamento.",
+    "hints": [
+      "Verificare manualmente l’interpolazione a 35 cm e controllare che una richiesta esterna a 0–160 cm restituisca NA.",
+      "Individuare la profondità del massimo prima di propagarne l’età: qui il massimo si trova sull’ultima osservazione del dominio.",
+      "Distinguere le perturbazioni delle ancore dalla traslazione di 400 anni sotto 80 cm, che definisce uno scenario strutturale differente."
+    ],
+    "stages": [
+      {
+        "title": "Costruire una corrispondenza entro il dominio",
+        "explanation": "La funzione approx interpola linearmente fra ancore ordinate senza estrapolare. Il controllo manuale a 35 cm verifica il calcolo, mentre l’asse della profondità invertito rispetta la convenzione stratigrafica. La prima figura espone sia le ancore sia i segmenti che costituiscono il modello età–profondità.",
+        "fromLine": 1,
+        "toLine": 8,
+        "observe": "A 35 cm l’età interpolata è 305 cal BP; al di fuori del dominio la funzione restituisce un valore mancante."
+      },
+      {
+        "title": "Propagare scenari cronologici fino al massimo",
+        "explanation": "Le variabili casuali archiviate perturbano le sei ancore secondo le deviazioni standard dichiarate. Vengono accettate soltanto cronologie strettamente crescenti, senza riordinare le età. Le curve sono interpolate sulla griglia del proxy e ne producono quantili puntuali; la stessa procedura colloca nel tempo il massimo identificato in profondità.",
+        "fromLine": 9,
+        "toLine": 14,
+        "observe": "Tutti i 500 scenari soddisfano l’ordinamento. Il massimo si trova a 160 cm, corrispondenti a 2.200 cal BP nel modello centrale."
+      },
+      {
+        "title": "Introdurre una discontinuità temporale dichiarata",
+        "explanation": "Uno hiatus di 400 anni a 80 cm viene rappresentato separando i due rami della cronologia. Il proxy rimane invariato in profondità, mentre cambia la collocazione temporale dei valori sottostanti. Il grafico degli intervalli fra campioni mostra inoltre che un passo uniforme di due centimetri non produce intervalli uniformi in anni.",
+        "fromLine": 15,
+        "toLine": 20,
+        "observe": "Il massimo passa a 2.600 cal BP nello scenario con hiatus; nella cronologia continua due centimetri rappresentano fra 16 e 40 anni."
+      },
+      {
+        "title": "Verificare ciò che determina l’incertezza",
+        "explanation": "I controlli confermano l’ordinamento, la posizione del massimo al bordo e la coincidenza della sua età con l’ultima ancora in ogni scenario. A 100 cm, situati a metà fra due ancore, la varianza analitica somma i contributi ponderati delle loro deviazioni standard, assumendone indipendenza. Le esportazioni conservano anche gli scenari generati.",
+        "fromLine": 21,
+        "toLine": 28,
+        "observe": "La deviazione standard analitica a 100 cm è circa 48,54 anni; al massimo l’incertezza cronologica dipende direttamente dall’ultima ancora."
+      }
+    ],
+    "interpretation": [
+      "Il massimo campionato del proxy è 3,23765 u.a. a 160 cm. I quantili 2,5% e 97,5% della sua età negli scenari sono circa 2.014,43 e 2.391,81 cal BP. Poiché il massimo coincide con il bordo inferiore del dominio, questi numeri collocano il maggiore valore disponibile e non dimostrano che il picco completo del fenomeno sia stato intercettato.",
+      "A 100 cm l’età centrale è 1.090 cal BP e la deviazione standard analitica è 48,54 anni, ottenuta da √((55² + 80²)/4). I quantili Monte Carlo descrivono le assunzioni delle perturbazioni archiviate; non sono una calibrazione radiocarbonica né una distribuzione a posteriori. Lo hiatus di 400 anni costituisce un’ipotesi alternativa imposta per studiarne le conseguenze."
+    ],
+    "pitfalls": [
+      "Riordinare le età perturbate per forzare la monotonia cambierebbe il modello probabilistico, mentre estrapolare oltre l’ultima ancora non è previsto dalla funzione impiegata.",
+      "Chiamare picco completo un massimo al bordo, o interpretare lo hiatus didattico come evento identificato dai dati, eccederebbe l’evidenza disponibile."
+    ],
+    "localRequirements": [
+      "R installato localmente con i pacchetti ggplot2 e jsonlite.",
+      "Avviare lo script dalla cartella che contiene R/ e dati/, conservando la struttura dell’archivio e i file di provenienza.",
+      "Dispositivo grafico Cairo disponibile; il carattere Nimbus Sans riproduce la tipografia originale. Le cartelle figure/ e risultati/ devono essere scrivibili.",
+      "Conservare cronologia_v3.csv, proxy_v3.csv e casuali_comuni_v3.csv: gli scenari condivisi dipendono dai numeri archiviati, non soltanto da un seme."
+    ]
+  },
+  "P09": {
+    "title": "Livelli di ritorno: probabilità annuale e sensibilità della coda",
+    "introduction": "Cento massimi annuali sintetici di portata, espressi in m³/s, costituiscono il campione con cui si adatta una distribuzione di Gumbel mediante il metodo dei momenti. Il progetto collega quantili, tempi di ritorno e probabilità di superamento su un orizzonte pluriennale, distinguendo la variabilità del campione dall’incertezza sulla forma della coda. L’esercizio è costruito per rendere trasparente l’estrapolazione; non fornisce livelli di progetto per un sito reale né una valutazione operativa del rischio.",
+    "hints": [
+      "Ricostruire la scala b = s√6/π e la posizione a = media − γb, verificando che la scala sia positiva.",
+      "Per il livello con tempo di ritorno 100 anni usare la probabilità di non superamento 0,99; per 50 anni indipendenti calcolare 1 − 0,99^50.",
+      "Confrontare il bootstrap condizionato a Gumbel con i tre scenari di forma GEV: il secondo esperimento modifica un’ipotesi che il primo mantiene fissa."
+    ],
+    "stages": [
+      {
+        "title": "Collegare i massimi a una distribuzione di riferimento",
+        "explanation": "Si controllano positività e calendario dei 100 massimi, poi si stimano i parametri Gumbel da media e deviazione standard. La serie annuale viene affiancata ai tempi di ritorno empirici basati sui ranghi. Le posizioni empiriche consentono un confronto descrittivo, senza trasformare i valori estremi osservati in probabilità note esattamente.",
+        "fromLine": 1,
+        "toLine": 9,
+        "observe": "La posizione stimata è circa 476,26 m³/s e la scala circa 82,96 m³/s; il massimo campionato è circa 883,69 m³/s"
+      },
+      {
+        "title": "Esaminare adattamento ed estrapolazione",
+        "explanation": "Il grafico quantile–quantile confronta i massimi con Gumbel. La curva dei livelli di ritorno si estende da 2 a 500 anni e segnala la regione che supera la lunghezza del campione. Il bootstrap ricampiona i massimi e ristima il livello centennale per 1.999 repliche, rappresentando l’incertezza campionaria all’interno della famiglia scelta.",
+        "fromLine": 10,
+        "toLine": 15,
+        "observe": "Il livello centennale è circa 857,90 m³/s; quello cinquecentennale circa 991,75 m³/s richiede un’estrapolazione più distante."
+      },
+      {
+        "title": "Trasformare la rarità annuale e variare la forma",
+        "explanation": "La probabilità cumulata di almeno un superamento deriva dal complemento della probabilità di nessun superamento, assumendo annualità indipendenti e probabilità costante. Tre valori del parametro di forma GEV, con posizione e scala mantenute fisse, illustrano poi quanto un’ipotesi sulla coda possa modificare i livelli rari.",
+        "fromLine": 16,
+        "toLine": 20,
+        "observe": "Un superamento con probabilità annua 0,01 ha probabilità circa 39,50% di verificarsi almeno una volta in 50 anni."
+      },
+      {
+        "title": "Controllare inversioni e limiti del modello",
+        "explanation": "Le verifiche numeriche controllano inversione fra distribuzione e quantile, crescita dei livelli di ritorno, validità delle repliche e probabilità pluriennale. Il limite GEV con forma nulla viene confrontato con Gumbel. Piani di ricampionamento e risultati sono esportati per distinguere la riproducibilità del calcolo dalla plausibilità delle ipotesi.",
+        "fromLine": 21,
+        "toLine": 27,
+        "observe": "La GEV con forma zero deve riprodurre Gumbel, entro la tolleranza numerica del controllo."
+      }
+    ],
+    "interpretation": [
+      "Il livello centennale stimato è 857,90 m³/s, con intervallo bootstrap percentile circa [789,16; 923,10]. Il tempo di ritorno di 100 anni esprime l’inverso della probabilità annua di superamento sotto stazionarietà; non prescrive un’attesa regolare. In 100 anni indipendenti la probabilità di almeno un superamento raggiunge circa il 63,40%.",
+      "Per il livello cinquecentennale, gli scenari GEV con forma −0,15, 0 e +0,15 restituiscono circa 811,56, 991,75 e 1.327,82 m³/s Questi scenari non sono tre adattamenti stimati sul campione: isolano la sensibilità alla forma mantenendo posizione e scala. La loro dispersione evidenzia un’incertezza strutturale che l’intervallo bootstrap Gumbel, da solo, non rappresenta."
+    ],
+    "pitfalls": [
+      "Interpretare il tempo di ritorno come periodicità, o applicare la formula pluriennale in presenza di dipendenza o non stazionarietà senza discuterla, cambierebbe il significato probabilistico.",
+      "Presentare i tre valori di forma come stime dai dati o applicare i livelli sintetici alla progettazione di opere reali trasformerebbe una sensibilità didattica in un risultato non supportato."
+    ],
+    "localRequirements": [
+      "R installato localmente con i pacchetti ggplot2 e jsonlite.",
+      "Avviare lo script dalla cartella che contiene R/ e dati/, conservando la struttura dell’archivio e i file di provenienza.",
+      "Dispositivo grafico Cairo disponibile; il carattere Nimbus Sans riproduce la tipografia originale. Le cartelle figure/ e risultati/ devono essere scrivibili.",
+      "Conservare estremi_v3.csv; lo script salva anche il piano delle 1.999 repliche generato con il seme dichiarato."
+    ]
+  },
+  "P10": {
+    "title": "Una catena riproducibile: controlli, file e storia Git",
+    "introduction": "Ventiquattro campioni sintetici permettono di seguire il calcolo della densità dalla tabella iniziale ai risultati esportati. La soluzione verifica proprietà delle funzioni, rifiuto degli ingressi non validi, conservazione dei valori nel passaggio CSV e riproducibilità di estrazioni condivise. L’ultima fase crea un repository Git temporaneo e ne controlla due commit. Richiede quindi R e Git nativi: un terminale di consultazione nel browser può mostrare il codice e la spiegazione, ma non eseguire il subprocesso Git di questo script.",
+    "hints": [
+      "Verificare a mano 107,2 g / 40 cm³ = 2,68 g/cm³ e confrontare la media della stazione A1 con 2,685 g/cm³.",
+      "Distinguere un input che deve essere respinto da un risultato numerico inatteso: i cinque casi alterati devono provocare errori controllati.",
+      "Confrontare i file che contengono 1 e 1.0: i byte cambiano, sebbene il numero letto da R sia equivalente."
+    ],
+    "stages": [
+      {
+        "title": "Definire proprietà controllabili del calcolo",
+        "explanation": "Le funzioni trasformano i campioni senza modificare l’input e producono una sintesi deterministica. I controlli confrontano calcoli manuali, invarianza all’ordine delle righe e rifiuto di volume nullo, massa negativa, valore mancante, tipo testuale e identificativi duplicati. Il grafico affianca densità dei campioni e medie per stazione.",
+        "fromLine": 1,
+        "toLine": 9,
+        "observe": "La densità del primo campione è 2,68 g/cm³; tutti e cinque gli ingressi costruiti come non validi devono essere respinti."
+      },
+      {
+        "title": "Distinguere fedeltà numerica e identità del file",
+        "explanation": "Il risultato viene scritto e riletto in CSV, verificando identificativi e differenze numeriche entro 10⁻¹². L’analisi dell’arrotondamento quantifica quanto si perde riducendo i decimali. Due piccoli file, diversi soltanto nella scrittura 1 oppure 1.0, mostrano infine che l’identità dei byte e l’equivalenza dei valori sono proprietà differenti.",
+        "fromLine": 10,
+        "toLine": 15,
+        "observe": "L’errore massimo è 0,5 g/cm³ con zero decimali e 0,05 con un decimale; i due CSV equivalenti come numeri hanno impronte MD5 diverse."
+      },
+      {
+        "title": "Condividere le estrazioni oltre il seme",
+        "explanation": "Le uniformi contenute nell’archivio vengono trasformate in dieci piani di estrazione, ciascuno con 24 indici validi. Il codice esporta sia gli indici sia le medie, rendendo replicabile il confronto anche fra implementazioni che non condividano lo stesso generatore casuale. Dieci repliche illustrano il trasferimento del piano, senza costituire una stima accurata delle code bootstrap.",
+        "fromLine": 16,
+        "toLine": 18,
+        "observe": "La media di riferimento dei 24 campioni è circa 2,59917 g/cm³; la riproduzione richiede gli stessi indici nello stesso ordine."
+      },
+      {
+        "title": "Registrare una storia locale verificabile",
+        "explanation": "system2 avvia l’eseguibile Git installato sul computer e crea un repository temporaneo. Nome e indirizzo didattici sono configurati soltanto lì; un commit registra i dati e un secondo aggiunge il calcolo. Il controllo richiede due identificativi distinti e un albero pulito, poi conserva il log, elimina il repository temporaneo ed esporta sessionInfo insieme ai risultati.",
+        "fromLine": 19,
+        "toLine": 29,
+        "observe": "Il risultato git_due_commit è TRUE solo dopo il controllo effettivo dei due commit. Questa fase non è eseguibile nel browser privo di Git nativo."
+      }
+    ],
+    "interpretation": [
+      "La media delle densità è 2,59917 g/cm³; le sei medie di stazione variano da 2,5125 a 2,6850 g/cm³. La riproducibilità è documentata attraverso proprietà verificabili del calcolo e della serializzazione, anziché dedotta dal semplice fatto che lo script termini senza errori. Le dieci medie ottenute con indici condivisi consentono un confronto puntuale fra esecuzioni.",
+      "Il confronto MD5 mostra soltanto che due sequenze di byte differiscono: non certifica provenienza, autenticità o resistenza a manomissioni avversarie. Analogamente, i due commit Git rendono ricostruibile la storia dell’esperimento, mentre la validità scientifica resta affidata a dati, definizioni e controlli pertinenti. Gli identificativi dei commit e i percorsi temporanei possono cambiare fra esecuzioni senza modificare la correttezza dell’esperimento."
+    ],
+    "pitfalls": [
+      "Promettere l’esecuzione integrale di P10 in un terminale browser ometterebbe la dipendenza dal subprocesso Git e dal filesystem locale.",
+      "Usare MD5 come garanzia di sicurezza, o interpretare versionamento e successo dei test come validazione scientifica automatica, attribuirebbe ai controlli uno scopo diverso."
+    ],
+    "localRequirements": [
+      "R installato localmente con i pacchetti ggplot2 e jsonlite.",
+      "Avviare lo script dalla cartella che contiene R/ e dati/, conservando la struttura dell’archivio e i file di provenienza.",
+      "Dispositivo grafico Cairo disponibile; il carattere Nimbus Sans riproduce la tipografia originale. Le cartelle figure/ e risultati/ devono essere scrivibili.",
+      "Installare Git nativo e renderlo disponibile nel PATH: lo script lo invoca con system2('git', ...). È necessario eseguire localmente l’archivio completo.",
+      "Conservare R/P10_funzioni.R, dati/campioni_modulo1.csv e dati/casuali_comuni_v3.csv. La directory temporanea deve consentire la creazione e rimozione del repository di prova."
+    ]
+  },
+  "P11": {
+    "title": "Classificare stazioni escluse senza contaminare il modello",
+    "introduction": "Il dataset sintetico comprende 180 campioni distribuiti in 18 stazioni e tre classi. La separazione già archiviata riserva 15 stazioni, con 150 campioni, all’adattamento e tre stazioni, con 30 campioni, alla verifica. La classificazione assegna ciascun campione al centroide di classe più vicino nello spazio di cinque variabili standardizzate. Il progetto rende espliciti i passaggi che devono essere appresi soltanto sul train, affinché la verifica sulle nuove stazioni mantenga un significato riconoscibile.",
+    "hints": [
+      "Confrontare gli identificativi delle stazioni fra train e test prima di valutare le classi: la separazione riguarda stazioni intere.",
+      "Calcolare medie e deviazioni standard sul solo train e applicare gli stessi parametri al test.",
+      "Leggere insieme matrice di confusione, riferimento della classe maggioritaria e margini di distanza, evitando di chiamare probabilità il margine."
+    ],
+    "stages": [
+      {
+        "title": "Fissare unità di separazione e trasformazione",
+        "explanation": "Il codice verifica che le stazioni dei due insiemi siano disgiunte e che le cinque caratteristiche siano numeriche, finite e associate a identificativi univoci. Le medie e le deviazioni standard vengono stimate sui 150 campioni train; la stessa trasformazione è poi applicata a tutti i dati, senza utilizzare le statistiche del test.",
+        "fromLine": 1,
+        "toLine": 5,
+        "observe": "Il test contiene 30 campioni di tre stazioni escluse; i parametri di standardizzazione provengono esclusivamente dal train."
+      },
+      {
+        "title": "Costruire una regola di classificazione esplicita",
+        "explanation": "I centroidi sono le medie delle caratteristiche standardizzate entro classe train. Per ciascun campione test si calcolano le distanze quadratiche e si assegna la classe del centroide più vicino, con regola dichiarata in caso di parità. Il riferimento predice sempre la classe maggioritaria del train; conteggi e controlli verificano standardizzazione e matrice di confusione.",
+        "fromLine": 6,
+        "toLine": 13,
+        "observe": "Il riferimento assegna Arenaria e raggiunge 1/3 di accuratezza; il classificatore riconosce correttamente i dieci campioni test di ciascuna classe."
+      },
+      {
+        "title": "Interpretare geometria, errori e separazione",
+        "explanation": "Una proiezione a due caratteristiche visualizza campioni e centroidi, mentre la mappa dei profili conserva tutte e cinque le variabili. La matrice di confusione e il confronto delle accuratezze descrivono gli esiti sul test. Il margine viene definito come distanza quadratica dal secondo centroide meno distanza dal primo, quantificando una separazione geometrica.",
+        "fromLine": 14,
+        "toLine": 24,
+        "observe": "I margini sono tutti positivi e variano circa fra 5,19 e 17,80; non sono probabilità calibrate di classificazione corretta."
+      },
+      {
+        "title": "Salvare ciò che serve a nuove classificazioni",
+        "explanation": "L’oggetto del modello conserva variabili, parametri di standardizzazione e centroidi, così da evitare che una futura applicazione li ricalcoli sui nuovi dati. Il passaggio RDS viene verificato mediante rilettura identica. Predizioni, matrice di confusione e scheda del modello vengono esportate insieme alle limitazioni del campione sintetico.",
+        "fromLine": 25,
+        "toLine": 29,
+        "observe": "Per riprodurre la regola occorrono sia i centroidi sia medie e deviazioni standard del train; le sole etichette previste non bastano."
+      }
+    ],
+    "interpretation": [
+      "L’accuratezza sul test è 1,000, rispetto a 0,333 del riferimento maggioritario; la matrice di confusione contiene dieci classificazioni corrette per ciascuna delle tre classi. Il risultato descrive la separabilità costruita in questa simulazione e la corretta applicazione della procedura alle stazioni escluse. Non stima, da solo, l’affidabilità su rocce reali o su condizioni di misura differenti.",
+      "I 30 campioni test provengono da sole tre stazioni: la numerosità delle righe non coincide quindi con il numero di contesti indipendenti su cui si è verificato il trasferimento. Una successiva scelta di caratteristiche o regole guidata da questo risultato richiederebbe nuovi dati di verifica. Il margine fra centroidi può ordinare la separazione geometrica, mentre per interpretarlo probabilisticamente servirebbe un’ulteriore procedura di calibrazione."
+    ],
+    "pitfalls": [
+      "Standardizzare con train e test insieme, oppure distribuire campioni della stessa stazione fra i due insiemi, introdurrebbe informazione estranea all’adattamento dichiarato.",
+      "Generalizzare il 100% ottenuto su dati sintetici a campioni reali, o trattare il margine di distanza come probabilità, trasformerebbe una misura descrittiva in una garanzia non verificata."
+    ],
+    "localRequirements": [
+      "R installato localmente con i pacchetti ggplot2 e jsonlite.",
+      "Avviare lo script dalla cartella che contiene R/ e dati/, conservando la struttura dell’archivio e i file di provenienza.",
+      "Dispositivo grafico Cairo disponibile; il carattere Nimbus Sans riproduce la tipografia originale. Le cartelle figure/ e risultati/ devono essere scrivibili.",
+      "Conservare ml_v3.csv con la suddivisione originale e PROVENIENZA_V3.json. Il file RDS prodotto include i parametri necessari a riapplicare la regola."
+    ]
+  }
+}

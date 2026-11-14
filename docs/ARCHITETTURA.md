@@ -10,6 +10,11 @@ GeoStat Lab è un’applicazione statica nella quale il browser esegue programmi
 | `scripts/import-course.py` | Importa R6 in `content/catalogue.json`, `moduli/*/modulo.json` e nelle schede dei moduli; con `--render` ricava gli SVG dai PDF |
 | `scripts/labs/build_catalogue.py` | Definisce algoritmi R, parametri, formalismo e raccordo con le sezioni; genera il catalogo degli esperimenti e gli script autonomi |
 | `content/prose-*.json` | Spiegazioni, simboli e limiti specifici: ogni attività appartiene a un solo file editoriale |
+| `content/research-*.json`, `assets/research/*/provenance.json` | Cinque missioni osservate, codici, campioni congelati e provenienza |
+| `content/solution-guides-research.json` | Guide delle missioni e documenti scaricabili prodotti da `scripts/prepare-solution-documents.mjs` |
+| `content/course-solutions.json` | Guide P01–P11; `scripts/prepare-course-solutions.R` genera il codice formattato equivalente agli originali |
+| `src/solution-terminal.js` | Unica navigazione dei passaggi dei progetti; incorpora il sorgente senza un secondo navigatore |
+| `scripts/package-research.mjs` | Programmi autonomi e ZIP delle missioni osservate |
 | `R/lab-common.R` | Funzioni statistiche e tema grafico condivisi |
 | `scripts/labs/format-code.R` | Formatta il codice R e riallinea `content/experiments.json`, la copia per il collaudo nativo e `R/experiments/` |
 | `scripts/public_materials.py` | Prepara i materiali pubblicabili e i manifesti: rapporti e registri editoriali restano nei sorgenti; lo stesso criterio vale per il download didattico |
@@ -36,6 +41,9 @@ La grafica planetaria dispone di rendering WebGL e di un’alternativa Canvas 2D
 |---|---|
 | `#indice` | Pagina iniziale |
 | `#mappa` | Atlante dei pianeti |
+| `#sistema-M01?v=18` | Sistema sintetico nella configurazione indicata |
+| `#esplorazione/M01-b?v=18` | Missione complementare e confronto dei mondi della stessa configurazione |
+| `#taccuino`, `#taccuino-esplorazioni` | Annotazioni del corso e delle esplorazioni, separate |
 | `#esperimenti` | Ricerca dei 139 esperimenti |
 | `#laboratorio/m05-intervalli` | Esperimento, controlli e risultati R |
 | `#modulo-M05` | Percorso sperimentale del modulo |
@@ -51,11 +59,11 @@ Per correggere le slide, aggiornare e ricollaudare le fonti in `materiali/`, ver
 
 Per gli esperimenti, modificare il generatore e il file editoriale dell’attività, quindi seguire la [sequenza di rigenerazione](LABORATORI_INTERATTIVI.md#struttura-dei-sorgenti). Quando cambia un algoritmo o un parametro occorre rigenerare e ricollaudare anche le basi numeriche e le figure. Le sole correzioni editoriali devono preservare codice R e parametri approvati.
 
-Dopo una modifica eseguire `npm test` e `npm run test:dom`; per le modifiche al calcolo o al suo collaudo eseguire anche il catalogo nel browser. `npm run test:consistency` controlla copie generate, limiti specifici, schede dei moduli, archivi e collegamenti. Non rigenerare automaticamente hash o risultati attesi per cancellare una discrepanza non spiegata.
+Dopo una modifica eseguire `npm test` e `npm run test:dom`; per le modifiche al calcolo o al suo collaudo eseguire anche il catalogo nel browser. `npm run test:consistency` controlla copie generate, limiti specifici, schede dei moduli, guide delle soluzioni, programmi scaricabili, membri e byte degli archivi e collegamenti. Il controllo R locale confronta anche gli alberi delle espressioni dei programmi P01–P11 con gli originali. Non rigenerare automaticamente hash o risultati attesi per cancellare una discrepanza non spiegata.
 
 ## Collaudo e pubblicazione
 
-Un solo preparatore, `scripts/prepare-browser-harness.mjs`, genera la pagina temporanea di collaudo. `npm run test:browser` lo usa e rimuove i file al termine; per una verifica manuale aprire la pagina direttamente e impostare il viewport tramite gli strumenti del browser. Gli iframe non sono utilizzati, poiché la distribuzione con header completi vieta l’incorporamento.
+Un solo preparatore, `scripts/prepare-browser-harness.mjs`, genera la pagina temporanea di collaudo. `npm run test:browser` lo usa e rimuove i file al termine; per una verifica manuale aprire la pagina direttamente e impostare il viewport tramite gli strumenti del browser. La distribuzione con header completi vieta l’incorporamento. Un’eventuale pagina temporanea isolata per confrontare larghezze CSS non verifica tali header e non sostituisce il collaudo della pagina effettiva; non deve entrare in `dist/` pubblicato.
 
 Il confronto delle metriche è condiviso tra Node e browser: richiede nomi univoci, uguale insieme di metriche, tipi compatibili, uguaglianza dei risultati testuali e una tolleranza esplicita per i numeri. Le differenze fanno fallire l’attività. Il [rapporto della revisione 3.2.2](REVISIONE_3_2_2.md) conserva le relative evidenze storiche; i nuovi interventi sono descritti nel [registro delle modifiche](../CHANGELOG.md).
 

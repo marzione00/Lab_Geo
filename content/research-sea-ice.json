@@ -1,0 +1,83 @@
+{
+  "id": "sea-ice",
+  "worldId": "M09-e",
+  "level": 3,
+  "title": "La memoria del ghiaccio",
+  "question": "Quanto cambia la tendenza dell’estensione artica quando scegli marzo invece di settembre e quando restringi il periodo di osservazione?",
+  "narrative": [
+    "Nell’archivio terrestre a bordo dell’osservatorio sono conservate le serie del Sea Ice Index, dalle quali puoi ricostruire come sia variata l’estensione del ghiaccio marino artico. Il mondo dell’atlante costituisce l’ambientazione della missione, mentre le misure provengono da osservazioni satellitari della Terra. L’estensione, che comprende le celle la cui concentrazione di ghiaccio raggiunge almeno il 15%, viene prima calcolata giornalmente e poi mediata nel mese.",
+    "Poiché il ciclo stagionale produce differenze considerevoli, ogni regressione confronta lo stesso mese attraverso gli anni: marzo oppure settembre. La relazione E(t) = α + βt + ε(t) riassume la variazione mediante una pendenza β, che il programma converte in milioni di chilometri quadrati per decennio. L’archivio didattico termina nel 2024, prima del cambio di sorgente introdotto dal 2025, e conserva le indicazioni del prodotto originale.",
+    "La conclusione richiede che tu distingua la tendenza stimata dalla variabilità che la circonda. Dopo aver modificato l’anno iniziale, osserva i residui nell’ordine temporale e confronta il coefficiente di correlazione al ritardo 1. Una pendenza descrittiva, pur essendo utile per sintetizzare la serie, richiede un modello dell’incertezza temporale prima di essere accompagnata da intervalli inferenziali o impiegata per proiezioni."
+  ],
+  "prerequisites": [
+    "M03",
+    "M07",
+    "M09"
+  ],
+  "preparation": "Regressione lineare, unità di misura, residui e dipendenza temporale.",
+  "steps": [
+    "Stima la tendenza di settembre sull’intero periodo 1979–2024 e annota unità, numerosità e riferimento 1981–2010.",
+    "Ripeti il calcolo per marzo, mantenendo fisso l’anno iniziale; confronta i tassi assoluti e quelli relativi al medesimo mese del riferimento.",
+    "Sposta l’inizio al 2000, esamina i residui e argomenta quali conclusioni rimangano stabili rispetto alla finestra scelta."
+  ],
+  "limitations": [
+    "Estensione e area sono grandezze diverse: il modello usa esclusivamente l’estensione; la colonna area è conservata per il confronto.",
+    "La selezione comprende marzo e settembre 1979–2024. Non rappresenta tutti i mesi né il volume del ghiaccio.",
+    "I residui possono essere dipendenti ed eteroschedastici. Non vengono presentati intervalli di confidenza OLS come validati né proiezioni climatiche.",
+    "Gli algoritmi e i sensori contribuiscono all’incertezza osservativa; il confronto fra periodi non attribuisce causalmente la variazione a un singolo fattore."
+  ],
+  "sources": [
+    {
+      "label": "NSIDC · Sea Ice Index v4 e citazione del dataset",
+      "url": "https://nsidc.org/data/g02135/versions/4"
+    },
+    {
+      "label": "NSIDC · Guida del prodotto v4",
+      "url": "https://nsidc.org/sites/default/files/documents/user-guide/g02135-v004-userguide.pdf"
+    },
+    {
+      "label": "NSIDC · Archivio delle serie mensili",
+      "url": "https://nsidc.org/data/seaice_index/data-and-image-archive"
+    }
+  ],
+  "controls": [
+    {
+      "key": "month",
+      "type": "select",
+      "label": "Mese confrontato fra anni",
+      "value": "9",
+      "options": [
+        {
+          "value": "3",
+          "label": "Marzo"
+        },
+        {
+          "value": "9",
+          "label": "Settembre"
+        }
+      ]
+    },
+    {
+      "key": "start_year",
+      "type": "number",
+      "label": "Anno iniziale (termine fisso: 2024)",
+      "value": 1979,
+      "min": 1979,
+      "max": 2000,
+      "step": 1
+    },
+    {
+      "key": "seed",
+      "type": "number",
+      "label": "Seme riproducibile",
+      "help": "Riservato a eventuali estensioni campionarie; il calcolo corrente è deterministico.",
+      "value": 2026,
+      "min": 1,
+      "max": 9999,
+      "step": 1
+    }
+  ],
+  "code": "# Confronta lo stesso mese tra anni: marzo e settembre non vengono mescolati.\ndata <- observations[observations$month == as.integer(p$month) &\n  observations$year >= p$start_year & is.finite(observations$extent_million_km2), ]\ndata <- data[order(data$year), ]\nstopifnot(nrow(data) >= 20)\n\n# La pendenza beta esprime milioni di km2 per anno; moltiplicarla per 10 dà il tasso decennale.\nfit <- lm(extent_million_km2 ~ year, data = data)\ndata$fitted_million_km2 <- as.numeric(predict(fit))\ndata$residual_million_km2 <- resid(fit)\nbeta <- unname(coef(fit)['year'])\n\n# Il riferimento 1981-2010 usa sempre il medesimo mese, anche quando cambia l'inizio del periodo.\nreference <- observations[observations$month == as.integer(p$month) &\n  observations$year >= 1981 & observations$year <= 2010, ]\nbaseline <- mean(reference$extent_million_km2, na.rm = TRUE)\npercent_decade <- 100 * 10 * beta / baseline\n\n# La correlazione al ritardo 1 segnala dipendenza residua; non costituisce una prova di indipendenza.\nlag1 <- as.numeric(acf(data$residual_million_km2, lag.max = 1, plot = FALSE)$acf[2])\nmetrics <- metric('Anni osservati' = nrow(data),\n  'Pendenza [milioni km2 / decennio]' = f(10 * beta),\n  'Pendenza [% del riferimento / decennio]' = f(percent_decade),\n  'Riferimento 1981-2010 [milioni km2]' = f(baseline),\n  'Correlazione residua al ritardo 1' = f(lag1))\nmonth_name <- if (p$month == '3') 'Marzo' else 'Settembre'\n\n# Mostra osservazioni e retta stimata, limitando la rappresentazione all'intervallo studiato.\ng1 <- ggplot(data, aes(year, extent_million_km2)) +\n  geom_line(colour = '#A0ADB7', linewidth = 0.55) +\n  geom_point(colour = '#168B9C', size = 2.6) +\n  geom_line(aes(y = fitted_million_km2), colour = '#BC5B35', linewidth = 1.15) +\n  labs(title = paste('Estensione artica ·', month_name),\n    subtitle = 'NSIDC Sea Ice Index v4 · osservazioni e tendenza lineare',\n    x = 'Anno', y = 'Estensione [milioni di km2]')\n\n# I residui conservano l'ordine temporale, così eventuali sequenze rimangono visibili.\ng2 <- ggplot(data, aes(year, residual_million_km2)) +\n  geom_hline(yintercept = 0, colour = '#64748B', linetype = 2) +\n  geom_line(colour = '#7054A4', linewidth = 0.75) +\n  geom_point(colour = '#7054A4', size = 2.3) +\n  labs(title = 'Scarti dalla tendenza lineare',\n    subtitle = 'Diagnostica descrittiva: verificare struttura temporale e sensibilità al periodo',\n    x = 'Anno', y = 'Residuo [milioni di km2]')\nplots <- list(g1, g2)\n",
+  "formula": "E_t=\\alpha+\\beta t+\\varepsilon_t,\\qquad r_{10}=100\\,\\frac{10\\widehat\\beta}{\\overline E_{1981:2010}}",
+  "formulaExplanation": "Eₜ è l’estensione media mensile, in milioni di km², e t è l’anno. La pendenza β̂ è espressa per anno; r₁₀ la converte in percentuale del riferimento per decennio, mantenendo fisso il mese. I residui εₜ vanno esaminati nell’ordine temporale."
+}

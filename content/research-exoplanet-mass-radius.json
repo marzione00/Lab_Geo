@@ -1,0 +1,91 @@
+{
+  "id": "exoplanet-mass-radius",
+  "worldId": "M16-e",
+  "level": 5,
+  "title": "Massa e raggio: un modello da mettere alla prova",
+  "question": "Quanto generalizza una relazione massa–raggio se la valutazione avviene su sistemi stellari esclusi dalla stima? Come cambia il risultato restringendo le incertezze ammesse?",
+  "narrative": [
+    "Dall’osservatorio della spedizione, l’indagine si sposta verso pianeti realmente osservati. La tabella Planetary Systems del NASA Exoplanet Archive conserva insiemi di parametri riferiti a singole pubblicazioni. L’estrazione seleziona una soluzione predefinita per pianeta, masse dichiarate come Mass e valori di massa e raggio privi di flag di limite; evita così di trattare una massa minima come una misura equivalente.",
+    "La relazione logaritmica log₁₀(M/M⊕) = α + β log₁₀(R/R⊕) + ε costituisce un modello di riferimento da verificare. Si delimita il regime dei piccoli pianeti mediante un raggio massimo e si richiedono incertezze relative sufficientemente contenute su entrambe le grandezze. La soglia modifica anche la popolazione osservabile: una misura più precisa non rende automaticamente il campione rappresentativo.",
+    "I sistemi stellari, anziché i singoli pianeti, vengono separati tra stima e verifica, affinché pianeti della stessa stella non compaiano nei due insiemi. L’errore sui sistemi esclusi viene confrontato con quello di una previsione costante ottenuta dal solo insieme di stima. Il livello di ricerca consiste nel giustificare queste scelte, diagnosticare i residui e proporre una successiva analisi che incorpori errori di misura e selezione osservativa; la regressione mostrata rimane una prima approssimazione."
+  ],
+  "prerequisites": [
+    "M05",
+    "M07",
+    "M10",
+    "M16"
+  ],
+  "preparation": "Regressione in scala logaritmica, errori di misura, separazione stima/verifica, dipendenza entro gruppi e distorsione di selezione.",
+  "steps": [
+    "Applica il criterio sulle incertezze, registra quanti pianeti e sistemi restano disponibili e motiva il regime di raggio scelto.",
+    "Confronta l’errore di verifica con la previsione costante e ispeziona i residui, mantenendo i sistemi stellari separati.",
+    "Ripeti con semi e soglie differenti; discuti stabilità, selezione e un modello successivo capace di incorporare le incertezze asimmetriche."
+  ],
+  "limitations": [
+    "La regressione ordinaria non propaga le incertezze di misura e non corregge gli effetti di selezione.",
+    "Il massimo degli errori relativi superiore e inferiore serve a filtrare; non è una nuova stima probabilistica dell’errore.",
+    "Il campione eterogeneo riunisce metodi osservativi diversi; default_flag non garantisce la misura più precisa disponibile.",
+    "La separazione per stella riduce la contaminazione fra insiemi, ma una sola partizione non quantifica la variabilità della prestazione.",
+    "Massa e raggio non determinano univocamente composizione, atmosfera o abitabilità."
+  ],
+  "sources": [
+    {
+      "label": "NASA Exoplanet Archive — tabella Planetary Systems",
+      "url": "https://exoplanetarchive.ipac.caltech.edu/docs/planetarysystems_about.html"
+    },
+    {
+      "label": "NASA Exoplanet Archive — definizioni e flag",
+      "url": "https://exoplanetarchive.ipac.caltech.edu/docs/API_PS_columns.html"
+    },
+    {
+      "label": "NASA Exoplanet Archive — parametri predefiniti e loro limiti",
+      "url": "https://exoplanetarchive.ipac.caltech.edu/docs/faq.html"
+    },
+    {
+      "label": "NASA Exoplanet Archive — attribuzione delle fonti",
+      "url": "https://exoplanetarchive.ipac.caltech.edu/docs/acknowledge.html"
+    }
+  ],
+  "controls": [
+    {
+      "key": "max_relative_error",
+      "type": "number",
+      "label": "Errore relativo massimo ammesso",
+      "value": 0.5,
+      "min": 0.2,
+      "max": 0.8,
+      "step": 0.1
+    },
+    {
+      "key": "max_radius",
+      "type": "number",
+      "label": "Raggio massimo [R⊕]",
+      "value": 4,
+      "min": 3,
+      "max": 6,
+      "step": 1
+    },
+    {
+      "key": "train_fraction",
+      "type": "number",
+      "label": "Quota dei sistemi per la stima",
+      "value": 0.7,
+      "min": 0.6,
+      "max": 0.8,
+      "step": 0.1
+    },
+    {
+      "key": "seed",
+      "type": "number",
+      "label": "Seme riproducibile",
+      "help": "Determina quali sistemi stellari entrano nell’insieme di stima; cambia il seme per valutare la sensibilità alla partizione.",
+      "value": 2026,
+      "min": 1,
+      "max": 9999,
+      "step": 1
+    }
+  ],
+  "code": "# Richiede entrambi gli errori asimmetrici: i mancanti non vengono sostituiti con zero.\nmass_err <- pmax(abs(observations$pl_bmasseerr1), abs(observations$pl_bmasseerr2)) / observations$pl_bmasse\nradius_err <- pmax(abs(observations$pl_radeerr1), abs(observations$pl_radeerr2)) / observations$pl_rade\nkeep <- is.finite(mass_err) & is.finite(radius_err) &\n  mass_err > 0 & radius_err > 0 &\n  mass_err <= p$max_relative_error & radius_err <= p$max_relative_error &\n  observations$pl_rade >= 0.5 & observations$pl_rade <= p$max_radius\nkeep[is.na(keep)] <- FALSE\ndata <- observations[keep, , drop = FALSE]\nstopifnot(nrow(data) >= 20)\n\n# Divide per stella: tutti i pianeti dello stesso sistema rimangono nello stesso insieme.\n# L’ordine dei nomi è fissato byte per byte, indipendentemente dalla lingua del sistema.\nhosts <- sort(unique(data$hostname), method=\"radix\")\nstopifnot(length(hosts) >= 10)\ntrain_hosts <- sample(hosts, size = floor(length(hosts) * p$train_fraction))\ndata$insieme <- ifelse(data$hostname %in% train_hosts, \"Stima\", \"Verifica\")\ndata$log_radius <- log10(data$pl_rade)\ndata$log_mass <- log10(data$pl_bmasse)\ntrain <- data[data$insieme == \"Stima\", , drop = FALSE]\ntest <- data[data$insieme == \"Verifica\", , drop = FALSE]\n\n# Stima il modello soltanto sui sistemi assegnati all’insieme di addestramento.\nfit <- lm(log_mass ~ log_radius, data = train)\ndata$predicted_log_mass <- as.numeric(predict(fit, newdata = data))\ndata$residuo_log <- data$log_mass - data$predicted_log_mass\ntest_prediction <- as.numeric(predict(fit, newdata = test))\nrmse <- sqrt(mean((test$log_mass - test_prediction)^2))\nbaseline_rmse <- sqrt(mean((test$log_mass - mean(train$log_mass))^2))\nmetrics <- metric(\n  \"Pianeti dopo i filtri\" = nrow(data),\n  \"Sistemi di stima\" = length(train_hosts),\n  \"Sistemi di verifica\" = length(hosts) - length(train_hosts),\n  \"Pendenza beta\" = f(unname(coef(fit)[2])),\n  \"RMSE verifica [dex]\" = f(rmse),\n  \"RMSE previsione costante [dex]\" = f(baseline_rmse)\n)\n\n# Disegna il modello di stima sull’intervallo osservato; i punti di verifica restano distinguibili.\ngrid <- data.frame(log_radius = seq(min(data$log_radius), max(data$log_radius), length.out = 100))\ngrid$log_mass <- as.numeric(predict(fit, newdata = grid))\ng1 <- ggplot(data, aes(x = log_radius, y = log_mass, colour = insieme)) +\n  geom_point(size = 2.3, alpha = 0.65) +\n  geom_line(data = grid, aes(x = log_radius, y = log_mass), inherit.aes = FALSE,\n            colour = \"#172F42\", linewidth = 1) +\n  scale_colour_manual(values = c(\"Stima\" = col_geo[1], \"Verifica\" = col_geo[2])) +\n  labs(title = \"Relazione massa–raggio: modello di riferimento\",\n       subtitle = \"NASA Exoplanet Archive · partizione per sistema stellare\",\n       x = \"log10 del raggio [R/R⊕]\", y = \"log10 della massa [M/M⊕]\")\n\n# La struttura dei residui suggerisce quali aspetti il modello lineare non descrive.\ng2 <- ggplot(data, aes(x = predicted_log_mass, y = residuo_log, colour = insieme)) +\n  geom_hline(yintercept = 0, colour = \"#64748B\", linetype = 2) +\n  geom_point(size = 2.3, alpha = 0.65) +\n  scale_colour_manual(values = c(\"Stima\" = col_geo[1], \"Verifica\" = col_geo[2])) +\n  labs(title = \"Residui e valori previsti\", subtitle = \"Un residuo è osservato meno previsto, in scala logaritmica\",\n       x = \"log10 della massa prevista [M/M⊕]\", y = \"Residuo [dex]\")\nplots <- list(g1, g2)",
+  "formula": "\\log_{10}\\!\\left(\\frac{M_i}{M_\\oplus}\\right)=\\alpha+\\beta\\log_{10}\\!\\left(\\frac{R_i}{R_\\oplus}\\right)+\\varepsilon_i,\\qquad \\mathrm{RMSE}=\\sqrt{\\frac{1}{n_V}\\sum_{i\\in V}(y_i-\\widehat y_i)^2}",
+  "formulaExplanation": "Mᵢ e Rᵢ sono massa e raggio planetari; yᵢ è il logaritmo della massa in unità terrestri. Il modello viene stimato su un insieme di sistemi stellari e valutato sui sistemi V esclusi dalla stima. L’RMSE è in dex e viene confrontato con quello della media del solo insieme di stima."
+}

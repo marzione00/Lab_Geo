@@ -37,7 +37,11 @@ L’HTML principale contiene una CSP funzionante anche su GitHub Pages. Essa lim
 
 La politica del worker R è separata: Emscripten richiede `unsafe-eval` per il collegamento dinamico delle librerie, mentre il documento principale continua a vietarlo. Su host compatibili il worker può collegarsi soltanto all’origine del sito. Su GitHub Pages puro questa restrizione HTTP del worker **non è garantita**. Non usare tale distribuzione come servizio di esecuzione di codice non fidato.
 
-I progetti pubblicati sotto lo stesso dominio `OWNER.github.io` condividono l’origine, anche se hanno sottocartelle diverse. Per una separazione più forte pubblicare GeoStat Lab su un proprio sottodominio. Non ospitare sulla stessa origine applicazioni riservate o servizi che dipendono da cookie privilegiati.
+La CSP del documento principale richiede inoltre Trusted Types (`require-trusted-types-for 'script'`): ogni inserimento di HTML e ogni URL di script passano dalla politica predefinita di `src/html.js`, che rifiuta marcatori eseguibili e script esterni all’origine. Una nuova libreria che inserisca HTML va collaudata con `npm run test:browser` prima della pubblicazione.
+
+I progetti pubblicati sotto lo stesso dominio `OWNER.github.io` condividono l’origine, anche se hanno sottocartelle diverse. Per una separazione più forte pubblicare GeoStat Lab su un proprio sottodominio. Non ospitare sulla stessa origine applicazioni riservate o servizi che dipendono da cookie privilegiati. Se GeoStat Lab resta una pagina di progetto collegata al sito personale, nessuna pagina sotto `OWNER.github.io` deve caricare script di terze parti (analytics, widget, incorporamenti): tali script potrebbero leggere appunti e progressi conservati nel `localStorage` del corso.
+
+Le anteprime dei collegamenti (Open Graph) usano `assets/social-card.jpg`. Con `SITE_URL` impostato la build scrive URL assoluti per l’immagine, per la pagina canonica e per `sitemap.xml`, che elenca anche le 29 pagine di `percorso/`.
 
 Un’infrastruttura pubblica deve inoltre gestire protezione DDoS, limiti di traffico, logging, disponibilità e aggiornamenti del provider. Il server Node incluso è un server di sviluppo locale, non un reverse proxy o un WAF.
 

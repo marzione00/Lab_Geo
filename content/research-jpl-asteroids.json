@@ -1,0 +1,62 @@
+{
+  "id": "jpl-asteroids",
+  "worldId": "M03-b",
+  "level": 2,
+  "title": "Dimensione e riflettività degli asteroidi",
+  "question": "L’associazione fra diametro e albedo resta simile quando cambi la soglia dimensionale? Quali oggetti non possono entrare nel confronto?",
+  "narrative": [
+    "Un osservatorio orbitale confronta due proprietà dei piccoli corpi: il diametro e l’albedo geometrica, che descrive la luminosità riflessa nella geometria di osservazione di riferimento. Il catalogo del Jet Propulsion Laboratory raccoglie stime ottenute con metodi e osservazioni differenti; una tabella apparentemente uniforme può quindi contenere informazioni di precisione diseguale.",
+    "Il progetto utilizza i primi 2.500 asteroidi numerati ordinati per identificativo SPK. Questa scelta rende esplicita e riproducibile l’estrazione, ma privilegia una parte storicamente studiata del catalogo. Le celle mancanti vengono conservate nel CSV affinché sia possibile contare gli oggetti esclusi prima di costruire il diagramma diametro–albedo.",
+    "Poiché i diametri coprono più ordini di grandezza, l’asse orizzontale è logaritmico. La correlazione di Spearman riassume un’associazione monotona nel sottoinsieme selezionato; il suo valore non identifica una relazione causale né una legge generale della popolazione degli asteroidi. Il secondo grafico rende visibile la disponibilità delle due misure nel campione estratto."
+  ],
+  "prerequisites": [
+    "M02",
+    "M03"
+  ],
+  "preparation": "Filtri di una tabella, valori mancanti, scale logaritmiche e correlazione di rango.",
+  "steps": [
+    "Conta i valori mancanti prima di applicare la soglia dimensionale.",
+    "Confronta i diagrammi con diametro minimo pari a 5, 20 e 100 km, osservando numerosità e correlazione.",
+    "Descrivi come la selezione per identificativo e la disponibilità delle misure limitino la generalizzazione."
+  ],
+  "limitations": [
+    "I primi 2.500 asteroidi numerati non costituiscono un campione casuale o completo della popolazione.",
+    "L’albedo è geometrica; non coincide con l’albedo di Bond impiegata nel bilancio radiativo dei pianeti sintetici.",
+    "Le incertezze dei diametri sono conservate nel CSV quando disponibili, ma il confronto descrittivo non le propaga.",
+    "Una correlazione interna al catalogo può riflettere selezione osservativa e metodi di stima condivisi."
+  ],
+  "sources": [
+    {
+      "label": "NASA/JPL — SBDB Query API e dizionario delle colonne",
+      "url": "https://ssd-api.jpl.nasa.gov/doc/sbdb_query.html"
+    },
+    {
+      "label": "NASA/JPL — accesso e uso delle API",
+      "url": "https://ssd-api.jpl.nasa.gov/doc/"
+    }
+  ],
+  "controls": [
+    {
+      "key": "min_diameter",
+      "type": "number",
+      "label": "Diametro minimo [km]",
+      "value": 20,
+      "min": 5,
+      "max": 100,
+      "step": 5
+    },
+    {
+      "key": "seed",
+      "type": "number",
+      "label": "Seme riproducibile",
+      "help": "Il seme interviene soltanto nelle operazioni di campionamento; nei grafici descrittivi i risultati restano invariati.",
+      "value": 2026,
+      "min": 1,
+      "max": 9999,
+      "step": 1
+    }
+  ],
+  "code": "# Valuta separatamente la disponibilità delle misure, prima di ogni filtro.\nhas_diameter <- is.finite(observations$diameter) & observations$diameter > 0\nhas_albedo <- is.finite(observations$albedo) & observations$albedo >= 0\ncomplete <- has_diameter & has_albedo\n\n# La soglia riguarda soltanto gli oggetti con entrambe le misure disponibili.\nkeep <- complete & observations$diameter >= p$min_diameter\nkeep[is.na(keep)] <- FALSE\ndata <- observations[keep, , drop = FALSE]\nstopifnot(nrow(data) >= 3)\nrho <- cor(data$diameter, data$albedo, method = \"spearman\")\nmetrics <- metric(\n  \"Asteroidi estratti\" = nrow(observations),\n  \"Coppie disponibili prima della soglia\" = sum(complete),\n  \"Oggetti selezionati\" = nrow(data),\n  \"Correlazione di Spearman\" = f(rho),\n  \"Diametro mediano [km]\" = f(median(data$diameter))\n)\n\n# La scala logaritmica rende leggibili diametri di ordine di grandezza diverso.\ng1 <- ggplot(data, aes(x = diameter, y = albedo)) +\n  geom_point(colour = col_geo[1], size = 2.2, alpha = 0.60) +\n  scale_x_log10() +\n  labs(title = \"Diametro e albedo geometrica\",\n       subtitle = \"NASA/JPL SBDB · asteroidi numerati selezionati\",\n       x = \"Diametro [km, scala logaritmica]\", y = \"Albedo geometrica [adimensionale]\")\n\n# Mostra la disponibilità originaria: il filtro dimensionale non modifica questi conteggi.\navailability <- data.frame(\n  misura = rep(c(\"Diametro\", \"Albedo\"), each = 2),\n  stato = rep(c(\"Disponibile\", \"Assente/non valida\"), times = 2),\n  conteggio = c(sum(has_diameter), sum(!has_diameter), sum(has_albedo), sum(!has_albedo))\n)\ng2 <- ggplot(availability, aes(x = misura, y = conteggio, fill = stato)) +\n  geom_col(position = \"stack\", width = 0.60) +\n  scale_fill_manual(values = c(\"Disponibile\" = col_geo[1], \"Assente/non valida\" = col_geo[2])) +\n  labs(title = \"Disponibilità delle misure nel CSV\",\n       subtitle = \"Conteggi prima della selezione per diametro\",\n       x = NULL, y = \"Numero di asteroidi\")\nplots <- list(g1, g2)",
+  "formula": "\\rho_S=\\operatorname{cor}\\bigl(\\operatorname{rank}(D),\\operatorname{rank}(A_g)\\bigr)",
+  "formulaExplanation": "D è il diametro in chilometri e Aɡ l’albedo geometrica. La correlazione di Spearman confronta i ranghi delle coppie disponibili; i valori mancanti e la soglia dimensionale determinano quali coppie entrano nel calcolo."
+}

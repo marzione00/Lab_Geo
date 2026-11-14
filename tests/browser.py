@@ -187,6 +187,54 @@ try:
     page.locator('mjx-container[jax="SVG"]').first.wait_for()
     assert_layout('lettura con formule')
    checks.append('Home, 28 moduli e formule senza overflow a 320/390/430/768/1440 px')
+   page.goto('about:blank')  # isolate the timing probes from the animated page and the trace recorder
+   shifts=[]
+   for vw,vh in [(390,844),(1440,900)]:
+    for r in ['#indice','#catalogo','#esperimenti','#modulo-M05','#laboratorio/m05-estimandi','#sistema-M05','#modulo-P01']:
+     fresh=browser.new_context(viewport={'width':vw,'height':vh})
+     fresh.add_init_script("window.__cls=0;new PerformanceObserver(l=>{for(const e of l.getEntries())if(!e.hadRecentInput)window.__cls+=e.value}).observe({type:'layout-shift',buffered:true});")
+     probe=fresh.new_page();probe.goto(url+r);probe.wait_for_timeout(3000)
+     shifts.append(dict(route=r,width=vw,cls=round(probe.evaluate('window.__cls'),4)));fresh.close()
+   (OUT/'layout-shift.json').write_text(json.dumps(shifts,ensure_ascii=False,indent=2))
+   worst=max(shifts,key=lambda x:x['cls'])
+   assert worst['cls']<0.1,'Layout shift: '+json.dumps(worst,ensure_ascii=False)
+   checks.append('Layout shift sotto 0,1 al primo caricamento su 7 rotte a 390 e 1440 px')
+   budget=[]
+   for r in ['#sistema-M05','#modulo-M05']:
+    fresh=browser.new_context(viewport={'width':1440,'height':900})
+    fresh.add_init_script("window.__long=[];new PerformanceObserver(l=>{for(const e of l.getEntries())window.__long.push(e.duration)}).observe({type:'longtask',buffered:true});")
+    probe=fresh.new_page();probe.goto(url+r);probe.wait_for_timeout(3000);probe.evaluate('window.__long=[]');probe.wait_for_timeout(10000)
+    budget.append(dict(route=r,longtask_ms=round(probe.evaluate('window.__long.reduce((a,b)=>a+b,0)')),space=probe.evaluate('window.GeoSpace?.debug().renderer')));fresh.close()
+   (OUT/'main-thread.json').write_text(json.dumps(budget,ensure_ascii=False,indent=2))
+   assert all(x['longtask_ms']<500 for x in budget),'Main thread: '+json.dumps(budget,ensure_ascii=False)
+   checks.append('Thread principale: meno di 500 ms di task lunghi in 10 s su sistema e modulo')
+   fresh=browser.new_context(viewport={'width':1440,'height':900})
+   fresh.add_init_script("try{localStorage.setItem('geostat:force-webgl','1')}catch(e){}")
+   probe=fresh.new_page();probe.on('pageerror',lambda e:errors.append(str(e)))
+   probe.goto(url+'#indice');probe.wait_for_timeout(3000)
+   assert probe.evaluate('window.GeoGalaxy.debug()?.renderer')=='webgl','WebGL path not exercised'
+   probe.goto(url+'#sistema-M05');probe.wait_for_timeout(6000)
+   probe.evaluate("window.__slow=0;let p=0;const f=t=>{if(p&&t-p>120)window.__slow++;p=t;requestAnimationFrame(f)};requestAnimationFrame(f)");probe.wait_for_timeout(4000)
+   assert probe.evaluate('window.__slow')<8,'WebGL system view stays slow without falling back'
+   fresh.close()
+   # Module pages use the GeoSpace renderer: its watchdog must fire even when intervals alternate around 120 ms.
+   fresh=browser.new_context(viewport={'width':1440,'height':900})
+   fresh.add_init_script("try{localStorage.setItem('geostat:force-webgl','1')}catch(e){}")
+   probe=fresh.new_page();probe.on('pageerror',lambda e:errors.append(str(e)))
+   probe.goto(url+'#modulo-M05');probe.wait_for_timeout(6000)
+   probe.evaluate("window.__slow=0;let p=0;const f=t=>{if(p&&t-p>100)window.__slow++;p=t;requestAnimationFrame(f)};requestAnimationFrame(f)");probe.wait_for_timeout(4000)
+   assert probe.evaluate('window.__slow')<8,'WebGL module view stays slow without falling back: '+str(probe.evaluate('window.GeoSpace.debug().renderer'))
+   fresh.close()
+   checks.append('Percorso WebGL forzato: galassia in WebGL; viste di sistema e di modulo fluide o ripiegate sul canvas')
+   axe=(ROOT/'node_modules/axe-core/axe.min.js').read_text(encoding='utf-8');violations={}
+   for r in ['#indice','#catalogo','#esperimenti','#progetti','#materiali','#taccuino','#sistema-M05','#modulo-M05','#modulo-M05/slide/3','#laboratorio/m05-estimandi','#esplorazione/M05-b']:
+    fresh=browser.new_context(viewport={'width':1440,'height':900});probe=fresh.new_page();probe.goto(url+r);probe.wait_for_timeout(2500);probe.evaluate(axe)
+    found=probe.evaluate("async()=>(await axe.run(document,{resultTypes:['violations'],rules:{'label-content-name-mismatch':{enabled:true}}})).violations.map(v=>({id:v.id,impact:v.impact,nodes:v.nodes.map(n=>n.target.join(' '))}))")
+    if found:violations[r]=found
+    fresh.close()
+   (OUT/'axe.json').write_text(json.dumps(violations,ensure_ascii=False,indent=2))
+   assert not violations,'Accessibility: '+json.dumps(violations,ensure_ascii=False)[:2000]
+   checks.append('axe-core 4.14: nessuna violazione su 11 rotte')
    page.goto(url+'experiments-harness.html')
    page.locator('#start').click()
    expect(page.locator('#status')).to_have_text('COMPLETATO · 139 superati · 0 errori',timeout=600000)

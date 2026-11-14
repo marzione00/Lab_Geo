@@ -1,0 +1,71 @@
+{
+  "id": "usgs-quakes",
+  "worldId": "M01-b",
+  "level": 1,
+  "title": "Leggere un catalogo sismico",
+  "question": "Come cambia la distribuzione delle magnitudo quando elevi la soglia di selezione, e quali conclusioni sul territorio rimangono ingiustificate?",
+  "narrative": [
+    "Dalla stazione di superficie giunge un catalogo terrestre: gli eventi registrati dall’USGS nel 2024 entro il rettangolo 32–42° N, 125–114° O. Ciascuna riga corrisponde a un terremoto, del quale sono riportati posizione, profondità e magnitudo. Prima di descriverne la distribuzione, occorre riconoscere che il campione dipende dall’area, dall’intervallo temporale e dalla soglia con cui è stata interrogata la banca dati.",
+    "L’istogramma permette di confrontare le frequenze, mentre il diagramma delle profondità conserva le osservazioni individuali. Al variare della soglia vengono esclusi eventi già presenti nella copia del catalogo: il controllo non recupera quelli al di sotto di magnitudo 3. Il numero delle classi modifica l’aspetto dell’istogramma senza modificare il campione.",
+    "La distribuzione descrive questa estrazione osservativa, nella quale possono convivere differenti scale di magnitudo. Una concentrazione di eventi non costituisce una previsione e, in assenza di uno studio della completezza del catalogo, non consente di stimare direttamente la frequenza di tutti i terremoti del territorio."
+  ],
+  "prerequisites": [
+    "M01",
+    "M03"
+  ],
+  "preparation": "Unità osservative, mediana, frequenze e lettura degli assi. Il percorso è guidato e non richiede modelli inferenziali.",
+  "steps": [
+    "Leggi le unità e individua la soglia applicata al catalogo; annota il numero di eventi disponibili.",
+    "Confronta soglie di magnitudo 3, 4 e 4,5, mantenendo costante il numero di classi.",
+    "Varia il numero di classi e spiega quali proprietà del campione restano identiche."
+  ],
+  "limitations": [
+    "Estrazione regionale e temporale delimitata; non è un campione casuale della sismicità mondiale.",
+    "Scale di magnitudo eterogenee: magType è conservato nel CSV e distingue i punti nel grafico.",
+    "La soglia di estrazione non dimostra la completezza del catalogo; repliche e sequenze possono introdurre dipendenza.",
+    "Le profondità possono essere negative rispetto al riferimento del catalogo; sono conservate, senza trasformarle arbitrariamente in zero."
+  ],
+  "sources": [
+    {
+      "label": "USGS — Earthquake Catalog, API FDSN",
+      "url": "https://earthquake.usgs.gov/fdsnws/event/1/"
+    },
+    {
+      "label": "USGS — definizioni del formato CSV",
+      "url": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/csv.php"
+    }
+  ],
+  "controls": [
+    {
+      "key": "min_mag",
+      "type": "number",
+      "label": "Magnitudo minima",
+      "value": 3,
+      "min": 3,
+      "max": 4.5,
+      "step": 0.1
+    },
+    {
+      "key": "bins",
+      "type": "number",
+      "label": "Classi dell’istogramma",
+      "value": 15,
+      "min": 6,
+      "max": 30,
+      "step": 1
+    },
+    {
+      "key": "seed",
+      "type": "number",
+      "label": "Seme riproducibile",
+      "help": "Il seme interviene soltanto nelle operazioni di campionamento; nei grafici descrittivi i risultati restano invariati.",
+      "value": 2026,
+      "min": 1,
+      "max": 9999,
+      "step": 1
+    }
+  ],
+  "code": "# Conserva gli eventi con misure finite e magnitudo sopra la soglia scelta.\nkeep <- is.finite(observations$mag) & is.finite(observations$depth) &\n  observations$mag >= p$min_mag\ndata <- observations[keep, , drop = FALSE]\nstopifnot(nrow(data) >= 2)\n\n# Riassume il campione selezionato; la mediana conserva l’unità della variabile.\nmetrics <- metric(\n  \"Eventi nel CSV\" = nrow(observations),\n  \"Eventi selezionati\" = nrow(data),\n  \"Mediana magnitudo\" = f(median(data$mag)),\n  \"Mediana profondità [km]\" = f(median(data$depth)),\n  \"Soglia magnitudo\" = p$min_mag\n)\n\n# Il numero di classi cambia la rappresentazione, non le osservazioni selezionate.\ng1 <- ggplot(data, aes(x = mag)) +\n  geom_histogram(bins = p$bins, fill = col_geo[1], colour = \"#F5F6F3\") +\n  labs(title = \"Magnitudo degli eventi selezionati\",\n       subtitle = \"Catalogo USGS · rettangolo californiano · anno 2024\",\n       x = \"Magnitudo riportata nel catalogo\", y = \"Numero di eventi\")\n\n# Colora le scale di magnitudo per rendere visibile l’eterogeneità del catalogo.\ntypes <- sort(unique(data$magType))\ng2 <- ggplot(data, aes(x = mag, y = depth, colour = magType)) +\n  geom_point(size = 2.3, alpha = 0.70) +\n  scale_colour_manual(values = setNames(rep(col_geo, length.out = length(types)), types)) +\n  labs(title = \"Profondità e magnitudo\", subtitle = \"Ogni punto rappresenta un evento; il colore identifica magType\",\n       x = \"Magnitudo\", y = \"Profondità [km]\")\nplots <- list(g1, g2)",
+  "formula": "\\widehat F_n(m)=\\frac{1}{n}\\sum_{i=1}^{n}\\mathbf{1}(M_i\\le m)",
+  "formulaExplanation": "La funzione empirica riassume le magnitudo Mᵢ degli n eventi selezionati. L’istogramma ne raggruppa i valori in classi; modificarne il numero cambia la rappresentazione, mentre il campione resta invariato."
+}

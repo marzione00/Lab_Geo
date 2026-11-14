@@ -3,7 +3,7 @@
 **Laboratori interattivi di statistica e coding R per le scienze della Terra**
 **Autore: Marzio De Corato** · Modulo didattico di [Topological Manifolds](https://marzione00.github.io/Personal_web_page/) ([repository del sito principale](https://github.com/marzione00/Personal_web_page)).
 
-Versione applicativa **3.6.0** · materiali didattici **R6** · lingua italiana
+Versione applicativa **4.0.0** · materiali didattici **R6** · lingua italiana
 
 GeoStat Lab accompagna lo studio dei metodi statistici attraverso 139 esperimenti nei quali, modificando parametri e ipotesi, si osservano le conseguenze sui dati simulati, sulle figure e sulle conclusioni. Ogni attività collega il problema scientifico al formalismo matematico e al programma R che ne produce i risultati. L’atlante di 17 pianeti rotanti organizza il percorso; le 11 spedizioni applicative riuniscono i metodi necessari ad affrontare un’indagine più articolata.
 
@@ -27,6 +27,27 @@ Tutti i 139 esperimenti espongono il proprio sorgente nel terminale R, con numer
 
 **Scarica R completo** include parametri commentati, funzioni comuni, corpo del programma e comandi di esportazione. I commenti vengono aggiunti senza cambiare le istruzioni eseguite. Il terminale usa gli stessi caratteri Nimbus e LMMono del corso, senza dipendenze esterne. La vista è mantenuta in `src/code-terminal.js` e `src/code-terminal.css`; `src/cosmos.js` e `src/cosmos-worker.js` gestiscono il paesaggio condiviso.
 
+## Soluzioni ragionate dei progetti
+
+Tutti i progetti attualmente disponibili hanno un terminale con tre accessi: **Suggerimento**, **Soluzione guidata** e **Codice completo**. Le spiegazioni collegano preparazione dei dati, metodo, diagnostica e interpretazione; i limiti dipendono dalla specifica indagine.
+
+Le cinque missioni su dati reali comprendono **23 passaggi eseguibili in R nel browser**. Ogni comando ricostruisce il prefisso del programma a partire dal campione verificato e dal seme: non mantiene una sessione nascosta fra due passaggi. I risultati intermedi possono contenere soltanto tabelle e statistiche. La soluzione completa produce figure, metriche e una lettura riferita ai parametri correnti. Modificando il codice si entra in una variante esplicita: il commento del modello originale rimane separato e il programma modificato è scaricabile. I pacchetti delle missioni includono `SOLUZIONE.txt`.
+
+Le undici spedizioni P01–P11 comprendono **44 passaggi spiegati**, con sorgenti completi formattati, commentati e scaricabili. Si eseguono in **R/RStudio locale**, estraendo l’archivio del corso e salvando lo script nella cartella `materiali`: producono file e P10 usa anche Git. Le istruzioni R dei derivati vengono confrontate con quelle degli originali; template, dati e presentazioni non cambiano.
+
+I 68 mondi complementari condividono ancora le cinque missioni del rispettivo livello. La presenza del terminale in ogni destinazione non equivale a 68 progetti differenti.
+
+Le guide sono mantenute in `content/solution-guides-research.json` e `content/course-solutions.json`; `scripts/prepare-course-solutions.R` genera il derivato formattato. La build ordinaria legge il derivato già incluso, senza richiedere R. Per rigenerare e verificare le soluzioni con R locale:
+
+```sh
+Rscript scripts/prepare-course-solutions.R
+node scripts/prepare-solution-documents.mjs /tmp/geostat-solution-stages.json
+Rscript scripts/check-solutions.R /tmp/geostat-solution-stages.json
+Rscript scripts/check-course-solutions.R
+npm run research:package
+npm test
+```
+
 ## Contenuti e funzioni
 
 | Ambito | Disponibilità |
@@ -47,17 +68,41 @@ Le simulazioni dichiarano le proprie ipotesi e impiegano dati sintetici. I risul
 
 La navigazione parte da una galassia tridimensionale con quattro bracci e fino a 120.000 stelle. I segmenti collegano le etichette a 17 punti stellari, ciascuno associato a un sistema. Un clic avvicina la camera e apre una stella con cinque pianeti esplorabili: in totale 85 mondi, di cui 17 destinazioni dei moduli.
 
-Ogni sistema estrae una stella fra quattro esempi coerenti di sequenza principale F, G, K e M. Il seme iniziale è stabile; **Nuova configurazione** produce un’altra estrazione nella sessione. Le schede riportano massa, raggio, temperatura e luminosità stellare; per i pianeti, semiasse maggiore, periodo orbitale, raggio, albedo, flusso e temperatura di equilibrio. Le relazioni fisiche e le ipotesi sono spiegate nella pagina, insieme alle fonti NASA.
+Ogni sistema estrae una stella fra quattro esempi coerenti di sequenza principale F, G, K e M. Il seme iniziale è stabile; **Nuova configurazione** produce un’altra estrazione e conserva il suo identificatore nel collegamento, ad esempio `#sistema-M01?v=18`. Le schede riportano massa, raggio, temperatura e luminosità stellare; per i pianeti, semiasse maggiore, periodo orbitale, raggio, albedo, flusso e temperatura di equilibrio. Le relazioni fisiche e le ipotesi sono spiegate nella pagina, insieme alle fonti NASA.
 
-Il clic su un pianeta apre un primo piano della superficie rotante e una scheda astronomica. **Localizza** identifica il mondo che ospita il modulo, mentre **Entra nel laboratorio** conduce agli esperimenti esistenti. La voce **Mappa stellare** usa lo stesso navigatore della home; l’indice testuale resta disponibile in `#catalogo`. I sistemi hanno collegamenti diretti `#sistema-M01` e analoghi.
+Il clic su un pianeta apre un primo piano della superficie rotante e una scheda astronomica. **Localizza** identifica il mondo che ospita il modulo, mentre **Entra nel modulo** conduce agli esperimenti esistenti. La voce **Mappa stellare** usa lo stesso navigatore della home; l’indice testuale resta disponibile in `#catalogo`. I sistemi hanno collegamenti diretti `#sistema-M01` e analoghi.
 
-La galassia e i sistemi sono modelli illustrativi: raggi visivi e distanze non sono in scala. Le orbite circolari conservano i rapporti fra i periodi con un’unica scala temporale. Le superfici dei mondi immaginari sono procedurali, rigenerate a 2048 × 1024 pixel. Anche Terra è un nome convenzionale della destinazione didattica; i sistemi non sono un catalogo astronomico osservato.
+I 17 pianeti del corso hanno richiami ciano e un doppio anello; i 68 pianeti complementari hanno richiami ambra e un simbolo della disciplina. Le schede distinguono l’appartenenza al percorso dal livello didattico e indicano la preparazione consigliata. Tutti i mondi restano accessibili, senza blocchi.
+
+**Avvia il mini-progetto**, oppure **Accedi all’osservatorio** nei giganti gassosi, apre una delle cinque missioni su dati osservati descritte di seguito. La sezione «Il sistema immaginario» conserva sei temi astronomici di contesto, il confronto dei cinque mondi esportabile in CSV, formule, ipotesi e fonti NASA/USGS. Il taccuino delle esplorazioni conserva risposte e autovalutazioni separatamente dal taccuino del corso; una visita non registra un completamento. Le annotazioni sono locali ed esportabili in JSON.
+
+La galassia e i sistemi sono modelli illustrativi: raggi visivi e distanze non sono in scala. Le orbite circolari conservano i rapporti fra i periodi con un’unica scala temporale. Le superfici dei mondi immaginari sono procedurali; le tredici famiglie complementari dispongono di texture 2K e 4K per gli avvicinamenti WebGL desktop compatibili. Anche Terra è un nome convenzionale della destinazione didattica; i sistemi non sono un catalogo astronomico osservato.
 
 WebGL usa sfere, particelle e texture locali, senza dipendenze grafiche esterne. Canvas 2D mantiene la proiezione tridimensionale, la selezione, le superfici rotanti e l’illuminazione stellare, con semplificazioni grafiche. I menu testuali funzionano anche senza renderer. Pausa e preferenza di movimento ridotto sono rispettate. Architettura e limiti sono descritti nella [guida dell’atlante](docs/ATLANTE_PLANETARIO.md).
 
+## Missioni su dati osservati
+
+L’atlante associa i 68 mondi complementari a 13 famiglie originali e cinque gradi di difficoltà. Le **cinque missioni** sono condivise dai mondi di pari livello: non si tratta di 68 dataset o progetti distinti. I 17 pianeti del corso conservano la propria identità.
+
+| Livello | Ambienti narrativi | Missione e archivio |
+|---|---|---|
+| L1 · Introduttivo | Gaia, temperato | Catalogo sismico USGS, California 2024 |
+| L2 · Fondamentale | Oceanico, forestale, pianure | Diametro e albedo, NASA/JPL SBDB |
+| L3 · Intermedio | Paludoso, desertico, artico | Ghiaccio artico, NOAA/NSIDC Sea Ice Index v4 |
+| L4 · Avanzato | Roccioso, sterile, vulcanico | Brillamenti solari NOAA GOES, 2003 |
+| L5 · Ricerca | Atmosfera corrosiva, gigante gassoso | Massa–raggio e verifica per sistema, NASA Exoplanet Archive |
+
+L’ospitalità è una metafora didattica riferita all’esploratore umano, non un indice astronomico. Nei giganti gassosi si accede a un osservatorio orbitale. Le texture sono originali: 2K per la vista ordinaria e 4K caricate progressivamente negli avvicinamenti WebGL desktop compatibili; il rendering software e mobile conserva il livello 2K.
+
+Ogni missione comprende prosa, formula con simboli e unità, controlli interattivi, codice R commentato, figure ggplot e un archivio `project.zip` autonomo. Dati, risposte originali e provenienza si trovano in `assets/research/<id>/`; i metadati didattici in `content/research-<id>.json`. Il motore verifica SHA-256 del CSV locale prima di eseguire R, senza interrogare API esterne durante la visita. La data di acquisizione e la selezione del campione sono esplicite.
+
+Per rigenerare figure e verifiche con R, installare `ggplot2` e `jsonlite`, quindi eseguire `npm run research:check` e `npm run research:package`. Il controllo nativo verifica 143 combinazioni iniziali ed estreme; `qa/research-r.json` riporta ambiente e risultati. I dati vengono aggiornati soltanto con una nuova acquisizione documentata, mantenendo risposte originali, filtri e impronte.
+
+Le annotazioni rimangono nel taccuino delle esplorazioni e non modificano il progresso del corso. Il completamento richiede un’esplicita autovalutazione.
+
 ## Avvio rapido
 
-Occorrono **Node.js 22 o successivo** e un browser aggiornato con JavaScript e WebAssembly. Node 22 e Ubuntu 24.04 costituiscono l’ambiente della pipeline GitHub; Python 3.12 serve soltanto per i test Playwright. La consultazione del sito non richiede un’installazione locale di R.
+Occorrono **Node.js 22 o successivo** e un browser aggiornato con JavaScript e WebAssembly. Node 22 e Ubuntu 24.04 costituiscono l’ambiente della pipeline GitHub; Python 3.12 serve anche ai controlli degli archivi, alla preparazione dei materiali e ai test Playwright. La consultazione del sito non richiede un’installazione locale di R.
 
 Dopo aver estratto lo ZIP, aprire un terminale nella directory che contiene `package.json`:
 
@@ -125,6 +170,7 @@ I CSV esportati neutralizzano le celle testuali che potrebbero essere interpreta
 |---|---|
 | `src/` | Interfaccia, navigazione, grafica dei pianeti e gestione dei laboratori |
 | `src/security.js` | Validazione di configurazioni, parametri, risultati, SVG e CSV |
+| `src/html.js` | Escaping unico dell’HTML, template con escaping automatico e politica Trusted Types |
 | `content/experiments.json` | Catalogo scientifico, codice e controlli dei 139 esperimenti |
 | `content/catalogue.json` | Indice delle unità e dei materiali |
 | `moduli/` | Scheda e contenuto strutturato di ciascuna unità |
@@ -138,7 +184,7 @@ I CSV esportati neutralizzano le celle testuali che potrebbero essere interpreta
 | `tests/` | Test funzionali, matematici e di regressione della sicurezza |
 | `.github/` | CI, pubblicazione Pages, CodeQL e Dependabot |
 | `docs/` e `qa/` | Documentazione e rapporti di verifica |
-| `dist/` | Output generato, escluso dal repository e dallo ZIP sorgente |
+| `dist/` | Output generato, escluso dal repository e dallo ZIP sorgente; comprende `percorso/`, una pagina testuale senza script per ogni modulo |
 
 Il browser carica il catalogo, apre il laboratorio selezionato e avvia R in un worker. Parametri e codice producono tabelle, riepiloghi e figure ggplot2; l’interfaccia verifica il formato prima di mostrarli. Appunti e progresso restano nel `localStorage` del dispositivo. Non sono presenti backend applicativo, database, account degli studenti, analytics o servizi di caricamento dei loro dati.
 
@@ -150,7 +196,7 @@ La versione 3.1 introduce verifiche agli ingressi, controlli sui risultati e pro
 |---|---|
 | URL e JSON importati | Formato, dimensioni, profondità, chiavi ammesse, tipi e domini dei parametri |
 | Codice R personalizzato | Revisione esplicita prima dell’esecuzione; ricalcolo automatico disattivato all’importazione |
-| Pagina web | Escaping dell’output, CSP senza JavaScript inline o `unsafe-eval`, SRI su script e stili |
+| Pagina web | Escaping centralizzato, CSP senza JavaScript inline o `unsafe-eval`, Trusted Types obbligatori per HTML e URL di script, SRI su script, stili e dati caricati su richiesta |
 | Risultati R | Contratto strutturale, limiti di righe, colonne, figure e dimensione |
 | SVG scaricabili | Elementi grafici ammessi; rifiuto di script, eventi, contenuti HTML e riferimenti esterni |
 | CSV | Neutralizzazione delle celle testuali interpretabili come formule |
@@ -169,7 +215,11 @@ Non viene dichiarata un’immunità agli attacchi, né una certificazione OWASP.
 
 | Comando | Verifica |
 |---|---|
-| `npm test` | Test Node, build, copertura dei materiali, protocollo HTTP e controlli di sicurezza |
+| `npm test` | Test Node, lint, ordine delle dipendenze fra script, build, copertura dei materiali, protocollo HTTP e controlli di sicurezza |
+| `npm run lint` | ESLint, Stylelint e Prettier; il numero di funzioni oltre la complessità 15 non può aumentare (`qa/lint-baseline.json`) |
+| `npm run check:modules` | Ogni variabile globale letta durante il caricamento è definita da uno script precedente in `index.html` |
+| `npm run coverage` | Copertura dei sorgenti di `src/` raggiunta dai test Node |
+| `node scripts/characterize-routes.mjs` | Istantanee jsdom di 32 rotte, da confrontare prima e dopo un refactoring |
 | `npm run test:consistency` | Coerenza editoriale, schede dei moduli, copie del catalogo, archivi scaricabili e collegamenti locali |
 | `npm run test:dom` | Navigazione, 1.730 espressioni matematiche, compatibilità SVG e blocco dell’esecuzione automatica del codice importato |
 | `npm run test:security` | Regressioni degli ingressi e controllo di dipendenze, CSP, SRI e workflow; richiede `dist/` aggiornato |
@@ -190,7 +240,7 @@ npm run test:browser
 
 I test browser producono schermate, esito JSON e una traccia in `qa/browser/`; GitHub conserva la diagnostica per sette giorni anche quando il collaudo fallisce. CodeQL è configurato per repository pubblici; nei repository privati richiede il relativo servizio GitHub e l’abilitazione esplicita tramite variabile `ENABLE_PRIVATE_CODEQL=true`.
 
-Dependabot propone aggiornamenti settimanali. Ogni modifica a webR, ai pacchetti R, alla CSP o a MathJax richiede un nuovo collaudo dei calcoli e delle formule, oltre all’aggiornamento motivato dei manifesti. Le impronte non devono essere rigenerate automaticamente per far passare una verifica fallita. La revisione strutturale 3.2.2 è documentata in [docs/REVISIONE_3_2_2.md](docs/REVISIONE_3_2_2.md); le successive correzioni sono in [CHANGELOG.md](CHANGELOG.md); i rapporti storici conservano la propria data e il proprio ambito.
+Dependabot propone aggiornamenti settimanali. Ogni modifica a webR, ai pacchetti R, alla CSP o a MathJax richiede un nuovo collaudo dei calcoli e delle formule, oltre all’aggiornamento motivato dei manifesti. Le impronte non devono essere rigenerate automaticamente per far passare una verifica fallita. Il controllo sistematico corrente è documentato in [docs/REVISIONE_4_0_0.md](docs/REVISIONE_4_0_0.md); le correzioni precedenti sono in [CHANGELOG.md](CHANGELOG.md); i rapporti storici conservano la propria data e il proprio ambito.
 
 ## Moduli e spedizioni
 
@@ -232,6 +282,7 @@ Dependabot propone aggiornamenti settimanali. Ogni modifica a webR, ai pacchetti
 - [CONTRIBUTING.md](CONTRIBUTING.md): modifiche al codice e ai contenuti scientifici.
 - [CHANGELOG.md](CHANGELOG.md): registro delle versioni.
 - [docs/SICUREZZA.md](docs/SICUREZZA.md): modello di minaccia e controlli.
+- [docs/REVISIONE_3_9_1.md](docs/REVISIONE_3_9_1.md): controllo sistematico di coerenza, correzioni e limiti della copertura.
 - [docs/REVISIONE_3_2_2.md](docs/REVISIONE_3_2_2.md): rilievi, correzioni, verifiche e limiti della revisione 3.2.2.
 - [docs/CORREZIONE_LAYOUT_3_1_2.md](docs/CORREZIONE_LAYOUT_3_1_2.md): correzione mobile e verifiche della versione 3.1.2.
 - [docs/CONSOLIDAMENTO_3_1_1.md](docs/CONSOLIDAMENTO_3_1_1.md): revisione delle stratificazioni e collaudo della versione 3.1.1.

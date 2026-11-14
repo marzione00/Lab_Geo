@@ -1,5 +1,51 @@
 # Registro delle modifiche
 
+## 4.0.0: revisione della qualità del codice e del sito
+
+- Nessuno scorrimento laterale a 320 px; lo spostamento del layout al primo caricamento scende da 0,70–0,98 a non oltre 0,002.
+- Con grafica software (SwiftShader, llvmpipe) o con fotogrammi lenti, pianeti e vista di sistema passano al renderer canvas; il thread principale resta libero.
+- Campi estesi degli esperimenti e soluzioni ragionate caricati soltanto nelle viste che li usano: la parte comune della pagina scende da 1,11 MB a 0,63 MB, e da 314 a 188 KB compressi.
+- Nessuna violazione axe-core sulle 254 rotte raggiungibili, a 390 e a 1440 px; codice e formule scorrevoli raggiungibili da tastiera; avviso quando il browser non conserva gli appunti.
+- Escaping centralizzato in `src/html.js`, Trusted Types obbligatori nella CSP, verifica delle versioni dei pacchetti R rispetto al lock.
+- Sorgenti formattati con Prettier; ESLint, Stylelint e Prettier in `npm test` con soglia di complessità non crescente; controllo dell’ordine delle dipendenze fra script; copertura misurabile; scomposte le cinque funzioni più complesse con verifica di equivalenza.
+- CSS ripulito: 104 dichiarazioni inattive rimosse, una sola definizione della tavolozza, breakpoint da 14 a 11.
+- Metadati Open Graph con immagine di anteprima, titoli dei laboratori e 29 pagine testuali senza script in `percorso/`; conteggi della pagina derivati dai dati.
+- Dal controllo finale del pacchetto: la verifica dei pacchetti R interroga soltanto i pacchetti del lock e non scarica più 3,4 MB inutilizzati; il controllo dei fotogrammi lenti usa la mediana degli ultimi otto intervalli e interviene anche sulla pagina di modulo; l’anteprima verificata di un laboratorio resta leggibile mentre R la ricalcola.
+- Dettagli e motivazioni in [docs/REVISIONE_4_0_0.md](docs/REVISIONE_4_0_0.md).
+
+## 3.9.1 — Coerenza dei percorsi, delle soluzioni e dei risultati
+
+- Rimosso il secondo navigatore per passi e il download duplicato nei terminali dei progetti; lettura autonoma degli esperimenti preservata.
+- Configurazione stellare conservata nei collegamenti e nel ritorno dall’esplorazione, anche dopo ricaricamento.
+- Interruzione efficace anche durante il caricamento del campione, con possibilità di ripetere il calcolo.
+- Ordinamento dei sistemi di esopianeti indipendente dalla lingua del sistema operativo; anteprime, soluzioni e programmi riallineati.
+- Controllo dei byte e dei membri dei cinque pacchetti osservativi, delle guide derivate e dei programmi scaricabili.
+- Documentazione corrente riallineata alle funzioni disponibili; corretta la distinzione fra cinque missioni, sei temi astronomici e tredici famiglie. I 68 mondi condividono ancora cinque progetti.
+
+## 3.9.0 — Soluzioni ragionate e terminali dei progetti
+
+- Cinque mini-progetti con 23 passaggi spiegati ed eseguibili, suggerimenti progressivi, interpretazioni specifiche e programmi completi.
+- Undici spedizioni del corso con 44 passaggi e script R formattati, equivalenti agli originali e scaricabili per RStudio; requisiti locali espliciti.
+- Varianti modificabili ed esportabili, separate dall’interpretazione di riferimento. Tabelle dei risultati intermedi e stato dei risultati aggiornato dopo modifiche dei parametri.
+- Guide testuali nei pacchetti delle cinque missioni. Nessun cambiamento ai dati, alle presentazioni o ai 139 esperimenti esistenti.
+
+## 3.8.0 — Ambienti planetari e missioni su dati reali
+
+- Tredici famiglie visive originali, livelli L1–L5 e texture 2K/4K.
+- Cinque progetti osservativi con campioni ufficiali congelati, provenienza, formule, codice R commentato e pacchetti autonomi.
+- Associazione coerente dei mondi complementari a missioni condivise dello stesso livello; identità dei pianeti del corso conservata.
+- Verifica SHA-256 dei campioni, stato esplicito dei risultati dopo modifiche e annullamento del calcolo.
+- 143 scenari R nativi; test aggiuntivi su famiglie, missioni, archivi e integrità dei dati.
+- Compattazione dei soli SVG generati durante la build: 17,6 MB risparmiati, con confronto pixel per pixel identico per tutte le 1.123 slide e figure pubblicate. Sorgenti originali conservati.
+
+## 3.7.0 — Percorso del corso ed esplorazioni complementari
+
+- Distinzione visiva dei 17 mondi del corso e delle 68 destinazioni complementari mediante colore, anelli, simboli ed etichette testuali.
+- Livello indipendente dall’appartenenza, preparazione consigliata e collegamenti diretti al modulo.
+- Sei letture scientifiche riutilizzate per tipologia di mondo, con domande, confronto dei parametri sintetici, formule, fonti NASA/USGS ed esportazione CSV.
+- Taccuino separato delle esplorazioni: salvataggio esplicito, conclusione per autovalutazione ed esportazione JSON, senza modificare il progresso del corso.
+- Anteprime al puntamento e da tastiera, pulsanti di accesso e impaginazione adattiva. Nessuna nuova dipendenza.
+
 ## 3.6.0 — Paesaggio cosmico e terminale R
 
 - Sfondo procedurale condiviso: nebulose, polveri, stelle con parallasse e galassie lontane; generazione della texture in un worker locale.

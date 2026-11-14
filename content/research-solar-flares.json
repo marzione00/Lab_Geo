@@ -1,0 +1,94 @@
+{
+  "id": "solar-flares",
+  "worldId": "M14-c",
+  "level": 4,
+  "title": "Quando il sensore raggiunge il limite",
+  "question": "L’associazione fra durata e irradiamento di picco dei brillamenti solari del 2003 rimane simile dopo aver cambiato soglia di selezione e trattamento degli eventi in sequenza?",
+  "narrative": [
+    "Dall’osservatorio della spedizione esamini un archivio del Sole, nel quale ogni riga descrive un brillamento rilevato dai satelliti GOES. Il catalogo scientifico del 2003 comprende eventi di intensità molto diversa e due picchi segnalati come saturati: quando lo strumento raggiunge il proprio limite, il valore registrato non può essere trattato come una misura esatta della massima intensità.",
+    "La durata viene ricavata dalla differenza fra gli istanti di fine e di inizio, espressa in minuti; la fine segue la definizione operativa del catalogo. Il programma seleziona gli eventi con durata disponibile e positiva, applica la soglia di irradiamento scelta ed esclude sempre i picchi saturati dalla regressione. Il controllo sulle sequenze permette di confrontare tutti gli eventi ammissibili con quelli che occupano la prima posizione nella sequenza, senza presumere che questi ultimi siano fisicamente isolati.",
+    "Poiché durata e irradiamento coprono più ordini di grandezza, la relazione viene riassunta mediante log10(I) = α + β log10(D) + ε. Le grandezze I e D sono espresse rispettivamente in W/m² e minuti; β descrive un’associazione nel campione selezionato. La missione si conclude confrontando le pendenze e i residui fra configurazioni, discutendo come i dati mancanti, la saturazione e le soglie di selezione limitino l’interpretazione."
+  ],
+  "prerequisites": [
+    "M05",
+    "M07",
+    "M14"
+  ],
+  "preparation": "Trasformazioni logaritmiche, regressione, selezione del campione e interpretazione dei controlli di qualità.",
+  "steps": [
+    "Esegui la configurazione iniziale e ricostruisci, dai conteggi, quanti eventi arrivino alla regressione e per quali motivi altri ne siano esclusi.",
+    "Passa dalla soglia C alla soglia M e confronta pendenza e correlazione di Spearman; osserva come cambia la regione dello spazio dei dati.",
+    "Ripeti l’analisi usando solo il primo evento di ciascuna sequenza e valuta i residui; presenta una conclusione che espliciti il campione a cui si riferisce."
+  ],
+  "limitations": [
+    "I tempi sono riferiti alla definizione operativa GOES; una durata mancante non viene ricostruita né sostituita con zero.",
+    "Il segnale XRS-B è un irradiamento di picco mediato su un minuto, non l’energia totale emessa dal brillamento.",
+    "I valori saturati sono esclusi da ogni modello. La selezione dei soli eventi con fine disponibile può introdurre distorsioni.",
+    "L’analisi riguarda il 2003, con soglie configurabili e dipendenze fra eventi possibili; non stima frequenze complete, causalità, pericolosità terrestre o previsioni operative."
+  ],
+  "sources": [
+    {
+      "label": "NOAA NCEI · GOES Flare Report, guida e limiti",
+      "url": "https://data.ngdc.noaa.gov/platforms/solar-space-observing-satellites/goes/goes16/l2/docs/GOES_Flare_Report_ReadMe.pdf"
+    },
+    {
+      "label": "NOAA NCEI · Archivio scientifico GOES XRS",
+      "url": "https://www.ncei.noaa.gov/products/goes-r-extreme-ultraviolet-xray-irradiance"
+    },
+    {
+      "label": "NOAA NCEI · CSV annuali e metadati",
+      "url": "https://data.ngdc.noaa.gov/platforms/solar-space-observing-satellites/goes/multi/l2/data/xrsf-l2-flrpt_science/csv/"
+    }
+  ],
+  "controls": [
+    {
+      "key": "minimum_class",
+      "type": "select",
+      "label": "Soglia minima di irradiamento",
+      "value": "C",
+      "options": [
+        {
+          "value": "B",
+          "label": "B: almeno 10⁻⁷ W/m²"
+        },
+        {
+          "value": "C",
+          "label": "C: almeno 10⁻⁶ W/m²"
+        },
+        {
+          "value": "M",
+          "label": "M: almeno 10⁻⁵ W/m²"
+        }
+      ]
+    },
+    {
+      "key": "sequence",
+      "type": "select",
+      "label": "Eventi nelle sequenze",
+      "value": "all",
+      "options": [
+        {
+          "value": "all",
+          "label": "Tutte le posizioni"
+        },
+        {
+          "value": "first",
+          "label": "Solo il primo evento"
+        }
+      ]
+    },
+    {
+      "key": "seed",
+      "type": "number",
+      "label": "Seme riproducibile",
+      "help": "Riservato a eventuali estensioni campionarie; il calcolo corrente è deterministico.",
+      "value": 2026,
+      "min": 1,
+      "max": 9999,
+      "step": 1
+    }
+  ],
+  "code": "# I tempi sono UTC; la durata termina secondo la definizione operativa dell'archivio GOES.\ndata <- observations\nstart <- as.POSIXct(data$start_time, format = '%Y-%m-%d %H:%M:%S', tz = 'UTC')\nend <- as.POSIXct(data$end_time, format = '%Y-%m-%d %H:%M:%S', tz = 'UTC')\ndata$duration_minutes <- as.numeric(difftime(end, start, units = 'mins'))\nvalid <- is.finite(data$duration_minutes) & data$duration_minutes > 0 &\n  is.finite(data$xrsb_irrad) & data$xrsb_irrad > 0\nmissing_duration <- sum(!valid)\n\n# La soglia di irradiamento seleziona un sottocampione; non corregge la completezza del catalogo.\nthreshold <- switch(p$minimum_class, B = 1e-7, C = 1e-6, M = 1e-5)\nselection <- valid & data$xrsb_irrad >= threshold\nif (p$sequence == 'first') selection <- selection & data$sequential_flare_num == 1\nselected <- data[selection, ]\n\n# I picchi saturati rimangono visibili nel conteggio ma sono sempre esclusi dalla regressione.\nsaturated <- selected[selected$peak_saturated == 1, ]\ndata <- selected[!is.na(selected$peak_saturated) & selected$peak_saturated == 0, ]\nstopifnot(nrow(data) >= 10)\ndata$log_duration <- log10(data$duration_minutes)\ndata$log_irradiance <- log10(data$xrsb_irrad)\n\n# La retta riassume l'associazione logaritmica; le osservazioni non identificano un rapporto causale.\nfit <- lm(log_irradiance ~ log_duration, data = data)\ndata$fitted_log_irradiance <- as.numeric(predict(fit))\ndata$residual_log_irradiance <- resid(fit)\nrho <- cor(data$duration_minutes, data$xrsb_irrad, method = 'spearman')\nmetrics <- metric('Eventi nel file originale' = nrow(observations),\n  'Durata o intensità non utilizzabile' = missing_duration,\n  'Eventi selezionati prima del controllo saturazione' = nrow(selected),\n  'Picchi saturati esclusi dal modello' = nrow(saturated),\n  'Eventi nel modello' = nrow(data),\n  'Pendenza in scala log10' = f(unname(coef(fit)[2])),\n  'Correlazione di Spearman' = f(rho))\n\n# Assi logaritmici mantengono visibili eventi che differiscono per diversi ordini di grandezza.\ng1 <- ggplot(data, aes(duration_minutes, xrsb_irrad)) +\n  geom_point(colour = '#BC5B35', alpha = 0.5, size = 1.9) +\n  geom_smooth(method = 'lm', formula = y ~ x, se = FALSE, colour = '#168B9C', linewidth = 1.1) +\n  scale_x_log10() + scale_y_log10() +\n  labs(title = 'Brillamenti solari · GOES 2003',\n    subtitle = 'Soli picchi non saturati · regressione descrittiva in scala logaritmica',\n    x = 'Durata [minuti; scala log10]', y = 'Irradiamento di picco [W/m2; scala log10]')\n\n# Il grafico dei residui aiuta a riconoscere dispersione variabile e forme non lineari.\ng2 <- ggplot(data, aes(fitted_log_irradiance, residual_log_irradiance)) +\n  geom_hline(yintercept = 0, colour = '#64748B', linetype = 2) +\n  geom_point(colour = '#7054A4', alpha = 0.5, size = 1.9) +\n  labs(title = 'Diagnostica della relazione durata–irradiamento',\n    subtitle = 'Confrontare soglie e primi eventi di sequenza prima di interpretare la pendenza',\n    x = 'Valore stimato [log10 W/m2]', y = 'Residuo [log10 W/m2]')\nplots <- list(g1, g2)\n",
+  "formula": "\\log_{10} I_i=\\alpha+\\beta\\log_{10} d_i+\\varepsilon_i",
+  "formulaExplanation": "Iᵢ e dᵢ sono i valori numerici dell’irradiamento di picco in W/m² e della durata in minuti. Il modello viene stimato sugli eventi selezionati con picchi non saturati. La pendenza descrive un’associazione nel campione, soggetta alle soglie di rilevazione e ai criteri di selezione."
+}

@@ -1,0 +1,251 @@
+{
+  "usgs-quakes": {
+    "introduction": "Il catalogo consente di descrivere gli eventi che soddisfano una selezione documentata. La soluzione separa quindi le decisioni che cambiano le osservazioni da quelle che ne modificano soltanto la rappresentazione, affinché l’effetto della soglia possa essere distinto dall’effetto delle classi dell’istogramma.",
+    "hints": [
+      "Controlla quali condizioni compongono il vettore keep: una riga entra nel campione soltanto quando le soddisfa tutte.",
+      "Prima di confrontare due istogrammi, annota numerosità e soglia. Il numero delle classi compare nella selezione delle righe oppure soltanto nella costruzione della figura?",
+      "Nel diagramma profondità–magnitudo, confronta anche i colori: la colonna magType permette di riconoscere le scale di magnitudo presenti nella stessa estrazione."
+    ],
+    "stages": [
+      {
+        "title": "Delimitare gli eventi osservati",
+        "explanation": "Il vettore logico keep richiede magnitudo e profondità finite e applica la soglia scelta. L’operatore & impone che le condizioni siano soddisfatte congiuntamente; la selezione delle righe conserva poi tutte le colonne, comprese quelle necessarie per riconoscere provenienza e tipo di magnitudo. Le profondità negative rimangono ammesse, poiché una misura rispetto al riferimento del catalogo non può essere corretta arbitrariamente imponendole lo zero.",
+        "blocks": [0],
+        "observe": "Leggi le prime righe della tabella selezionata e confrontane la numerosità con le 459 osservazioni del CSV. Elevando la soglia puoi soltanto escludere eventi dalla copia disponibile."
+      },
+      {
+        "title": "Descrivere il campione con quantità leggibili",
+        "explanation": "Le mediane riassumono la posizione centrale delle distribuzioni senza richiedere un modello probabilistico. La profondità mediana resta espressa in chilometri, mentre la magnitudo mantiene la scala riportata nel catalogo. Affiancare le due numerosità rende visibile quanto della raccolta iniziale partecipi effettivamente al riepilogo.",
+        "blocks": [1],
+        "observe": "Con la soglia iniziale pari a 3, il riepilogo di riferimento contiene 459 eventi, magnitudo mediana 3,33 e profondità mediana 9,32 km. Dopo una nuova selezione, interpreta le metriche prodotte da quel calcolo."
+      },
+      {
+        "title": "Separare frequenze e scelta delle classi",
+        "explanation": "geom_histogram suddivide l’asse delle magnitudo in intervalli e conta le osservazioni che vi ricadono. Modificare bins cambia i confini delle classi e l’altezza delle colonne; poiché data rimane identica, mediana e numerosità devono conservarsi quando la soglia è fissa. La frequenza di una classe dipende pertanto anche dalla sua ampiezza.",
+        "blocks": [2],
+        "observe": "Confronta una rappresentazione con poche classi e una con molte classi, mantenendo la stessa soglia. Verifica quali irregolarità siano stabili e quali compaiano soltanto dopo il cambiamento della partizione."
+      },
+      {
+        "title": "Riconoscere l’eterogeneità delle misure",
+        "explanation": "Il secondo grafico restituisce a ogni terremoto un punto, evitando che l’aggregazione in classi nasconda la dispersione delle profondità. Il colore identifica magType, per cui osservazioni ottenute con scale differenti restano distinguibili. La lista plots raccoglie entrambe le figure affinché la lettura delle frequenze possa essere affiancata a quella delle singole misure.",
+        "blocks": [3],
+        "observe": "Esamina la sovrapposizione delle categorie magType e la dispersione verticale. Una concentrazione di punti descrive questa estrazione regionale del 2024; per trasformarla in una stima della sismicità occorrerebbe valutare anche completezza e dipendenza degli eventi."
+      }
+    ],
+    "interpretation": [
+      "La configurazione iniziale verificata in R 4.5.0, con soglia 3 e 15 classi, conserva tutti i 459 eventi; le mediane sono 3,33 per la magnitudo e 9,32 km per la profondità. Questi valori costituiscono il riferimento della copia pubblicata. Una diversa soglia definisce un altro insieme osservativo, mentre una diversa scelta delle classi conserva le medesime statistiche quando la selezione rimane fissa.",
+      "La risposta alla domanda richiede due confronti separati: dapprima si modifica la soglia conservando il numero delle classi, quindi si varia la rappresentazione del medesimo campione. Si può così attribuire il cambiamento a una selezione delle osservazioni oppure alla loro aggregazione grafica. L’estrazione non permette, da sola, di prevedere un terremoto né di confrontare la pericolosità di territori diversi."
+    ],
+    "alternatives": [
+      "Affiancare all’istogramma la funzione di distribuzione empirica permetterebbe di confrontare le soglie senza introdurre una scelta del numero delle classi.",
+      "Un confronto separato per magType potrebbe rendere più omogenea la descrizione, purché la riduzione della numerosità e la diversa copertura delle scale vengano documentate."
+    ],
+    "pitfalls": [
+      "L’aumento della magnitudo mediana dopo l’esclusione degli eventi più piccoli è coerente con il filtro applicato: non dimostra un cambiamento temporale del processo sismico.",
+      "La soglia di interrogazione del catalogo e la magnitudo di completezza sono concetti distinti; la prima, già fissata nella copia a magnitudo 3, non determina automaticamente la seconda."
+    ]
+  },
+  "jpl-asteroids": {
+    "introduction": "La relazione fra diametro e albedo viene osservata attraverso un catalogo nel quale la disponibilità delle misure può essere selettiva. La soluzione conserva perciò due denominatori: tutti gli asteroidi estratti e quelli che possiedono entrambe le grandezze richieste. Solo dopo questa distinzione applica il limite dimensionale e descrive l’associazione.",
+    "hints": [
+      "Conta separatamente diametri utilizzabili e albedo utilizzabili, poi determina quante righe soddisfino entrambe le condizioni.",
+      "La correlazione di Spearman confronta i ranghi: una trasformazione strettamente crescente del diametro, come il logaritmo sui valori positivi, ne conserva l’ordinamento.",
+      "Quando elevi il diametro minimo, controlla il numero degli oggetti selezionati prima di confrontare la nuova correlazione con quella iniziale."
+    ],
+    "stages": [
+      {
+        "title": "Distinguere disponibilità e selezione",
+        "explanation": "has_diameter richiede un diametro finito e positivo, condizione necessaria anche per rappresentarlo su un asse logaritmico. has_albedo richiede una misura finita e non negativa. La congiunzione complete individua le coppie utilizzabili prima che sia applicata la soglia dimensionale, evitando che assenza della misura e piccolo diametro vengano confusi.",
+        "blocks": [0],
+        "observe": "Il campione originario comprende 2.500 asteroidi; 2.430 possiedono una coppia diametro–albedo utilizzabile. Queste quantità restano riferite al CSV originario anche quando cambia il limite di diametro."
+      },
+      {
+        "title": "Valutare un’associazione di rango",
+        "explanation": "Dopo aver selezionato gli oggetti con diametro almeno pari alla soglia, cor con method = 'spearman' misura l’associazione fra gli ordinamenti delle due variabili. Il coefficiente descrive una tendenza monotona e può essere interpretato insieme alla dispersione dei punti; il filtro ridefinisce la popolazione osservata, per cui il suo effetto va distinto da una modifica del metodo di calcolo.",
+        "blocks": [1],
+        "observe": "Al limite iniziale di 20 km rimangono 1.471 asteroidi, con diametro mediano 44,7 km e correlazione di Spearman −0,313. Confronta sempre correlazione e numerosità della stessa configurazione."
+      },
+      {
+        "title": "Rendere confrontabili gli ordini di grandezza",
+        "explanation": "La trasformazione dell’asse orizzontale rende leggibili diametri molto diversi, conservando sull’asse le unità in chilometri. L’albedo geometrica è adimensionale; la sua dispersione verticale mostra quanto oggetti di dimensioni simili possano differire nella riflettività misurata. La scelta dell’asse migliora la lettura senza introdurre una regressione né modificare la correlazione già calcolata sui ranghi.",
+        "blocks": [2],
+        "observe": "Segui l’andamento complessivo della nube e individua regioni del diagramma nelle quali il catalogo appare poco popolato. L’assenza di punti può dipendere anche dalle modalità con cui gli oggetti sono stati osservati e caratterizzati."
+      },
+      {
+        "title": "Conservare visibile ciò che manca",
+        "explanation": "La tabella availability riporta, per ciascuna grandezza, le misure utilizzabili e quelle assenti o non valide prima della selezione dimensionale. Il diagramma a colonne conserva quindi un’informazione che il solo grafico delle coppie complete perderebbe. Poiché i conteggi sono marginali, le due colonne non identificano direttamente quali asteroidi manchino di entrambe le misure.",
+        "blocks": [3],
+        "observe": "Verifica che le colonne della disponibilità restino invariate al cambiare della soglia, mentre il numero degli oggetti nel diagramma di dispersione può diminuire."
+      }
+    ],
+    "interpretation": [
+      "Il riferimento verificato in R 4.5.0 seleziona 1.471 oggetti sopra 20 km fra le 2.430 coppie utilizzabili; il diametro mediano è 44,7 km e la correlazione di Spearman è −0,313. Il segno negativo indica che, in questo sottoinsieme, ai ranghi maggiori del diametro tendono ad associarsi ranghi minori dell’albedo. La dispersione osservata rimane parte essenziale del risultato.",
+      "Per stabilire quanto l’associazione dipenda dal limite dimensionale occorre ripetere l’analisi, conservando per ogni configurazione soglia, numerosità e coefficiente. Il confronto riguarda un catalogo delimitato di asteroidi numerati; la disponibilità selettiva delle misure e i metodi con cui esse sono ottenute impediscono di attribuire automaticamente l’associazione a un solo meccanismo fisico."
+    ],
+    "alternatives": [
+      "Un confronto fra fasce di diametro definite prima dell’analisi permetterebbe di descrivere come cambi la distribuzione dell’albedo entro intervalli dimensionali distinti.",
+      "Qualora si introduca un modello quantitativo delle misure, le incertezze dei diametri e il processo di selezione dovrebbero essere trattati esplicitamente, anziché dedotti dalla sola dispersione dei punti."
+    ],
+    "pitfalls": [
+      "L’albedo geometrica del catalogo non coincide con l’albedo di Bond impiegata nel bilancio energetico dei pianeti dell’atlante.",
+      "Una variazione della correlazione dopo aver ristretto l’intervallo dei diametri non dimostra da sola l’esistenza di popolazioni fisiche differenti."
+    ]
+  },
+  "sea-ice": {
+    "introduction": "L’estensione artica possiede un ciclo stagionale che renderebbe ambiguo un confronto fra mesi diversi mescolati nella stessa regressione. La soluzione segue un mese alla volta, esprime il tasso di variazione in unità assolute e relative, quindi restituisce ai residui il loro ordine temporale.",
+    "hints": [
+      "Seleziona dapprima settembre e mantieni la sequenza degli anni: quale componente stagionale elimini confrontando sempre lo stesso mese?",
+      "Controlla il denominatore del tasso percentuale. La media 1981–2010 viene ricalcolata per il mese scelto, ma deve rimanere fissa quando cambi l’anno iniziale della regressione.",
+      "Una sequenza di residui consecutivi dello stesso segno contiene un’informazione che un grafico privo dell’asse temporale renderebbe meno evidente."
+    ],
+    "stages": [
+      {
+        "title": "Costruire una sequenza temporalmente confrontabile",
+        "explanation": "La selezione trattiene il mese indicato e gli anni successivi al limite iniziale, escludendo estensioni non finite. L’ordinamento per year prepara una sequenza nella quale ogni osservazione corrisponde a una media mensile in milioni di chilometri quadrati. Il controllo sulla numerosità impedisce di proseguire con una finestra troppo breve rispetto a quella prevista dalla missione.",
+        "blocks": [0],
+        "observe": "Settembre, dal 1979 al 2024 inclusi, produce 46 osservazioni annuali. Cambiare l’anno iniziale modifica la finestra analizzata; cambiare il mese modifica la fase del ciclo stagionale che viene confrontata."
+      },
+      {
+        "title": "Stimare la tendenza e conservare gli scarti",
+        "explanation": "La regressione Eₜ = α + βt + εₜ riassume l’estensione Eₜ mediante una funzione lineare dell’anno t. La pendenza β è espressa in milioni di km² per anno; fitted e resid conservano, per ogni anno, la componente descritta dalla retta e lo scarto osservato. Questa scomposizione permette di valutare quanto la sintesi lineare lasci struttura nei residui.",
+        "blocks": [1],
+        "observe": "Esamina contemporaneamente i valori stimati e i residui. Il segno della pendenza descrive la direzione della tendenza nella finestra scelta, mentre i residui mostrano le variazioni che la retta non rappresenta."
+      },
+      {
+        "title": "Esprimere il tasso rispetto a un riferimento fisso",
+        "explanation": "La media di riferimento viene calcolata sulle osservazioni del medesimo mese comprese fra il 1981 e il 2010. Moltiplicando β per dieci si ottiene il tasso decennale; dividendo per la media e moltiplicando per cento lo si esprime come percentuale del riferimento per decennio. Conservare lo stesso riferimento durante il confronto fra finestre evita di cambiare simultaneamente numeratore e denominatore.",
+        "blocks": [2],
+        "observe": "Annota separatamente il tasso assoluto e quello percentuale. Marzo e settembre hanno riferimenti propri: una stessa variazione assoluta assumerebbe un significato relativo diverso rispetto alle rispettive estensioni medie."
+      },
+      {
+        "title": "Esaminare la dipendenza residua",
+        "explanation": "L’autocorrelazione al ritardo uno confronta residui distanti un anno e fornisce un primo indicatore della loro persistenza. Il riepilogo affianca questa quantità ai tassi di variazione, così che la lettura della tendenza tenga conto anche della struttura temporale rimasta dopo la stima. Un singolo coefficiente non descrive tutti i ritardi possibili.",
+        "blocks": [3],
+        "observe": "Nel riferimento iniziale la correlazione residua al ritardo uno è 0,149. Confrontala con il grafico cronologico e con l’esito ottenuto restringendo il periodo, evitando di trasformare un valore contenuto in una prova di indipendenza."
+      },
+      {
+        "title": "Leggere insieme osservazioni, retta e residui",
+        "explanation": "La prima figura sovrappone osservazioni e retta entro il periodo effettivamente studiato; la seconda conserva l’ordine degli scarti rispetto alla stessa retta. Le due rappresentazioni rispondono a domande complementari: quanto vari l’estensione lungo il periodo e quali variazioni rimangano dopo averne sottratto la componente lineare.",
+        "blocks": [4, 5],
+        "observe": "Cerca sequenze, cambiamenti di dispersione e anni lontani dalla retta. Quando confronti due finestre, conserva gli intervalli temporali insieme ai risultati, affinché la diversa pendenza possa essere interpretata nel proprio dominio."
+      }
+    ],
+    "interpretation": [
+      "Per settembre 1979–2024, il riferimento verificato in R 4.5.0 comprende 46 anni e una pendenza di −0,779 milioni di km² per decennio. Rispetto alla media di settembre 1981–2010, pari a circa 6,41 milioni di km², il tasso corrisponde a −12,1% del riferimento per decennio. La percentuale esprime una variazione rispetto a una base fissa; non rappresenta una perdita composta che venga applicata ogni anno alla quantità residua.",
+      "La correlazione residua al ritardo uno è 0,149 nella configurazione iniziale. Il confronto richiesto dalla missione va completato eseguendo marzo e una finestra più recente, quindi discutendo insieme tassi assoluti, tassi relativi e residui. La regressione fornisce una sintesi descrittiva del periodo e del mese scelti; proiezioni e intervalli inferenziali richiederebbero ulteriori ipotesi sulla dinamica e sull’incertezza temporale."
+    ],
+    "alternatives": [
+      "Una curva flessibile potrebbe descrivere deviazioni dalla linearità, purché la complessità venga scelta con un criterio dichiarato e la valutazione rispetti l’ordine temporale.",
+      "Per discutere l’incertezza della pendenza si potrebbe introdurre un modello dei residui oppure un ricampionamento a blocchi, confrontando la sensibilità alle rispettive ipotesi."
+    ],
+    "pitfalls": [
+      "Estensione, area e volume del ghiaccio sono grandezze differenti: una tendenza dell’estensione non quantifica direttamente la variazione del volume.",
+      "La scelta retrospettiva della finestra che produce il tasso più marcato rende selettiva la conclusione; gli intervalli confrontati devono essere dichiarati e motivati."
+    ]
+  },
+  "solar-flares": {
+    "introduction": "La durata di un brillamento dipende dalla definizione operativa con cui l’archivio ne identifica inizio e fine, mentre un picco saturato non costituisce una misura utilizzabile come gli altri. La soluzione rende visibili questi passaggi di selezione prima di descrivere l’associazione fra durata e irradiamento di picco.",
+    "hints": [
+      "Ricava la durata sottraendo istanti espressi nello stesso fuso orario e controlla che sia finita e positiva prima di applicare il logaritmo.",
+      "Distingui gli eventi che superano la soglia dagli eventi che possono entrare nella regressione: il controllo della saturazione modifica soltanto il secondo insieme.",
+      "Il segnale di picco e l’energia integrata nel tempo rispondono a domande fisiche differenti. Controlla quale delle due quantità compare nella colonna xrsb_irrad."
+    ],
+    "stages": [
+      {
+        "title": "Ricostruire una durata operativa",
+        "explanation": "Gli istanti di inizio e fine vengono interpretati in UTC e sottratti con difftime, che restituisce la durata in minuti. La condizione valid richiede una durata positiva e un irradiamento finito e positivo, così che entrambe le variabili possano essere trasformate in logaritmi. Gli eventi privi dei requisiti vengono conteggiati prima delle ulteriori selezioni.",
+        "blocks": [0],
+        "observe": "Il file di riferimento contiene 3.662 eventi; 480 presentano durata o intensità non utilizzabile secondo questi criteri. Una durata mancante resta tale: sostituirla con zero introdurrebbe una misura che l’archivio non fornisce."
+      },
+      {
+        "title": "Applicare soglia, sequenza e controllo della saturazione",
+        "explanation": "La soglia B, C oppure M corrisponde rispettivamente a 10⁻⁷, 10⁻⁶ oppure 10⁻⁵ W/m². L’opzione first conserva gli eventi contrassegnati come primi della sequenza, secondo l’identificatore dell’archivio. Il controllo peak_saturated viene applicato successivamente, conservando un conteggio dei picchi esclusi prima di calcolare i logaritmi della durata e dell’irradiamento.",
+        "blocks": [1, 2],
+        "observe": "Con soglia C e tutte le sequenze, il riferimento seleziona inizialmente 2.205 eventi; due picchi saturati vengono esclusi e il modello utilizza 2.203 osservazioni. La selezione dei primi eventi riduce una possibile fonte di dipendenza senza dimostrare, da sola, l’indipendenza del campione."
+      },
+      {
+        "title": "Stimare una relazione in scala logaritmica",
+        "explanation": "Il modello descrive log₁₀ dell’irradiamento mediante log₁₀ della durata. La pendenza esprime quindi una variazione proporzionale: un incremento di un ordine di grandezza della durata corrisponde a β ordini di grandezza della previsione in scala logaritmica. La correlazione di Spearman aggiunge una sintesi dell’associazione di rango, mentre i residui conservano gli scarti rispetto alla retta.",
+        "blocks": [3],
+        "observe": "Nel riferimento iniziale la pendenza è 0,432 e la correlazione di Spearman è 0,209. Sono quantità differenti: la prima dipende dalla regressione logaritmica, la seconda dall’ordinamento delle osservazioni."
+      },
+      {
+        "title": "Rappresentare la dispersione su più ordini di grandezza",
+        "explanation": "Entrambi gli assi sono logaritmici, per cui distanze uguali rappresentano rapporti uguali. La retta viene calcolata nello spazio trasformato e riassume l’associazione dei soli picchi non saturati. L’assenza di una fascia di confidenza evita di attribuire al modello descrittivo un’incertezza già validata rispetto alla possibile dipendenza fra eventi.",
+        "blocks": [4],
+        "observe": "Confronta la dispersione dei punti con l’andamento della retta. Un’associazione positiva può convivere con una capacità predittiva limitata quando, a durate simili, corrispondono irradiamenti molto diversi."
+      },
+      {
+        "title": "Valutare ciò che la retta lascia irrisolto",
+        "explanation": "Il diagramma dei residui dispone gli scarti in scala logaritmica contro i valori stimati. Una struttura curva suggerirebbe che la forma lineare sia insufficiente; una dispersione che cambia con il valore previsto richiederebbe attenzione alla variabilità non costante. La diagnostica deve essere ripetuta quando una nuova soglia o la selezione delle sequenze modifica il campione.",
+        "blocks": [5],
+        "observe": "Esamina se gli scarti risultino distribuiti in modo simile lungo l’asse delle previsioni e conserva la configurazione usata. La presenza di una struttura residua orienta la revisione del modello, senza identificarne automaticamente la causa fisica."
+      }
+    ],
+    "interpretation": [
+      "La configurazione iniziale verificata in R 4.5.0, con soglia C e tutte le sequenze, utilizza 2.203 eventi dopo aver escluso due picchi saturati fra i 2.205 selezionati. I 480 record con durata o intensità non utilizzabile vengono conteggiati separatamente. Questa ricostruzione rende esplicito quali osservazioni sostengano la regressione e quali siano rimaste fuori.",
+      "La pendenza logaritmica di riferimento è 0,432 e la correlazione di Spearman è 0,209: il campione mostra un’associazione positiva, la cui interpretazione richiede tuttavia di osservare dispersione e residui. Per rispondere alla domanda sulla stabilità occorre confrontare le configurazioni B, C e M e l’opzione dei primi eventi, documentando la diversa numerosità. Il risultato riguarda l’irradiamento di picco misurato nel 2003; non quantifica l’energia totale dei brillamenti né costituisce una previsione operativa."
+    ],
+    "alternatives": [
+      "Un’analisi che raggruppi gli eventi per sequenza potrebbe esaminare esplicitamente la dipendenza interna, qualora identificatori e numerosità consentano di definire unità di ricampionamento adeguate.",
+      "Per studiare l’energia sarebbe necessario un prodotto osservativo che descriva l’andamento temporale del flusso e una definizione dell’integrazione; durata e picco, da soli, non forniscono tale misura."
+    ],
+    "pitfalls": [
+      "Un picco saturato non va trattato come una misura esatta soltanto perché il catalogo riporta un valore numerico.",
+      "Il filtro sui casi con durata disponibile può essere selettivo rispetto alla fisica o al riconoscimento degli eventi; l’analisi delle sole righe complete non elimina questa possibile distorsione."
+    ]
+  },
+  "exoplanet-mass-radius": {
+    "introduction": "La relazione massa–raggio viene valutata come problema di trasferimento a sistemi stellari esclusi dalla stima. La soluzione mantiene insieme i pianeti che orbitano attorno alla stessa stella, applica criteri osservativi espliciti e confronta il modello con una previsione costante costruita sui soli dati di addestramento.",
+    "hints": [
+      "Per ogni grandezza, controlla entrambi gli errori asimmetrici prima di rapportarli al valore misurato. Un errore mancante non equivale a una misura priva d’incertezza.",
+      "La suddivisione riguarda hostname: verifica che tutti i pianeti di una stessa stella ricevano la medesima etichetta Stima oppure Verifica.",
+      "Confronta il RMSE del modello con quello ottenuto usando la media delle masse logaritmiche del solo insieme di stima. Entrambi devono essere valutati sulle medesime osservazioni escluse dall’addestramento."
+    ],
+    "stages": [
+      {
+        "title": "Definire un campione con incertezze documentate",
+        "explanation": "Per massa e raggio viene assunto il maggiore valore assoluto dei due errori asimmetrici, diviso per la misura corrispondente. Questa quantità serve esclusivamente a formulare il criterio di ammissibilità. La selezione richiede errori relativi finiti, positivi e inferiori al limite scelto, oltre al dominio dei raggi: i casi mancanti vengono esclusi senza attribuire loro una precisione fittizia.",
+        "blocks": [0],
+        "observe": "Con errore relativo massimo 0,5 e raggi compresi fra 0,5 e 4 raggi terrestri, la copia di riferimento conserva 462 pianeti. Restringere il filtro cambia il campione osservato e può cambiarne anche la composizione."
+      },
+      {
+        "title": "Separare i sistemi stellari",
+        "explanation": "I nomi delle stelle vengono raccolti, ordinati e campionati per assegnare interi sistemi all’insieme di stima. I sistemi rimanenti costituiscono la verifica. Questa scelta impedisce che pianeti della stessa stella compaiano in entrambi gli insiemi, situazione che renderebbe meno convincente la valutazione del trasferimento a una nuova stella. Massa e raggio sono poi trasformati in logaritmi in base dieci delle quantità espresse in unità terrestri. L’ordinamento radix dei nomi stellari mantiene identica la lista di partenza fra sistemi con impostazioni linguistiche diverse, affinché il seme selezioni gli stessi gruppi.",
+        "blocks": [1],
+        "observe": "La frazione iniziale 0,7 assegna 224 sistemi alla stima e 96 alla verifica. Il seme agisce su una lista ordinata con radix, così le impostazioni linguistiche non cambiano l’assegnazione. Conserva insieme ai risultati il campione, i parametri e la versione R."
+      },
+      {
+        "title": "Confrontare una previsione con il suo riferimento",
+        "explanation": "La regressione è stimata esclusivamente sulle righe train; la sua prestazione viene misurata sui sistemi test mediante la radice della media degli errori quadratici in scala logaritmica. Il confronto costante utilizza la media di log₁₀ della massa nel solo insieme train. Il confronto fra i due RMSE, entrambi espressi in dex, valuta quindi il contributo predittivo del raggio rispetto a un riferimento che non lo utilizza.",
+        "blocks": [2],
+        "observe": "Leggi i due RMSE prodotti dalla tua esecuzione: un valore minore per il modello indica un miglioramento su quella partizione. Ripetere con un altro seme permette di osservare quanto la conclusione dipenda dai sistemi assegnati alla verifica."
+      },
+      {
+        "title": "Riconoscere il dominio della relazione stimata",
+        "explanation": "Il diagramma distingue gli oggetti utilizzati per stimare la retta da quelli riservati alla verifica. La relazione log₁₀(M/M⊕) = α + β log₁₀(R/R⊕) corrisponde, nello spazio delle quantità originali, a una legge di potenza per la previsione ritrasformata. Tale ritrasformazione non coincide automaticamente con la media condizionata della massa in presenza di dispersione logaritmica.",
+        "blocks": [3],
+        "observe": "Confronta gli intervalli di raggio occupati dai due insiemi e la dispersione intorno alla retta. Una porzione del dominio rappresentata quasi soltanto da punti di verifica richiede cautela nell’interpretazione del trasferimento."
+      },
+      {
+        "title": "Interrogare gli scarti e la generalizzazione",
+        "explanation": "Il residuo è la massa logaritmica osservata meno quella prevista. Affiancare i due insiemi nel diagramma consente di confrontarne la dispersione e di cercare strutture che la legge di potenza non descriva. Le incertezze di misura hanno guidato la selezione, ma la regressione ordinaria non le propaga nella stima dei coefficienti né nell’errore predittivo.",
+        "blocks": [4],
+        "observe": "Esamina se i residui di verifica mostrino dispersione o struttura diverse da quelli di stima. Documenta il confronto senza attribuire automaticamente gli scarti a una composizione planetaria specifica."
+      }
+    ],
+    "interpretation": [
+      "Nella configurazione iniziale, i filtri lasciano 462 pianeti distribuiti fra 320 sistemi; la frazione di stima 0,7 produce 224 sistemi di stima e 96 di verifica. Con seme 2026 e ordinamento radix dei nomi, la pendenza è 1,82 e l’RMSE di verifica è 0,225 dex, contro 0,368 dex del riferimento costante. Queste metriche arrotondate coincidono nel riferimento nativo e nel browser verificati. Cambiando seme o criteri di selezione, occorre interpretare i risultati della nuova partizione.",
+      "La risposta principale deriva dal confronto fra il RMSE della regressione e quello della previsione costante sul medesimo insieme di verifica. Quando la regressione ottiene un errore minore, il raggio fornisce informazione predittiva aggiuntiva per quella selezione e quella suddivisione dei sistemi. La stabilità della conclusione richiede ulteriori partizioni e confronti fra soglie d’incertezza; una sola suddivisione non ne misura la variabilità.",
+      "Il filtro sugli errori non sostituisce un modello delle incertezze di misura, mentre la selezione degli esopianeti osservabili può influenzare la relazione stimata. Massa e raggio, pur essendo grandezze fondamentali per la caratterizzazione planetaria, non identificano univocamente composizione, atmosfera o abitabilità."
+    ],
+    "alternatives": [
+      "Una validazione ripetuta per sistema stellare permetterebbe di descrivere la variabilità della prestazione, mantenendo la stessa unità di separazione in tutte le partizioni.",
+      "Un modello con errori su entrambe le variabili richiederebbe una formulazione esplicita delle distribuzioni di misura e delle ipotesi sulla selezione; potrebbe essere confrontato con questa regressione descrittiva come estensione della missione."
+    ],
+    "pitfalls": [
+      "Separare casualmente le righe senza raggrupparle per stella consente a membri dello stesso sistema di comparire sia nella stima sia nella verifica.",
+      "Un RMSE espresso in dex non è un errore assoluto in masse terrestri; la sua interpretazione deve conservare la scala logaritmica usata nel calcolo."
+    ]
+  }
+}
