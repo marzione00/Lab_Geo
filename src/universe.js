@@ -6,7 +6,7 @@
   const volumeVertex = `attribute vec2 aPosition;varying vec2 vUV;
     void main(){vUV=aPosition*.5+.5;gl_Position=vec4(aPosition,0.,1.);}`;
   const volumeFragment = `precision highp float;varying vec2 vUV;
-    uniform mat3 uBasis;uniform vec3 uOrigin;uniform vec2 uSize;uniform float uF,uStrength;
+    uniform mat3 uBasis;uniform vec3 uOrigin;uniform vec2 uSize;uniform float uF,uStrength,uSteps;
     float hash(vec3 p){p=fract(p*.1031);p+=dot(p,p.yzx+33.33);return fract((p.x+p.y)*p.z);}
     float noise3(vec3 p){vec3 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
       return mix(mix(mix(hash(i),hash(i+vec3(1,0,0)),f.x),mix(hash(i+vec3(0,1,0)),hash(i+vec3(1,1,0)),f.x),f.y),
@@ -17,7 +17,9 @@
       vec3 sum=vec3(0.);float trans=1.;
       float jitter=.5;
       for(int i=0;i<56;i++){
-        float t=35.+(float(i)+jitter)*5.5;vec3 p=ro+rd*t;
+        if(float(i)>=uSteps)break;
+        float stride=308./uSteps;
+        float t=35.+(float(i)+jitter)*stride;vec3 p=ro+rd*t;
         vec3 q=(p-vec3(-75.,-105.,-145.))/vec3(135.,90.,115.);
         vec3 r=(p-vec3(115.,-100.,-120.))/vec3(100.,95.,115.);
         vec3 s=(p-vec3(-40.,-80.,170.))/vec3(135.,85.,100.);
@@ -28,7 +30,7 @@
         float filaments=pow(max(0.,1.-abs(n-.51)*11.),4.);
         float gas=pow(smoothstep(.30,.72,n),1.65)*envelope;
         float dust=smoothstep(.48,.73,fbm(p*.031+71.))*envelope;
-        float opacity=(gas*.14+dust*.24)*uStrength;
+        float opacity=(gas*.14+dust*.24)*uStrength*stride/5.5;
         float warm=smoothstep(.43,.69,fbm(p*.009+110.));
         vec3 cold=mix(vec3(.045,.22,.43),vec3(.23,.065,.29),smoothstep(-50.,90.,p.x));
         vec3 color=mix(cold,vec3(.62,.28,.1),warm);
@@ -118,6 +120,12 @@
     return p;
   }
   function create(gl) {
+    // Detect the actual rasteriser even when the application forces its WebGL path.
+    // CPU WebGL still renders the 3D volume, with a bounded sample budget.
+    const info = gl.getExtension('WEBGL_debug_renderer_info');
+    const software = /swiftshader|llvmpipe|softpipe|software rasterizer|basic render driver/i.test(
+      info ? gl.getParameter(info.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER),
+    );
     const volume = program(gl, volumeVertex, volumeFragment),
       copy = program(gl, volumeVertex, copyFragment),
       sky = program(gl, skyVertex, skyFragment);
@@ -137,7 +145,8 @@
     let tw = 0,
       th = 0,
       lastKey = '',
-      detail = 640;
+      detail = software ? 64 : 640,
+      steps = software ? 16 : 56;
     const location = new Map();
     function loc(p, name) {
       if (!location.has(p)) location.set(p, new Map());
@@ -159,8 +168,9 @@
       const m = camera.view,
         basis = new Float32Array([m[0], m[4], m[8], m[1], m[5], m[9], m[2], m[6], m[10]]);
       const view = new Float32Array([m[0], m[1], m[2], m[4], m[5], m[6], m[8], m[9], m[10]]);
-      const w = Math.max(1, Math.round(Math.min(width, detail))),
-        h = Math.max(1, Math.round((height * w) / width));
+      const scale = Math.min(1, detail / Math.max(width, height));
+      const w = Math.max(1, Math.round(width * scale)),
+        h = Math.max(1, Math.round(height * scale));
       const origin = camera.eye.map(x => x * 0.025);
       const key = [...basis, ...origin, width, height, strength, detail].map(x => Math.round(x * 10000)).join(',');
       gl.disable(gl.DEPTH_TEST);
@@ -184,6 +194,7 @@
         gl.uniform2f(loc(volume, 'uSize'), width, height);
         gl.uniform1f(loc(volume, 'uF'), camera.f);
         gl.uniform1f(loc(volume, 'uStrength'), strength);
+        gl.uniform1f(loc(volume, 'uSteps'), steps);
         gl.drawArrays(gl.TRIANGLES, 0, 6);
         lastKey = key;
       }
@@ -214,9 +225,10 @@
     return {
       draw,
       reduce: () => {
-        detail = 400;
+        detail = Math.min(detail, 160);
+        steps = Math.min(steps, 24);
       },
-      debug: () => ({ stars: 52000, nebulaSteps: 56, nebulaWidth: tw }),
+      debug: () => ({ stars: 52000, nebulaSteps: steps, nebulaWidth: tw, software }),
       dispose() {
         for (const p of [volume, copy, sky]) gl.deleteProgram(p);
         gl.deleteBuffer(quad);
