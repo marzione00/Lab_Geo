@@ -40,11 +40,12 @@ attach = gl('glAttachShader',None,C.c_uint,C.c_uint)
 link = gl('glLinkProgram',None,C.c_uint)
 get_program = gl('glGetProgramiv',None,C.c_uint,C.c_uint,C.POINTER(C.c_int))
 program_log = gl('glGetProgramInfoLog',None,C.c_uint,C.c_int,C.c_void_p,C.c_void_p)
-text = (root/'src/galaxy-scene.js').read_text()
-for name in ['point','mesh','line']:
+text = (root/'src/galaxy-scene.js').read_text() + (root/'src/universe.js').read_text()
+for name in ['point','mesh','line','volume','sky','copy']:
     handle = program()
     for suffix,kind in [('Vertex',0x8B31),('Fragment',0x8B30)]:
-        code = re.search(r'const '+name+suffix+r'=`(.*?)`;',text,re.S).group(1).encode()
+        source_name = 'volume' if name == 'copy' and suffix == 'Vertex' else name
+        code = re.search(r'const '+source_name+suffix+r'\s*=\s*`(.*?)`;',text,re.S).group(1).encode()
         shader=create(kind);ptr=C.c_char_p(code);source(shader,1,C.byref(ptr),None);compile_shader(shader)
         ok=C.c_int();get_shader(shader,0x8B81,C.byref(ok));log=C.create_string_buffer(8192)
         shader_log(shader,len(log),None,log);assert ok.value,(name+suffix,log.value.decode())
