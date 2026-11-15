@@ -21,11 +21,11 @@ I testi sono mantenuti in `content/narrative.json` e `content/narrative-m05.json
 
 ## Sfondo cosmico e lettura del codice
 
-Il paesaggio laterale combina nebulose procedurali, polveri scure, stelle su più piani e due piccole galassie lontane. La scena è illustrativa: distanze, dimensioni e velocità non costituiscono una simulazione astrofisica. Le nebulose vengono calcolate da un worker locale; durante la lettura si riutilizza la texture già generata. Stelle e parallasse condividono con i pianeti il comando **Pausa movimento**. La preferenza di sistema per il movimento ridotto e le schede non visibili sospendono l’animazione. Se il worker non è disponibile, rimangono il campo stellare e lo sfondo essenziale.
+Il paesaggio laterale combina nebulose volumetriche, polveri scure, stelle distribuite nello spazio e tre galassie lontane a particelle. La scena è illustrativa: distanze, dimensioni e velocità non costituiscono una simulazione astrofisica. Le nebulose vengono renderizzate in WebGL integrando densità, emissione e assorbimento lungo i raggi della camera; a camera ferma si riutilizza il risultato. Il movimento della camera segue i pianeti e il comando **Pausa movimento**. Sui renderer software il pass volumetrico usa meno campioni e una risoluzione inferiore; senza WebGL rimane lo sfondo essenziale.
 
 Tutti i 139 esperimenti espongono il proprio sorgente nel terminale R, con numeri di riga, commenti per istruzione, parametri sincronizzati e lettura per passi. Negli schermi ampi codice e risultati sono affiancati; nelle altre larghezze seguono l’ordine di lettura. **Modifica** apre l’editor esistente. Le spiegazioni del modello originale vengono sospese quando il programma è personalizzato. I passi guidano la lettura e non rappresentano l’esecuzione riga per riga di R.
 
-**Scarica R completo** include parametri commentati, funzioni comuni, corpo del programma e comandi di esportazione. I commenti vengono aggiunti senza cambiare le istruzioni eseguite. Il terminale usa gli stessi caratteri Nimbus e LMMono del corso, senza dipendenze esterne. La vista è mantenuta in `src/code-terminal.js` e `src/code-terminal.css`; `src/cosmos.js` e `src/cosmos-worker.js` gestiscono il paesaggio condiviso.
+**Scarica R completo** include parametri commentati, funzioni comuni, corpo del programma e comandi di esportazione. I commenti vengono aggiunti senza cambiare le istruzioni eseguite. Il terminale usa gli stessi caratteri Nimbus e LMMono del corso, senza dipendenze esterne. La vista è mantenuta in `src/code-terminal.js` e `src/code-terminal.css`; `src/cosmos.js` e `src/universe.js` gestiscono il paesaggio condiviso, mentre `src/cosmos-worker.js` genera il catalogo stellare.
 
 ## Briefing e audio di bordo
 
