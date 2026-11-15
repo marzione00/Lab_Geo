@@ -204,12 +204,100 @@
     }
     return { stars, dust };
   }
+  // Interleaved position/color/opacity/size: 38.4 MB for 1.2 million stars.
+  // Kept separate from the small object catalogue used by the software fallback.
+  function stellarColor(rng, warm) {
+    if (warm) return [1, 0.76 + rng() * 0.17, 0.41 + rng() * 0.24];
+    if (rng() < 0.065) return [1, 0.36, 0.52];
+    return [0.48 + rng() * 0.3, 0.68 + rng() * 0.25, 1];
+  }
+  function stellarOpacity(rng, bulge, halo, interarm, offset) {
+    if (bulge) return 0.026;
+    if (halo || interarm) return 0.055;
+    return (0.085 + rng() * 0.1) * (Math.sin(offset + 0.13) > 0.08 ? 0.2 : 1);
+  }
+  function validCount(count) {
+    if (!Number.isInteger(count) || count < 1 || count > 2000000) throw RangeError('Invalid stellar count');
+  }
+  function packedParticles(count = 1200000) {
+    validCount(count);
+    const rng = random(92026),
+      stars = new Float32Array(count * 8),
+      dust = new Float32Array(18000 * 8);
+    const normal = () => Math.sqrt(-2 * Math.log(Math.max(1e-7, rng()))) * Math.cos(TAU * rng());
+    for (let i = 0; i < count; i++) {
+      const bulge = i < count * 0.17,
+        halo = i >= count * 0.97,
+        interarm = i % 3 === 0;
+      const r = bulge ? Math.sqrt(-2 * Math.log(Math.max(1e-7, rng()))) * 1.2 : 0.45 + Math.pow(rng(), 0.67) * 19.4;
+      const arm = i % 4;
+      const theta = Math.log(r + 0.6) * 1.8 + r * 0.11 + (arm * TAU) / 4;
+      const a = bulge || interarm || halo ? rng() * TAU : theta + normal() * (0.065 + r * 0.006);
+      const lane = Math.sin(r * 2.7 + arm * 1.8) * 0.035;
+      const x = Math.cos(a + lane) * r,
+        z = Math.sin(a + lane) * r;
+      const y = normal() * (bulge ? 0.72 : halo ? 3.1 : 0.13 + 0.21 * Math.exp(-r / 7));
+      const color = stellarColor(rng, bulge || r < 3.4);
+      const alpha = stellarOpacity(rng, bulge, halo, interarm, a - theta);
+      const size = 0.0045 + Math.pow(rng(), 18) * 0.055;
+      stars.set([x, y, z, ...color, alpha, size], i * 8);
+    }
+    for (let i = 0; i < dust.length / 8; i++) {
+      const r = 0.4 + Math.pow(rng(), 0.65) * 18.5,
+        arm = i % 4;
+      const a = Math.log(r + 0.6) * 1.8 + r * 0.11 + (arm * TAU) / 4 + normal() * 0.09;
+      const warm = r < 3,
+        pink = Math.sin(r * 1.9 + arm) > 0.84;
+      const color = warm ? [0.95, 0.51, 0.16] : pink ? [0.55, 0.13, 0.27] : [0.13, 0.32, 0.68];
+      dust.set(
+        [Math.cos(a) * r, normal() * 0.24, Math.sin(a) * r, ...color, warm ? 0.004 : 0.0027, 0.65 + rng() * 1.4],
+        i * 8,
+      );
+    }
+    return { packed: true, stars, dust, starCount: count, dustCount: dust.length / 8 };
+  }
+  let galaxyPromise;
+  const modelSource = root.document?.currentScript?.src;
+  function loadGalaxy() {
+    if (galaxyPromise) return galaxyPromise;
+    galaxyPromise = new Promise(resolve => {
+      let worker,
+        timer,
+        done = false;
+      const finish = data => {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        worker?.terminate();
+        resolve(data);
+      };
+      const fallback = () => {
+        if (!done) finish(packedParticles());
+      };
+      try {
+        worker = new Worker(new URL('cosmos-worker.js', modelSource || root.location.href));
+        worker.onmessage = e => {
+          if (e.data.starCount === 1200000 && e.data.stars?.length === 9600000) finish(e.data);
+          else fallback();
+        };
+        worker.onerror = fallback;
+        timer = setTimeout(fallback, 20000);
+        worker.postMessage({ count: 1200000 });
+      } catch {
+        setTimeout(fallback, 0);
+      }
+    });
+    return galaxyPromise;
+  }
   // Odd sampling strides retain all four arms. Canvas still draws tens of thousands of stars.
   function softwareParticles(data) {
     return [...data.dust.filter((_, i) => i % 3 === 0), ...data.stars.filter((_, i) => i % 3 === 0)];
   }
   root.GeoGalaxyModel = Object.freeze({
     anchors,
+    random,
+    packedParticles,
+    loadGalaxy,
     clamp,
     identity,
     multiply,

@@ -1,5 +1,15 @@
 # Registro delle modifiche
 
+## 4.2.0 – ambiente cosmico tridimensionale (15 novembre 2026)
+
+- Galassia WebGL da 1.200.000 stelle, con worker, buffer trasferibili e cache fra le visite.
+- Nucleo volumetrico, bracci, disco diffuso, alone e 18.000 particelle di gas galattico.
+- Eliminato il fondale Canvas 2D: nebulose a densità 3D con emissione/assorbimento, 52.000 punti ambientali, fascia galattica e galassie lontane.
+- Ambiente condiviso con la camera orbitale e mantenuto nel passaggio al dossier planetario.
+- Risoluzione adattiva delle nebulose e ripristino del contesto WebGL nei sistemi.
+- Shader e dati procedurali locali, senza nuove immagini o dipendenze runtime.
+- Dettagli e collaudo: [docs/REVISIONE_4_2_0.md](docs/REVISIONE_4_2_0.md).
+
 ## 4.1.0: impianto grafico, briefing e audio di bordo
 
 - Scala tipografica di sette gradini in rem (minimo 12 px) al posto di 31 dimensioni in pixel; 199 colori del testo ridotti a otto toni, con ruoli e superfici nominati e un test di contrasto WCAG AA.

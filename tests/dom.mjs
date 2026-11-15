@@ -36,6 +36,8 @@ const dom = new JSDOM(fs.readFileSync(path.join(dist, 'index.html'), 'utf8'), {
     w.matchMedia = () => ({ matches: false });
     const gl = new Proxy(
       {
+        getParameter: () => 4096,
+        checkFramebufferStatus: () => 1,
         getShaderParameter: () => true,
         getProgramParameter: () => true,
         getUniformLocation: (_, n) => n,
@@ -48,7 +50,7 @@ const dom = new JSDOM(fs.readFileSync(path.join(dist, 'index.html'), 'utf8'), {
       set src(v) {
         this.width = 2048;
         this.height = 1024;
-        setTimeout(() => this.onload(), 0);
+        setTimeout(() => this.onload?.(), 0);
       }
     };
   },

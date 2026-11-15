@@ -166,6 +166,7 @@ for (const name of [
   'galaxy.css',
   'narrative.js',
   'narrative.css',
+  'universe.js',
   'cosmos.js',
   'cosmos-worker.js',
   'code-terminal.js',

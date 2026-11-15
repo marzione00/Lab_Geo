@@ -22,10 +22,8 @@
       transition = null,
       drag = null;
     const listeners = [],
-      bound = [],
       listen = (el, event, fn, options) => {
         el.addEventListener(event, fn, options);
-        bound.push([el, event, fn, options]);
         listeners.push(() => el.removeEventListener(event, fn, options));
       };
     const paused = () => root.GeoSpace?.debug().paused ?? window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -45,10 +43,8 @@
       emissive: true,
     };
     const worlds = [star, ...system.planets.map(p => ({ ...p, radius: p.visualRadius }))];
-    const field = M.particles(6000)
-      .stars.filter(p => Math.hypot(...p.p) > 8)
-      .slice(0, 650)
-      .map(p => ({ ...p, p: p.p.map((v, i) => v * (i === 1 ? 25 : 4)), a: p.a * 0.45, size: 0.025 }));
+    // The 52,000-star environment and nebulae are rendered by the shared GPU pass.
+    const field = [];
     const state = { width, height, time, angle: 0, worlds, camera: null, light: [0, 0, 0], selected };
     const invalidate = () => {
       if (!disposed && !raf) raf = requestAnimationFrame(tick);
@@ -69,32 +65,8 @@
       chart.dataset.renderer = renderer.kind;
       chart.classList.add('scene-ready');
     }
-    // A WebGL context that cannot keep up (software rasteriser, weak GPU) gives way to the canvas renderer.
+    // Reduce only the volume pass when frames are slow; preserve the 3D renderer.
     const slowFrames = root.GeoCore?.frameWatch?.() || (() => false);
-    function downgrade() {
-      const old = canvas,
-        next = canvas.cloneNode(false);
-      try {
-        renderer?.dispose();
-      } catch (_) {
-        /* context already gone */
-      }
-      old.replaceWith(next);
-      canvas = next;
-      for (const [el, event, fn, options] of bound)
-        if (el === old) {
-          next.addEventListener(event, fn, options);
-          listeners.push(() => next.removeEventListener(event, fn, options));
-        }
-      try {
-        renderer = root.GeoGalaxyScene.software(canvas, { stars: field, dust: [] }, invalidate);
-        chart.dataset.renderer = renderer.kind;
-      } catch (_) {
-        renderer = null;
-        chart.dataset.renderer = 'essential';
-      }
-      resize();
-    }
     const rings = chart.querySelector('.system-rings');
     const overlay = chart.querySelector('.system-orbits'),
       orbitPaths = [...overlay.querySelectorAll('path')],
@@ -185,7 +157,7 @@
       return true;
     }
     function advance(now) {
-      if (renderer?.kind === 'webgl' && last && slowFrames(now - last)) downgrade();
+      if (renderer?.kind === 'webgl' && last && slowFrames(now - last)) renderer.reduceDetail?.();
       const dt = last ? Math.min(0.1, (now - last) / 1000) : 0;
       last = now;
       if (!paused()) {
@@ -206,6 +178,7 @@
       state.time = time;
       state.selected = selected;
       state.camera = M.camera(azimuth, elevation, camDistance, eyeTarget, width / height);
+      root.GeoCosmos?.setView({ azimuth, elevation, distance: camDistance, target: eyeTarget });
       projectWorlds();
       drawRings();
       drawOrbits();
@@ -324,6 +297,17 @@
       chart.dataset.renderer = 'essential';
       chart.classList.remove('scene-ready');
     });
+    listen(canvas, 'webglcontextrestored', () => {
+      if (disposed) return;
+      try {
+        renderer = root.GeoGalaxyScene.webgl(canvas, { stars: field, dust: [] }, worlds, invalidate);
+        chart.dataset.renderer = 'webgl';
+        chart.classList.add('scene-ready');
+        resize();
+      } catch {
+        chart.dataset.renderer = 'essential';
+      }
+    });
     resize();
     return {
       focus,
@@ -336,6 +320,8 @@
       },
       debug: () => ({
         renderer: renderer?.kind || 'essential',
+        environment: renderer?.environment?.(),
+        camera: { azimuth, elevation, distance: state.distance },
         selected,
         focusId,
         years,

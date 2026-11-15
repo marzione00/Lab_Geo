@@ -79,7 +79,7 @@
       antialias: true,
       depth: true,
       premultipliedAlpha: false,
-      powerPreference: 'low-power',
+      powerPreference: 'high-performance',
     });
     if (!gl || typeof gl.getParameter(gl.MAX_TEXTURE_SIZE) !== 'number') throw Error('WebGL unavailable');
     const resources = [],
@@ -142,9 +142,13 @@
     const points = program(pointVertex, pointFragment),
       mesh = program(meshVertex, meshFragment),
       lines = program(lineVertex, lineFragment);
-    const flatten = rows => rows.flatMap(p => [...p.p, ...p.c, p.a, p.size]);
+    const particleCount = (next, key) => (next.packed ? next[key].length / 8 : next[key].length);
+    const flatten = rows => (rows instanceof Float32Array ? rows : rows.flatMap(p => [...p.p, ...p.c, p.a, p.size]));
     const starBuffer = buffer(flatten(data.stars)),
       dustBuffer = buffer(flatten(data.dust));
+    let starCount = particleCount(data, 'stars'),
+      dustCount = particleCount(data, 'dust');
+    const environment = root.GeoUniverse.create(gl);
     const ball = sphere(),
       ring = annulus(),
       ballBuffer = buffer(ball.v),
@@ -265,10 +269,21 @@
     }
     return {
       kind: 'webgl',
+      updateParticles(next) {
+        gl.bindBuffer(gl.ARRAY_BUFFER, starBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, flatten(next.stars), gl.STATIC_DRAW);
+        gl.bindBuffer(gl.ARRAY_BUFFER, dustBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, flatten(next.dust), gl.STATIC_DRAW);
+        starCount = particleCount(next, 'stars');
+        dustCount = particleCount(next, 'dust');
+      },
+      reduceDetail: () => environment.reduce(),
+      environment: () => environment.debug(),
       draw(state) {
         gl.viewport(0, 0, canvas.width, canvas.height);
-        gl.clearColor(0, 0, 0, 0);
+        gl.clearColor(0.004, 0.009, 0.022, 1);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        environment.draw(state.camera, canvas.width, canvas.height, state.light ? 1.15 : 0.7);
         gl.enable(gl.DEPTH_TEST);
         gl.depthMask(true);
         gl.disable(gl.BLEND);
@@ -285,13 +300,14 @@
         if (p && !p.marker && !p.emissive && !state.light)
           linePass(orbitBuffer, 121, M.model(p.position, p.radius * 1.3), [0.93, 0.7, 0.37, 0.65], state);
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
-        pointPass(dustBuffer, data.dust.length, state);
-        pointPass(starBuffer, data.stars.length, state);
+        pointPass(dustBuffer, dustCount, state);
+        pointPass(starBuffer, starCount, state);
         for (const p of state.worlds) if (!p.marker && !p.emissive) planetPass(p, state, 2);
         gl.depthMask(true);
       },
       dispose() {
         disposed = true;
+        environment.dispose();
         for (const im of images) {
           im.onload = null;
           im.onerror = null;
@@ -470,8 +486,8 @@
       marker: true,
       radius: 0.025,
     }));
-    const data = M.particles(window.innerWidth < 600 ? 60000 : 120000),
-      buttons = [...chart.querySelectorAll('[data-destination]')],
+    let data = { stars: [], dust: [] };
+    const buttons = [...chart.querySelectorAll('[data-destination]')],
       listeners = [];
     const leaders = new Map(
       [...chart.querySelectorAll('[data-leader]')].map(g => [
@@ -502,6 +518,7 @@
         canvas.replaceWith(next);
         canvas = next;
         try {
+          data = M.particles(60000);
           renderer = software(canvas, data, invalidate);
         } catch (_) {
           renderer = null;
@@ -513,6 +530,16 @@
       chart.classList.add('scene-ready');
     }
     initialize();
+    if (renderer?.kind === 'webgl') {
+      chart.dataset.stars = 'loading';
+      M.loadGalaxy().then(next => {
+        if (disposed) return;
+        data = next;
+        renderer?.updateParticles?.(data);
+        chart.dataset.stars = String(data.starCount);
+        invalidate();
+      });
+    }
     function resize() {
       const r = chart.getBoundingClientRect();
       width = Math.max(1, r.width);
@@ -542,6 +569,7 @@
       state.angle = angle;
       state.selected = selected;
       state.camera = M.camera(azimuth, elevation, flight ? distance : fitDistance, target, width / height);
+      root.GeoCosmos?.setView({ azimuth, elevation, distance: fitDistance, target });
       for (const p of worlds) {
         p.position = M.destination(p.id, angle);
         p.screen = M.project(p.position, state.camera.vp, width, height);
@@ -847,8 +875,9 @@
       },
       debug: () => ({
         renderer: renderer?.kind || 'essential',
-        stars: data.stars.length,
-        dust: data.dust.length,
+        environment: renderer?.environment?.(),
+        stars: data.starCount ?? data.stars.length,
+        dust: data.dustCount ?? data.dust.length,
         angle,
         time,
         azimuth,
