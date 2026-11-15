@@ -3,7 +3,7 @@
 **Laboratori interattivi di statistica e coding R per le scienze della Terra**
 **Autore: Marzio De Corato** · Modulo didattico di [Topological Manifolds](https://marzione00.github.io/Personal_web_page/) ([repository del sito principale](https://github.com/marzione00/Personal_web_page)).
 
-Versione applicativa **4.1.0** · materiali didattici **R6** · lingua italiana
+Versione applicativa **4.2.0** · materiali didattici **R6** · lingua italiana
 
 GeoStat Lab accompagna lo studio dei metodi statistici attraverso 139 esperimenti nei quali, modificando parametri e ipotesi, si osservano le conseguenze sui dati simulati, sulle figure e sulle conclusioni. Ogni attività collega il problema scientifico al formalismo matematico e al programma R che ne produce i risultati. L’atlante di 17 pianeti rotanti organizza il percorso; le 11 spedizioni applicative riuniscono i metodi necessari ad affrontare un’indagine più articolata.
 
@@ -72,7 +72,9 @@ Le simulazioni dichiarano le proprie ipotesi e impiegano dati sintetici. I risul
 
 ## Atlante scientifico: galassia, sistemi e pianeti
 
-La navigazione parte da una galassia tridimensionale con quattro bracci e fino a 120.000 stelle. I segmenti collegano le etichette a 17 punti stellari, ciascuno associato a un sistema. Un clic avvicina la camera e apre una stella con cinque pianeti esplorabili: in totale 85 mondi, di cui 17 destinazioni dei moduli.
+Il fondale 3D comprende nebulose volumetriche procedurali, una fascia galattica e galassie lontane a particelle. I dettagli e i limiti del collaudo sono in [docs/REVISIONE_4_2_0.md](docs/REVISIONE_4_2_0.md).
+
+La navigazione parte da una galassia tridimensionale con quattro bracci e 1.200.000 stelle WebGL. I segmenti collegano le etichette a 17 punti stellari, ciascuno associato a un sistema. Un clic avvicina la camera e apre una stella con cinque pianeti esplorabili: in totale 85 mondi, di cui 17 destinazioni dei moduli.
 
 Ogni sistema estrae una stella fra quattro esempi coerenti di sequenza principale F, G, K e M. Il seme iniziale è stabile; **Nuova configurazione** produce un’altra estrazione e conserva il suo identificatore nel collegamento, ad esempio `#sistema-M01?v=18`. Le schede riportano massa, raggio, temperatura e luminosità stellare; per i pianeti, semiasse maggiore, periodo orbitale, raggio, albedo, flusso e temperatura di equilibrio. Le relazioni fisiche e le ipotesi sono spiegate nella pagina, insieme alle fonti NASA.
 
