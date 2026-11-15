@@ -99,3 +99,42 @@ test('GPU path submits the full galaxy and disposes its environment resources', 
   for (const kind of ['Program', 'Shader', 'Buffer', 'Texture', 'Framebuffer'])
     assert.equal(deleted.get(kind), created.get(kind), kind);
 });
+
+test('Software WebGL bounds volume work on portrait screens and reuses a stationary view', () => {
+  const calls = [];
+  const gl = new Proxy(
+    {},
+    {
+      get(_, key) {
+        if (key.toUpperCase() === key) return key;
+        if (key === 'getExtension') return () => ({ UNMASKED_RENDERER_WEBGL: 'renderer' });
+        if (key === 'getParameter') return () => 'ANGLE (SwiftShader Device)';
+        if (key === 'getShaderParameter' || key === 'getProgramParameter') return () => true;
+        if (key === 'checkFramebufferStatus') return () => 'FRAMEBUFFER_COMPLETE';
+        if (key === 'getUniformLocation') return (_, name) => name;
+        if (key === 'getAttribLocation') return () => 0;
+        if (key.startsWith('create')) return () => ({});
+        return (...args) => calls.push([key, ...args]);
+      },
+    },
+  );
+  const scope = load({ GeoCore: { softwareRendering: () => false } }, 'galaxy-model', 'universe');
+  const renderer = scope.GeoUniverse.create(gl);
+  const camera = scope.GeoGalaxyModel.camera(0, 0.6, 35, [0, 0, 0], 390 / 844);
+  renderer.draw(camera, 390, 844);
+  const allocation = calls.find(c => c[0] === 'texImage2D');
+  assert(allocation[4] * allocation[5] <= 4096, 'CPU rasterisation must stay bounded in portrait orientation');
+  assert(calls.some(c => c[0] === 'uniform1f' && c[1] === 'uSteps' && c[2] <= 16));
+  assert(calls.some(c => c[0] === 'drawArrays' && c[1] === 'POINTS' && c[3] === 52000));
+  const before = calls.length;
+  renderer.draw(camera, 390, 844);
+  assert.equal(
+    calls.slice(before).filter(c => c[0] === 'drawArrays' && c[1] === 'TRIANGLES').length,
+    1,
+    'A stationary camera only composites the cached volume',
+  );
+  renderer.reduce();
+  renderer.draw(camera, 390, 844);
+  assert(renderer.debug().nebulaWidth <= 64, 'Adaptation must never increase CPU workload');
+  renderer.dispose();
+});
