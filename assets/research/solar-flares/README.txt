@@ -20,3 +20,7 @@ I valori saturati sono esclusi da ogni modello. La selezione dei soli eventi con
 L’analisi riguarda il 2003, con soglie configurabili e dipendenze fra eventi possibili; non stima frequenze complete, causalità, pericolosità terrestre o previsioni operative.
 
 Il mondo dell’atlante è immaginario; il dataset contiene osservazioni reali documentate. Il campione non si aggiorna automaticamente.
+
+Codice: PolyForm Noncommercial 1.0.0, https://polyformproject.org/licenses/noncommercial/1.0.0
+Required Notice: Copyright 2026 Marzio De Corato (https://github.com/marzione00/Lab_Geo)
+Dati: condizioni del fornitore in provenance.json.

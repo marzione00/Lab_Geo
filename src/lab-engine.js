@@ -147,7 +147,9 @@
       a.title +
       '\n# ' +
       a.goal +
-      '\n# Dati sintetici; ambiente e pacchetti documentati nel manifesto.\n# Se necessario: install.packages(c("ggplot2", "jsonlite", "svglite"))\n\n' +
+      '\n# Dati sintetici; ambiente e pacchetti documentati nel manifesto.\n# Se necessario: install.packages(c("ggplot2", "jsonlite", "svglite"))\n' +
+      '# Codice: PolyForm Noncommercial 1.0.0, https://polyformproject.org/licenses/noncommercial/1.0.0\n' +
+      '# Required Notice: Copyright 2026 Marzio De Corato (https://github.com/marzione00/Lab_Geo)\n\n' +
       root.GEO_LABS.common +
       '\n' +
       (root.GeoCodeGuide ? root.GeoCodeGuide.parameterScript(a, p) : paramsCode(p) + '\nset.seed(p$seed)') +

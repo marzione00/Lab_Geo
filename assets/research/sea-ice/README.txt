@@ -20,3 +20,7 @@ I residui possono essere dipendenti ed eteroschedastici. Non vengono presentati 
 Gli algoritmi e i sensori contribuiscono all’incertezza osservativa; il confronto fra periodi non attribuisce causalmente la variazione a un singolo fattore.
 
 Il mondo dell’atlante è immaginario; il dataset contiene osservazioni reali documentate. Il campione non si aggiorna automaticamente.
+
+Codice: PolyForm Noncommercial 1.0.0, https://polyformproject.org/licenses/noncommercial/1.0.0
+Required Notice: Copyright 2026 Marzio De Corato (https://github.com/marzione00/Lab_Geo)
+Dati: condizioni del fornitore in provenance.json.

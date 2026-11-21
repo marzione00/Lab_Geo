@@ -43,7 +43,12 @@ def payloads():
         'Il browser usa R 4.6.0 e ggplot2 4.0.3; il collaudo nativo usa R 4.5.0 e ggplot2 3.5.1.\n'
         'I dati sono sintetici: generatore, ipotesi e seme sono dichiarati nel codice.\n'
         'Vedere docs/LABORATORI_INTERATTIVI.md per copertura e limiti.\n'
+        'Codice: PolyForm Noncommercial 1.0.0 (LICENSE-CODE.md). Materiali: CC BY-NC-SA 4.0 (LICENSE.md).\n'
+        'Required Notice: Copyright 2026 Marzio De Corato (https://github.com/marzione00/Lab_Geo)\n'
     ).encode()
+    for name in ('LICENSE.md', 'LICENSE-CODE.md'):
+        labs[name] = (ROOT / name).read_bytes()
+        r6[name] = (ROOT / name).read_bytes()
     return {'GeoStatLab_codice_dati_R6.zip': r6, 'GeoStatLab_esperimenti_R.zip': labs}, stream.getvalue().encode('utf-8-sig')
 
 

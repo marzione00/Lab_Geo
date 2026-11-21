@@ -29,7 +29,9 @@
     return (
       '# GeoStat Lab · ' +
       p.title +
-      '\n# Dati osservati: consultare provenance.json.\n# Estrarre il pacchetto; impostare questa cartella come directory di lavoro.\n# install.packages("ggplot2")\n\n' +
+      '\n# Dati osservati: consultare provenance.json.\n# Estrarre il pacchetto; impostare questa cartella come directory di lavoro.\n# install.packages("ggplot2")\n' +
+      '# Codice: PolyForm Noncommercial 1.0.0, https://polyformproject.org/licenses/noncommercial/1.0.0\n' +
+      '# Required Notice: Copyright 2026 Marzio De Corato (https://github.com/marzione00/Lab_Geo)\n\n' +
       root.GEO_LABS.common +
       '\n' +
       root.GeoCodeGuide.parameterScript(p, params) +

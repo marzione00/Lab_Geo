@@ -20,3 +20,7 @@ La soglia di estrazione non dimostra la completezza del catalogo; repliche e seq
 Le profondità possono essere negative rispetto al riferimento del catalogo; sono conservate, senza trasformarle arbitrariamente in zero.
 
 Il mondo dell’atlante è immaginario; il dataset contiene osservazioni reali documentate. Il campione non si aggiorna automaticamente.
+
+Codice: PolyForm Noncommercial 1.0.0, https://polyformproject.org/licenses/noncommercial/1.0.0
+Required Notice: Copyright 2026 Marzio De Corato (https://github.com/marzione00/Lab_Geo)
+Dati: condizioni del fornitore in provenance.json.

@@ -3,7 +3,7 @@
 **Laboratori interattivi di statistica e coding R per le scienze della Terra**
 **Autore: Marzio De Corato** · Modulo didattico di [Topological Manifolds](https://marzione00.github.io/Personal_web_page/) ([repository del sito principale](https://github.com/marzione00/Personal_web_page)).
 
-Versione applicativa **4.2.0** · materiali didattici **R6** · lingua italiana · licenza [CC BY-NC-SA 4.0](LICENSE.md)
+Versione applicativa **4.2.0** · materiali didattici **R6** · lingua italiana · materiali [CC BY-NC-SA 4.0](LICENSE.md), codice [PolyForm Noncommercial 1.0.0](LICENSE-CODE.md)
 
 GeoStat Lab accompagna lo studio dei metodi statistici attraverso 139 esperimenti nei quali, modificando parametri e ipotesi, si osservano le conseguenze sui dati simulati, sulle figure e sulle conclusioni. Ogni attività collega il problema scientifico al formalismo matematico e al programma R che ne produce i risultati. L’atlante di 17 pianeti rotanti organizza il percorso; le 11 spedizioni applicative riuniscono i metodi necessari ad affrontare un’indagine più articolata.
 
@@ -306,6 +306,6 @@ Dependabot propone aggiornamenti settimanali. Ogni modifica a webR, ai pacchetti
 
 ## Licenze, provenienza e attribuzioni
 
-I contenuti originali del repository, compresi materiali didattici e codice del sito, sono distribuiti con licenza [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/): attribuzione obbligatoria, nessun uso commerciale, opere derivate con la stessa licenza. Condizioni ed esclusioni sono in [LICENSE.md](LICENSE.md). Le licenze delle componenti software, dei caratteri e delle texture di terzi sono indicate in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) e incluse nei rispettivi percorsi. Per webR e i pacchetti R sono riportati anche i riferimenti ai sorgenti corrispondenti.
+I materiali didattici originali sono distribuiti con licenza [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/): attribuzione obbligatoria, nessun uso commerciale, opere derivate con la stessa licenza. Il codice sorgente è distribuito con licenza [PolyForm Noncommercial 1.0.0](LICENSE-CODE.md), che consente l’uso non commerciale e quello delle istituzioni educative e di ricerca. Condizioni, ripartizione ed esclusioni sono in [LICENSE.md](LICENSE.md). Le licenze delle componenti software, dei caratteri e delle texture di terzi sono indicate in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) e incluse nei rispettivi percorsi. Per webR e i pacchetti R sono riportati anche i riferimenti ai sorgenti corrispondenti.
 
 L’organizzazione autonoma dei moduli riprende l’impostazione di [QuantumLab_Public](https://github.com/marzione00/QuantumLab_Public). I suoi programmi e contenuti non sono incorporati nel progetto. I pianeti hanno funzione illustrativa: superfici e velocità di rotazione non rappresentano osservazioni astronomiche.

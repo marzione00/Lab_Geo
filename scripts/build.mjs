@@ -276,7 +276,7 @@ function staticPage(file, title, summary, body) {
       body +
       '</main><footer><p>' +
       text(config.author) +
-      ' · <a href="../index.html">Atlante interattivo</a> · <a href="index.html">Indice testuale</a> · <a href="../LICENSE.md" rel="license">Licenza CC BY-NC-SA 4.0</a></p></footer></body></html>\n',
+      ' · <a href="../index.html">Atlante interattivo</a> · <a href="index.html">Indice testuale</a> · <a href="../LICENSE.md" rel="license">Licenze: materiali CC BY-NC-SA 4.0, codice PolyForm Noncommercial 1.0.0</a></p></footer></body></html>\n',
   );
 }
 for (const m of catalogue.modules) {
@@ -375,7 +375,8 @@ if (config.siteUrl)
       [config.siteUrl, ...staticPages.map(absolute)].map(u => '<url><loc>' + esc(u) + '</loc></url>').join('') +
       '</urlset>',
   );
-for (const f of ['THIRD_PARTY_NOTICES.md', 'LICENSE.md']) fs.copyFileSync(path.join(root, f), path.join(out, f));
+for (const f of ['THIRD_PARTY_NOTICES.md', 'LICENSE.md', 'LICENSE-CODE.md'])
+  fs.copyFileSync(path.join(root, f), path.join(out, f));
 // Compact generated SVG markup without changing coordinates, colours or precision.
 // Keep the editable course assets untouched.
 let svgBytesSaved = 0;
