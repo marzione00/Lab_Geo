@@ -1,0 +1,132 @@
+---
+title: "Il grafico della distribuzione nulla"
+subtitle: "M06_N05 \u00b7 Gemina"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come rendiamo visibili l'ipotesi nulla, il contrasto osservato e le due code usate dal p-value?
+
+## Obiettivi
+
+- Rappresentare una distribuzione nulla.
+- Collegare le aree di coda al conteggio delle repliche.
+
+**Prima di iniziare.** Vettori, indicizzazione, media, varianza e grafici di base in R.
+
+**Dati e unità.** Due gruppi sintetici indipendenti di venti e venticinque misure, in unità convenzionali. La simulazione didattica introduce uno spostamento della media.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M06_N05/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M06_N05")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(6005)
+```
+
+## 1. Costruire dati e riferimento nullo
+
+Usiamo un esempio costruito per separare i dati osservati dal modello di riassegnazione. Le due popolazioni generatrici hanno la stessa varianza e differiscono per posizione. La distribuzione nulla è ottenuta riassegnando le etichette ai valori osservati, non simulando nuovamente le popolazioni generatrici.
+
+```{r passo_01}
+set.seed(605)
+a <- rnorm(20, mean = 5, sd = 1)
+b <- rnorm(25, mean = 5.6, sd = 1)
+x <- c(a, b)
+osservato <- mean(b) - mean(a)
+B <- 2500
+nulli <- replicate(B, {
+  i <- sample.int(length(x), length(a), FALSE)
+  mean(x[-i]) - mean(x[i])
+})
+print(c(differenza_B_A = osservato, nA = length(a), nB = length(b)))
+```
+
+**Lettura del risultato.** Lo spostamento impostato nel generatore e la differenza osservata non devono coincidere. Il campionamento produce variabilità anche quando il modello generatore è noto.
+
+## 2. Disegnare soglie simmetriche
+
+Per una statistica bilaterale basata sul valore assoluto, le soglie sono meno e più il valore assoluto osservato. Mostriamo una linea per il contrasto effettivamente osservato e segnaliamo entrambe le regioni estreme con i punti della simulazione.
+
+```{r passo_02}
+soglia <- abs(osservato)
+estremi <- abs(nulli) >= soglia
+dominio <- range(c(nulli, -soglia, soglia))
+hist(nulli, breaks = 35, xlim = dominio, col = "#C9DFE8",
+     border = "white", ylab = "Frequenza", xlab = "Contrasto B - A sotto la nulla (u.c.)",
+     main = "Due code per un confronto bilaterale")
+abline(v = c(-soglia, soglia), col = "#A33B31", lty = 2, lwd = 2)
+rug(nulli[estremi], col = "#A33B31")
+abline(v = osservato, col = "#222222", lwd = 2)
+```
+
+**Lettura del risultato.** Le soglie dipendono dalla statistica osservata. Il numero di barre, il colore e la larghezza degli intervalli grafici non devono entrare nel calcolo del p-value.
+
+## 3. Verificare il conteggio indipendentemente dal grafico
+
+Contiamo le repliche direttamente dal vettore, includendo l'uguaglianza alla soglia. Il grafico illustra il criterio, mentre il vettore conserva i valori necessari per un conteggio preciso. Separiamo le due code per documentare il risultato.
+
+```{r passo_03}
+sinistra <- sum(nulli <= -soglia)
+destra <- sum(nulli >= soglia)
+k <- sum(estremi)
+p_mc <- (k + 1) / (B + 1)
+print(c(coda_sinistra = sinistra, coda_destra = destra,
+        totale_estremi = k, p_bilaterale = p_mc))
+stopifnot(soglia > 0, sinistra + destra == k)
+```
+
+**Lettura del risultato.** Le due code non devono contenere esattamente lo stesso numero di repliche in una simulazione finita. Il p-value non è la probabilità che la nulla sia vera dopo aver osservato i dati.
+
+## Variante svolta
+
+Calcolare una coda destra per un'alternativa B maggiore di A definita prima dell'esperimento.
+
+```{r variante}
+k_destra_osservata <- sum(nulli >= osservato)
+p_destra <- (k_destra_osservata + 1) / (B + 1)
+print(data.frame(alternativa = c("B diverso da A", "B maggiore di A"),
+  p_MC = c(p_mc, p_destra)))
+print(c(contrasto_osservato = osservato))
+```
+
+La soglia unilaterale è il contrasto con il suo segno, non il suo valore assoluto. Il confronto mostra come l'alternativa determina la regione estrema; non autorizza a sceglierla dopo i risultati.
+
+## Errore da riconoscere
+
+Non stimare il p-value contando visivamente le barre oltre una linea. Usare i valori delle repliche e una regola di coda definita in anticipo.
+
+## Risposta alla domanda
+
+Un grafico utile mostra centro nullo, statistica osservata e regione estrema. Il conteggio numerico precisa la lettura e resta distinto dall'interpretazione scientifica dell'effetto.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M06_N05` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M06/M06_N05.R).

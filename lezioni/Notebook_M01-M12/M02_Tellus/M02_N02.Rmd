@@ -1,0 +1,126 @@
+---
+title: "Vettori: tipi e operazioni"
+subtitle: "M02_N02 \u00b7 Tellus"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Perché una sola stringa può cambiare il tipo di un vettore e perché NA modifica il risultato di una media?
+
+## Obiettivi
+
+- Riconoscere la coercizione automatica dei tipi.
+- Dichiarare quali valori entrano in una sintesi e contare quelli esclusi.
+
+**Prima di iniziare.** Saper eseguire una cella R e riconoscere vettori, assegnamenti e nomi di colonne.
+
+**Dati e unità.** Usiamo piccoli vettori costruiti di tre o quattro elementi. I numeri sono esempi didattici senza unità fisica; ND rappresenta un codice testuale che richiede una regola di interpretazione.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M02_N02/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M02_N02")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(2002)
+```
+
+## 1. Osservare come nasce il tipo del vettore
+
+Un vettore atomico ha un tipo comune per tutti gli elementi. Se uniamo numeri e testo, R adotta una rappresentazione capace di conservarli entrambi: anche i valori che sembrano numeri diventano stringhe.
+
+```{r passo_01}
+numeri <- c(4, 5, 6)
+misti <- c(4, "5", "ND")
+print(numeri)
+print(misti)
+print(c(tipo_numeri = typeof(numeri), tipo_misti = typeof(misti)))
+stopifnot(is.numeric(numeri), is.character(misti))
+print(numeri * 2)
+```
+
+**Lettura del risultato.** La stampa e typeof mostrano due aspetti diversi: contenuto visibile e rappresentazione interna. Una stringa '5' non viene interpretata come misura numerica finché non scegliamo ed eseguiamo una conversione appropriata.
+
+## 2. Convertire soltanto valori riconosciuti
+
+Definiamo una regola semplice per l'esempio: accettiamo solo interi non negativi scritti con cifre. Convertiamo quelle posizioni e lasciamo NA nelle altre, conservando in una tabella il testo originale e l'esito della regola.
+
+```{r passo_02}
+riconosciuto <- grepl("^[0-9]+$", misti)
+convertiti <- rep(NA_real_, length(misti))
+convertiti[riconosciuto] <- as.numeric(misti[riconosciuto])
+audit <- data.frame(originale = misti, riconosciuto = riconosciuto, valore = convertiti)
+print(audit)
+stopifnot(!anyNA(riconosciuto), sum(is.na(convertiti)) == sum(!riconosciuto))
+```
+
+**Lettura del risultato.** La grammatica scelta è volutamente limitata: non accetta decimali o numeri negativi e andrebbe adattata a dati reali. Qui rende esplicito perché ND non entra nell'operazione, evitando una conversione indiscriminata accompagnata da avvisi ignorati.
+
+## 3. Leggere una media con mancanti
+
+Una media con NA è indefinita finché non decidiamo come trattare le osservazioni mancanti. Mostriamo la differenza fra il comportamento predefinito e l'esclusione esplicita, riportando sempre il numero di elementi effettivamente utilizzati.
+
+```{r passo_03}
+x <- c(4, 5, NA_real_, 7)
+media_completa <- mean(x)
+media_disponibili <- mean(x, na.rm = TRUE)
+n_totale <- length(x)
+n_disponibile <- sum(!is.na(x))
+print(c(totali = n_totale, disponibili = n_disponibile,
+        media_predefinita = media_completa, media_disponibili = media_disponibili))
+stopifnot(is.na(media_completa), n_disponibile == 3L)
+```
+
+**Lettura del risultato.** La media dei disponibili descrive tre valori osservati, non quattro valori completi. L'opzione na.rm non ricostruisce il dato assente e non garantisce che l'assenza sia irrilevante rispetto alla domanda scientifica.
+
+## Variante svolta
+
+Gestire un vettore interamente mancante evitando una media NaN non spiegata.
+
+```{r variante}
+solo_mancanti <- c(NA_real_, NA_real_)
+n_valido <- sum(is.finite(solo_mancanti))
+media_sicura <- if (n_valido > 0L) mean(solo_mancanti[is.finite(solo_mancanti)]) else NA_real_
+print(c(disponibili = n_valido, media = media_sicura))
+stopifnot(n_valido == 0L, is.na(media_sicura))
+```
+
+L'assenza totale di dati viene rappresentata da numerosità zero e media non disponibile. Questo esito è più chiaro di una tabella che mostri soltanto un simbolo numerico speciale senza spiegare il denominatore.
+
+## Errore da riconoscere
+
+Usare na.rm = TRUE in ogni funzione senza contare le esclusioni può produrre sintesi basate su insiemi diversi di osservazioni. Il numero valido va riportato accanto a ogni risultato.
+
+## Risposta alla domanda
+
+Il tipo del vettore determina quali operazioni sono possibili. Una conversione documentata e un denominatore esplicito permettono di distinguere dati assenti, testo non riconosciuto e numeri utilizzati.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M02_N02` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M02/M02_N02.R).

@@ -1,0 +1,131 @@
+---
+title: "Bootstrap stratificato"
+subtitle: "M05_N14 \u00b7 Pelago"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come manteniamo fisse le numerosità di gruppo e stimiamo una media con pesi dichiarati?
+
+## Obiettivi
+
+- Ricampionare separatamente gli strati.
+- Applicare gli stessi pesi in ogni replica.
+
+**Prima di iniziare.** Vettori, indicizzazione, media, varianza e grafici di base in R.
+
+**Dati e unità.** Ottanta fossili sintetici per morfotipo; diametri in micrometri. I pesi territoriali 0,4 e 0,6 sono ipotesi didattiche, non quote documentate di una popolazione reale.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M05_N14/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M05_N14")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(5014)
+```
+
+## 1. Definire strati e pesi del bersaglio
+
+La media bersaglio combina le medie dei due morfotipi con pesi fissati prima dell'analisi. I pesi della popolazione non coincidono necessariamente con le proporzioni raccolte. Associamo i nomi ai pesi per evitare inversioni silenziose dell'ordine dei gruppi.
+
+```{r passo_01}
+dati <- carica_dati("fossili_simulati.csv")
+gruppi <- split(dati$diametro_tot_um, dati$morfotipo)
+pesi <- c(Rounded = 0.4, Spiky = 0.6)
+gruppi <- gruppi[names(pesi)]
+stopifnot(all(vapply(gruppi, function(x) all(is.finite(x)), logical(1))))
+numerosita <- lengths(gruppi)
+medie <- vapply(gruppi, mean, numeric(1))
+stima <- sum(pesi * medie)
+print(data.frame(gruppo = names(pesi), n = numerosita, peso = pesi, media = medie))
+```
+
+**Lettura del risultato.** La stima attribuisce alla popolazione Spiky il sessanta per cento del peso indipendentemente dall'uguaglianza delle numerosità campionarie. Cambiare questi pesi cambia il parametro.
+
+## 2. Ricampionare entro ciascuno strato
+
+In ogni replica estraiamo con reinserimento lo stesso numero di unità osservate in ciascun gruppo. Poi applichiamo i pesi originali alle due medie. I ricampionamenti dei gruppi sono indipendenti nell'ipotesi di due campioni raccolti indipendentemente.
+
+```{r passo_02}
+set.seed(514)
+B <- 2000
+medie_boot <- replicate(B, vapply(gruppi, function(x)
+  mean(sample(x, length(x), replace = TRUE)), numeric(1)))
+stime_boot <- as.numeric(crossprod(pesi, medie_boot))
+intervallo <- quantile(stime_boot, c(0.025, 0.975), names = FALSE)
+print(c(stima_um = stima, SE_um = sd(stime_boot),
+        inferiore_um = intervallo[1], superiore_um = intervallo[2]))
+```
+
+**Lettura del risultato.** Le quote non oscillano fra repliche; cambia la selezione dei diametri all'interno dei gruppi. L'intervallo percentile conserva le limitazioni della procedura bootstrap e delle unità osservate.
+
+## 3. Verificare la varianza condizionale della media pesata
+
+Per strati indipendenti la varianza di una somma pesata è la somma delle varianze moltiplicate per i pesi al quadrato. Usiamo la varianza empirica esatta delle medie bootstrap per ottenere un riferimento che non dipende da B.
+
+```{r passo_03}
+var_medie <- vapply(gruppi, function(x) {
+  nn <- length(x)
+  (nn - 1) * var(x) / nn^2
+}, numeric(1))
+se_condizionale <- sqrt(sum(pesi^2 * var_medie))
+print(c(SE_simulato = sd(stime_boot), SE_condizionale = se_condizionale))
+hist(stime_boot, breaks = 30, col = "#95BDD0", border = "white", ylab = "Frequenza",
+     xlab = "Media pesata del diametro (um)", main = "Bootstrap stratificato")
+abline(v = stima, col = "#A33B31", lwd = 2)
+```
+
+**Lettura del risultato.** Il confronto controlla il calcolo della media pesata e del ricampionamento. Non verifica che le quote didattiche siano appropriate per una popolazione geologica.
+
+## Variante svolta
+
+Ricalcolare il bersaglio con quote uguali usando le stesse medie bootstrap.
+
+```{r variante}
+pesi_uguali <- c(Rounded = 0.5, Spiky = 0.5)
+boot_uguale <- as.numeric(crossprod(pesi_uguali, medie_boot))
+print(data.frame(pesi = c("0.4 / 0.6", "0.5 / 0.5"),
+  stima_um = c(stima, sum(pesi_uguali * medie)),
+  SE_um = c(sd(stime_boot), sd(boot_uguale))))
+```
+
+Riutilizzare le medie bootstrap isola l'effetto della ponderazione. Si confrontano due parametri e non due metodi concorrenti per un unico parametro immutato.
+
+## Errore da riconoscere
+
+Non ricalcolare i pesi dalle numerosità casuali di una replica pooled quando il bersaglio impone quote note e fisse.
+
+## Risposta alla domanda
+
+Lo schema stratificato conserva le numerosità previste e rende esplicito il ruolo dei pesi. Se le quote della popolazione sono stimate, anche la loro incertezza richiede attenzione.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M05_N14` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M05/M05_N14.R).

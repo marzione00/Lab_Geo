@@ -1,0 +1,134 @@
+---
+title: "Preparare le distanze senza usare l\u2019etichetta"
+subtitle: "M08_N10 \u00b7 Polychroma"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Quali controlli rendono una matrice di distanze riproducibile e interpretabile?
+
+## Obiettivi
+
+- Controllare simmetria e diagonale.
+- Scomporre una distanza per variabile.
+- Separare i metadati dalla geometria di analisi.
+
+**Prima di iniziare.** Lettura di un CSV, vettori, matrici, indicizzazione e funzioni di base in R.
+
+**Dati e unità.** Novanta rocce sintetiche del corso. SiO2, CaO, MgO e FeO sono percentuali in massa; densita è espressa in g/cm³ e grana_mm in millimetri. colore e fossili sono indici numerici convenzionali del simulatore, non misure mineralogiche o conteggi reali. La colonna litologia_generatrice descrive il gruppo usato nella simulazione e viene esclusa dalle stime.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Polychroma oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M08_Polychroma` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M08_Polychroma/Risultati/M08_N10/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M08_Polychroma"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M08_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M08_Polychroma o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M08_N10")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(8010)
+```
+
+## 1. La distanza nello spazio scelto
+
+La distanza euclidea standardizzata confronta otto scarti relativi: $d^2(i,h)=\sum_j(z_{ij}-z_{hj})^2$. È una distanza nello spazio delle proprietà, non una distanza geografica.
+
+```{r passo_01}
+# Seleziona le misure per nome: ID ed etichetta non entrano nella matrice.
+r <- carica_dati("rocce_simulate.csv")
+v <- c("SiO2", "CaO", "MgO", "FeO", "densita", "grana_mm", "colore", "fossili")
+X <- as.matrix(r[v])
+stopifnot(nrow(X)==90L, ncol(X)==8L, !anyDuplicated(r$id),
+          all(is.finite(X)), all(apply(X,2,sd)>0))
+Z <- scale(X)
+D <- dist(Z)
+DD <- as.matrix(D)
+c(campioni=nrow(DD),coppie=length(D),minimo=min(D),massimo=max(D))
+stopifnot(max(abs(DD-t(DD)))<1e-12,all(diag(DD)==0))
+```
+
+**Lettura del risultato.** Con 90 campioni le coppie distinte sono 4005. La matrice è simmetrica e la diagonale nulla. R conserva dist in forma compatta, senza memorizzare due volte ogni coppia.
+
+## 2. Contributi alla distanza
+
+Scomponiamo la distanza fra due campioni nei contributi delle otto proprietà. È il modo più diretto per capire quali differenze sostengono la dissimilarità.
+
+```{r passo_02}
+i <- 1;j <- 40
+contributi <- (Z[i,]-Z[j,])^2
+data.frame(variabile=v,contributo=contributi,
+ quota=contributi/sum(contributi))
+c(somma=sum(contributi),da_dist=DD[i,j]^2)
+barplot(contributi,horiz=TRUE,las=1,col="#087C74",cex.names=.75,
+ xlab="Contributo alla distanza quadratica")
+```
+
+**Lettura del risultato.** I contributi rendono esplicito il criterio di somiglianza. Una colonna molto ridondante con altre può aumentare il peso di una stessa proprietà latente.
+
+## 3. L’etichetta rimane fuori
+
+Gli ID collegano la distanza ai campioni. Le litologie del simulatore vengono mantenute in un oggetto separato e potranno essere consultate soltanto dopo la costruzione dei gruppi.
+
+```{r passo_03}
+metadati <- r[c("id","litologia_generatrice")]
+stopifnot(!any(c("id","litologia_generatrice") %in% colnames(Z)))
+prima_coppia <- data.frame(id1=r$id[i],id2=r$id[j],distanza=DD[i,j])
+prima_coppia
+write.csv(data.frame(id=r$id,Z),percorso_risultati("coordinate_per_clustering.csv"),row.names=FALSE)
+```
+
+**Lettura del risultato.** La separazione evita di usare nella distanza un’informazione che si intende confrontare successivamente con i cluster. Il solo fatto di averla separata non garantisce comunque una validazione geologica indipendente.
+
+## Variante svolta
+
+Confrontare la distanza quadratica con un raddoppio esplicito del peso della granulometria.
+
+```{r variante}
+pesi <- rep(1,ncol(Z));pesi[which(v=="grana_mm")] <- 2
+Zp <- sweep(Z,2,sqrt(pesi),"*")
+c(originale=DD[i,j]^2,pesata=as.matrix(dist(Zp))[i,j]^2)
+```
+
+Il peso entra tramite la radice quadrata perché la distanza somma scarti quadratici. Pesare una proprietà è una scelta scientifica da dichiarare e verificare con analisi di sensibilità.
+
+## Errore da riconoscere
+
+Includere il numero progressivo del campione o i codici delle litologie nella distanza solo perché sono stati convertiti in numeri.
+
+## Risposta alla domanda
+
+La distanza risulta riproducibile quando variabili, trasformazioni, pesi e identificativi sono documentati. Le etichette del simulatore non intervengono nel calcolo.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M08_N10` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M08/M08_N10.R).

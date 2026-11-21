@@ -1,0 +1,141 @@
+---
+title: "Intervallo per la media e per un individuo"
+subtitle: "M07_N06 \u00b7 Annula"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Perché la previsione di un nuovo fossile è meno precisa della stima della media a pari diametro?
+
+## Obiettivi
+
+- Collegare la domanda al calcolo riportato.
+- Interpretare il risultato usando variabili e unità del problema.
+
+**Prima di iniziare.** Vettori, data frame, indicizzazione e funzioni di base in R.
+
+**Dati e unità.** Fossili simulati del corso: 160 individui, 80 Rounded e 80 Spiky. Diametri e spessori sono espressi in micrometri. Nel generatore, diametro interno = diametro totale − 2 × spessore. La relazione contiene quindi un vincolo geometrico noto.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Annula oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M07_Annula` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M07_Annula/Risultati/M07_N06/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M07_Annula"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M07_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M07_Annula o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M07_N06")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(7006)
+```
+
+## 1. Due oggetti della previsione
+
+A $x_0=7$ µm stimiamo sia la media condizionata sia il diametro interno di un nuovo individuo. La seconda domanda aggiunge la variabilità individuale alla stima incerta della media.
+
+```{r passo_01}
+# Ogni riga identifica un fossile simulato.
+f <- carica_dati("fossili_simulati.csv")
+f$morfotipo <- factor(f$morfotipo, levels=c("Rounded", "Spiky"))
+x <- f$diametro_tot_um
+y <- f$diametro_int_um
+stopifnot(nrow(f)==160L, !anyDuplicated(f$id),
+          all(is.finite(x)), all(is.finite(y)))
+# La formula mette la risposta a sinistra della tilde.
+modello <- lm(diametro_int_um ~ diametro_tot_um, data=f)
+e <- residuals(modello)
+x0 <- data.frame(diametro_tot_um=7)
+IC <- predict(modello,x0,interval="confidence",level=.95)
+IP <- predict(modello,x0,interval="prediction",level=.95)
+rbind(media=IC,nuovo_individuo=IP)
+```
+
+**Lettura del risultato.** La previsione centrale è la stessa, circa 5,999 µm. L’intervallo individuale è più ampio perché include una nuova deviazione dalla retta.
+
+## 2. La formula spiega la differenza
+
+Nella regressione semplice, $h_0=1/n+(x_0-\bar x)^2/S_{xx}$. L’errore standard della media è $s\sqrt{h_0}$, mentre quello per un individuo è $s\sqrt{1+h_0}$. Il termine 1 rappresenta la variabilità del nuovo errore.
+
+```{r passo_02}
+h0 <- 1/length(x)+(7-mean(x))^2/sum((x-mean(x))^2)
+s <- summary(modello)$sigma
+tcrit <- qt(.975,df=df.residual(modello))
+centro <- as.numeric(predict(modello,x0))
+rbind(media=centro+c(-1,1)*tcrit*s*sqrt(h0),
+      individuo=centro+c(-1,1)*tcrit*s*sqrt(1+h0))
+c(SE_media=s*sqrt(h0),SE_individuo=s*sqrt(1+h0))
+```
+
+**Lettura del risultato.** Il calcolo manuale coincide con `predict()`. Gli intervalli t sono esatti nel modello lineare con errori gaussiani indipendenti e varianza costante. La loro correttezza algebrica non compensa una forma della media sbagliata.
+
+## 3. Bande nel dominio osservato
+
+La banda della media si allarga allontanandosi dal centro dei predittori. Disegniamo entrambe le bande solo nel campo osservato, così il grafico non suggerisce supporto empirico oltre i dati.
+
+```{r passo_03}
+g <- data.frame(diametro_tot_um=seq(min(x),max(x),length.out=100))
+ic <- predict(modello,g,interval="confidence")
+ip <- predict(modello,g,interval="prediction")
+plot(x,y,pch=19,col="grey70",xlab="Diametro totale (micrometri)",
+ ylab="Diametro interno (micrometri)")
+matlines(g$diametro_tot_um,ip[,2:3],col="#C57E42",lty=3,lwd=1.5)
+matlines(g$diametro_tot_um,ic[,2:3],col="#087C74",lty=2,lwd=1.5)
+lines(g$diametro_tot_um,ic[,1],col="#087C74",lwd=2)
+legend("topleft",c("Media al 95%","Individuo al 95%"),
+ col=c("#087C74","#C57E42"),lty=c(2,3),bty="n")
+```
+
+**Lettura del risultato.** La banda più stretta riguarda la media. Non va presentata come contenitore del 95% dei singoli fossili. L’intervallo per un individuo riguarda una nuova osservazione proveniente dallo stesso meccanismo del modello.
+
+## Variante svolta
+
+Calcolare un intervallo a 11 µm e indicare esplicitamente se il punto appartiene al dominio osservato.
+
+```{r variante}
+nuovo <- data.frame(diametro_tot_um=11)
+predict(modello,nuovo,interval="prediction")
+nuovo$diametro_tot_um>=min(x) & nuovo$diametro_tot_um<=max(x)
+```
+
+R restituisce un intervallo, ma 11 µm è oltre il massimo osservato di circa 8,62 µm. L’intervallo usa ancora le stesse ipotesi e non misura l’errore dovuto a una possibile rottura della relazione fuori dominio.
+
+## Errore da riconoscere
+
+Usare `interval="confidence"` per un singolo individuo produce un intervallo troppo stretto per quella domanda.
+
+## Risposta alla domanda
+
+La previsione centrale coincide, ma il nuovo individuo conserva una variabilità che la media stimata non ha.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M07_N06` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M07/M07_N06.R).

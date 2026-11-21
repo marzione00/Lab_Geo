@@ -1,0 +1,134 @@
+---
+title: "Risposta, predittore e geometria del fossile"
+subtitle: "M07_N01 \u00b7 Annula"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Come descrivere il diametro interno a partire dal diametro totale, conservando il significato fisico delle misure?
+
+## Obiettivi
+
+- Collegare la domanda al calcolo riportato.
+- Interpretare il risultato usando variabili e unità del problema.
+
+**Prima di iniziare.** Vettori, data frame, indicizzazione e funzioni di base in R.
+
+**Dati e unità.** Fossili simulati del corso: 160 individui, 80 Rounded e 80 Spiky. Diametri e spessori sono espressi in micrometri. Nel generatore, diametro interno = diametro totale − 2 × spessore. La relazione contiene quindi un vincolo geometrico noto.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Annula oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M07_Annula` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M07_Annula/Risultati/M07_N01/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M07_Annula"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M07_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M07_Annula o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M07_N01")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(7001)
+```
+
+## 1. Lettura e controllo delle misure
+
+La risposta $Y$ è il diametro interno. Il predittore $X$ è il diametro totale. Prima del modello verifichiamo che le due colonne contengano misure dello stesso individuo e che le unità siano coerenti.
+
+```{r passo_01}
+# Ogni riga identifica un fossile simulato.
+f <- carica_dati("fossili_simulati.csv")
+f$morfotipo <- factor(f$morfotipo, levels=c("Rounded", "Spiky"))
+x <- f$diametro_tot_um
+y <- f$diametro_int_um
+stopifnot(nrow(f)==160L, !anyDuplicated(f$id),
+          all(is.finite(x)), all(is.finite(y)))
+head(f[, c("id", "morfotipo", "diametro_tot_um", "diametro_int_um")])
+summary(f[, c("diametro_tot_um", "diametro_int_um")])
+```
+
+**Lettura del risultato.** Le colonne condividono l’identificativo di riga. Il diametro totale osservato va da circa 3,68 a 8,62 µm. Un valore esterno a questo intervallo richiederebbe un’estrapolazione.
+
+## 2. Una nuvola con un vincolo geometrico
+
+Nel dataset sintetico vale $D_{\mathrm{int}}=D_{\mathrm{tot}}-2s$. La bisettrice $y=x$ rappresenta spessore nullo: i punti devono stare al di sotto.
+
+```{r passo_02}
+# Colori distinti per mantenere visibile l'informazione di gruppo.
+colore <- c("#087C74", "#C57E42")[f$morfotipo]
+plot(x, y, pch=19, col=adjustcolor(colore,.7),
+     xlab="Diametro totale (micrometri)", ylab="Diametro interno (micrometri)")
+abline(0,1,lty=2,col="grey45")
+legend("topleft",levels(f$morfotipo),pch=19,col=c("#087C74","#C57E42"),bty="n")
+scarto_geometrico <- x-y-2*f$spessore_um
+c(massimo_scarto=max(abs(scarto_geometrico)), punti_sopra=sum(y>x))
+```
+
+**Lettura del risultato.** Nessun punto supera la bisettrice. Lo scarto massimo dall’identità è circa $10^{-8}$ µm, compatibile con l’arrotondamento del CSV. Una parte dell’associazione è imposta dalla costruzione delle misure.
+
+## 3. La domanda condizionata
+
+Per un diametro totale vicino a 6 µm, osserviamo la dispersione del diametro interno. Questa sezione locale anticipa la quantità $E(Y\mid X=x)$, senza assumere ancora una retta.
+
+```{r passo_03}
+# Una finestra scelta per illustrare la lettura condizionata.
+vicini <- abs(x-6)<=.25
+c(n=sum(vicini), diametro_medio=mean(y[vicini]),
+  sd_diametro=sd(y[vicini]))
+f[vicini, c("id","diametro_tot_um","diametro_int_um","spessore_um")]
+```
+
+**Lettura del risultato.** A diametri totali simili corrispondono diametri interni diversi, perché cambia lo spessore. Media e dispersione rispondono a domande differenti. Questa finestra è descrittiva e non costituisce un modello predittivo validato.
+
+## Variante svolta
+
+Ripetere la sezione locale intorno a 7 µm e confrontare numerosità e media.
+
+```{r variante}
+centri <- c(6,7)
+do.call(rbind,lapply(centri,function(a) {
+ v <- abs(x-a)<=.25
+ data.frame(centro=a,n=sum(v),media=mean(y[v]),sd=sd(y[v]))
+}))
+```
+
+Le finestre contengono individui diversi. Il confronto delle medie suggerisce una relazione crescente, mentre le deviazioni standard descrivono la variabilità locale.
+
+## Errore da riconoscere
+
+Una correlazione elevata fra diametri collegati da un’identità geometrica non dimostra un meccanismo causale indipendente.
+
+## Risposta alla domanda
+
+La risposta è una misura per individuo, il predittore è una misura disponibile dello stesso individuo e il dominio osservato definisce dove l’esempio ha supporto empirico.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M07_N01` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M07/M07_N01.R).

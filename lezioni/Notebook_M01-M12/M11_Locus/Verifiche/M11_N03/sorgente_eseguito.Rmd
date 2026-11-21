@@ -1,0 +1,141 @@
+---
+title: "Distanza euclidea e invarianti"
+subtitle: "M11_N03 · Locus"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Quali proprietà deve conservare una distanza euclidea nel piano locale?
+
+## Obiettivi
+
+- Costruire una matrice di distanze in metri.
+- Controllare simmetria, diagonale e una distanza nota.
+- Verificare traslazioni, rotazioni e cambi di unità.
+
+**Prima di iniziare.** Sono richiesti vettori, tabelle, coordinate e funzioni R di base. I blocchi vanno eseguiti in ordine; il notebook è autonomo rispetto agli altri. I calcoli usano R base e i pacchetti standard.
+
+**Dati e unità.** 64 siti sintetici su una griglia 8 × 8, con passo 250 m e coordinate locali x_m e y_m fra 0 e 1750 m. Questo piano locale non ha un codice EPSG. La concentrazione è sintetica, in unità arbitrarie (u.a.); la quota è in metri sintetici. Ogni riga descrive un sito e il suo valore puntuale, non la media di una cella.
+
+## Preparazione
+
+Aprire il progetto autonomo di Locus o quello generale dei notebook. I CSV locali restano invariati. Gli output vanno in `Risultati/M11_N03/`. Nessun download o installazione viene eseguito nei blocchi.
+
+```{r preparazione}
+# Trova il modulo dal progetto autonomo o dal progetto generale dei notebook.
+.gs_cerca <- normalizePath(getwd(),winslash="/",mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca,file.path(.gs_cerca,"M11_Locus"),
+    file.path(.gs_cerca,"03_Notebook_svolti","M11_Locus"),
+    file.path(.gs_cerca,"M11","03_Notebook_svolti","M11_Locus"))
+  .gs_ok <- file.exists(file.path(.gs_candidati,"M11_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati,"R","funzioni_notebook.R"))
+  if(any(.gs_ok)) { .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]];break }
+  .gs_padre <- dirname(.gs_cerca)
+  if(.gs_padre==.gs_cerca) stop("Aprire il progetto M11_Locus o quello generale dei notebook.")
+  .gs_cerca <- .gs_padre
+}
+source(file.path(.gs_modulo,"R","funzioni_notebook.R"),local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo,"M11_N03")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88,digits=6)
+if(requireNamespace("knitr",quietly=TRUE)) {
+  knitr::opts_chunk$set(echo=TRUE,error=FALSE,warning=TRUE,message=TRUE,
+    fig.width=8,fig.height=5,dpi=150,fig.align="center")
+}
+set.seed(11003)
+```
+
+## 1. La matrice confronta tutte le coppie
+
+Nel piano metrico usiamo $d_{ij}=\sqrt{(x_i-x_j)^2+(y_i-y_j)^2}$. La matrice ha 64 righe e 64 colonne, ma le coppie non ordinate sono molte meno.
+
+```{r passo_01}
+d <- carica_dati("spazio_v3.csv")
+audit_spazio(d)
+ xy <- as.matrix(d[c("x_m","y_m")])
+ D <- as.matrix(dist(xy))
+ stopifnot(max(abs(D-t(D)))<1e-12,all(diag(D)==0),D[1,2]==250)
+ data.frame(siti=nrow(D),celle=length(D),coppie_non_ordinate=choose(nrow(D),2),
+   distanza_S01_S64_m=D[1,64])
+ head(data.frame(id=d$id,distanza_da_S01_m=D[,1]),10)
+```
+
+**Lettura del risultato.** La diagonale confronta ciascun sito con sé stesso. Le due metà della matrice ripetono le stesse distanze, quindi non rappresentano confronti distinti.
+
+## 2. Traslazioni e rotazioni conservano la geometria
+
+Aggiungere un’origine o ruotare entrambi gli assi non deve cambiare le distanze. Il controllo è numerico, con una tolleranza esplicita.
+
+```{r passo_02}
+traslate <- sweep(xy,2,c(500000,4980000),"+")
+alfa <- pi/6;rotazione <- matrix(c(cos(alfa),sin(alfa),-sin(alfa),cos(alfa)),2,2)
+ruotate <- xy%*%rotazione
+confronto <- data.frame(trasformazione=c("Traslazione","Rotazione 30 gradi"),
+  scarto_massimo_m=c(max(abs(as.matrix(dist(traslate))-D)),max(abs(as.matrix(dist(ruotate))-D))))
+confronto
+stopifnot(all(confronto$scarto_massimo_m<1e-8))
+```
+
+**Lettura del risultato.** Aggiungere numeri alle coordinate conserva la distanza euclidea, ma non attribuisce al piano locale un CRS. Un’origine UTM apparentemente plausibile non costituisce un georiferimento.
+
+## 3. Il cambio di unità ha un effetto prevedibile
+
+Convertire entrambi gli assi da metri a chilometri divide tutte le distanze per mille.
+
+```{r passo_03}
+D_km <- as.matrix(dist(xy/1000))
+stopifnot(max(abs(D_km-D/1000))<1e-12)
+stile_grafico()
+plot(d$x_m,d$y_m,pch=19,col=palette_geo[1],asp=1,
+  xlab="x locale (m)",ylab="y locale (m)",main="Distanza fra due siti estremi")
+segments(d$x_m[1],d$y_m[1],d$x_m[64],d$y_m[64],col=palette_geo[2],lwd=2)
+write.csv(data.frame(id=d$id,distanza_da_S01_m=D[,1]),
+  percorso_risultati("distanze_da_S01.csv"),row.names=FALSE)
+```
+
+**Lettura del risultato.** La conversione usa la stessa scala su entrambi gli assi. Mescolare metri e chilometri nello stesso calcolo cambia la geometria in modo scorretto.
+
+## Variante svolta
+
+**Una scala diversa per un solo asse.** Raddoppiare x mantenendo y invariata e confrontare tre distanze.
+
+```{r variante}
+deformate <- xy;deformate[,1] <- 2*deformate[,1]
+D2 <- as.matrix(dist(deformate))
+data.frame(coppia=c("S01-S02","S01-S09","S01-S64"),
+  prima=D[1,c(2,9,64)],dopo=D2[1,c(2,9,64)])
+stopifnot(D2[1,2]==2*D[1,2],D2[1,9]==D[1,9])
+```
+
+La deformazione non è un semplice cambio di unità comune: favorisce una direzione rispetto all’altra.
+
+## Errore da riconoscere
+
+Usare dist su lon e lat e chiamare metri il risultato, oppure interpretare le due metà di D come coppie indipendenti.
+
+## Risposta alla domanda
+
+Una distanza locale verificabile conserva simmetria, diagonale nulla e invarianti geometrici. Le coordinate devono avere unità compatibili; un calcolo in gradi richiede un modello geografico diverso.
+
+## Raccordo con le slide
+
+[Slide 19–21 della lezione Locus](../../02_PDF/M11_Locus/Locus_M11_statistica_spaziale.pdf#page=19). Il notebook conserva il tema del laboratorio originale e aggiunge verifiche e una variante svolta.
+
+
+## Riferimenti e provenienza
+
+Questo svolgimento sviluppa `M11_N03` del [modulo M11 del corso](https://marzione00.github.io/Lab_Geo/#modulo-M11). Il [codice originale](https://github.com/marzione00/Lab_Geo/blob/649f7cc577b96bd1044d81e78a2f530813e4f96b/materiali/laboratori/M11/M11_N03.R) è conservato immutato in `R/Originali_corso/`; la mappa allegata documenta gli ampliamenti. Dati e originali hanno impronte SHA-256 e SHA-1 Git verificate.
+
+Documentazione primaria delle operazioni: [R, dist](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/dist.html), [R, aggregate](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/aggregate.html), [R, sample](https://stat.ethz.ch/R-manual/R-devel/library/base/html/sample.html). Le definizioni spaziali e il riferimento inferenziale seguono il laboratorio originale, con le distinzioni esplicitate nel testo.

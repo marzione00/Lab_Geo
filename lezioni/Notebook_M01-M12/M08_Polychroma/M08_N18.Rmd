@@ -1,0 +1,148 @@
+---
+title: "Campioni atipici e sensibilit\u00e0 alle variabili"
+subtitle: "M08_N18 \u00b7 Polychroma"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Quali casi meritano un controllo e quanto dipendono i gruppi dalle variabili selezionate?
+
+## Obiettivi
+
+- Esaminare distanza dal centro e silhouette.
+- Interpretare una soglia descrittiva.
+- Confrontare selezioni di variabili e perturbazioni dichiarate.
+
+**Prima di iniziare.** Lettura di un CSV, vettori, matrici, indicizzazione e funzioni di base in R.
+
+**Dati e unità.** Novanta rocce sintetiche del corso. SiO2, CaO, MgO e FeO sono percentuali in massa; densita è espressa in g/cm³ e grana_mm in millimetri. colore e fossili sono indici numerici convenzionali del simulatore, non misure mineralogiche o conteggi reali. La colonna litologia_generatrice descrive il gruppo usato nella simulazione e viene esclusa dalle stime.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Polychroma oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M08_Polychroma` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M08_Polychroma/Risultati/M08_N18/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M08_Polychroma"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M08_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M08_Polychroma o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M08_N18")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(8018)
+```
+
+## 1. Distanza dal centro e separazione relativa
+
+Combiniamo due descrizioni: la distanza quadratica dal centro misura lontananza interna; la silhouette descrive separazione rispetto agli altri gruppi. Manteniamo gli identificativi per poter verificare i casi segnalati.
+
+```{r passo_01}
+# Seleziona le misure per nome: ID ed etichetta non entrano nella matrice.
+r <- carica_dati("rocce_simulate.csv")
+v <- c("SiO2", "CaO", "MgO", "FeO", "densita", "grana_mm", "colore", "fossili")
+X <- as.matrix(r[v])
+stopifnot(nrow(X)==90L, ncol(X)==8L, !anyDuplicated(r$id),
+          all(is.finite(X)), all(apply(X,2,sd)>0))
+Z <- scale(X)
+D <- dist(Z)
+# Gli avvii multipli confrontano soluzioni locali sullo stesso spazio.
+set.seed(816)
+km <- kmeans(Z, centers=3, nstart=50, iter.max=100)
+d2 <- rowSums((Z-km$centers[km$cluster,,drop=FALSE])^2)
+s <- silhouette_base(km$cluster,D)
+tab <- data.frame(id=r$id,cluster=km$cluster,distanza2=d2,silhouette=s)
+head(tab[order(tab$distanza2,decreasing=TRUE),],8)
+plot(d2,s,pch=19,col="#087C74",xlab="Distanza quadratica dal centro",
+ ylab="Silhouette")
+segnala <- order(d2,decreasing=TRUE)[1:4]
+text(d2[segnala],s[segnala],labels=r$id[segnala],pos=3,cex=.7)
+```
+
+**Lettura del risultato.** I campioni più lontani non sono automaticamente errori. Un caso può segnalare dispersione del gruppo, una combinazione rara, una variabile influente o un problema di misura; qui si tratta comunque di dati sintetici.
+
+## 2. Una soglia descrittiva interna
+
+Usiamo il 95° percentile delle distanze entro ciascun cluster per individuare casi da esaminare. La soglia è descrittiva e costruita sugli stessi dati: non è un test con errore di primo tipo al 5%.
+
+```{r passo_02}
+soglia <- vapply(1:3,function(g)unname(quantile(d2[km$cluster==g],.95)),numeric(1))
+tab$da_esaminare <- d2>soglia[km$cluster]
+tab[tab$da_esaminare,]
+# Scompone il contributo delle variabili per il caso più lontano.
+i <- which.max(d2)
+sort((Z[i,]-km$centers[km$cluster[i],])^2,decreasing=TRUE)
+```
+
+**Lettura del risultato.** La scomposizione mostra quali proprietà hanno contribuito alla segnalazione. Prima di rimuovere un caso servirebbe una ragione osservativa o strumentale documentata; il solo superamento del percentile non basta.
+
+## 3. Una geometria basata soltanto sugli ossidi
+
+Ripetiamo l’analisi sulle quattro percentuali di ossidi, standardizzate singolarmente. Questo confronto esplora il ruolo delle variabili: non sostituisce l’approfondimento composizionale sui cinque log-rapporti.
+
+```{r passo_03}
+ossidi <- c("SiO2","CaO","MgO","FeO")
+Zo <- scale(as.matrix(r[ossidi]))
+set.seed(822)
+ko <- kmeans(Zo,3,nstart=50,iter.max=100)
+c(ARI=indice_rand_corretto(km$cluster,ko$cluster),
+ silhouette_8=mean(s),silhouette_4=mean(silhouette_base(ko$cluster,dist(Zo))))
+table(otto_variabili=km$cluster,quattro_ossidi=ko$cluster)
+```
+
+**Lettura del risultato.** La partizione a tre gruppi coincide in questo dataset. Le due silhouette si riferiscono però a distanze differenti; un valore più alto non dimostra automaticamente che la seconda selezione sia scientificamente preferibile.
+
+## Variante svolta
+
+Esaminare la sensibilità a una modifica artificiale di un campione, senza sovrascrivere i dati.
+
+```{r variante}
+Z_mod <- Z
+i <- 1L
+Z_mod[i,"grana_mm"] <- Z_mod[i,"grana_mm"]+5
+set.seed(823)
+km_mod <- kmeans(Z_mod,3,nstart=50,iter.max=100)
+c(campione=i,ARI=indice_rand_corretto(km$cluster,km_mod$cluster),
+ WSS_originale=km$tot.withinss,WSS_modificata=km_mod$tot.withinss)
+r[i,c("id","grana_mm")]
+```
+
+L’incremento di cinque deviazioni standard è una prova artificiale, non una correzione del campione. I dati originali restano inalterati e l’output separa l’effetto sulla partizione da quello sulla WSS.
+
+## Errore da riconoscere
+
+Eliminare automaticamente i campioni distanti per rendere i cluster più netti.
+
+## Risposta alla domanda
+
+La diagnostica individua domande da verificare sui campioni e sulle misure. Le analisi di sensibilità documentano quanto cambiano i risultati al cambiare delle scelte.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M08_N18` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M08/M08_N18.R).

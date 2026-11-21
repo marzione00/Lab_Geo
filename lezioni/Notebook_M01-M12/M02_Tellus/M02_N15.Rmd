@@ -1,0 +1,153 @@
+---
+title: "Visualizzare il controllo e derivare le misure"
+subtitle: "M02_N15 \u00b7 Tellus"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come rendiamo visibili le anomalie geometriche prima di calcolare spessore e rapporto fra diametri?
+
+## Obiettivi
+
+- Usare un grafico diagnostico con la retta di uguaglianza.
+- Derivare misure soltanto su coppie di diametri ammissibili.
+
+**Prima di iniziare.** Saper eseguire una cella R e riconoscere vettori, assegnamenti e nomi di colonne.
+
+**Dati e unità.** I 25 record sintetici riportano diametri in micrometri. Per spessore e rapporto servono esterno e interno; il diaframma può essere assente. Lo spessore è definito come metà della differenza fra diametri nel modello geometrico adottato.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M02_N15/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M02_N15")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(2015)
+```
+
+## 1. Preparare un criterio per le due misure richieste
+
+Ricostruiamo conversione e controlli senza dipendere da altri quaderni. Definiamo prima le coppie finite, poi positività e ordine. Categoria e duplicazione sono controlli separati, necessari per scegliere quali record entrano nella tabella derivata.
+
+```{r passo_01}
+# Conservare anche stringhe vuote e codici testuali prima di interpretarli.
+raw <- carica_dati("fossili_da_controllare.csv", sep = ";",
+                   colClasses = "character", na.strings = character(),
+                   stringsAsFactors = FALSE)
+stopifnot(nrow(raw) == 25L)
+
+converti_misura <- function(x) {
+  testo <- trimws(x)
+  mancante <- is.na(testo) | toupper(testo) %in% c("", "NA", "ND")
+  normalizzato <- gsub(",", ".", testo, fixed = TRUE)
+  # La grammatica accetta decimali semplici; non interpreta simboli di censura.
+  numerico <- !mancante & grepl("^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)$", normalizzato)
+  valore <- rep(NA_real_, length(x))
+  valore[numerico] <- as.numeric(normalizzato[numerico])
+  data.frame(originale = x, valore = valore, mancante = mancante,
+             fallito = !mancante & !numerico, stringsAsFactors = FALSE)
+}
+
+misure <- c("diametro_tot_um", "diametro_int_um", "diaframma_um")
+conversioni <- lapply(raw[misure], converti_misura)
+f <- raw
+for (nome in misure) f[[nome]] <- conversioni[[nome]]$valore
+f$riga_origine <- seq_len(nrow(f))
+
+finita <- is.finite(f$diametro_tot_um) & is.finite(f$diametro_int_um)
+geometria_ok <- finita & f$diametro_tot_um > 0 & f$diametro_int_um > 0 &
+                f$diametro_int_um <= f$diametro_tot_um
+categoria_ok <- tolower(trimws(f$morfotipo)) %in% c("rounded", "spiky")
+copia <- duplicated(raw)
+utilizzabile <- geometria_ok & categoria_ok & !copia
+stopifnot(!anyNA(utilizzabile))
+print(c(record = nrow(f), coppie_finite = sum(finita), utilizzabili = sum(utilizzabile)))
+```
+
+**Lettura del risultato.** Le coppie finite possono essere rappresentate nel grafico anche se geometricamente errate. Le righe con un diametro mancante non hanno coordinate complete e vengono contate separatamente, invece di sparire senza spiegazione.
+
+## 2. Disegnare il vincolo geometrico
+
+Rappresentiamo diametro esterno sull'asse orizzontale e interno su quello verticale. La retta di uguaglianza separa coppie compatibili dall'interno maggiore dell'esterno; il colore distingue le anomalie geometriche, mentre un simbolo aggiuntivo segnala la copia esatta.
+
+```{r passo_02}
+colori <- ifelse(geometria_ok[finita], "steelblue", "firebrick")
+plot(f$diametro_tot_um[finita], f$diametro_int_um[finita], pch = 19,
+     col = colori, xlab = "Diametro esterno (um)", ylab = "Diametro interno (um)")
+abline(a = 0, b = 1, lty = 2)
+points(f$diametro_tot_um[finita & copia], f$diametro_int_um[finita & copia],
+       pch = 1, cex = 1.8, lwd = 2)
+legend("topleft", c("Geometria ammessa", "Da verificare", "Copia esatta"),
+       col = c("steelblue", "firebrick", "black"), pch = c(19, 19, 1), bty = "n")
+print(f[!finita, c("id", "diametro_tot_um", "diametro_int_um")])
+```
+
+**Lettura del risultato.** La retta è un vincolo della definizione geometrica, non una regressione stimata. Una copia esatta si sovrappone al record originale e può essere invisibile senza un controllo tabellare: il grafico integra l'audit, senza sostituirlo.
+
+## 3. Calcolare spessore e rapporto
+
+Le formule vengono applicate soltanto alle righe utilizzabili. Lo spessore conserva l'unità dei diametri; il rapporto è adimensionale. Manteniamo NA nelle altre righe e verifichiamo gli intervalli imposti dalle definizioni.
+
+```{r passo_03}
+f$spessore_um <- NA_real_
+f$rapporto_int_tot <- NA_real_
+f$spessore_um[utilizzabile] <- (f$diametro_tot_um[utilizzabile] - f$diametro_int_um[utilizzabile]) / 2
+f$rapporto_int_tot[utilizzabile] <- f$diametro_int_um[utilizzabile] / f$diametro_tot_um[utilizzabile]
+print(head(f[utilizzabile, c("id", "spessore_um", "rapporto_int_tot")]))
+stopifnot(all(f$spessore_um[utilizzabile] >= 0))
+stopifnot(all(f$rapporto_int_tot[utilizzabile] > 0 & f$rapporto_int_tot[utilizzabile] <= 1))
+write.csv(f, percorso_risultati("fossili_misure_derivate.csv"), row.names = FALSE)
+```
+
+**Lettura del risultato.** Dividere la differenza dei diametri per due presuppone il modello di uno spessore radiale confrontabile sulle due pareti. In forme eccentriche o irregolari questa quantità resta una misura convenzionale e non descrive necessariamente ogni spessore locale.
+
+## Variante svolta
+
+Verificare che il diametro interno si ricostruisca da esterno e spessore.
+
+```{r variante}
+interno_ricostruito <- f$diametro_tot_um[utilizzabile] - 2 * f$spessore_um[utilizzabile]
+scarti <- interno_ricostruito - f$diametro_int_um[utilizzabile]
+print(max(abs(scarti)))
+stopifnot(isTRUE(all.equal(interno_ricostruito, f$diametro_int_um[utilizzabile])))
+```
+
+La relazione inversa verifica l'implementazione della formula e gli abbinamenti. Non controlla da sola il modello geometrico del fossile: un calcolo algebricamente corretto può richiedere una diversa interpretazione per forme non concentriche.
+
+## Errore da riconoscere
+
+Un punto lontano dagli altri non è necessariamente errato, mentre un diametro interno maggiore dell'esterno viola una definizione esplicita. Il controllo usa vincoli documentati, non la sola rarità statistica.
+
+## Risposta alla domanda
+
+Il grafico rende leggibile l'audit e le formule producono misure con unità e limiti chiari. I record non utilizzati restano presenti con risultati mancanti, conservando la possibilità di una revisione.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M02_N15` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M02/M02_N15.R).

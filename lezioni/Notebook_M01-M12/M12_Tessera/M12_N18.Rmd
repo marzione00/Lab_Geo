@@ -1,0 +1,144 @@
+---
+title: "Finestre di lettura e memoria"
+subtitle: "M12_N18 · Tessera"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Come si legge una finestra del GeoTIFF senza confondere indici e orientamento?
+
+## Obiettivi
+
+- Eseguire readStart, readValues e readStop di terra.
+- Verificare le 48 celle originali contro la matrice completa.
+- Distinguere una prova su file piccolo da una strategia per grandi raster.
+
+**Prima di iniziare.** Sono richiesti vettori, matrici, tabelle e funzioni R di base. Eseguire i blocchi in ordine; ogni notebook è autonomo rispetto agli altri. Questo notebook richiede terra installato prima dell’analisi e usa le sue funzioni effettive.
+
+**Dati e unità.** Il raster è interamente sintetico: 24 righe × 30 colonne, 720 celle quadrate di lato 30 m. Nel CSV riga e colonna partono da zero; x_m = 30 × colonna e y_m = 30 × riga indicano i centri nel piano locale. La riga 0 è a Sud; la riga 23 è a Nord. Le quote sono in metri sintetici. I dati non descrivono un rilievo reale. Il GeoTIFF originale porta EPSG:32632, UTM zona 32 Nord, con georeferenziazione fittizia: corner Nord-Ovest E=500000, N=5000000; passo 30 m, PixelIsArea. I centri corrispondono a E=x_m+500015 e N=y_m+4999295. Le righe del TIFF procedono da Nord a Sud, al contrario della matrice locale.
+
+## Preparazione
+
+Aprire il progetto autonomo di Tessera o quello generale dei notebook. I file originali restano invariati. Gli output vanno in `Risultati/M12_N18/`. Nessun download o installazione avviene nei blocchi.
+
+```{r preparazione}
+# Trova il modulo dal progetto autonomo o da quello generale dei notebook.
+.gs_cerca <- normalizePath(getwd(),winslash="/",mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca,file.path(.gs_cerca,"M12_Tessera"),
+    file.path(.gs_cerca,"03_Notebook_svolti","M12_Tessera"),
+    file.path(.gs_cerca,"M12","03_Notebook_svolti","M12_Tessera"))
+  .gs_ok <- file.exists(file.path(.gs_candidati,"M12_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati,"R","funzioni_notebook.R"))
+  if(any(.gs_ok)) { .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]];break }
+  .gs_padre <- dirname(.gs_cerca)
+  if(.gs_padre==.gs_cerca) stop("Aprire il progetto M12_Tessera o quello generale dei notebook.")
+  .gs_cerca <- .gs_padre
+}
+source(file.path(.gs_modulo,"R","funzioni_notebook.R"),local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo,"M12_N18")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88,digits=6)
+if(requireNamespace("knitr",quietly=TRUE)) {
+  knitr::opts_chunk$set(echo=TRUE,error=FALSE,warning=TRUE,message=TRUE,
+    fig.width=8,fig.height=5,dpi=150,fig.align="center")
+}
+set.seed(20261104)
+```
+
+## 1. Una finestra usa gli indici del TIFF
+
+Le righe R 5:10 e le colonne R 10:17 del TIFF individuano 6 × 8 celle. Le righe procedono da Nord a Sud.
+
+```{r passo_01}
+d <- carica_dati("raster_v3.csv")
+audit_raster(d)
+d <- d[order(d$riga,d$colonna),]
+Z <- matrice_quote(d)
+richiedi_terra()
+r <- terra::rast(percorso_dati("raster_v3.tif"))
+ leggi_finestra <- function(r,row,nrows,col,ncols) {
+   terra::readStart(r)
+   on.exit(terra::readStop(r))
+   terra::readValues(r,row=row,nrows=nrows,col=col,ncols=ncols,mat=FALSE)
+ }
+ win <- leggi_finestra(r,5,6,10,8)
+ data.frame(valori=length(win),minimo=min(win),massimo=max(win),media=mean(win))
+ stopifnot(length(win)==48L)
+```
+
+**Lettura del risultato.** La lettura è effettiva sul file. on.exit garantisce la chiusura anche se una successiva operazione nella funzione fallisce.
+
+## 2. Il confronto con la matrice completa è un controllo
+
+Per questo piccolo esercizio carichiamo anche l’intera matrice e verifichiamo ordinamento e valori.
+
+```{r passo_02}
+M <- terra::as.matrix(r,wide=TRUE)
+attesi <- as.vector(t(M[5:10,10:17]))
+risultato <- data.frame(n=length(win),errore=max(abs(win-attesi)),
+  bytes_valori_finestra=as.numeric(object.size(win)),bytes_matrice=as.numeric(object.size(M)))
+risultato
+stopifnot(risultato$errore<1e-10)
+```
+
+**Lettura del risultato.** La matrice completa serve qui per verificare il risultato. Queste misure di object.size non includono cache GDAL, processi o memoria totale e non sono un benchmark di I/O.
+
+## 3. La finestra torna nel piano locale
+
+Per la carta invertiamo le sei righe della finestra. I suoi centri sono x=270…480 m e y=420…570 m.
+
+```{r passo_03}
+W <- matrix(win,nrow=6,ncol=8,byrow=TRUE)
+mappa_matrice(W[6:1,],seq(270,480,30),seq(420,570,30),
+  titolo="Finestra letta dal GeoTIFF: 48 celle",limiti=range(Z))
+write.csv(risultato,percorso_risultati("audit_finestra.csv"),row.names=FALSE)
+write.csv(data.frame(ordine=seq_along(win),quota_m=win),percorso_risultati("valori_finestra.csv"),row.names=FALSE)
+```
+
+**Lettura del risultato.** Una finestra di lettura seleziona un sottoinsieme senza cambiare i valori. Le coordinate restano necessarie per collegare quel sottoinsieme alla griglia.
+
+## Variante svolta
+
+**Due finestre coprono l’intero raster.** Leggere separatamente le metà settentrionale e meridionale e ricostruire la media globale con i conteggi.
+
+```{r variante}
+nord <- leggi_finestra(r,1,12,1,30)
+sud <- leggi_finestra(r,13,12,1,30)
+media_finestre <- weighted.mean(c(mean(nord),mean(sud)),c(length(nord),length(sud)))
+data.frame(n_nord=length(nord),n_sud=length(sud),media_finestre=media_finestre,
+  media_intera=mean(M),scarto=abs(media_finestre-mean(M)))
+stopifnot(length(nord)+length(sud)==720L,abs(media_finestre-mean(M))<1e-10)
+```
+
+L’elaborazione a finestre può accumulare somme e conteggi. Derivate e filtri richiederebbero anche un margine di vicini attorno a ciascuna finestra.
+
+## Errore da riconoscere
+
+Scambiare le righe del CSV e del TIFF, chiamare prova di memoria un confronto di object.size o ignorare i margini necessari ai filtri.
+
+## Risposta alla domanda
+
+La lettura a finestre controlla quanti valori vengono materializzati per operazione. Una verifica corretta confronta celle e orientamento; il trattamento di filtri, bordi e NoData resta parte dell’algoritmo.
+
+## Raccordo con le slide
+
+[Slide 103–105 della lezione Tessera](../../02_PDF/M12_Tessera/Tessera_M12_raster_telerilevamento_morfometria.pdf#page=103). La [mappa dei notebook e delle slide](MAPPA_SLIDE.csv) conserva il raccordo puntuale con la lezione estesa.
+
+## Riferimenti e provenienza
+
+Questo svolgimento sviluppa `M12_N18` del [modulo M12 del corso](https://marzione00.github.io/Lab_Geo/#modulo-M12). Il [codice originale](https://github.com/marzione00/Lab_Geo/blob/649f7cc577b96bd1044d81e78a2f530813e4f96b/materiali/laboratori/M12/M12_N18.R) è conservato immutato in `R/Originali_corso/`. Dati e originali hanno SHA-256 e SHA-1 Git verificati; gli ampliamenti sono dichiarati nella [mappa degli originali](MAPPA_ORIGINALI.csv).
+
+Documentazione primaria: [terra, rast](https://rspatial.github.io/terra/reference/rast.html), [terra, resample](https://rspatial.github.io/terra/reference/resample.html), [terra, readValues](https://rspatial.github.io/terra/reference/readValues.html), [terra, writeRaster](https://rspatial.github.io/terra/reference/writeRaster.html).

@@ -1,0 +1,130 @@
+---
+title: "Dai tipi informatici al significato"
+subtitle: "M01_N06 \u00b7 Terra"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come possiamo rappresentare in R categorie nominali, categorie ordinate e identificativi senza trattarli come misure?
+
+## Obiettivi
+
+- Creare fattori con livelli dichiarati.
+- Controllare categorie inattese prima della conversione.
+
+**Prima di iniziare.** Saper eseguire una cella R e riconoscere vettori, assegnamenti e nomi di colonne.
+
+**Dati e unità.** I 24 provini sintetici hanno un affioramento A o B e una classe di alterazione bassa, media o alta. L'ordine delle classi è qualitativo.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M01_N06/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M01_N06")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(1006)
+```
+
+## 1. Controllare il vocabolario disponibile
+
+Prima della conversione osserviamo le etichette effettive. La dichiarazione dei livelli deve essere una scelta esplicita: un'etichetta non prevista diventerebbe NA in un fattore, anche quando la stringa originale conteneva un'informazione recuperabile.
+
+```{r passo_01}
+# Ogni esecuzione riparte dal CSV condiviso, senza modificare il file.
+d <- carica_dati("campioni_modulo1.csv", stringsAsFactors = FALSE)
+stopifnot(nrow(d) == 24L, !anyDuplicated(d$id))
+
+livelli_aff <- c("A", "B")
+livelli_alt <- c("bassa", "media", "alta")
+print(unique(d$affioramento))
+print(unique(d$alterazione))
+inattesi_aff <- setdiff(unique(d$affioramento), livelli_aff)
+inattesi_alt <- setdiff(unique(d$alterazione), livelli_alt)
+stopifnot(length(inattesi_aff) == 0L, length(inattesi_alt) == 0L)
+```
+
+**Lettura del risultato.** L'assenza di etichette inattese autorizza la conversione secondo il vocabolario dichiarato. Non certifica la correttezza della classificazione geologica: verifica soltanto che il testo rispetti le categorie stabilite per questa esercitazione.
+
+## 2. Separare nominale e ordinato
+
+Affioramento è una categoria nominale; alterazione ha invece un ordine. Indichiamo questa differenza nella costruzione dei fattori. L'ordine permette confronti fra classi, ma non attribuisce distanze numeriche uguali fra bassa, media e alta.
+
+```{r passo_02}
+d$affioramento_f <- factor(d$affioramento, levels = livelli_aff)
+d$alterazione_f <- factor(d$alterazione, levels = livelli_alt, ordered = TRUE)
+print(levels(d$affioramento_f))
+print(levels(d$alterazione_f))
+print(is.ordered(d$affioramento_f))
+print(is.ordered(d$alterazione_f))
+print(table(d$alterazione_f, useNA = "ifany"))
+```
+
+**Lettura del risultato.** La tabella segue l'ordine didattico dichiarato, anziché quello alfabetico. Il codice interno del fattore serve a rappresentare le categorie; non è una misura dell'intensità dell'alterazione e non giustifica una media aritmetica.
+
+## 3. Usare un ordine senza inventare una scala
+
+Selezioniamo le classi almeno medie attraverso il confronto ordinato e confrontiamo il risultato con una selezione per etichetta. Manteniamo l'ID come testo, perché serve a riconoscere il provino e non a misurarlo.
+
+```{r passo_03}
+almeno_media <- d$alterazione_f >= "media"
+per_etichetta <- d$alterazione %in% c("media", "alta")
+stopifnot(identical(almeno_media, per_etichetta))
+print(d[almeno_media, c("id", "alterazione"), drop = FALSE])
+codici <- as.integer(d$alterazione_f)
+print(data.frame(etichetta = d$alterazione_f, codice_interno = codici))
+stopifnot(is.character(d$id), !anyDuplicated(d$id))
+```
+
+**Lettura del risultato.** I due criteri selezionano le stesse righe perché rispettano l'ordine dichiarato. La tabella dei codici mostra come R memorizza il fattore, senza trasformare una differenza di categoria in una quantità fisica.
+
+## Variante svolta
+
+Individuare un'etichetta con uno spazio finale prima di convertirla.
+
+```{r variante}
+etichette <- c("bassa", "media ", "alta")
+print(setdiff(etichette, livelli_alt))
+normalizzate <- trimws(etichette)
+print(factor(normalizzate, levels = livelli_alt, ordered = TRUE))
+stopifnot(all(normalizzate %in% livelli_alt))
+```
+
+La rimozione degli spazi risolve questo caso documentato. Una trasformazione del testo deve precedere il fattore ed essere giustificata: categorie geologiche davvero diverse non vanno accorpate soltanto perché si assomigliano.
+
+## Errore da riconoscere
+
+Calcolare una media dei codici 1, 2 e 3 attribuisce intervalli uguali alle classi senza una base di misura. Per categorie ordinate usiamo conteggi, proporzioni e confronti coerenti con l'ordine.
+
+## Risposta alla domanda
+
+Il tipo informatico rende esplicite alcune proprietà della variabile, mentre il significato resta nel contesto. La dichiarazione dei livelli aiuta a individuare errori di etichetta e a mantenere stabile la presentazione.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M01_N06` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M01/M01_N06.R).

@@ -1,0 +1,132 @@
+---
+title: "Indipendenza: non basta una somiglianza visiva"
+subtitle: "M04_N04 \u00b7 Aurea"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come confrontare una tabella osservata con ciò che ci aspetteremmo se affioramento e segnale fossero indipendenti?
+
+## Obiettivi
+
+- Usare la fattorizzazione delle probabilità come definizione di indipendenza.
+- Distinguere uno scarto descrittivo da una conclusione inferenziale.
+
+**Prima di iniziare.** Probabilità congiunte, marginali e condizionate.
+
+**Dati e unità.** Tabella sintetica di sessanta campioni: A contiene 18 segnali presenti e 12 assenti; B contiene 9 presenti e 21 assenti. L'esercizio è descrittivo.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M04_N04/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M04_N04")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(4004)
+```
+
+## 1. Confrontare congiunta e prodotto
+
+Due eventi indipendenti soddisfano P(A e presente) = P(A) per P(presente). Calcoliamo entrambi i membri usando le frequenze della tabella, così lo scarto rispetto alla fattorizzazione è esplicito.
+
+```{r passo_01}
+t <- matrix(c(18, 12, 9, 21), 2, byrow = TRUE,
+            dimnames = list(c("A", "B"), c("presente", "assente")))
+p <- prop.table(t)
+margine_riga <- rowSums(p)
+margine_colonna <- colSums(p)
+congiunta <- p["A", "presente"]
+# La fattorizzazione e la previsione di indipendenza per questa cella.
+prodotto <- margine_riga["A"] * margine_colonna["presente"]
+print(c(congiunta = congiunta, prodotto_marginali = unname(prodotto)))
+```
+
+**Lettura del risultato.** Una differenza indica che la tabella empirica non fattorizza esattamente. Anche un campione generato da variabili indipendenti può mostrare differenze casuali: il controllo non è ancora un test della popolazione.
+
+## 2. Costruire tutti i valori attesi
+
+L'indipendenza impone la stessa fattorizzazione in ogni cella. Moltiplicando le quote marginali e poi il totale ricostruiamo i conteggi attesi; possono essere non interi perché sono valori medi del modello.
+
+```{r passo_02}
+# outer calcola tutti i prodotti fra probabilita marginali di riga e colonna.
+p_indipendenti <- outer(margine_riga, margine_colonna)
+attesi <- sum(t) * p_indipendenti
+dimnames(attesi) <- dimnames(t)
+print(attesi)
+scarti <- t - attesi
+print(scarti)
+stopifnot(max(abs(rowSums(attesi) - rowSums(t))) < 1e-12)
+stopifnot(max(abs(colSums(attesi) - colSums(t))) < 1e-12)
+```
+
+**Lettura del risultato.** Gli attesi conservano i margini e redistribuiscono le celle secondo l'ipotesi. Uno scarto positivo in una cella deve essere compensato altrove, perché i totali sono mantenuti fissi.
+
+## 3. Leggere le quote condizionate
+
+L'indipendenza implica anche che conoscere l'affioramento non cambi la quota di segnali. Confrontiamo le percentuali interne ad A e B e sovrapponiamo la frequenza marginale come riferimento.
+
+```{r passo_03}
+# Le quote entro affioramento sono confrontate con la stessa quota marginale.
+condizionate <- prop.table(t, margin = 1)[, "presente"]
+print(condizionate)
+barplot(condizionate, ylim = c(0, 1), col = c("#1D7890", "#C57E42"),
+        xlab = "Affioramento", ylab = "Quota di segnale presente")
+abline(h = margine_colonna["presente"], col = "#7363AA", lty = 2, lwd = 2)
+print(c(quota_marginale = margine_colonna["presente"]))
+```
+
+**Lettura del risultato.** Le barre mostrano il significato operativo dell'indipendenza, ma la loro separazione non tiene ancora conto della variabilità da campionamento. La numerosità e il disegno di raccolta sarebbero necessari per un'inferenza.
+
+## Variante svolta
+
+Costruire una tabella di probabilità esattamente indipendente con margini assegnati.
+
+```{r variante}
+p_affioramento <- c(A = .3, B = .7)
+p_segnale <- c(presente = .4, assente = .6)
+p_esatta <- outer(p_affioramento, p_segnale)
+print(p_esatta)
+print(p_esatta / rowSums(p_esatta))
+stopifnot(abs(sum(p_esatta) - 1) < 1e-12)
+stopifnot(max(abs(p_esatta[, "presente"] / rowSums(p_esatta) - .4)) < 1e-12)
+```
+
+Questa è una distribuzione costruita sotto indipendenza, non una tabella campionaria. Le quote condizionate coincidono esattamente perché la proprietà è imposta dalla formula generatrice.
+
+## Errore da riconoscere
+
+Non confondere indipendenza con incompatibilità: eventi indipendenti possono verificarsi insieme. Non usare una discrepanza campionaria qualsiasi come prova conclusiva di dipendenza nella popolazione.
+
+## Risposta alla domanda
+
+L'indipendenza è una proprietà della distribuzione congiunta. Prodotti marginali e quote condizionate forniscono controlli equivalenti nel modello; gli scarti della tabella osservata restano descrittivi finché non se ne valuta l'incertezza.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M04_N04` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M04/M04_N04.R).

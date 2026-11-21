@@ -1,0 +1,139 @@
+---
+title: "Composizioni e log-rapporti"
+subtitle: "M08_N09 \u00b7 Polychroma"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Come analizzare parti positive che insieme rappresentano il 100% di un campione?
+
+## Obiettivi
+
+- Definire le cinque parti della composizione.
+- Calcolare e verificare CLR.
+- Distinguere chiusura e trattamento degli zeri.
+
+**Prima di iniziare.** Lettura di un CSV, vettori, matrici, indicizzazione e funzioni di base in R.
+
+**Dati e unità.** Novanta rocce sintetiche del corso. SiO2, CaO, MgO e FeO sono percentuali in massa; densita è espressa in g/cm³ e grana_mm in millimetri. colore e fossili sono indici numerici convenzionali del simulatore, non misure mineralogiche o conteggi reali. La colonna litologia_generatrice descrive il gruppo usato nella simulazione e viene esclusa dalle stime.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Polychroma oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M08_Polychroma` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M08_Polychroma/Risultati/M08_N09/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M08_Polychroma"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M08_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M08_Polychroma o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M08_N09")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(8009)
+```
+
+## 1. Definire la composizione completa
+
+Le quattro colonne di ossidi non sommano da sole a 100. Nell’esempio il resto è esplicitamente registrato in resto_wt. La composizione dell’approfondimento comprende quindi cinque parti; densità, grana e indici restano fuori.
+
+```{r passo_01}
+# Seleziona le misure per nome: ID ed etichetta non entrano nella matrice.
+r <- carica_dati("rocce_simulate.csv")
+v <- c("SiO2", "CaO", "MgO", "FeO", "densita", "grana_mm", "colore", "fossili")
+X <- as.matrix(r[v])
+stopifnot(nrow(X)==90L, ncol(X)==8L, !anyDuplicated(r$id),
+          all(is.finite(X)), all(apply(X,2,sd)>0))
+Z <- scale(X)
+D <- dist(Z)
+parti <- c("SiO2","CaO","MgO","FeO","resto_wt")
+C <- as.matrix(r[parti])
+c(minimo=min(C),scarto_chiusura=max(abs(rowSums(C)-100)))
+head(data.frame(id=r$id,somma_ossidi=rowSums(C[,1:4]),resto=C[,5]),4)
+stopifnot(all(C>0),max(abs(rowSums(C)-100))<1e-5)
+```
+
+**Lettura del risultato.** Le cinque parti sono positive e chiuse entro l’arrotondamento. resto_wt rappresenta il complemento sintetico complessivo; non identifica un minerale specifico.
+
+## 2. Coordinate CLR e vincolo
+
+La trasformazione $\operatorname{clr}(x)_j=\log x_j-\frac1D\sum_h\log x_h$ confronta ogni parte con la media geometrica. Le coordinate sommano a zero, perciò la loro covarianza è singolare.
+
+```{r passo_02}
+L <- log(C)
+clr <- L-rowMeans(L)
+c(massima_somma_righe=max(abs(rowSums(clr))))
+pc_clr <- prcomp(clr,center=TRUE,scale.=FALSE)
+pc_clr$sdev
+summary(pc_clr)
+```
+
+**Lettura del risultato.** La quinta componente ha deviazione standard praticamente nulla, conseguenza del vincolo CLR. La PCA usa qui i log-rapporti senza una successiva standardizzazione, per mantenere la geometria scelta.
+
+## 3. Invarianza a un fattore comune
+
+Moltiplicare tutte le parti dello stesso campione per un fattore positivo lascia invariati i rapporti e le coordinate CLR. La trasformazione non usa la quantità totale.
+
+```{r passo_03}
+fattore <- seq(.5,2,length.out=nrow(C))
+C2 <- C*fattore
+clr2 <- log(C2)-rowMeans(log(C2))
+max(abs(clr-clr2))
+plot(pc_clr$x[,1:2],pch=19,col="#7363AA",asp=1,
+ xlab="PC1 dei log-rapporti",ylab="PC2 dei log-rapporti")
+```
+
+**Lettura del risultato.** La differenza fra coordinate è prossima a zero. Il grafico risponde a una domanda sulle proporzioni relative delle cinque parti, diversa dalla PCA sulle otto misure eterogenee.
+
+## Variante svolta
+
+Mostrare perché uno zero impedisce la trasformazione senza scegliere arbitrariamente un sostituto.
+
+```{r variante}
+esempio <- c(A=50,B=50,C=0)
+valido <- all(esempio>0)
+c(CLR_applicabile=valido)
+# Il controllo precede log(); non viene aggiunta una costante agli zeri.
+if (valido) log(esempio)-mean(log(esempio)) else
+  "Prima distinguere zero strutturale, arrotondamento e limite analitico."
+```
+
+La procedura si ferma prima del logaritmo. Un trattamento degli zeri richiede informazioni sul processo di misura; aggiungere la stessa costante a tutte le parti modifica i rapporti.
+
+## Errore da riconoscere
+
+Applicare CLR a densità, granulometria e percentuali mescolate: queste colonne non sono parti della stessa composizione.
+
+## Risposta alla domanda
+
+L’analisi composizionale richiede parti dichiarate, positività e attenzione ai rapporti. Il vincolo di somma spiega la singolarità delle coordinate CLR.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M08_N09` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M08/M08_N09.R).

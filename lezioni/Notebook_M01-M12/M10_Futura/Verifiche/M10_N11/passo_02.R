@@ -1,0 +1,5 @@
+mod <- lm(diametro_int_um~diametro_tot_um,data=tr)
+prev <- as.numeric(predict(mod,newdata=te))
+base <- rep(mean(tr$diametro_int_um),nrow(te))
+data.frame(termine=names(coef(mod)),stima=as.numeric(coef(mod)))
+head(data.frame(id=te$id,osservato=te$diametro_int_um,regressione=prev,baseline=base),4)

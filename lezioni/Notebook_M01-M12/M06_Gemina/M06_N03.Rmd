@@ -1,0 +1,131 @@
+---
+title: "Una singola permutazione delle etichette"
+subtitle: "M06_N03 \u00b7 Gemina"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Che cosa cambia e che cosa rimane fisso quando permutiamo le etichette di due gruppi?
+
+## Obiettivi
+
+- Separare valori e assegnazione ai gruppi.
+- Calcolare un riferimento esatto in un esempio minimo.
+
+**Prima di iniziare.** Vettori, indicizzazione, media, varianza e grafici di base in R.
+
+**Dati e unità.** Quattro valori costruiti, A = 1 e 2, B = 4 e 7, in unità convenzionali. Consideriamo tutte le sei assegnazioni di due valori ad A.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M06_N03/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M06_N03")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(6003)
+```
+
+## 1. Fissare statistica e ipotesi di scambiabilità
+
+La statistica è la media di B meno la media di A. Una permutazione lascia fissi i valori e cambia quali ricevono ogni etichetta, conservando due unità per gruppo. La validità del riferimento richiede scambiabilità sotto l'ipotesi nulla o una randomizzazione coerente con il disegno.
+
+```{r passo_01}
+valori <- c(1, 2, 4, 7)
+etichette <- c("A", "A", "B", "B")
+nA <- sum(etichette == "A")
+nB <- sum(etichette == "B")
+contrasto <- function(gruppoA) {
+  gruppoB <- setdiff(seq_along(valori), gruppoA)
+  mean(valori[gruppoB]) - mean(valori[gruppoA])
+}
+osservato <- contrasto(which(etichette == "A"))
+print(c(nA = nA, nB = nB, contrasto_B_A = osservato))
+```
+
+**Lettura del risultato.** L'uguaglianza delle sole medie non garantisce la scambiabilità quando forma o varianza differiscono. L'esempio assume che le assegnazioni ammesse siano equiprobabili sotto il riferimento nullo.
+
+## 2. Eseguire e documentare una permutazione
+
+Estraiamo senza reinserimento quali due indici ricevono l'etichetta A. Gli altri diventano B. Non estraiamo nuovi valori e non reinseriamo indici dentro la stessa assegnazione: questo distingue la permutazione dal bootstrap.
+
+```{r passo_02}
+set.seed(603)
+nuovaA <- sample.int(length(valori), nA, replace = FALSE)
+nuove_etichette <- rep("B", length(valori))
+nuove_etichette[nuovaA] <- "A"
+print(data.frame(valore = valori, originale = etichette,
+                 permutata = nuove_etichette))
+permutato <- contrasto(nuovaA)
+print(c(osservato = osservato, singola_permutazione = permutato))
+stopifnot(sum(nuove_etichette == "A") == nA)
+```
+
+**Lettura del risultato.** Una sola permutazione serve a osservare il meccanismo, non a costruire un p-value informativo. Il valore del contrasto cambia perché cambia l'assegnazione dei valori ai gruppi.
+
+## 3. Enumerare tutte le assegnazioni
+
+Con quattro unità possiamo elencare tutti i sottoinsiemi di due indici assegnati ad A. Il p-value bilaterale esatto è la quota delle assegnazioni con contrasto almeno altrettanto estremo in valore assoluto, includendo l'assegnazione osservata.
+
+```{r passo_03}
+assegnazioni <- combn(seq_along(valori), nA)
+nulli <- apply(assegnazioni, 2, contrasto)
+estremi <- abs(nulli) >= abs(osservato)
+p_esatto <- mean(estremi)
+print(data.frame(A1 = assegnazioni[1, ], A2 = assegnazioni[2, ],
+                 contrasto = nulli, estremo = estremi))
+print(c(p_esatto_bilaterale = p_esatto))
+stopifnot(isTRUE(all.equal(p_esatto, 2 / 6)))
+```
+
+**Lettura del risultato.** La distribuzione è discreta: con sei assegnazioni non si ottiene qualunque p-value. Il conteggio esatto non richiede la correzione usata quando si campiona soltanto un sottoinsieme casuale di permutazioni.
+
+## Variante svolta
+
+Calcolare la coda unilaterale per l'alternativa B maggiore di A.
+
+```{r variante}
+p_unilaterale <- mean(nulli >= osservato)
+print(c(p_bilaterale = p_esatto, p_B_maggiore_A = p_unilaterale))
+stopifnot(isTRUE(all.equal(p_unilaterale, 1 / 6)))
+print(sort(nulli))
+```
+
+La coda cambia perché cambia l'alternativa, che deve essere formulata prima di osservare il risultato. Non si sceglie la direzione dopo aver visto quale produce il numero minore.
+
+## Errore da riconoscere
+
+Non permutare etichette ignorando blocchi o coppie del disegno. Le assegnazioni ammesse devono corrispondere alla scambiabilità o alla randomizzazione effettiva.
+
+## Risposta alla domanda
+
+La permutazione costruisce un riferimento mediante riassegnazione delle etichette. Valori, numerosità e statistica rimangono fissi; l'ipotesi che giustifica la riassegnazione va dichiarata.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M06_N03` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M06/M06_N03.R).

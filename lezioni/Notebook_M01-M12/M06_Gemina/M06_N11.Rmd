@@ -1,0 +1,130 @@
+---
+title: "Mostrare le coppie con segmenti"
+subtitle: "M06_N11 \u00b7 Gemina"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Quale informazione sul cambiamento si vede collegando prima e dopo della stessa unità?
+
+## Obiettivi
+
+- Rappresentare l'abbinamento nel grafico.
+- Separare livello iniziale e cambiamento individuale.
+
+**Prima di iniziare.** Vettori, indicizzazione, media, varianza e grafici di base in R.
+
+**Dati e unità.** Ventiquattro coppie sintetiche in misure_appaiate_simulate.csv; le misure sono in unità convenzionali e il segno è dopo meno prima.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M06_N11/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M06_N11")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(6011)
+```
+
+## 1. Preparare una tabella di coppie complete
+
+Un grafico appaiato richiede che ogni segmento colleghi la stessa unità. Conserviamo gli identificativi, controlliamo l'unicità ed escludiamo soltanto coppie incomplete dichiarandone il numero. La differenza con segno sarà usata sia per il colore sia per il riepilogo.
+
+```{r passo_01}
+dati <- carica_dati("misure_appaiate_simulate.csv")
+stopifnot(!anyDuplicated(dati$id))
+utilizzabili <- complete.cases(dati[c("prima", "dopo")])
+coppie <- dati[utilizzabili, ]
+coppie$differenza <- coppie$dopo - coppie$prima
+stopifnot(all(is.finite(coppie$differenza)))
+print(c(coppie_totali = nrow(dati), coppie_usate = nrow(coppie)))
+print(table(verso = sign(coppie$differenza)))
+```
+
+**Lettura del risultato.** Il conteggio per segno distingue aumenti, diminuzioni ed eventuali assenze di cambiamento. La media da sola potrebbe nascondere differenze individuali di verso opposto.
+
+## 2. Collegare le misure della stessa unità
+
+L'asse orizzontale identifica le due occasioni di misura, mentre quello verticale conserva la scala originale. Un segmento crescente indica un aumento. Usiamo una trasparenza moderata per rendere visibili le sovrapposizioni senza spostare artificialmente i valori.
+
+```{r passo_02}
+colori <- ifelse(coppie$differenza >= 0, "#27647B", "#A33B31")
+limiti <- range(c(coppie$prima, coppie$dopo))
+plot(c(1, 2), limiti, type = "n", xaxt = "n",
+     xlab = "Occasione", ylab = "Misura (u.c.)", main = "Ogni segmento e una coppia")
+axis(1, at = c(1, 2), labels = c("Prima", "Dopo"))
+segments(1, coppie$prima, 2, coppie$dopo,
+         col = grDevices::adjustcolor(colori, alpha.f = 0.65))
+points(rep(1, nrow(coppie)), coppie$prima, pch = 16, col = colori)
+points(rep(2, nrow(coppie)), coppie$dopo, pch = 16, col = colori)
+```
+
+**Lettura del risultato.** Il grafico distingue eterogeneità dei livelli iniziali e direzione dei cambiamenti. Una nube molto dispersa nei livelli può comunque mostrare differenze entro coppia piuttosto regolari.
+
+## 3. Disegnare direttamente le differenze
+
+Per leggere la grandezza del cambiamento senza essere distratti dai livelli iniziali, rappresentiamo una differenza per identificativo. Ordiniamo soltanto la visualizzazione, lasciando intatta la tabella delle coppie. La linea a zero separa aumenti e diminuzioni.
+
+```{r passo_03}
+ordine <- order(coppie$differenza)
+dotchart(coppie$differenza[ordine], labels = coppie$id[ordine],
+         xlab = "Dopo - prima (u.c.)", main = "Cambiamenti individuali",
+         color = colori[ordine])
+abline(v = 0, lty = 2)
+abline(v = mean(coppie$differenza), col = "#222222", lwd = 2)
+print(c(media_cambiamento = mean(coppie$differenza),
+        SD_cambiamento = sd(coppie$differenza)))
+```
+
+**Lettura del risultato.** La distribuzione delle differenze è il dato centrale per un'analisi appaiata della media. La linea della media riassume la posizione ma non sostituisce l'osservazione dei singoli cambiamenti.
+
+## Variante svolta
+
+Ordinare le coppie per valore iniziale e verificare che il cambiamento medio resti invariato.
+
+```{r variante}
+ordinate <- coppie[order(coppie$prima), ]
+media_ordinata <- mean(ordinate$dopo - ordinate$prima)
+stopifnot(isTRUE(all.equal(media_ordinata, mean(coppie$differenza))))
+print(head(ordinate[c("id", "prima", "dopo", "differenza")]))
+print(c(media_ordinata = media_ordinata))
+```
+
+Un ordinamento comune delle righe conserva le coppie e tutte le statistiche simmetriche. Ordinare separatamente le due colonne produrrebbe invece abbinamenti diversi e altererebbe la distribuzione delle differenze.
+
+## Errore da riconoscere
+
+Due boxplot affiancati non mostrano quali misure appartengono alla stessa unità. Quando l'abbinamento conta, aggiungere segmenti o mostrare le differenze.
+
+## Risposta alla domanda
+
+I segmenti rendono leggibile il disegno appaiato. Il grafico delle differenze collega direttamente i cambiamenti individuali alla quantità che verrà stimata.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M06_N11` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M06/M06_N11.R).

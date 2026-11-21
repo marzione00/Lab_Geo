@@ -1,0 +1,134 @@
+---
+title: "La retta dei minimi quadrati a mano"
+subtitle: "M07_N03 \u00b7 Annula"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Come ricavare i coefficienti della retta usando somme, medie e scarti?
+
+## Obiettivi
+
+- Collegare la domanda al calcolo riportato.
+- Interpretare il risultato usando variabili e unità del problema.
+
+**Prima di iniziare.** Vettori, data frame, indicizzazione e funzioni di base in R.
+
+**Dati e unità.** Fossili simulati del corso: 160 individui, 80 Rounded e 80 Spiky. Diametri e spessori sono espressi in micrometri. Nel generatore, diametro interno = diametro totale − 2 × spessore. La relazione contiene quindi un vincolo geometrico noto.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Annula oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M07_Annula` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M07_Annula/Risultati/M07_N03/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M07_Annula"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M07_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M07_Annula o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M07_N03")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(7003)
+```
+
+## 1. Il criterio da minimizzare
+
+La retta $\hat y_i=b_0+b_1x_i$ lascia residui verticali $e_i=y_i-\hat y_i$. I minimi quadrati scelgono i coefficienti che minimizzano $SSE=\sum e_i^2$. Le distanze sono misurate lungo l’asse della risposta.
+
+```{r passo_01}
+# Ogni riga identifica un fossile simulato.
+f <- carica_dati("fossili_simulati.csv")
+f$morfotipo <- factor(f$morfotipo, levels=c("Rounded", "Spiky"))
+x <- f$diametro_tot_um
+y <- f$diametro_int_um
+stopifnot(nrow(f)==160L, !anyDuplicated(f$id),
+          all(is.finite(x)), all(is.finite(y)))
+# Prima retta proposta: intercetta zero e pendenza uno.
+SSE_proposta <- sum((y-x)^2)
+c(SSE_proposta=SSE_proposta)
+```
+
+**Lettura del risultato.** La bisettrice sottostima lo spessore e produce scarti sistematici. Il suo errore quadratico fornisce un riferimento da confrontare con la soluzione ottima.
+
+## 2. Coefficienti dalle somme centrate
+
+Con $S_{xx}=\sum(x_i-\bar x)^2>0$ e $S_{xy}=\sum(x_i-\bar x)(y_i-\bar y)$, le equazioni normali danno $\hat\beta_1=S_{xy}/S_{xx}$ e $\hat\beta_0=\bar y-\hat\beta_1\bar x$.
+
+```{r passo_02}
+Sxx <- sum((x-mean(x))^2)
+Sxy <- sum((x-mean(x))*(y-mean(y)))
+stopifnot(Sxx>0)
+b1 <- Sxy/Sxx
+b0 <- mean(y)-b1*mean(x)
+y_hat <- b0+b1*x
+e <- y-y_hat
+c(intercetta=b0,pendenza=b1,SSE=sum(e^2))
+```
+
+**Lettura del risultato.** La retta è circa $\hat y=-0,7003+0,9570x$, con diametri in µm. La somma dei quadrati residui scende a circa 10,646 µm². L’intercetta a x=0 è un parametro della retta, fuori dal dominio dei dati.
+
+## 3. Le proprietà della soluzione
+
+Una regressione con intercetta passa per $(\bar x,\bar y)$. I residui sono ortogonali alla colonna costante e alla colonna del predittore: $\sum e_i=0$ e $\sum x_ie_i=0$, a meno di arrotondamenti numerici.
+
+```{r passo_03}
+c(somma_residui=sum(e),somma_x_residui=sum(x*e),
+  scarto_al_baricentro=(b0+b1*mean(x))-mean(y))
+plot(x,y,pch=19,col="grey65",xlab="Diametro totale (micrometri)",
+ ylab="Diametro interno (micrometri)")
+abline(b0,b1,col="#087C74",lwd=2)
+points(mean(x),mean(y),pch=23,bg="#C57E42",cex=1.5)
+```
+
+**Lettura del risultato.** I tre controlli restituiscono numeri praticamente nulli. Sono conseguenze del criterio di stima con intercetta, non prove di indipendenza o normalità degli errori.
+
+## Variante svolta
+
+Spostare la pendenza di 0,10 mantenendo il passaggio per il baricentro: quanto aumenta SSE?
+
+```{r variante}
+b1_alt <- b1+.10
+b0_alt <- mean(y)-b1_alt*mean(x)
+c(SSE_ottima=sum(e^2),SSE_alternativa=sum((y-b0_alt-b1_alt*x)^2))
+```
+
+La retta alternativa passa ancora per il baricentro, ma aumenta SSE. La sola condizione sul baricentro non basta a identificare la pendenza ottima.
+
+## Errore da riconoscere
+
+Minimizzare distanze perpendicolari alla retta definisce un problema diverso dai minimi quadrati ordinari della risposta su X.
+
+## Risposta alla domanda
+
+I coefficienti si ottengono da scarti centrati. Le equazioni normali consentono un controllo indipendente del calcolo.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M07_N03` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M07/M07_N03.R).

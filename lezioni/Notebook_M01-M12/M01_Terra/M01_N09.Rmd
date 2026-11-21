@@ -1,0 +1,136 @@
+---
+title: "Salvare un risultato che un altro studente possa leggere"
+subtitle: "M01_N09 \u00b7 Terra"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Quali informazioni devono accompagnare un risultato esportato perché un altro studente possa verificarlo?
+
+## Obiettivi
+
+- Esportare dati derivati senza indici di riga aggiuntivi.
+- Verificare una rilettura e documentare formula, unità e limiti.
+
+**Prima di iniziare.** Saper eseguire una cella R e riconoscere vettori, assegnamenti e nomi di colonne.
+
+**Dati e unità.** Partiamo dai 24 provini sintetici e produciamo una tabella di densità, una sintesi per affioramento e una nota metodologica. Tutti i file vanno nella cartella dei risultati del notebook.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M01_N09/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M01_N09")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(1009)
+```
+
+## 1. Costruire tabelle autosufficienti
+
+Una tabella esportata deve conservare gli identificativi e rendere riconoscibile l'unità. Prepariamo una tabella per provino e una per affioramento: separarle evita di mescolare misure individuali e sintesi con unità di osservazione diversa.
+
+```{r passo_01}
+# Ogni esecuzione riparte dal CSV condiviso, senza modificare il file.
+d <- carica_dati("campioni_modulo1.csv", stringsAsFactors = FALSE)
+stopifnot(nrow(d) == 24L, !anyDuplicated(d$id))
+
+stopifnot(all(is.finite(d$massa_g)), all(d$massa_g > 0),
+          all(is.finite(d$volume_cm3)), all(d$volume_cm3 > 0))
+d$densita_g_cm3 <- d$massa_g / d$volume_cm3
+
+individuali <- d[c("id", "affioramento", "stazione", "densita_g_cm3")]
+medie <- aggregate(densita_g_cm3 ~ affioramento, data = d, FUN = mean)
+conteggi <- as.data.frame(table(d$affioramento), stringsAsFactors = FALSE)
+names(conteggi) <- c("affioramento", "n")
+riassunto <- merge(medie, conteggi, by = "affioramento", sort = TRUE)
+print(riassunto)
+```
+
+**Lettura del risultato.** Il nome della colonna distingue una densità da una massa o da un volume. La numerosità chiarisce su quante osservazioni si basa ogni media. Gli ID individuali rendono possibile risalire dai risultati ai dati originali.
+
+## 2. Esportare e verificare il ritorno
+
+Scriviamo file separati e rileggiamo quello individuale. La verifica riguarda sia le chiavi sia i numeri: un file esistente potrebbe comunque avere colonne indesiderate, righe perse o valori alterati dal formato di esportazione.
+
+```{r passo_02}
+file_ind <- percorso_risultati("densita_provini.csv")
+file_med <- percorso_risultati("medie_affioramenti.csv")
+write.csv(individuali, file_ind, row.names = FALSE)
+write.csv(riassunto, file_med, row.names = FALSE)
+riletto <- read.csv(file_ind, stringsAsFactors = FALSE)
+stopifnot(identical(riletto$id, individuali$id))
+stopifnot(isTRUE(all.equal(riletto$densita_g_cm3, individuali$densita_g_cm3)))
+print(head(riletto, 3))
+```
+
+**Lettura del risultato.** row.names = FALSE evita di aggiungere una colonna con la numerazione della stampa R. Il controllo numerico usa una tolleranza adeguata; l'identificativo deve invece corrispondere esattamente, nello stesso ordine.
+
+## 3. Accompagnare il numero con una frase verificabile
+
+Una nota leggibile deve indicare formula, verso della differenza e ambito del risultato. Costruiamo la frase dal valore calcolato, così testo e tabella non rischiano di divergere dopo una nuova esecuzione.
+
+```{r passo_03}
+media_nominata <- setNames(riassunto$densita_g_cm3, riassunto$affioramento)
+delta <- unname(media_nominata["B"] - media_nominata["A"])
+nota <- c("Dati sintetici: 24 provini in sei stazioni di due affioramenti.",
+          "Formula: densita = massa_g / volume_cm3; unita: g/cm^3.",
+          sprintf("Differenza fra medie, B meno A: %.4f g/cm^3.", delta),
+          "Confronto descrittivo; nessuna conclusione causale o generalizzazione automatica.")
+writeLines(nota, percorso_risultati("nota_metodologica.txt"), useBytes = TRUE)
+cat(paste(nota, collapse = "
+"), "
+")
+```
+
+**Lettura del risultato.** La frase riporta il numero effettivo senza attribuirgli un significato inferenziale non calcolato. La nota permette di leggere il risultato anche fuori dal notebook, dove non sarebbero disponibili tutti i passaggi precedenti.
+
+## Variante svolta
+
+Rileggere anche la sintesi e verificare il totale delle numerosità.
+
+```{r variante}
+riassunto_riletto <- read.csv(file_med, stringsAsFactors = FALSE)
+print(riassunto_riletto)
+stopifnot(sum(riassunto_riletto$n) == nrow(individuali))
+stopifnot(setequal(riassunto_riletto$affioramento, c("A", "B")))
+```
+
+La somma riconcilia tabella individuale e tabella aggregata. È un controllo utile quando filtri o gruppi cambiano: il lettore deve sapere se tutte le osservazioni esportate contribuiscono alla sintesi.
+
+## Errore da riconoscere
+
+Salvare soltanto un numero separa il risultato dalla domanda. Identificativi, unità, formula, numerosità e ambito sono parte della consegna, non dettagli lasciati alla memoria di chi ha eseguito il codice.
+
+## Risposta alla domanda
+
+I file esportati sono leggibili e verificati mediante rilettura. La nota spiega che cosa è stato calcolato e quali conclusioni il procedimento non ha ancora affrontato.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M01_N09` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M01/M01_N09.R).

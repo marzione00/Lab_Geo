@@ -1,0 +1,133 @@
+---
+title: "Stima con lm e interpretazione dei coefficienti"
+subtitle: "M07_N04 \u00b7 Annula"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Come leggere l’oggetto restituito da lm senza confondere parametro, incertezza e previsione?
+
+## Obiettivi
+
+- Collegare la domanda al calcolo riportato.
+- Interpretare il risultato usando variabili e unità del problema.
+
+**Prima di iniziare.** Vettori, data frame, indicizzazione e funzioni di base in R.
+
+**Dati e unità.** Fossili simulati del corso: 160 individui, 80 Rounded e 80 Spiky. Diametri e spessori sono espressi in micrometri. Nel generatore, diametro interno = diametro totale − 2 × spessore. La relazione contiene quindi un vincolo geometrico noto.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Annula oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M07_Annula` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M07_Annula/Risultati/M07_N04/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M07_Annula"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M07_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M07_Annula o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M07_N04")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(7004)
+```
+
+## 1. La formula e l’oggetto modello
+
+La formula `risposta ~ predittore` specifica il ruolo delle colonne. `lm()` restituisce un oggetto che conserva coefficienti, residui e matrice del modello. Estrarre ciò che serve evita di leggere un riepilogo lungo come una risposta unica.
+
+```{r passo_01}
+# Ogni riga identifica un fossile simulato.
+f <- carica_dati("fossili_simulati.csv")
+f$morfotipo <- factor(f$morfotipo, levels=c("Rounded", "Spiky"))
+x <- f$diametro_tot_um
+y <- f$diametro_int_um
+stopifnot(nrow(f)==160L, !anyDuplicated(f$id),
+          all(is.finite(x)), all(is.finite(y)))
+# La formula mette la risposta a sinistra della tilde.
+modello <- lm(diametro_int_um ~ diametro_tot_um, data=f)
+e <- residuals(modello)
+coef(modello)
+head(data.frame(osservato=y,stimato=fitted(modello),residuo=e))
+```
+
+**Lettura del risultato.** La pendenza indica una variazione media stimata di circa 0,957 µm di diametro interno per 1 µm di diametro totale. Il residuo conserva il segno: è positivo quando il valore osservato supera la retta.
+
+## 2. Incertezza dei coefficienti
+
+Gli intervalli di `confint()` per un modello `lm` usano la distribuzione t e la varianza residua stimata. La lettura inferenziale richiede un modello della media adeguato, errori indipendenti e omoschedastici, con normalità per l’inferenza t esatta.
+
+```{r passo_02}
+# Intervalli al 95% per i coefficienti.
+confint(modello,level=.95)
+coef(summary(modello))
+summary(modello)$sigma
+```
+
+**Lettura del risultato.** Ogni riga del riepilogo riguarda un parametro. Il p-value confronta quel parametro con zero sotto le ipotesi del modello. La relazione geometrica nota e la natura simulata dei fossili restano parte dell’interpretazione scientifica.
+
+## 3. Un confronto con il calcolo manuale
+
+La formula manuale usa la stessa funzione obiettivo di `lm()`. Il confronto numerico controlla che la formula R abbia collegato le colonne previste.
+
+```{r passo_03}
+b1 <- cov(x,y)/var(x)
+b0 <- mean(y)-b1*mean(x)
+confronto <- cbind(manuale=c(b0,b1),R=unname(coef(modello)))
+rownames(confronto) <- c("intercetta","pendenza")
+confronto
+stopifnot(max(abs(confronto[,1]-confronto[,2]))<1e-10)
+```
+
+**Lettura del risultato.** I due calcoli coincidono entro la precisione numerica. Questo controllo verifica l’implementazione, ma non verifica la validità scientifica del modello.
+
+## Variante svolta
+
+Centrare il predittore su 7 µm e interpretare la nuova intercetta.
+
+```{r variante}
+f$x_centrato <- f$diametro_tot_um-7
+m_centrato <- lm(diametro_int_um~x_centrato,data=f)
+coef(m_centrato)
+predict(modello,newdata=data.frame(diametro_tot_um=7))
+```
+
+L’intercetta diventa il diametro interno medio stimato a 7 µm di diametro totale, circa 5,999 µm. La pendenza e le previsioni rimangono identiche.
+
+## Errore da riconoscere
+
+Una piccola probabilità sotto l’ipotesi nulla non misura la dimensione pratica della relazione e non dimostra un effetto causale.
+
+## Risposta alla domanda
+
+La formula definisce la domanda. Coefficienti e intervalli la quantificano, mentre residui e dominio aiutano a giudicare dove il modello è utilizzabile.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M07_N04` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M07/M07_N04.R).

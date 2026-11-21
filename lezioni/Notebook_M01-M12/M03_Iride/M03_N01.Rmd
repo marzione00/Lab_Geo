@@ -1,0 +1,131 @@
+---
+title: "Il campione da descrivere"
+subtitle: "M03_N01 \u00b7 Iride"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Quali osservazioni e quali variabili contiene il campione che descriveremo nei prossimi esercizi?
+
+## Obiettivi
+
+- Riconoscere individuo, variabile e unità di misura.
+- Verificare identificativi e disponibilità dei dati prima dei riassunti.
+
+**Prima di iniziare.** Oggetti, vettori, data frame e selezione di colonne con il simbolo $.
+
+**Dati e unità.** Archivio didattico sintetico: 160 fossili, 80 Rounded e 80 Spiky. Diametri e spessori sono espressi in micrometri; ogni riga identifica un individuo.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M03_N01/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M03_N01")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(3001)
+```
+
+## 1. Leggere la struttura
+
+Carichiamo il file senza modificare i dati. Le dimensioni descrivono la tabella, mentre str mostra il tipo delle colonne. Un numero scritto in una colonna non garantisce da solo che la sua unità sia stata documentata.
+
+```{r passo_01}
+f <- carica_dati("fossili_simulati.csv")
+# La struttura distingue colonne numeriche e categorie testuali.
+str(f)
+dimensioni <- c(individui = nrow(f), variabili = ncol(f))
+print(dimensioni)
+# Elenco esplicito delle colonne necessarie: un nome errato deve fermare il lavoro.
+richieste <- c("id", "morfotipo", "diametro_tot_um", "spessore_um")
+stopifnot(all(richieste %in% names(f)))
+head(f[richieste], 4)
+```
+
+**Lettura del risultato.** Ogni riga è un fossile, non una ripetizione di misura. La presenza di più colonne numeriche indica più proprietà dello stesso individuo: non moltiplica la numerosità del campione.
+
+## 2. Controllare identità e completezza
+
+Contiamo gli identificativi distinti e i valori mancanti. Separiamo questo controllo dalla plausibilità fisica: un dato può essere presente, numerico e tuttavia impossibile per la grandezza misurata.
+
+```{r passo_02}
+duplicati <- duplicated(f$id)
+print(f[duplicati, richieste])
+mancanti <- colSums(is.na(f[richieste]))
+print(mancanti)
+# is.finite esclude sia NA sia valori infiniti; il secondo controllo impone la positivita.
+diametro_valido <- is.finite(f$diametro_tot_um) & f$diametro_tot_um > 0
+print(table(diametro_valido))
+stopifnot(!any(duplicati), all(diametro_valido))
+```
+
+**Lettura del risultato.** L'assenza di duplicati permette di contare le righe come individui distinti nell'archivio. Non dimostra che il prelievo sul terreno sia casuale, né che individui della stessa località siano indipendenti.
+
+## 3. Dichiarare il campione disponibile
+
+Rendiamo visibili le categorie e il campo delle misure. Il campione bilanciato è una scelta della simulazione; la frazione di Spiky qui osservata non stima automaticamente una frequenza naturale.
+
+```{r passo_03}
+numerosita <- table(f$morfotipo)
+        print(numerosita)
+        # sapply applica range a ciascuna colonna senza mescolare le due misure.
+        intervalli <- sapply(f[c("diametro_tot_um", "spessore_um")], range)
+        rownames(intervalli) <- c("minimo_um", "massimo_um")
+        print(intervalli)
+        stopifnot(sum(numerosita) == nrow(f))
+        cat("Campione sintetico con", nrow(f), "individui distinti.
+")
+```
+
+**Lettura del risultato.** Il controllo produce una descrizione dell'archivio utilizzabile nei calcoli successivi. Conserviamo insieme numerosità, categorie e unità: una media senza queste informazioni sarebbe difficile da confrontare con altri campioni.
+
+## Variante svolta
+
+Costruire l'inventario del solo morfotipo Rounded e verificare quali informazioni cambiano.
+
+```{r variante}
+rounded <- f[f$morfotipo == "Rounded", , drop = FALSE]
+print(c(n = nrow(rounded), id_distinti = length(unique(rounded$id))))
+print(range(rounded$diametro_tot_um))
+print(colSums(is.na(rounded[richieste])))
+stopifnot(all(rounded$morfotipo == "Rounded"))
+```
+
+La selezione cambia la popolazione di righe descritta, ma lascia invariati significato e unità delle colonne. Anche un sottoinsieme deve essere controllato prima di applicare funzioni riassuntive.
+
+## Errore da riconoscere
+
+Non trattare i 160 fossili simulati come 160 campioni territoriali indipendenti: la tabella non documenta un disegno di campionamento naturale.
+
+## Risposta alla domanda
+
+Disponiamo di individui identificabili e misure positive in unità esplicite. Possiamo descrivere il campione; conclusioni su una formazione geologica richiederebbero informazioni sul prelievo e sulla popolazione di interesse.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M03_N01` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M03/M03_N01.R).

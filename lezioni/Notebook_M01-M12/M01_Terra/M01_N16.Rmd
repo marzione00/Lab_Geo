@@ -1,0 +1,131 @@
+---
+title: "Un possibile confondente: l'alterazione"
+subtitle: "M01_N16 \u00b7 Terra"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Il confronto grezzo fra affioramenti considera anche eventuali differenze nella composizione delle classi di alterazione?
+
+## Obiettivi
+
+- Descrivere la distribuzione di una variabile qualitativa per gruppo.
+- Confrontare sintesi complessive e sintesi entro classe senza conclusioni causali.
+
+**Prima di iniziare.** Saper eseguire una cella R e riconoscere vettori, assegnamenti e nomi di colonne.
+
+**Dati e unità.** I 24 provini sintetici riportano affioramento, stazione e alterazione bassa, media o alta. La densità è calcolata in g/cm³; le classi di alterazione non sono misure numeriche.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M01_N16/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M01_N16")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(1016)
+```
+
+## 1. Contare le classi entro affioramento
+
+Prima delle medie guardiamo quali classi sono presenti e in quali proporzioni. Se due affioramenti hanno composizioni differenti, il confronto complessivo combina anche queste differenze; una cella vuota limita ciò che possiamo confrontare direttamente.
+
+```{r passo_01}
+# Ogni esecuzione riparte dal CSV condiviso, senza modificare il file.
+d <- carica_dati("campioni_modulo1.csv", stringsAsFactors = FALSE)
+stopifnot(nrow(d) == 24L, !anyDuplicated(d$id))
+
+stopifnot(all(is.finite(d$massa_g)), all(d$massa_g > 0),
+          all(is.finite(d$volume_cm3)), all(d$volume_cm3 > 0))
+d$densita_g_cm3 <- d$massa_g / d$volume_cm3
+
+d$alterazione <- factor(d$alterazione, levels = c("bassa", "media", "alta"))
+conteggi <- table(d$affioramento, d$alterazione)
+proporzioni <- prop.table(conteggi, margin = 1)
+print(conteggi)
+print(round(proporzioni, 3))
+stopifnot(all(abs(rowSums(proporzioni) - 1) < 1e-12))
+```
+
+**Lettura del risultato.** Le proporzioni hanno come denominatore i provini di ciascun affioramento. Rispondono alla domanda 'com'è composto questo gruppo?', mentre le proporzioni per colonna risponderebbero a una domanda differente.
+
+## 2. Confrontare medie entro classe
+
+Calcoliamo medie e numerosità per ogni combinazione osservata. Il confronto entro classe riduce una differenza di composizione visibile, ma celle piccole e possibili altre variabili non osservate impediscono di interpretarlo automaticamente come effetto dell'affioramento.
+
+```{r passo_02}
+medie <- aggregate(densita_g_cm3 ~ affioramento + alterazione, d, mean)
+numeri <- aggregate(id ~ affioramento + alterazione, d, length)
+names(numeri)[names(numeri) == "id"] <- "n"
+riassunto <- merge(medie, numeri, by = c("affioramento", "alterazione"))
+print(riassunto)
+grezze <- tapply(d$densita_g_cm3, d$affioramento, mean)
+print(grezze)
+```
+
+**Lettura del risultato.** Le medie di classe descrivono soltanto combinazioni effettivamente presenti. Una numerosità piccola rende fragile la descrizione; una combinazione assente non va riempita con zero né trattata come una densità osservata.
+
+## 3. Rappresentare la composizione
+
+Un grafico a barre impilate mostra quale quota del gruppo appartiene a ciascuna classe. Usiamo le stesse categorie e gli stessi colori per entrambi gli affioramenti, così il confronto riguarda le composizioni e non l'ordine accidentale delle etichette.
+
+```{r passo_03}
+barplot(t(proporzioni), col = c("lightblue", "goldenrod", "firebrick"),
+        ylim = c(0, 1), ylab = "Proporzione dei provini", xlab = "Affioramento",
+        legend.text = colnames(proporzioni), args.legend = list(x = "topright", bty = "n"))
+medie_matrice <- with(d, tapply(densita_g_cm3, list(affioramento, alterazione), mean))
+print(medie_matrice)
+confrontabili <- colSums(is.finite(medie_matrice)) == 2L
+print(confrontabili)
+```
+
+**Lettura del risultato.** Le classi confrontabili hanno una media disponibile in entrambi i gruppi. Il grafico chiarisce una possibile fonte di composizione diversa, ma non stabilisce se alterazione sia causa, conseguenza o semplice indicatore di altri processi.
+
+## Variante svolta
+
+Calcolare B meno A soltanto per le classi presenti in entrambi gli affioramenti.
+
+```{r variante}
+delta_classe <- medie_matrice["B", confrontabili] - medie_matrice["A", confrontabili]
+print(delta_classe)
+print(c(differenza_grezza = unname(grezze["B"] - grezze["A"])))
+```
+
+La variante mette accanto confronti con composizioni diverse. Non impone che gli scarti cambino segno e non dimostra un paradosso: il risultato va letto insieme a numerosità, classi mancanti e struttura per stazione.
+
+## Errore da riconoscere
+
+Chiamare una differenza 'effetto dell'affioramento' dopo una sola stratificazione anticipa una conclusione causale. Il codice descrive associazioni e composizioni; il disegno e le conoscenze geologiche sostengono l'interpretazione.
+
+## Risposta alla domanda
+
+La densità media complessiva combina valori entro classe e frequenze delle classi. Osservare entrambi rende il confronto più trasparente e indica quali informazioni servirebbero per un'analisi successiva.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M01_N16` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M01/M01_N16.R).

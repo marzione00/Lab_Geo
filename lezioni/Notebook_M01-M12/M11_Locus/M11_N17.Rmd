@@ -1,0 +1,136 @@
+---
+title: "Medie di blocco e pesi"
+subtitle: "M11_N17 · Locus"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Quando la media delle medie coincide con la media delle singole osservazioni?
+
+## Obiettivi
+
+- Costruire quattro blocchi con 16 siti ciascuno.
+- Verificare la media pesata per numerosità.
+- Distinguere uguale peso ai blocchi e uguale peso ai siti.
+
+**Prima di iniziare.** Sono richiesti vettori, tabelle, coordinate e funzioni R di base. I blocchi vanno eseguiti in ordine; il notebook è autonomo rispetto agli altri. I calcoli usano R base e i pacchetti standard.
+
+**Dati e unità.** 64 siti sintetici su una griglia 8 × 8, con passo 250 m e coordinate locali x_m e y_m fra 0 e 1750 m. Questo piano locale non ha un codice EPSG. La concentrazione è sintetica, in unità arbitrarie (u.a.); la quota è in metri sintetici. Ogni riga descrive un sito e il suo valore puntuale, non la media di una cella.
+
+## Preparazione
+
+Aprire il progetto autonomo di Locus o quello generale dei notebook. I CSV locali restano invariati. Gli output vanno in `Risultati/M11_N17/`. Nessun download o installazione viene eseguito nei blocchi.
+
+```{r preparazione}
+# Trova il modulo dal progetto autonomo o dal progetto generale dei notebook.
+.gs_cerca <- normalizePath(getwd(),winslash="/",mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca,file.path(.gs_cerca,"M11_Locus"),
+    file.path(.gs_cerca,"03_Notebook_svolti","M11_Locus"),
+    file.path(.gs_cerca,"M11","03_Notebook_svolti","M11_Locus"))
+  .gs_ok <- file.exists(file.path(.gs_candidati,"M11_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati,"R","funzioni_notebook.R"))
+  if(any(.gs_ok)) { .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]];break }
+  .gs_padre <- dirname(.gs_cerca)
+  if(.gs_padre==.gs_cerca) stop("Aprire il progetto M11_Locus o quello generale dei notebook.")
+  .gs_cerca <- .gs_padre
+}
+source(file.path(.gs_modulo,"R","funzioni_notebook.R"),local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo,"M11_N17")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88,digits=6)
+if(requireNamespace("knitr",quietly=TRUE)) {
+  knitr::opts_chunk$set(echo=TRUE,error=FALSE,warning=TRUE,message=TRUE,
+    fig.width=8,fig.height=5,dpi=150,fig.align="center")
+}
+set.seed(11017)
+```
+
+## 1. La partizione bilanciata ha quattro gruppi
+
+Le soglie 1000 m per x e y producono quattro blocchi da 16 siti. Le etichette indicano la posizione relativa nella griglia locale.
+
+```{r passo_01}
+d <- carica_dati("spazio_v3.csv")
+audit_spazio(d)
+ d$blocco <- paste0(ifelse(d$y_m>=1000,"N","S"),ifelse(d$x_m>=1000,"E","O"))
+ sintesi <- aggregate(concentrazione~blocco,d,mean)
+ numerosita <- table(d$blocco)
+ sintesi$n <- as.numeric(numerosita[sintesi$blocco])
+ sintesi
+ stopifnot(all(sintesi$n==16L),sum(sintesi$n)==64L)
+```
+
+**Lettura del risultato.** Il bilanciamento deriva dalla griglia e dalle soglie scelte. Non è una proprietà generale delle partizioni territoriali.
+
+## 2. Due formule coincidono nel caso bilanciato
+
+La media dei siti è $\bar z=\sum_b n_b\bar z_b/\sum_b n_b$. La media semplice delle medie coincide con questa formula solo quando le numerosità sono uguali, salvo coincidenze numeriche.
+
+```{r passo_02}
+media_siti <- mean(d$concentrazione)
+media_blocchi <- mean(sintesi$concentrazione)
+media_pesata <- weighted.mean(sintesi$concentrazione,sintesi$n)
+data.frame(calcolo=c("Tutti i siti","Blocchi con peso uguale","Blocchi pesati per n"),
+  valore=c(media_siti,media_blocchi,media_pesata))
+stopifnot(abs(media_siti-media_blocchi)<1e-12,abs(media_siti-media_pesata)<1e-12)
+```
+
+**Lettura del risultato.** L’uguaglianza è un’identità delle medie su questi gruppi. Non dimostra che le medie puntuali siano medie areali dei blocchi.
+
+## 3. La consegna conserva i pesi
+
+Mostriamo le medie per blocco e salviamo la numerosità insieme a ogni valore.
+
+```{r passo_03}
+stile_grafico()
+barplot(sintesi$concentrazione,names.arg=sintesi$blocco,col=palette_geo[1:4],
+  ylab="Concentrazione media dei siti (u.a.)",main="Quattro blocchi: 16 siti ciascuno")
+write.csv(sintesi,percorso_risultati("medie_blocchi.csv"),row.names=FALSE)
+```
+
+**Lettura del risultato.** Una tabella di medie priva di numerosità può impedire la ricostruzione della media dei siti. Per una media areale servono invece supporti e pesi coerenti con quella domanda.
+
+## Variante svolta
+
+**Due blocchi sbilanciati.** Costruire l’esempio con 2 valori pari a 10 e 8 valori pari a 20.
+
+```{r variante}
+piccolo <- c(10,10);grande <- rep(20,8)
+medie <- c(mean(piccolo),mean(grande));n <- c(length(piccolo),length(grande))
+data.frame(peso=c("Uguale ai blocchi","Uguale ai siti"),
+  media=c(mean(medie),weighted.mean(medie,n)))
+stopifnot(mean(medie)==15,weighted.mean(medie,n)==18,mean(c(piccolo,grande))==18)
+```
+
+15 e 18 rispondono a domande diverse: uguale peso ai due blocchi oppure ai dieci siti. Il peso corretto dipende dall’oggetto da stimare, non dal desiderio di ottenere una media particolare.
+
+## Errore da riconoscere
+
+Calcolare una media semplice di medie con numerosità diverse senza dichiarare che si sta dando uguale peso ai gruppi.
+
+## Risposta alla domanda
+
+La media dei siti si ricostruisce pesando le medie di gruppo per le rispettive numerosità. Nel caso bilanciato le formule coincidono; cambiando supporto o obiettivo, i pesi devono essere nuovamente giustificati.
+
+## Raccordo con le slide
+
+[Slide 85–91 della lezione Locus](../../02_PDF/M11_Locus/Locus_M11_statistica_spaziale.pdf#page=85). Il notebook conserva il tema del laboratorio originale e aggiunge verifiche e una variante svolta.
+
+
+## Riferimenti e provenienza
+
+Questo svolgimento sviluppa `M11_N17` del [modulo M11 del corso](https://marzione00.github.io/Lab_Geo/#modulo-M11). Il [codice originale](https://github.com/marzione00/Lab_Geo/blob/649f7cc577b96bd1044d81e78a2f530813e4f96b/materiali/laboratori/M11/M11_N17.R) è conservato immutato in `R/Originali_corso/`; la mappa allegata documenta gli ampliamenti. Dati e originali hanno impronte SHA-256 e SHA-1 Git verificate.
+
+Documentazione primaria delle operazioni: [R, dist](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/dist.html), [R, aggregate](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/aggregate.html), [R, sample](https://stat.ethz.ch/R-manual/R-devel/library/base/html/sample.html). Le definizioni spaziali e il riferimento inferenziale seguono il laboratorio originale, con le distinzioni esplicitate nel testo.

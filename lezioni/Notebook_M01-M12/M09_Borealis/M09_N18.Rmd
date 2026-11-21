@@ -1,0 +1,140 @@
+---
+title: "Una diagnosi completa prima del modello"
+subtitle: "M09_N18 \u00b7 Borealis"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Quali elementi devono comparire in un resoconto sulla preparazione della serie CO₂?
+
+## Obiettivi
+
+- Documentare la catena delle trasformazioni.
+- Confrontare evidenze grafiche e test.
+- Scrivere un resoconto riproducibile.
+
+**Prima di iniziare.** Lettura di CSV, vettori, indicizzazione e funzioni di base in R. I blocchi vanno eseguiti nell’ordine all’interno del singolo notebook.
+
+**Dati e unità.** Archivio storico CO₂ 1958–2001, copia del dataset settimanale statsmodels attribuito a Keeling, Whorf e CDIAC. Le concentrazioni sono espresse in ppm. Le medie mensili del corso derivano dai valori settimanali assegnati al mese della data e differiscono per definizione da una serie mensile ufficiale.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Borealis oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M09_Borealis` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M09_Borealis/Risultati/M09_N18/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M09_Borealis"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M09_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M09_Borealis o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M09_N18")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(9018)
+```
+
+## 1. Riunire calendario e trasformazioni
+
+Un resoconto inizia da periodo, copertura, unità e definizione dell’aggregato. Poi elenca le trasformazioni confrontate e quante osservazioni rimangono.
+
+```{r passo_01}
+d <- carica_dati("co2_1985_2001.csv")
+d$data <- as.Date(d$data)
+d <- d[order(d$data), ]
+attese <- seq(as.Date("1985-01-01"), as.Date("2001-12-01"), by="month")
+stopifnot(identical(d$data, attese), !anyNA(d$co2_ppm))
+y <- ts(d$co2_ppm, start=c(1985,1), frequency=12)
+serie <- list(livello=as.numeric(y),diff1=as.numeric(diff(y)),
+ diff12=as.numeric(diff(y,lag=12)),combinata=as.numeric(diff(diff(y,lag=12))))
+sintesi <- data.frame(serie=names(serie),n=sapply(serie,length),
+ media=sapply(serie,mean),SD=sapply(serie,sd),
+ ACF1=sapply(serie,function(z)as.numeric(acf(z,plot=FALSE,lag.max=1)$acf[2])))
+sintesi
+```
+
+**Lettura del risultato.** Le statistiche descrivono risposte diverse. Una SD più piccola dopo una trasformazione non prova da sola che quella rappresentazione sia adatta a un modello.
+
+## 2. Affiancare test e grafici
+
+Calcoliamo ADF con quattro lag e KPSS nelle due specifiche. Gli avvisi vengono conservati. La scelta non si riduce al numero dei test favorevoli.
+
+```{r passo_02}
+esiti <- do.call(rbind,lapply(names(serie),function(n)tabella_test(n,serie[[n]],k=4)))
+esiti
+par(mfrow=c(2,1),mar=c(4.1,4.5,3.3,1.2))
+plot(d$data[-(1:13)],serie$combinata,type="l",col="#087C74",
+ xlab="Data",ylab="Differenza combinata (ppm)")
+acf(serie$combinata,lag.max=36,main="ACF: lag in mesi")
+```
+
+**Lettura del risultato.** Nei livelli l’ADF con trend rifiuta la radice unitaria, KPSS Level rifiuta e KPSS Trend non rifiuta. La differenza stagionale dà altri esiti discordanti. La combinata è compatibile con entrambe le nulle KPSS considerate, ma può conservare autocorrelazione: i test non dimostrano indipendenza e non impongono da soli una trasformazione.
+
+## 3. Scrivere un registro delle decisioni
+
+Il registro rende riproducibile l’analisi e impedisce di confondere livelli e differenze. Conserviamo i livelli originari e documentiamo separatamente le trasformazioni candidate.
+
+```{r passo_03}
+registro <- c(
+ "CO2 storica 1985-2001: 204 mesi completi, aggregati locali da dati settimanali.",
+ "Ogni mese ha almeno tre valori settimanali disponibili.",
+ "Confrontate differenza ordinaria, stagionale a 12 mesi e combinata.",
+ "La combinata conserva 191 osservazioni e cambia la risposta in incrementi stagionali.",
+ "ADF: costante e trend, k=4. KPSS: Level e Trend. Avvisi salvati nella tabella.",
+ "La dipendenza residua richiede un modello e una valutazione temporale separata.",
+ "I livelli originali restano disponibili; nessuna previsione e' valutata qui.")
+writeLines(registro,percorso_risultati("registro_diagnosi.txt"))
+write.csv(esiti,percorso_risultati("test_con_specifiche.csv"),row.names=FALSE)
+cat(paste(registro,collapse="
+"))
+```
+
+**Lettura del risultato.** Il registro separa ciò che è stato controllato da ciò che resta da valutare. Non introduce il riferimento non più valido al notebook 19 come modello previsivo.
+
+## Variante svolta
+
+Rifare l’ADF della differenza combinata con k=8 e conservare il nuovo confronto.
+
+```{r variante}
+riga_test("combinata","ADF k8",
+ cattura_test(tseries::adf.test(serie$combinata,k=8)))
+```
+
+La sensibilità alla specifica va discussa insieme ai grafici. Non si sceglie il risultato più favorevole scartando senza motivazione gli altri.
+
+## Errore da riconoscere
+
+Concludere che una trasformazione è corretta soltanto perché un test produce p<0,05, oppure chiamare “rumore bianco” qualsiasi serie senza trend visibile.
+
+## Risposta alla domanda
+
+La diagnosi combina provenienza, calendario, trasformazioni, grafici e test specificati. Prepara la modellazione successiva senza anticiparne le conclusioni.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M09_N18` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M09/M09_N18.R).

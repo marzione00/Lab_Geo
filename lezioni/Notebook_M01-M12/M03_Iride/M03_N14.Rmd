@@ -1,0 +1,131 @@
+---
+title: "Boxplot con punti: centro, dispersione e numerosit\u00e0"
+subtitle: "M03_N14 \u00b7 Iride"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Che cosa aggiungono gli individui sovrapposti al boxplot nel confronto fra morfotipi?
+
+## Obiettivi
+
+- Leggere scatola, mediana, baffi e valori oltre i baffi.
+- Conservare visibile la numerosità e limitare la sovrapposizione grafica.
+
+**Prima di iniziare.** Mediana, quartili, IQR e confronto fra gruppi.
+
+**Dati e unità.** Archivio didattico sintetico: 160 fossili, 80 Rounded e 80 Spiky. Diametri e spessori sono espressi in micrometri; ogni riga identifica un individuo.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M03_N14/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M03_N14")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(3014)
+```
+
+## 1. Riassumere prima di disegnare
+
+Calcoliamo numerosità, mediana e IQR per gruppo. Il boxplot sintetizza questi aspetti, ma non mostra da solo quanti individui occupino una zona della distribuzione o se esistano concentrazioni interne.
+
+```{r passo_01}
+f <- carica_dati("fossili_simulati.csv")
+gruppi <- split(f$diametro_tot_um, f$morfotipo)
+tab <- t(sapply(gruppi, function(x)
+  c(n = length(x), mediana_um = median(x), IQR_um = IQR(x, type = 7))))
+print(tab)
+# boxplot.stats restituisce cerniere, baffi e osservazioni oltre i baffi.
+dettagli <- lapply(gruppi, boxplot.stats)
+print(lapply(dettagli, function(z) z$stats))
+```
+
+**Lettura del risultato.** Gli estremi della scatola di boxplot usano le cerniere di Tukey, che possono differire dai quartili interpolati type = 7 nei campioni piccoli. Specificare la funzione impiegata evita confronti apparentemente contraddittori.
+
+## 2. Sovrapporre gli individui
+
+Il jitter sposta leggermente i punti in orizzontale per ridurre la sovrapposizione, senza cambiare il diametro sull'asse verticale. Il seme rende ripetibile soltanto questa disposizione grafica.
+
+```{r passo_02}
+set.seed(314)
+# ylim include anche gli estremi: outline = FALSE non deve nascondere i punti aggiunti.
+boxplot(diametro_tot_um ~ morfotipo, data = f, outline = FALSE, ylim = range(f$diametro_tot_um),
+        col = c("#D5E9EE", "#F1DFCF"), ylab = "Diametro totale (um)",
+        xlab = "Morfotipo", main = "Distribuzioni e singoli individui")
+stripchart(diametro_tot_um ~ morfotipo, data = f, vertical = TRUE,
+           method = "jitter", jitter = .13, add = TRUE,
+           pch = 16, cex = .65, col = "#1D7890")
+mtext(paste(paste(names(gruppi), lengths(gruppi), sep = ": n="), collapse = "; "), side = 3, cex = .8)
+```
+
+**Lettura del risultato.** outline = FALSE evita di disegnare due volte i punti oltre i baffi: tutti gli individui ricompaiono nello stripchart. Non è un'eliminazione dei dati e non modifica mediana, quartili o numerosità.
+
+## 3. Interpretare i baffi
+
+I baffi usuali si estendono fino alle osservazioni più estreme entro una distanza di una volta e mezzo l'ampiezza della scatola. Elenchiamo i punti segnalati dalla regola senza definirli automaticamente errori.
+
+```{r passo_03}
+# La regola grafica segnala osservazioni da esaminare, senza cancellarle.
+fuori_baffi <- lapply(dettagli, function(z) z$out)
+print(fuori_baffi)
+n_fuori <- lengths(fuori_baffi)
+print(data.frame(morfotipo = names(n_fuori), oltre_baffi = n_fuori))
+stopifnot(sum(lengths(gruppi)) == nrow(f))
+print(range(f$diametro_tot_um))
+```
+
+**Lettura del risultato.** Un punto oltre il baffo è insolito secondo una regola descrittiva, non necessariamente scorretto. Il boxplot non fornisce qui intervalli di confidenza: la separazione delle scatole non è un test statistico.
+
+## Variante svolta
+
+Ridurre Rounded a venti individui e verificare perché occorre indicare le numerosità.
+
+```{r variante}
+idx <- c(head(which(f$morfotipo == "Rounded"), 20), which(f$morfotipo == "Spiky"))
+ridotto <- f[idx, , drop = FALSE]
+print(table(ridotto$morfotipo))
+boxplot(diametro_tot_um ~ morfotipo, data = ridotto, varwidth = TRUE,
+        col = c("#D5E9EE", "#F1DFCF"), ylab = "Diametro totale (um)",
+        main = "Larghezza proporzionale alla radice di n")
+stopifnot(nrow(ridotto) == 100)
+```
+
+varwidth associa la larghezza alla radice della numerosità. È un aiuto visivo, ma un'etichetta con n resta più precisa; il sottoinsieme è costruito per il confronto e non è un nuovo campione casuale.
+
+## Errore da riconoscere
+
+Non attribuire significato numerico allo spostamento orizzontale dei punti. Non eliminare automaticamente le osservazioni oltre i baffi e non leggere la scatola come intervallo di confidenza.
+
+## Risposta alla domanda
+
+Il boxplot riassume posizioni e dispersione; i punti rendono visibili individui e concentrazioni. La combinazione è utile se si dichiarano numerosità, regola dei baffi e natura puramente grafica del jitter.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M03_N14` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M03/M03_N14.R).

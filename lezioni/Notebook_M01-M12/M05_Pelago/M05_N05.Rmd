@@ -1,0 +1,129 @@
+---
+title: "Dispersione dei dati ed errore standard"
+subtitle: "M05_N05 \u00b7 Pelago"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+La deviazione standard dei diametri e l'errore standard della media descrivono la stessa variabilità?
+
+## Obiettivi
+
+- Calcolare SD e SE con unità coerenti.
+- Distinguere eterogeneità dei fossili e precisione della media.
+
+**Prima di iniziare.** Vettori, indicizzazione, media, varianza e grafici di base in R.
+
+**Dati e unità.** Ottanta fossili sintetici Rounded in fossili_simulati.csv; diametro totale in micrometri. Per l'esercizio assumiamo unità indipendenti.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M05_N05/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M05_N05")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(5005)
+```
+
+## 1. Selezionare e controllare i diametri
+
+Definiamo il gruppo prima dei calcoli. Controlliamo che i diametri siano numerici, finiti e positivi e che gli identificativi non siano ripetuti. L'indipendenza non può essere dimostrata da questi controlli: rimane un'ipotesi del disegno didattico.
+
+```{r passo_01}
+dati <- carica_dati("fossili_simulati.csv")
+gruppo <- dati[dati$morfotipo == "Rounded", ]
+x <- gruppo$diametro_tot_um
+stopifnot(!anyDuplicated(gruppo$id), all(is.finite(x)), all(x > 0))
+n <- length(x)
+media <- mean(x)
+s <- sd(x)
+print(c(n = n, media_um = media, SD_um = s))
+```
+
+**Lettura del risultato.** La deviazione standard misura quanto differiscono i diametri osservati. Il numero di cifre stampate è una scelta di visualizzazione, non una nuova informazione sulla precisione strumentale.
+
+## 2. Calcolare e interpretare l'errore standard
+
+Sotto indipendenza, stimiamo la deviazione standard della media con s/√n. Le unità restano micrometri perché n è un conteggio. Un errore standard piccolo può coesistere con una dispersione individuale ampia quando il numero di fossili è elevato.
+
+```{r passo_02}
+se <- s / sqrt(n)
+print(data.frame(quantita = c("Deviazione standard", "Errore standard della media"),
+                 valore_um = c(s, se)))
+hist(x, breaks = 12, col = "#95BDD0", border = "white", ylab = "Frequenza",
+     xlab = "Diametro totale (umm)", main = "Eterogeneita individuale")
+abline(v = media, col = "#A33B31", lwd = 2)
+segments(media - s, 0, media + s, 0, lwd = 4, col = "#27647B")
+```
+
+**Lettura del risultato.** L'istogramma mostra i dati individuali. Il segmento ha ampiezza due deviazioni standard e non rappresenta un intervallo di confidenza della media.
+
+## 3. Verificare cosa cambia aumentando n nel modello
+
+Manteniamo fissa la deviazione standard della popolazione e simuliamo campioni normali soltanto per isolare l'effetto della numerosità. La dispersione dei singoli dati non si divide per √n; è la distribuzione delle medie a restringersi.
+
+```{r passo_03}
+set.seed(506)
+numerosita <- c(20, 80, 320)
+confronto <- data.frame(n = numerosita)
+confronto$SD_popolazione <- s
+confronto$SE_teorico <- s / sqrt(numerosita)
+confronto$SD_medie_simulate <- sapply(numerosita, function(nn)
+  sd(replicate(1500, mean(rnorm(nn, mean = media, sd = s)))))
+print(confronto)
+```
+
+**Lettura del risultato.** La colonna della deviazione standard della popolazione resta costante per costruzione. Le due colonne relative alla media concordano entro l'errore introdotto dalla simulazione.
+
+## Variante svolta
+
+Ricalcolare SD e SE per il gruppo Spiky e presentare i due gruppi nella stessa tabella.
+
+```{r variante}
+y <- dati$diametro_tot_um[dati$morfotipo == "Spiky"]
+stopifnot(all(is.finite(y)))
+riepilogo <- data.frame(gruppo = c("Rounded", "Spiky"), n = c(n, length(y)),
+  media_um = c(media, mean(y)), SD_um = c(s, sd(y)),
+  SE_um = c(se, sd(y) / sqrt(length(y))))
+print(riepilogo)
+```
+
+La tabella affianca tre domande distinte: posizione media, variabilità individuale e precisione stimata della media. Nessuna colonna, da sola, costituisce un test fra gruppi.
+
+## Errore da riconoscere
+
+Non presentare media ± SE come fascia contenente la maggior parte dei fossili. Il SE riguarda la stima della media, non la variabilità individuale.
+
+## Risposta alla domanda
+
+SD e SE hanno le stesse unità ma significati diversi. Dichiararli per esteso rende il riepilogo leggibile e impedisce di confondere omogeneità e precisione.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M05_N05` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M05/M05_N05.R).

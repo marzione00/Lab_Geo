@@ -1,0 +1,137 @@
+---
+title: "Un join spaziale può moltiplicare le righe"
+subtitle: "M11_N09 · Locus"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Perché unire punti e aree sovrapposte può produrre più righe che punti?
+
+## Obiettivi
+
+- Costruire una relazione di appartenenza molti-a-molti.
+- Controllare le molteplicità prima di una media.
+- Conservare l’ID del sito come unità osservativa.
+
+**Prima di iniziare.** Sono richiesti vettori, tabelle, coordinate e funzioni R di base. I blocchi vanno eseguiti in ordine; il notebook è autonomo rispetto agli altri. I calcoli usano R base e i pacchetti standard.
+
+**Dati e unità.** 64 siti sintetici su una griglia 8 × 8, con passo 250 m e coordinate locali x_m e y_m fra 0 e 1750 m. Questo piano locale non ha un codice EPSG. La concentrazione è sintetica, in unità arbitrarie (u.a.); la quota è in metri sintetici. Ogni riga descrive un sito e il suo valore puntuale, non la media di una cella.
+
+## Preparazione
+
+Aprire il progetto autonomo di Locus o quello generale dei notebook. I CSV locali restano invariati. Gli output vanno in `Risultati/M11_N09/`. Nessun download o installazione viene eseguito nei blocchi.
+
+```{r preparazione}
+# Trova il modulo dal progetto autonomo o dal progetto generale dei notebook.
+.gs_cerca <- normalizePath(getwd(),winslash="/",mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca,file.path(.gs_cerca,"M11_Locus"),
+    file.path(.gs_cerca,"03_Notebook_svolti","M11_Locus"),
+    file.path(.gs_cerca,"M11","03_Notebook_svolti","M11_Locus"))
+  .gs_ok <- file.exists(file.path(.gs_candidati,"M11_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati,"R","funzioni_notebook.R"))
+  if(any(.gs_ok)) { .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]];break }
+  .gs_padre <- dirname(.gs_cerca)
+  if(.gs_padre==.gs_cerca) stop("Aprire il progetto M11_Locus o quello generale dei notebook.")
+  .gs_cerca <- .gs_padre
+}
+source(file.path(.gs_modulo,"R","funzioni_notebook.R"),local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo,"M11_N09")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88,digits=6)
+if(requireNamespace("knitr",quietly=TRUE)) {
+  knitr::opts_chunk$set(echo=TRUE,error=FALSE,warning=TRUE,message=TRUE,
+    fig.width=8,fig.height=5,dpi=150,fig.align="center")
+}
+set.seed(11009)
+```
+
+## 1. La relazione non è una partizione
+
+Replichiamo il join didattico attraverso predicati sulle coordinate: A include x ≤ 1250, B include x ≥ 750. Le zone si sovrappongono; qui non si invoca st_join.
+
+```{r passo_01}
+d <- carica_dati("spazio_v3.csv")
+audit_spazio(d)
+ a <- data.frame(id=d$id[d$x_m<=1250],zona="A")
+ b <- data.frame(id=d$id[d$x_m>=750],zona="B")
+ relazioni <- rbind(a,b)
+ frequenze <- table(relazioni$id)
+ data.frame(punti=nrow(d),relazioni=nrow(relazioni),siti_con_piu_appartenenze=sum(frequenze>1))
+ stopifnot(nrow(relazioni)==88L,sum(frequenze>1)==24L)
+```
+
+**Lettura del risultato.** Le 88 righe descrivono relazioni sito–zona, non 88 osservazioni indipendenti. Ventiquattro siti appartengono a entrambe le zone.
+
+## 2. La molteplicità modifica il peso delle osservazioni
+
+Uniamo gli attributi per ID e confrontiamo la media sulle righe del join con quella sui siti.
+
+```{r passo_02}
+unione <- merge(relazioni,d,by="id",sort=FALSE)
+data.frame(unita=c("Sito originale","Relazione sito-zona"),
+  n=c(nrow(d),nrow(unione)),media=c(mean(d$concentrazione),mean(unione$concentrazione)))
+aggregate(concentrazione~zona,data=unione,mean)
+table(unione$zona)
+```
+
+**Lettura del risultato.** La media del join dà peso doppio ai siti sovrapposti. La differenza può essere piccola o grande; il problema è la modifica dell’unità e dei pesi, non una soglia numerica fissa.
+
+## 3. L’audit rende visibile la sovrapposizione
+
+La mappa usa il numero di appartenenze per distinguere i siti ripetuti.
+
+```{r passo_03}
+molteplicita <- as.integer(frequenze[d$id])
+stile_grafico()
+plot(d$x_m,d$y_m,pch=19,col=palette_geo[molteplicita],asp=1,
+  xlab="x locale (m)",ylab="y locale (m)",main="Sovrapposizione fra 750 e 1250 m")
+abline(v=c(750,1250),lty=2,col="grey50")
+write.csv(unione,percorso_risultati("relazioni_sito_zona.csv"),row.names=FALSE)
+data.frame(appartenenze=as.integer(names(table(molteplicita))),siti=as.integer(table(molteplicita)))
+```
+
+**Lettura del risultato.** Le soglie sono inclusive, quindi anche le colonne sui confini contribuiscono alla sovrapposizione.
+
+## Variante svolta
+
+**Un riepilogo con una riga per sito.** Conservare tutte le zone in un campo testuale per ID, evitando di scegliere arbitrariamente la prima relazione.
+
+```{r variante}
+elenco <- aggregate(zona~id,relazioni,function(x) paste(sort(unique(x)),collapse="+"))
+unico <- merge(d,elenco,by="id")
+head(unico[,c("id","zona","concentrazione")],8)
+stopifnot(nrow(unico)==64L,!anyDuplicated(unico$id))
+```
+
+La rappresentazione conserva la molteplicità senza cambiare il peso di un sito nelle sintesi. Per analisi specifiche delle zone si torna alla tabella delle relazioni.
+
+## Errore da riconoscere
+
+Eliminare duplicati dopo il join senza capire perché esistono oppure trattare ogni relazione come un nuovo sito campionato.
+
+## Risposta alla domanda
+
+La cardinalità del join dipende dalla geometria e dal predicato. Le righe possono rappresentare relazioni, mentre l’unità campionaria resta il sito. ID e numerosità devono essere controllati prima di interpretare una sintesi.
+
+## Raccordo con le slide
+
+[Slide 37–38 della lezione Locus](../../02_PDF/M11_Locus/Locus_M11_statistica_spaziale.pdf#page=37). Il notebook conserva il tema del laboratorio originale e aggiunge verifiche e una variante svolta.
+
+
+## Riferimenti e provenienza
+
+Questo svolgimento sviluppa `M11_N09` del [modulo M11 del corso](https://marzione00.github.io/Lab_Geo/#modulo-M11). Il [codice originale](https://github.com/marzione00/Lab_Geo/blob/649f7cc577b96bd1044d81e78a2f530813e4f96b/materiali/laboratori/M11/M11_N09.R) è conservato immutato in `R/Originali_corso/`; la mappa allegata documenta gli ampliamenti. Dati e originali hanno impronte SHA-256 e SHA-1 Git verificate.
+
+Documentazione primaria delle operazioni: [R, dist](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/dist.html), [R, aggregate](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/aggregate.html), [R, sample](https://stat.ethz.ch/R-manual/R-devel/library/base/html/sample.html). Le definizioni spaziali e il riferimento inferenziale seguono il laboratorio originale, con le distinzioni esplicitate nel testo.

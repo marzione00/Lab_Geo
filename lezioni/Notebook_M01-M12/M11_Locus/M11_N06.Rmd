@@ -1,0 +1,140 @@
+---
+title: "Rietichettare non significa trasformare"
+subtitle: "M11_N06 · Locus"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Cambiare l’etichetta del CRS cambia davvero le coordinate?
+
+## Obiettivi
+
+- Confrontare st_set_crs e st_transform.
+- Mostrare numericamente una rietichettatura errata.
+- Riconoscere il limite di un piano locale senza CRS.
+
+**Prima di iniziare.** Sono richiesti vettori, tabelle, coordinate e funzioni R di base. I blocchi vanno eseguiti in ordine; il notebook è autonomo rispetto agli altri. Questo notebook richiede il pacchetto sf installato prima dell’analisi e usa le sue funzioni effettive.
+
+**Dati e unità.** 64 siti sintetici su una griglia 8 × 8, con passo 250 m e coordinate locali x_m e y_m fra 0 e 1750 m. Questo piano locale non ha un codice EPSG. La concentrazione è sintetica, in unità arbitrarie (u.a.); la quota è in metri sintetici. Ogni riga descrive un sito e il suo valore puntuale, non la media di una cella. Le colonne lon e lat forniscono un georiferimento sintetico separato, vicino a 9° E e 45° N, costruito con una relazione approssimata. Non sono coordinate UTM ottenute aggiungendo un’origine alle coordinate locali. Nel percorso geografico l’ordine è sempre longitudine, latitudine.
+
+## Preparazione
+
+Aprire il progetto autonomo di Locus o quello generale dei notebook. I CSV locali restano invariati. Gli output vanno in `Risultati/M11_N06/`. Nessun download o installazione viene eseguito nei blocchi.
+
+```{r preparazione}
+# Trova il modulo dal progetto autonomo o dal progetto generale dei notebook.
+.gs_cerca <- normalizePath(getwd(),winslash="/",mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca,file.path(.gs_cerca,"M11_Locus"),
+    file.path(.gs_cerca,"03_Notebook_svolti","M11_Locus"),
+    file.path(.gs_cerca,"M11","03_Notebook_svolti","M11_Locus"))
+  .gs_ok <- file.exists(file.path(.gs_candidati,"M11_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati,"R","funzioni_notebook.R"))
+  if(any(.gs_ok)) { .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]];break }
+  .gs_padre <- dirname(.gs_cerca)
+  if(.gs_padre==.gs_cerca) stop("Aprire il progetto M11_Locus o quello generale dei notebook.")
+  .gs_cerca <- .gs_padre
+}
+source(file.path(.gs_modulo,"R","funzioni_notebook.R"),local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo,"M11_N06")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88,digits=6)
+if(requireNamespace("knitr",quietly=TRUE)) {
+  knitr::opts_chunk$set(echo=TRUE,error=FALSE,warning=TRUE,message=TRUE,
+    fig.width=8,fig.height=5,dpi=150,fig.align="center")
+}
+set.seed(11006)
+```
+
+## 1. La trasformazione corretta parte da un riferimento noto
+
+Prepariamo la geometria lon–lat e la sua trasformazione metrica di confronto.
+
+```{r passo_01}
+d <- carica_dati("spazio_v3.csv")
+audit_spazio(d)
+richiedi_sf()
+ p <- sf::st_as_sf(d,coords=c("lon","lat"),crs="OGC:CRS84")
+ corretto <- sf::st_transform(p,32632)
+ originali <- sf::st_coordinates(p)
+ xy_corrette <- sf::st_coordinates(corretto)
+ data.frame(caso=c("WGS84 lon-lat","UTM32N trasformato"),
+   x=c(originali[1,1],xy_corrette[1,1]),y=c(originali[1,2],xy_corrette[1,2]))
+```
+
+**Lettura del risultato.** L’operazione di trasformazione usa la relazione fra due sistemi di riferimento. I numeri cambiano perché cambia la rappresentazione della stessa geometria dichiarata.
+
+## 2. La rietichettatura conserva i numeri
+
+Riproduciamo intenzionalmente l’errore del laboratorio. Togliere il CRS prima della rietichettatura evita un avviso del software, ma non rende corretta l’operazione.
+
+```{r passo_02}
+errato <- sf::st_set_crs(sf::st_set_crs(p,NA),32632)
+xy_errate <- sf::st_coordinates(errato)
+stopifnot(max(abs(xy_errate-originali))==0)
+data.frame(caso=c("ERRATO: etichetta 32632","Corretto: trasformazione"),
+  primo_x=c(xy_errate[1,1],xy_corrette[1,1]),
+  primo_y=c(xy_errate[1,2],xy_corrette[1,2]),unita_dichiarata="metri")
+```
+
+**Lettura del risultato.** Nel caso errato, circa 9 e 45 vengono chiamati metri UTM senza aver subito una proiezione. L’assenza di un avviso non certifica la qualità dei metadati.
+
+## 3. La conseguenza si osserva tornando in gradi
+
+Trasformiamo l’oggetto errato in coordinate geografiche e controlliamo la zona sintetica attesa.
+
+```{r passo_03}
+falsi <- sf::st_coordinates(sf::st_transform(errato,"OGC:CRS84"))
+in_zona <- falsi[,1]>8 & falsi[,1]<10 & falsi[,2]>44 & falsi[,2]<46
+risultato <- data.frame(id=d$id,lon_errata=falsi[,1],lat_errata=falsi[,2],nella_zona=in_zona)
+head(risultato,4)
+data.frame(siti_nella_zona=sum(in_zona),totale=nrow(d))
+stopifnot(!any(in_zona))
+write.csv(risultato,percorso_risultati("effetto_rietichettatura.csv"),row.names=FALSE)
+```
+
+**Lettura del risultato.** La trasformazione interpreta fedelmente un’etichetta sbagliata e produce un’altra posizione. Per trovare l’errore serve un controllo esterno coerente con il contesto.
+
+## Variante svolta
+
+**Un piano senza CRS non si trasforma per tentativi.** Chiedere a sf di trasformare il piano locale privo di CRS e catturare l’errore atteso, lasciando invariati i dati.
+
+```{r variante}
+locale <- sf::st_as_sf(d,coords=c("x_m","y_m"),crs=NA)
+errore_atteso <- tryCatch({sf::st_transform(locale,32632);NA_character_},
+  error=function(e) conditionMessage(e))
+errore_atteso
+stopifnot(is.character(errore_atteso),!is.na(errore_atteso))
+```
+
+Questo errore è intenzionale e gestito nel codice. La soluzione scientifica richiede informazioni sul georiferimento; un EPSG inventato non risolve la mancanza di metadati.
+
+## Errore da riconoscere
+
+Usare st_set_crs per «convertire in metri» oppure assegnare una zona UTM a una griglia locale perché i valori sembrano plausibili.
+
+## Risposta alla domanda
+
+st_set_crs modifica la dichiarazione; st_transform ricalcola la geometria fra CRS noti. La distinzione è verificabile nei numeri. Un piano locale senza riferimento va mantenuto tale finché manca una relazione geografica giustificata.
+
+## Raccordo con le slide
+
+[Slide 29–31 della lezione Locus](../../02_PDF/M11_Locus/Locus_M11_statistica_spaziale.pdf#page=29). Il notebook conserva il tema del laboratorio originale e aggiunge verifiche e una variante svolta.
+
+
+## Riferimenti e provenienza
+
+Questo svolgimento sviluppa `M11_N06` del [modulo M11 del corso](https://marzione00.github.io/Lab_Geo/#modulo-M11). Il [codice originale](https://github.com/marzione00/Lab_Geo/blob/649f7cc577b96bd1044d81e78a2f530813e4f96b/materiali/laboratori/M11/M11_N06.R) è conservato immutato in `R/Originali_corso/`; la mappa allegata documenta gli ampliamenti. Dati e originali hanno impronte SHA-256 e SHA-1 Git verificate.
+
+Documentazione primaria: [sf, trasformazione](https://r-spatial.github.io/sf/reference/st_transform.html), [sf, CRS](https://r-spatial.github.io/sf/reference/st_crs.html), [sf, scrittura](https://r-spatial.github.io/sf/reference/st_write.html), [GeoJSON RFC7946](https://www.rfc-editor.org/rfc/rfc7946).

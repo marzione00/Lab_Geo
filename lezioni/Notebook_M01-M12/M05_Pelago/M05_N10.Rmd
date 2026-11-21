@@ -1,0 +1,130 @@
+---
+title: "Distribuzione empirica e informazione"
+subtitle: "M05_N10 \u00b7 Pelago"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Quale informazione conserva la distribuzione empirica e quale informazione non può creare il bootstrap?
+
+## Obiettivi
+
+- Costruire frequenze e funzione di ripartizione empirica.
+- Riconoscere i limiti del supporto osservato.
+
+**Prima di iniziare.** Vettori, indicizzazione, media, varianza e grafici di base in R.
+
+**Dati e unità.** Sei misure didattiche in unità convenzionali, con valori ripetuti. Le ripetizioni sono osservazioni distinte e devono conservare il loro peso.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M05_N10/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M05_N10")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(5010)
+```
+
+## 1. Assegnare massa alle osservazioni
+
+La distribuzione empirica assegna massa 1/n a ciascuna osservazione, non a ciascun valore distinto. Quando una misura compare più volte, la sua probabilità empirica è la somma delle masse corrispondenti. Questo passaggio determina il modello usato dal bootstrap non parametrico.
+
+```{r passo_01}
+x <- c(2, 2, 3, 4, 4, 9)
+n <- length(x)
+frequenze <- table(x)
+valori <- as.numeric(names(frequenze))
+probabilita <- as.numeric(frequenze) / n
+print(data.frame(valore = valori, frequenza = as.integer(frequenze),
+                 probabilita_empirica = probabilita))
+stopifnot(abs(sum(probabilita) - 1) < 1e-12)
+```
+
+**Lettura del risultato.** I valori due e quattro ricevono più massa perché sono stati osservati due volte. Rimuovere i duplicati cambierebbe la distribuzione su cui si fonda il ricampionamento.
+
+## 2. Costruire la funzione di ripartizione
+
+La funzione empirica F_n(t) è la proporzione di osservazioni minori o uguali a t. È una funzione a gradini: un salto più alto segnala più osservazioni nello stesso punto. Verifichiamo alcuni valori con un conteggio diretto.
+
+```{r passo_02}
+Fn <- ecdf(x)
+soglie <- c(1, 2, 3.5, 4, 9, 10)
+diretto <- sapply(soglie, function(t) mean(x <= t))
+print(data.frame(soglia = soglie, Fn = Fn(soglie), conteggio = diretto))
+stopifnot(isTRUE(all.equal(Fn(soglie), diretto)))
+plot(Fn, verticals = TRUE, do.points = TRUE, col = "#27647B",
+     main = "Distribuzione empirica", xlab = "Misura (u.c.)",
+     ylab = "Proporzione minore o uguale")
+```
+
+**Lettura del risultato.** Sotto il minimo osservato la funzione vale zero e dal massimo osservato in poi vale uno. Queste proprietà descrivono il campione, non dimostrano che la popolazione abbia gli stessi estremi.
+
+## 3. Ricampionare dalla distribuzione osservata
+
+Ricampionando con reinserimento scegliamo ogni volta uno degli indici originali. Possiamo ottenere molteplicità diverse, ma mai un valore individuale assente dal campione. Una media bootstrap può invece assumere combinazioni non presenti fra le misure originali.
+
+```{r passo_03}
+set.seed(510)
+B <- 1500
+repliche <- replicate(B, sample(x, size = n, replace = TRUE))
+medie <- colMeans(repliche)
+print(c(min_dato_boot = min(repliche), max_dato_boot = max(repliche),
+        media_originale = mean(x), media_boot = mean(medie)))
+stopifnot(all(as.vector(repliche) %in% x))
+print(c(media_empirica_pesata = sum(valori * probabilita),
+        media_valori_distinti = mean(unique(x))))
+```
+
+**Lettura del risultato.** La media dei valori distinti usa pesi diversi e risponde a un'altra domanda. Il bootstrap conserva i valori osservati ma cambia quali e quante volte entrano in una replica.
+
+## Variante svolta
+
+Calcolare la probabilità empirica di osservare un valore maggiore di quattro, e confrontarla con il ricampionamento.
+
+```{r variante}
+p_empirica <- mean(x > 4)
+p_da_Fn <- 1 - Fn(4)
+p_simulata <- mean(repliche > 4)
+print(c(empirica = p_empirica, da_ripartizione = p_da_Fn, simulata = p_simulata))
+stopifnot(isTRUE(all.equal(p_empirica, p_da_Fn)))
+```
+
+La frequenza simulata oscilla attorno alla probabilità empirica. Non fornisce una nuova osservazione delle code della popolazione: ripete l'informazione contenuta nei sei dati.
+
+## Errore da riconoscere
+
+Non eliminare valori ripetuti prima di costruire la distribuzione empirica e non usare il bootstrap per sostenere che estremi mai osservati siano impossibili.
+
+## Risposta alla domanda
+
+La distribuzione empirica conserva frequenze e supporto osservati. Il bootstrap studia una procedura condizionata a questa informazione e non sostituisce un nuovo campionamento.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M05_N10` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M05/M05_N10.R).

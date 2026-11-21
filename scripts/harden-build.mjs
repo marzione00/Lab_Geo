@@ -61,6 +61,7 @@ export function hardenBuild(out) {
   };
   visit(path.join(out, 'materiali'));
   visit(path.join(out, 'percorso'));
+  if (fs.existsSync(path.join(out, 'notebook'))) visit(path.join(out, 'notebook'));
   const headers = { ...securityHeaders, 'Strict-Transport-Security': 'max-age=31536000' };
   delete headers['Content-Security-Policy'];
   fs.writeFileSync(

@@ -1,0 +1,131 @@
+---
+title: "Join molti-a-uno con controllo delle chiavi"
+subtitle: "M02_N05 \u00b7 Tellus"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come aggiungiamo informazioni di stazione ai provini senza moltiplicare o perdere righe?
+
+## Obiettivi
+
+- Verificare unicità della chiave nella tabella di riferimento.
+- Controllare cardinalità, corrispondenze e ordine dopo un join.
+
+**Prima di iniziare.** Saper eseguire una cella R e riconoscere vettori, assegnamenti e nomi di colonne.
+
+**Dati e unità.** Usiamo 24 provini sintetici e una tabella derivata di sei stazioni. Ogni provino appartiene a una stazione, mentre una stazione compare in più righe della tabella individuale.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M02_N05/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M02_N05")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(2005)
+```
+
+## 1. Preparare il lato con chiave unica
+
+Un join molti-a-uno richiede che la tabella delle stazioni contenga una sola riga per chiave. Costruiamo la densità media per stazione e controlliamo esplicitamente questa proprietà prima di unirla ai provini.
+
+```{r passo_01}
+# Ogni esecuzione riparte dal CSV condiviso, senza modificare il file.
+d <- carica_dati("campioni_modulo1.csv", stringsAsFactors = FALSE)
+stopifnot(nrow(d) == 24L, !anyDuplicated(d$id))
+
+stopifnot(all(is.finite(d$massa_g)), all(d$massa_g > 0),
+          all(is.finite(d$volume_cm3)), all(d$volume_cm3 > 0))
+d$densita_g_cm3 <- d$massa_g / d$volume_cm3
+
+stazioni <- aggregate(densita_g_cm3 ~ stazione, data = d, FUN = mean)
+names(stazioni)[2] <- "media_stazione_g_cm3"
+print(stazioni)
+stopifnot(!anyDuplicated(stazioni$stazione))
+stopifnot(all(d$stazione %in% stazioni$stazione))
+```
+
+**Lettura del risultato.** La stessa stazione può comparire molte volte fra i provini, ma una sola volta nella tabella di riferimento. Questa asimmetria definisce il rapporto molti-a-uno e impedisce combinazioni multiple per lo stesso provino.
+
+## 2. Unire conservando le righe individuali
+
+Usiamo un join che conserva tutti i provini e una colonna temporanea per ripristinare l'ordine originale. Le funzioni di unione possono riordinare le righe: conservare esplicitamente l'ordine evita di attribuire significato a un comportamento accidentale.
+
+```{r passo_02}
+d$ordine_origine <- seq_len(nrow(d))
+unita <- merge(d, stazioni, by = "stazione", all.x = TRUE, sort = FALSE)
+unita <- unita[order(unita$ordine_origine), , drop = FALSE]
+rownames(unita) <- NULL
+stopifnot(nrow(unita) == nrow(d), identical(unita$id, d$id))
+stopifnot(!anyNA(unita$media_stazione_g_cm3))
+print(head(unita[c("id", "stazione", "densita_g_cm3", "media_stazione_g_cm3")]))
+```
+
+**Lettura del risultato.** La media di stazione si ripete sulle righe dei suoi provini: questo è previsto e non crea nuove misure indipendenti. Una media mancante dopo il join indicherebbe una chiave non trovata, non una densità di stazione pari a zero.
+
+## 3. Mostrare l'effetto di una chiave duplicata
+
+Creiamo appositamente una tabella di riferimento errata duplicando una stazione. Il join può essere eseguito senza errori sintattici, ma produce più righe: per questo la sola riuscita del comando non è una verifica sufficiente.
+
+```{r passo_03}
+stazioni_errate <- rbind(stazioni, stazioni[1, , drop = FALSE])
+chiavi_duplicate <- stazioni_errate$stazione[duplicated(stazioni_errate$stazione)]
+risultato_errato <- merge(d, stazioni_errate, by = "stazione", all.x = TRUE)
+print(chiavi_duplicate)
+print(c(prima = nrow(d), dopo_join_errato = nrow(risultato_errato)))
+stopifnot(nrow(risultato_errato) > nrow(d))
+```
+
+**Lettura del risultato.** Ogni provino della stazione duplicata trova due corrispondenze e compare due volte. R non può sapere se questa moltiplicazione sia intenzionale: è il contratto del join a stabilire che, in questo esercizio, si tratta di un errore.
+
+## Variante svolta
+
+Togliere una stazione dal riferimento e identificare i provini senza corrispondenza.
+
+```{r variante}
+riferimento_incompleto <- stazioni[-1, , drop = FALSE]
+incompleto <- merge(d, riferimento_incompleto, by = "stazione", all.x = TRUE)
+non_abbinati <- is.na(incompleto$media_stazione_g_cm3)
+print(incompleto[non_abbinati, c("id", "stazione")])
+stopifnot(nrow(incompleto) == nrow(d))
+```
+
+Conservare le righe di sinistra rende visibile il mancato abbinamento. Un join che mantenesse soltanto le corrispondenze cancellerebbe quei provini; occorre scegliere il comportamento in base alla domanda, poi controllarne l'esito.
+
+## Errore da riconoscere
+
+Verificare soltanto il numero finale di righe non esclude sostituzioni o riordini indesiderati. Si controllano anche chiavi duplicate, ID conservati, corrispondenze mancanti e ordine quando questo serve alle operazioni successive.
+
+## Risposta alla domanda
+
+Il join è corretto quando rispetta la relazione attesa fra le tabelle. Le informazioni di stazione possono essere aggiunte ai provini senza cambiare l'unità di osservazione della tabella individuale.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M02_N05` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M02/M02_N05.R).

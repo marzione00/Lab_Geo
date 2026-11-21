@@ -1,0 +1,132 @@
+---
+title: "Categorie e duplicati richiedono regole diverse"
+subtitle: "M02_N13 \u00b7 Tellus"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come distinguiamo una variante grafica di categoria, una riga esattamente ripetuta e un identificativo potenzialmente conflittuale?
+
+## Obiettivi
+
+- Normalizzare etichette conservando le forme originali.
+- Usare criteri diversi per duplicati di riga e duplicati di chiave.
+
+**Prima di iniziare.** Saper eseguire una cella R e riconoscere vettori, assegnamenti e nomi di colonne.
+
+**Dati e unità.** Il file sintetico contiene 25 record, incluso un duplicato esatto di F007 e un'etichetta ' rounded ' con spazi e maiuscole differenti. Tutte le etichette normalizzate presenti appartengono a Rounded.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M02_N13/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M02_N13")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(2013)
+```
+
+## 1. Definire un vocabolario di categorie
+
+La normalizzazione deve essere limitata a trasformazioni che non cambiano il significato. Eliminiamo spazi esterni e differenze fra maiuscole e minuscole, poi confrontiamo il risultato con un vocabolario dichiarato: categorie sconosciute restano segnalate.
+
+```{r passo_01}
+# Conservare anche stringhe vuote e codici testuali prima di interpretarli.
+raw <- carica_dati("fossili_da_controllare.csv", sep = ";",
+                   colClasses = "character", na.strings = character(),
+                   stringsAsFactors = FALSE)
+stopifnot(nrow(raw) == 25L)
+
+normalizzate <- tolower(trimws(raw$morfotipo))
+vocabolario <- c(rounded = "Rounded", spiky = "Spiky")
+categoria <- unname(vocabolario[normalizzate])
+sconosciuta <- is.na(categoria)
+print(data.frame(originale = raw$morfotipo, normalizzata = categoria))
+print(table(categoria, useNA = "ifany"))
+stopifnot(!any(sconosciuta))
+```
+
+**Lettura del risultato.** L'etichetta con spazi converge sulla categoria prevista senza cambiare il record originale. Il vocabolario comprende anche Spiky, ma la sua presenza nel dizionario non implica che questa piccola tabella contenga osservazioni di entrambe le categorie.
+
+## 2. Separare duplicati esatti e chiavi ripetute
+
+Un duplicato esatto confronta tutte le celle originali. Un ID ripetuto confronta invece soltanto la chiave e potrebbe accompagnare misure differenti. Calcoliamo entrambi gli indicatori, includendo tutte le occorrenze degli ID da verificare.
+
+```{r passo_02}
+duplicato_esatto <- duplicated(raw)
+id_ripetuto <- duplicated(raw$id) | duplicated(raw$id, fromLast = TRUE)
+audit <- data.frame(riga = seq_len(nrow(raw)), id = raw$id,
+                    duplicato_esatto = duplicato_esatto, id_ripetuto = id_ripetuto)
+print(audit[id_ripetuto | duplicato_esatto, ])
+print(c(record = nrow(raw), ID_distinti = length(unique(raw$id)),
+        copie_esatte_successive = sum(duplicato_esatto)))
+```
+
+**Lettura del risultato.** duplicated marca come copia esatta l'occorrenza successiva, lasciando una prima riga di riferimento. Per l'ID ripetuto mostriamo entrambe le righe, così la revisione può stabilire se si tratti di copia, replica autorizzata o conflitto.
+
+## 3. Applicare una decisione documentata
+
+Per questa esercitazione creiamo una vista che conserva la prima copia delle righe esattamente identiche. La tabella completa e l'audit rimangono disponibili. Non estendiamo automaticamente la stessa decisione a ogni ID ripetuto con contenuto diverso.
+
+```{r passo_03}
+vista_unica <- raw[!duplicato_esatto, , drop = FALSE]
+print(c(prima = nrow(raw), dopo_copie_esatte = nrow(vista_unica)))
+stopifnot(nrow(vista_unica) + sum(duplicato_esatto) == nrow(raw))
+stopifnot(!anyDuplicated(vista_unica$id))
+write.csv(audit, percorso_risultati("audit_duplicati.csv"), row.names = FALSE)
+print(vista_unica[vista_unica$id == "F007", ])
+```
+
+**Lettura del risultato.** L'unicità finale degli ID è verificata nei dati presenti, non assunta come conseguenza universale della rimozione delle copie esatte. Due righe con lo stesso ID e una misura diversa richiederebbero una decisione ulteriore basata sulla provenienza.
+
+## Variante svolta
+
+Costruire un conflitto di ID cambiando una misura nella copia di F007.
+
+```{r variante}
+conflitto <- raw
+ultima <- which(conflitto$id == "F007")[2]
+conflitto$diametro_tot_um[ultima] <- "7.00"
+stesso_id <- duplicated(conflitto$id) | duplicated(conflitto$id, fromLast = TRUE)
+print(conflitto[stesso_id, ])
+print(c(duplicati_esatti = sum(duplicated(conflitto)), righe_ID_ripetuto = sum(stesso_id)))
+```
+
+La chiave resta ripetuta ma le righe non sono più identiche. Se il protocollo prevedesse repliche, servirebbe un identificativo di replica; altrimenti si dovrebbe verificare quale record appartenga realmente al fossile.
+
+## Errore da riconoscere
+
+Eliminare duplicati includendo una nuova colonna riga_origine impedisce di trovare copie identiche, perché la traccia è sempre diversa. Il confronto esatto deve usare le colonne originali pertinenti.
+
+## Risposta alla domanda
+
+Categorie e duplicazioni sono controlli distinti con regole esplicite. Normalizzare il testo non decide quali record rappresentino la stessa osservazione; chiavi e contenuto devono essere valutati insieme.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M02_N13` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M02/M02_N13.R).

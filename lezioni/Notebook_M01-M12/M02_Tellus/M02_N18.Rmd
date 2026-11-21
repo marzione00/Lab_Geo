@@ -1,0 +1,132 @@
+---
+title: "Mg#: convertire le masse in quantit\u00e0 molari"
+subtitle: "M02_N18 \u00b7 Tellus"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Perché il rapporto MgO/(MgO+FeO) in massa non coincide con il rapporto fra quantità di Mg e Fe?
+
+## Obiettivi
+
+- Convertire percentuali in massa in quantità molari su una base convenzionale.
+- Verificare Mg# e dichiararne la convenzione frazione o percentuale.
+
+**Prima di iniziare.** Saper eseguire una cella R e riconoscere vettori, assegnamenti e nomi di colonne.
+
+**Dati e unità.** Le 75 analisi di microsonda sono sintetiche. MgO e FeO sono percentuali in massa; usiamo masse molari 40,304 e 71,844 g/mol. Mg# è qui la frazione molare Mg/(Mg+Fe), compresa fra zero e uno.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M02_N18/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M02_N18")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(2018)
+```
+
+## 1. Definire base di calcolo e stechiometria
+
+Su una base di cento grammi, una percentuale in massa corrisponde numericamente ai grammi dell'ossido. Ogni formula di MgO contiene un Mg e ogni FeO un Fe: le moli di questi ossidi forniscono quindi le quantità dei rispettivi cationi nel modello dichiarato.
+
+```{r passo_01}
+m <- carica_dati("microsonda_simulata.csv", stringsAsFactors = FALSE)
+M_MgO <- 40.304
+M_FeO <- 71.844
+stopifnot(all(is.finite(m$MgO)), all(is.finite(m$FeO)),
+          all(m$MgO >= 0), all(m$FeO >= 0))
+m$n_Mg <- m$MgO / M_MgO
+m$n_Fe <- m$FeO / M_FeO
+print(head(m[c("id", "MgO", "FeO", "n_Mg", "n_Fe")], 4))
+```
+
+**Lettura del risultato.** Le quantità sono moli su cento grammi di campione convenzionale. Il calcolo assume il ferro rappresentato dalla colonna FeO secondo il modello didattico; non determina da solo la ripartizione fra ferro bivalente e trivalente in un campione reale.
+
+## 2. Calcolare il rapporto con un denominatore valido
+
+Sommiamo le quantità molari dei due cationi e controlliamo il denominatore. Un campione privo di entrambi non avrebbe Mg# definito. La frazione viene conservata separatamente dalla forma moltiplicata per cento, così la convenzione resta visibile.
+
+```{r passo_02}
+denominatore <- m$n_Mg + m$n_Fe
+valido <- is.finite(denominatore) & denominatore > 0
+m$Mg_num_calcolato <- NA_real_
+m$Mg_num_calcolato[valido] <- m$n_Mg[valido] / denominatore[valido]
+m$Mg_num_percento <- 100 * m$Mg_num_calcolato
+stopifnot(all(valido), all(m$Mg_num_calcolato >= 0 & m$Mg_num_calcolato <= 1))
+scarto_archivio <- m$Mg_num_calcolato - m$mg_num
+print(max(abs(scarto_archivio)))
+stopifnot(max(abs(scarto_archivio)) < 1e-6)
+```
+
+**Lettura del risultato.** L'accordo con mg_num verifica convenzione, masse molari e formula del dataset. La forma percentuale contiene la stessa informazione, ma un valore fra zero e uno non va confrontato direttamente con una soglia espressa fra zero e cento.
+
+## 3. Confrontare con il rapporto in massa
+
+Calcoliamo anche il rapporto degli ossidi in massa per mostrare la differenza. Il grafico usa la retta di uguaglianza come riferimento: eventuali scarti dipendono dalle diverse masse molari e non da un errore numerico di R.
+
+```{r passo_03}
+m$frazione_massa_MgO <- m$MgO / (m$MgO + m$FeO)
+print(head(m[c("id", "frazione_massa_MgO", "Mg_num_calcolato")], 5))
+plot(m$frazione_massa_MgO, m$Mg_num_calcolato, pch = 19, col = "steelblue",
+     xlim = c(0, 1), ylim = c(0, 1),
+     xlab = "MgO / (MgO + FeO), rapporto in massa", ylab = "Mg / (Mg + Fe), rapporto molare")
+abline(a = 0, b = 1, lty = 2)
+print(range(m$Mg_num_calcolato - m$frazione_massa_MgO))
+```
+
+**Lettura del risultato.** A parità di massa, MgO fornisce più moli di FeO perché la sua massa molare è minore. Il rapporto in massa e quello molare rispondono quindi a domande diverse; soltanto il secondo corrisponde alla definizione adottata di Mg#. 
+
+## Variante svolta
+
+Controllare un esempio senza Mg né Fe senza produrre una divisione zero per zero.
+
+```{r variante}
+esempio <- data.frame(MgO = c(0, 40), FeO = c(0, 10))
+n_Mg <- esempio$MgO / M_MgO
+n_Fe <- esempio$FeO / M_FeO
+ok <- n_Mg + n_Fe > 0
+esempio$Mg_num <- NA_real_
+esempio$Mg_num[ok] <- n_Mg[ok] / (n_Mg[ok] + n_Fe[ok])
+print(esempio)
+stopifnot(is.na(esempio$Mg_num[1]))
+```
+
+L'assenza di entrambi i cationi rende il rapporto indefinito, non pari a zero. Il risultato mancante conserva questa distinzione; zero sarebbe invece appropriato con Mg assente e una quantità positiva di Fe.
+
+## Errore da riconoscere
+
+Il rapporto fra masse di ossidi non è il rapporto fra numeri di cationi. Bisogna dividere per le masse molari e considerare quanti cationi interessati compaiono in ciascuna formula chimica.
+
+## Risposta alla domanda
+
+Mg# è riprodotto con un calcolo molare verificato e una convenzione esplicita. L'applicazione chimica richiede dichiarare anche il trattamento del ferro e la base analitica delle concentrazioni.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M02_N18` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M02/M02_N18.R).

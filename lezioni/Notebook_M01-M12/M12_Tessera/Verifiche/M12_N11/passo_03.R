@@ -1,0 +1,12 @@
+stile_grafico();par(mar=c(2,2,3,2))
+theta <- seq(0,2*pi,length.out=361)
+plot(sin(theta),cos(theta),type="l",asp=1,axes=FALSE,xlim=c(-1.3,1.3),ylim=c(-1.3,1.3),
+  xlab="",ylab="",col="grey70",main="359 e 1 gradi: due direzioni vicine al Nord")
+points(sin(radiani),cos(radiani),pch=19,col=palette_geo[1])
+arrows(0,0,0,.9,length=.12,lwd=2,col=palette_geo[1])
+arrows(0,0,0,-.9,length=.12,lwd=2,col=palette_geo[2])
+text(c(-.42,.42),c(1.05,1.05),c("359 gradi","1 grado"),cex=.85)
+text(.05,.52,"Circolare: 0",pos=4,col=palette_geo[1],cex=.85)
+text(.05,-.52,"Aritmetica: 180",pos=4,col=palette_geo[2],cex=.85)
+text(c(0,1.15,0,-1.15),c(1.25,0,-1.2,0),c("N","E","S","O"))
+write.csv(risultato,percorso_risultati("media_angoli.csv"),row.names=FALSE)

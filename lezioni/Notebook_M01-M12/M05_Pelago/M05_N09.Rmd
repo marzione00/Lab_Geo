@@ -1,0 +1,130 @@
+---
+title: "Pesi, precisione richiesta e conclusione"
+subtitle: "M05_N09 \u00b7 Pelago"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Quando le stazioni hanno numerosità diverse, quale media stiamo stimando e quante unità indipendenti servono per una precisione prefissata?
+
+## Obiettivi
+
+- Distinguere media dei provini e media delle stazioni.
+- Esplicitare i pesi e formulare un calcolo preliminare di numerosità.
+
+**Prima di iniziare.** Vettori, indicizzazione, media, varianza e grafici di base in R.
+
+**Dati e unità.** Tre stazioni didattiche con numeri diversi di provini e densità in g/cm³; i valori sono costruiti per rendere visibile il ruolo dei pesi.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M05_N09/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M05_N09")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(5009)
+```
+
+## 1. Calcolare due medie con significati diversi
+
+La media di tutte le righe assegna più peso alle stazioni da cui provengono più provini. La media delle medie di stazione assegna lo stesso peso a ogni stazione. Nessuna delle due è automaticamente corretta: la scelta dipende dalla popolazione che la domanda descrive.
+
+```{r passo_01}
+dati <- data.frame(stazione = rep(c("S1", "S2", "S3"), c(2, 4, 6)),
+  densita = c(2.40, 2.44, 2.58, 2.62, 2.60, 2.64,
+              2.78, 2.82, 2.80, 2.84, 2.79, 2.83))
+medie <- tapply(dati$densita, dati$stazione, mean)
+conteggi <- table(dati$stazione)
+media_provini <- mean(dati$densita)
+media_stazioni <- mean(medie)
+print(data.frame(stazione = names(medie), n = as.integer(conteggi),
+                 media_g_cm3 = as.numeric(medie)))
+print(c(media_provini = media_provini, media_stazioni = media_stazioni))
+```
+
+**Lettura del risultato.** La differenza nasce dal peso assegnato alle stazioni, non da un difetto della funzione mean. Specificare l'unità di riferimento rende verificabile la scelta.
+
+## 2. Rendere espliciti i pesi
+
+Ricostruiamo la media delle righe con pesi proporzionali alle numerosità. Poi consideriamo una popolazione territoriale in cui le tre zone hanno quote note, qui stabilite didatticamente. Le quote territoriali non si possono dedurre automaticamente da quanti provini sono stati raccolti.
+
+```{r passo_02}
+pesi_provini <- as.numeric(conteggi) / sum(conteggi)
+pesi_stazioni <- rep(1 / length(medie), length(medie))
+pesi_area <- c(0.50, 0.30, 0.20)
+stopifnot(abs(sum(pesi_area) - 1) < 1e-12)
+media_area <- sum(pesi_area * medie)
+stopifnot(isTRUE(all.equal(sum(pesi_provini * medie), media_provini)))
+print(data.frame(stazione = names(medie), peso_provini = pesi_provini,
+  peso_stazioni = pesi_stazioni, peso_area = pesi_area))
+print(c(media_area = media_area))
+```
+
+**Lettura del risultato.** Ogni sistema di pesi definisce un diverso bersaglio. Una conclusione deve riportare quali quote sono state usate e perché rappresentano la popolazione dichiarata.
+
+## 3. Tradurre una semiampiezza in un piano preliminare
+
+Per una media di unità indipendenti, una deviazione standard di pianificazione nota e un'approssimazione normale, n deve essere almeno (z sigma/e)². La formula riguarda unità indipendenti della popolazione bersaglio e non gestisce automaticamente stazioni, costi o quote diseguali.
+
+```{r passo_03}
+sigma_piano <- 0.12
+errore_massimo <- 0.03
+livello <- 0.95
+z <- qnorm((1 + livello) / 2)
+n_richiesto <- ceiling((z * sigma_piano / errore_massimo)^2)
+margine_previsto <- z * sigma_piano / sqrt(n_richiesto)
+print(c(n_indipendenti = n_richiesto, semiampiezza_g_cm3 = margine_previsto))
+```
+
+**Lettura del risultato.** Arrotondare per eccesso mantiene la semiampiezza prevista entro la soglia. Il risultato è preliminare: se sigma è stimata male o le unità sono dipendenti, il piano deve essere rivisto.
+
+## Variante svolta
+
+Richiedere una semiampiezza dimezzata e confrontare le numerosità.
+
+```{r variante}
+errori <- c(errore_massimo, errore_massimo / 2)
+numerosita <- ceiling((z * sigma_piano / errori)^2)
+print(data.frame(semiampiezza_richiesta = errori, n = numerosita))
+print(c(rapporto_n = numerosita[2] / numerosita[1]))
+```
+
+Dimezzare la semiampiezza richiede circa quattro volte le unità indipendenti in questo modello. L'arrotondamento può rendere il rapporto leggermente diverso da quattro.
+
+## Errore da riconoscere
+
+Non interpretare una media pesata senza dichiarare i pesi. Non tradurre una richiesta di sessanta unità indipendenti in sessanta provini concentrati in poche stazioni.
+
+## Risposta alla domanda
+
+Una conclusione leggibile specifica bersaglio, pesi, unità e precisione. Il calcolo della numerosità viene dopo queste scelte.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M05_N09` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M05/M05_N09.R).

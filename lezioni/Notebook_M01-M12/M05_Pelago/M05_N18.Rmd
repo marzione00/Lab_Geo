@@ -1,0 +1,132 @@
+---
+title: "Precisione Monte Carlo e registrazione"
+subtitle: "M05_N18 \u00b7 Pelago"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Quanto cambiano gli estremi bootstrap per effetto del seme e come registriamo un risultato riproducibile?
+
+## Obiettivi
+
+- Separare errore Monte Carlo e incertezza di campionamento.
+- Salvare dati di controllo, semi e parametri dell'analisi.
+
+**Prima di iniziare.** Vettori, indicizzazione, media, varianza e grafici di base in R.
+
+**Dati e unità.** Ottanta diametri sintetici Rounded in micrometri. Lo stesso campione viene ricampionato con più semi e due numerosità di simulazione.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M05_N18/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M05_N18")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(5018)
+```
+
+## 1. Definire una funzione che restituisce i risultati necessari
+
+Una funzione rende confrontabili le simulazioni: dati, statistica e quantili restano invariati mentre cambiano seme e numero di repliche. Registriamo queste scelte insieme ai risultati, invece di conservare soltanto un intervallo privo di provenienza.
+
+```{r passo_01}
+dati <- carica_dati("fossili_simulati.csv")
+x <- dati$diametro_tot_um[dati$morfotipo == "Rounded"]
+stopifnot(all(is.finite(x)))
+analizza_boot <- function(B, seme) {
+  set.seed(seme)
+  z <- replicate(B, mean(sample(x, length(x), TRUE)))
+  q <- quantile(z, c(0.025, 0.975), names = FALSE)
+  data.frame(B = B, seme = seme, SE = sd(z), inferiore = q[1], superiore = q[2])
+}
+```
+
+**Lettura del risultato.** La funzione stima lo stesso bersaglio in ogni chiamata. L'eventuale differenza fra le righe dipende dal ricampionamento numerico, perché il campione osservato non è cambiato.
+
+## 2. Confrontare più semi e più valori di B
+
+Usiamo sei semi per ciascuna numerosità di simulazione. La dispersione degli estremi fra semi descrive la stabilità numerica della procedura per questo campione. Sei ripetizioni forniscono una diagnosi didattica, non una misura molto precisa dell'errore Monte Carlo.
+
+```{r passo_02}
+piano <- expand.grid(B = c(1000, 3000), seme = 518:523)
+risultati <- do.call(rbind, lapply(seq_len(nrow(piano)), function(i)
+  analizza_boot(piano$B[i], piano$seme[i])))
+stabilita <- aggregate(cbind(SE, inferiore, superiore) ~ B,
+                       data = risultati, FUN = sd)
+print(risultati)
+print(stabilita)
+print(c(n_fossili = length(x), SE_classico = sd(x) / sqrt(length(x))))
+```
+
+**Lettura del risultato.** Le deviazioni standard nella tabella di stabilità riguardano gli stimatori numerici, non i diametri. Aumentare B tende a stabilizzare il calcolo, ma una singola sequenza non deve migliorare monotonamente.
+
+## 3. Salvare un risultato e i suoi controlli
+
+Salviamo una tabella leggibile e un oggetto R che contiene dati di configurazione. Il percorso dedicato al notebook evita di sovrascrivere i dati originali. Rileggiamo i file per controllare che ciò che è stato scritto corrisponda agli oggetti analizzati.
+
+```{r passo_03}
+file_tabella <- percorso_risultati("stabilita_bootstrap.csv")
+write.csv(risultati, file_tabella, row.names = FALSE)
+registro <- list(gruppo = "Rounded", variabile = "diametro_tot_um",
+                 n = length(x), quantili = c(0.025, 0.975),
+                 R = R.version.string, risultati = risultati)
+file_registro <- percorso_risultati("registro_bootstrap.rds")
+saveRDS(registro, file_registro)
+riletto <- readRDS(file_registro)
+stopifnot(identical(riletto$risultati, risultati))
+print(read.csv(file_tabella)[1:4, ])
+```
+
+**Lettura del risultato.** Il registro documenta le scelte che consentono di ripetere l'analisi. Per archivi completi è utile conservare anche i dati usati e la versione del codice, disponibili nel pacchetto del corso.
+
+## Variante svolta
+
+Ripetere una configurazione già eseguita e verificare l'identità dei risultati.
+
+```{r variante}
+prima <- analizza_boot(1000, 518)
+seconda <- analizza_boot(1000, 518)
+stopifnot(identical(prima, seconda))
+print(prima)
+print(c(riproduzione_identica = identical(prima, seconda)))
+```
+
+Stesso algoritmo, stessi dati, stesso seme e stesso ambiente rendono riproducibile il calcolo. La riproducibilità non è una prova che il disegno di campionamento sia corretto.
+
+## Errore da riconoscere
+
+Non presentare un B elevato come aumento della numerosità scientifica. Restano ottanta fossili, qualunque sia il numero di ricampionamenti.
+
+## Risposta alla domanda
+
+La precisione numerica si controlla registrando semi, B e risultati. L'incertezza legata al campione richiede dati informativi e un disegno adeguato.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M05_N18` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M05/M05_N18.R).

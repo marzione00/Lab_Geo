@@ -1,0 +1,137 @@
+---
+title: "Ricostruire con due componenti"
+subtitle: "M08_N07 \u00b7 Polychroma"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Quali valori otteniamo tornando dal piano PCA alle unità delle otto misure?
+
+## Obiettivi
+
+- Ricostruire una matrice a rango ridotto.
+- Invertire la standardizzazione.
+- Verificare l’identità dell’errore quadratico.
+
+**Prima di iniziare.** Lettura di un CSV, vettori, matrici, indicizzazione e funzioni di base in R.
+
+**Dati e unità.** Novanta rocce sintetiche del corso. SiO2, CaO, MgO e FeO sono percentuali in massa; densita è espressa in g/cm³ e grana_mm in millimetri. colore e fossili sono indici numerici convenzionali del simulatore, non misure mineralogiche o conteggi reali. La colonna litologia_generatrice descrive il gruppo usato nella simulazione e viene esclusa dalle stime.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Polychroma oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M08_Polychroma` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M08_Polychroma/Risultati/M08_N07/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M08_Polychroma"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M08_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M08_Polychroma o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M08_N07")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(8007)
+```
+
+## 1. Ricostruzione nella scala standardizzata
+
+Il prodotto $\hat Z_2=T_2V_2^\top$ restituisce una matrice con le stesse dimensioni di Z. La riduzione riguarda il rango, non il numero di colonne del risultato ricostruito.
+
+```{r passo_01}
+# Seleziona le misure per nome: ID ed etichetta non entrano nella matrice.
+r <- carica_dati("rocce_simulate.csv")
+v <- c("SiO2", "CaO", "MgO", "FeO", "densita", "grana_mm", "colore", "fossili")
+X <- as.matrix(r[v])
+stopifnot(nrow(X)==90L, ncol(X)==8L, !anyDuplicated(r$id),
+          all(is.finite(X)), all(apply(X,2,sd)>0))
+Z <- scale(X)
+D <- dist(Z)
+# La PCA conserva medie, scale e rotazione per eventuali nuovi campioni.
+pc <- prcomp(X, center=TRUE, scale.=TRUE)
+lambda <- pc$sdev^2
+quota <- lambda/sum(lambda)
+Z2 <- pc$x[,1:2,drop=FALSE] %*% t(pc$rotation[,1:2,drop=FALSE])
+c(righe=nrow(Z2),colonne=ncol(Z2),RMSE=sqrt(mean((Z-Z2)^2)))
+head(Z2,3)
+```
+
+**Lettura del risultato.** La ricostruzione ha 90 righe e otto colonne, ma è costruita con due componenti. Il RMSE complessivo vale circa 0,364 deviazioni standard nella scala di analisi.
+
+## 2. Ritorno alle unità originali
+
+Invertiamo la standardizzazione moltiplicando ciascuna colonna per la sua scala e aggiungendo la media originaria. Le medie e le scale sono quelle conservate nell’oggetto PCA.
+
+```{r passo_02}
+X2 <- sweep(sweep(Z2,2,pc$scale,"*"),2,pc$center,"+")
+data.frame(variabile=v,osservato=X[1,],ricostruito=X2[1,],
+ scarto=X[1,]-X2[1,])
+plot(X[,"grana_mm"],X2[,"grana_mm"],pch=19,col="#087C74",
+ xlab="Grana osservata (mm)",ylab="Grana ricostruita (mm)")
+abline(0,1,col="#C57E42",lwd=2)
+```
+
+**Lettura del risultato.** Gli scarti tornano nelle unità delle singole variabili. La ricostruzione è un’approssimazione lineare; non impone automaticamente positività o limiti fisici alle singole misure.
+
+## 3. L’errore e gli autovalori esclusi
+
+La norma di Frobenius al quadrato è la somma degli scarti quadratici di tutte le celle. Per la PCA, $\|Z-\hat Z_2\|_F^2=(n-1)\sum_{k>2}\lambda_k$.
+
+```{r passo_03}
+SSE <- sum((Z-Z2)^2)
+da_autovalori <- (nrow(Z)-1)*sum(lambda[-(1:2)])
+c(SSE=SSE,da_autovalori=da_autovalori,differenza=SSE-da_autovalori)
+RMSE_colonne <- sqrt(colMeans((X-X2)^2))
+data.frame(variabile=v,RMSE_unita_originali=RMSE_colonne)
+```
+
+**Lettura del risultato.** Le due espressioni danno circa 95,514. I singoli RMSE sono in percentuali, g/cm³, millimetri o unità convenzionali e non vanno confrontati come se condividessero la stessa unità.
+
+## Variante svolta
+
+Ricostruire tutte le componenti e controllare il recupero di X.
+
+```{r variante}
+Ztutto <- pc$x %*% t(pc$rotation)
+Xtutto <- sweep(sweep(Ztutto,2,pc$scale,"*"),2,pc$center,"+")
+max(abs(X-Xtutto))
+```
+
+Con tutte le componenti il dato originario viene recuperato entro la precisione numerica. La perdita precedente derivava dal troncamento, non dalla rotazione completa.
+
+## Errore da riconoscere
+
+Interpretare la matrice ricostruita come una nuova misura di laboratorio: è un’approssimazione determinata dalle componenti conservate.
+
+## Risposta alla domanda
+
+La ricostruzione rende concreta la perdita di varianza e permette di valutarla nelle unità scientifiche delle variabili.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M08_N07` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M08/M08_N07.R).

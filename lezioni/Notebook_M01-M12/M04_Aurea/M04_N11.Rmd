@@ -1,0 +1,134 @@
+---
+title: "Standardizzare e ritrovare le probabilit\u00e0"
+subtitle: "M04_N11 \u00b7 Aurea"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come ricondurre un intervallo di densità fisiche a una probabilità della normale standard?
+
+## Obiettivi
+
+- Trasformare soglie con z = (x meno mu) diviso sigma.
+- Distinguere intervallo di valori del modello e intervallo di confidenza di un parametro.
+
+**Prima di iniziare.** Normale, cumulativa e trasformazione lineare.
+
+**Dati e unità.** Distribuzione normale assegnata con media 2,65 g/cm³ e deviazione standard 0,06 g/cm³. Le soglie iniziali sono 2,55 e 2,75 g/cm³.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M04_N11/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M04_N11")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(4011)
+```
+
+## 1. Trasformare le soglie
+
+La standardizzazione sottrae la media e divide per la deviazione standard del modello. Le unità si cancellano e le soglie risultano espresse in numero di deviazioni standard dalla media.
+
+```{r passo_01}
+mu <- 2.65
+sigma <- .06
+limiti <- c(inferiore = 2.55, superiore = 2.75)
+# Sottrarre mu e dividere per sigma converte tutte le soglie sulla stessa scala standard.
+z <- (limiti - mu) / sigma
+print(data.frame(soglia_g_cm3 = limiti, soglia_z = z))
+stopifnot(sigma > 0, z[1] < z[2])
+ricostruiti <- mu + sigma * z
+stopifnot(max(abs(ricostruiti - limiti)) < 1e-12)
+```
+
+**Lettura del risultato.** Una soglia negativa sulla scala z è sotto la media, non una densità fisica negativa. La trasformazione è reversibile finché conserviamo media, deviazione standard e unità della scala originale.
+
+## 2. Confrontare due calcoli equivalenti
+
+Calcoliamo la probabilità sia con i parametri originali sia con la normale standard, i cui parametri sono zero e uno. Il confronto numerico verifica contemporaneamente ordine delle soglie e conversione delle unità.
+
+```{r passo_02}
+probabilita_originale <- pnorm(limiti[2], mu, sigma) - pnorm(limiti[1], mu, sigma)
+# Senza mean e sd, pnorm usa la normale standard con media zero e deviazione uno.
+probabilita_standard <- pnorm(z[2]) - pnorm(z[1])
+print(c(scala_originale = unname(probabilita_originale),
+        scala_standard = unname(probabilita_standard)))
+stopifnot(abs(probabilita_originale - probabilita_standard) < 1e-12)
+curva <- seq(-4, 4, length.out = 500)
+plot(curva, dnorm(curva), type = "l", lwd = 2, col = "#1D7890",
+     xlab = "Scarto standardizzato z", ylab = "Densita", main = "Normale standard")
+abline(v = z, col = "#C57E42", lty = 2, lwd = 2)
+```
+
+**Lettura del risultato.** Le probabilità coincidono perché stiamo descrivendo lo stesso evento in coordinate diverse. Standardizzare una variabile qualsiasi non garantisce normalità; qui la normale è un'ipotesi dichiarata prima della trasformazione.
+
+## 3. Tornare dalle probabilità ai valori
+
+qnorm inverte la cumulativa e permette di trovare due soglie che lascino il 2,5 per cento in ciascuna coda. Il risultato contiene il 95 per cento della distribuzione assegnata.
+
+```{r passo_03}
+livelli <- c(.025, .975)
+# qnorm inverte la cumulativa; questi quantili delimitano valori, non stimatori di parametri.
+z_centrali <- qnorm(livelli)
+intervallo_centrale <- mu + sigma * z_centrali
+print(data.frame(probabilita_cumulata = livelli, z = z_centrali,
+                 densita_g_cm3 = intervallo_centrale))
+copertura <- diff(pnorm(intervallo_centrale, mu, sigma))
+print(c(probabilita_centrale = copertura))
+stopifnot(abs(copertura - .95) < 1e-12)
+```
+
+**Lettura del risultato.** Questo è un intervallo centrale dei valori della variabile sotto parametri noti. Non è un intervallo di confidenza per una media ignota: quel problema richiederebbe un campione e la distribuzione del suo stimatore.
+
+## Variante svolta
+
+Mantenere le stesse soglie fisiche e raddoppiare la deviazione standard del modello.
+
+```{r variante}
+sigma2 <- 2 * sigma
+z2 <- (limiti - mu) / sigma2
+nuova_probabilita <- pnorm(z2[2]) - pnorm(z2[1])
+print(data.frame(soglia = limiti, z_prima = z, z_dopo = z2))
+print(c(probabilita_prima = probabilita_originale, probabilita_dopo = nuova_probabilita))
+stopifnot(nuova_probabilita < probabilita_originale)
+```
+
+Le soglie restano uguali in g/cm³ ma diventano più vicine al centro in unità standardizzate. Una distribuzione più dispersa lascia meno massa nello stesso intervallo simmetrico attorno alla media.
+
+## Errore da riconoscere
+
+Non usare la deviazione standard campionaria al posto di sigma senza riconoscere che i parametri diventano stimati. Non chiamare automaticamente 'intervallo di confidenza' una fascia centrale della distribuzione.
+
+## Risposta alla domanda
+
+La standardizzazione rende confrontabili soglie e probabilità sulla normale standard. La trasformazione conserva l'evento, mentre l'interpretazione dell'intervallo dipende da ciò che è casuale e da quali parametri sono considerati noti.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M04_N11` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M04/M04_N11.R).

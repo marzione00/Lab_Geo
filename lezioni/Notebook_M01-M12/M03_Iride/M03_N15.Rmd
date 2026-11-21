@@ -1,0 +1,131 @@
+---
+title: "La distribuzione cumulativa empirica"
+subtitle: "M03_N15 \u00b7 Iride"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Quale frazione di fossili ha diametro non superiore a una soglia, senza scegliere classi di istogramma?
+
+## Obiettivi
+
+- Calcolare e leggere la funzione cumulativa empirica.
+- Distinguere soglia inclusiva e confronto stretto in presenza di valori ripetuti.
+
+**Prima di iniziare.** Proporzioni, confronti logici e ordinamento.
+
+**Dati e unità.** Archivio didattico sintetico: 160 fossili, 80 Rounded e 80 Spiky. Diametri e spessori sono espressi in micrometri; ogni riga identifica un individuo.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M03_N15/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M03_N15")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(3015)
+```
+
+## 1. Calcolare una quota sotto soglia
+
+La cumulativa empirica in t conta gli individui con misura minore o uguale a t e divide per n. La funzione ecdf memorizza questa regola e può essere valutata per qualsiasi soglia.
+
+```{r passo_01}
+f <- carica_dati("fossili_simulati.csv")
+gruppi <- split(f$diametro_tot_um, f$morfotipo)
+soglia <- 6
+cumulate <- lapply(gruppi, ecdf)
+# Il confronto <= include gli individui esattamente uguali alla soglia.
+dirette <- sapply(gruppi, function(x) mean(x <= soglia))
+tramite_funzione <- sapply(cumulate, function(Fn) Fn(soglia))
+print(data.frame(morfotipo = names(dirette), quota_fino_a_6_um = dirette))
+stopifnot(max(abs(dirette - tramite_funzione)) < 1e-12)
+```
+
+**Lettura del risultato.** La quota riguarda il campione e una soglia espressa nelle stesse unità dei diametri. Non richiede classi; la funzione aumenta soltanto quando la soglia attraversa una misura osservata.
+
+## 2. Confrontare le curve
+
+Disegniamo le due cumulative su assi comuni. A una stessa soglia, la curva più alta indica una quota maggiore di individui piccoli; per interpretare una posizione orizzontale conviene invece fissare una probabilità.
+
+```{r passo_02}
+limiti <- range(f$diametro_tot_um)
+# Assi comuni consentono di leggere differenze verticali alla stessa soglia.
+plot(cumulate[[1]], xlim = limiti, verticals = TRUE, do.points = FALSE,
+     col = "#1D7890", lwd = 2, xlab = "Diametro totale (um)",
+     ylab = "Quota con diametro <= soglia", main = "Cumulative empiriche")
+lines(cumulate[[2]], verticals = TRUE, do.points = FALSE, col = "#C57E42", lwd = 2)
+abline(v = soglia, lty = 2, col = "gray40")
+legend("bottomright", names(cumulate), col = c("#1D7890", "#C57E42"), lwd = 2, bty = "n")
+```
+
+**Lettura del risultato.** Le curve possono incrociarsi: in quel caso l'ordine fra gruppi dipende dalla soglia. Una differenza visiva delle cumulative è descrittiva e non costituisce da sola una valutazione inferenziale.
+
+## 3. Controllare salti e valori ripetuti
+
+Un esempio breve rende visibile il significato di minore o uguale. Quando due misure coincidono, la cumulativa compie un salto pari a due diviso n; non sempre ogni salto vale uno diviso n.
+
+```{r passo_03}
+esempio <- c(4, 5, 5, 7)
+# Le due misure uguali a cinque producono un unico salto di ampiezza 2/4.
+Fpiccola <- ecdf(esempio)
+t <- c(4.9, 5, 5.1)
+print(data.frame(soglia = t, cumulativa = Fpiccola(t)))
+print(c(strettamente_sotto_5 = mean(esempio < 5), fino_a_5 = mean(esempio <= 5)))
+stopifnot(Fpiccola(5) == 3 / 4)
+print(quantile(esempio, .5, type = 1))
+```
+
+**Lettura del risultato.** La funzione include tutte le osservazioni uguali alla soglia ed è continua da destra. Il quantile type = 1 segue direttamente i gradini empirici; altri tipi di quantile introducono interpolazioni.
+
+## Variante svolta
+
+Alzare la soglia a 6,5 micrometri e confrontare l'aumento della quota nei due gruppi.
+
+```{r variante}
+nuova_soglia <- 6.5
+nuove <- sapply(cumulate, function(Fn) Fn(nuova_soglia))
+incremento <- nuove - dirette
+print(data.frame(prima = dirette, dopo = nuove, quota_fra_soglie = incremento))
+controllo <- sapply(gruppi, function(x) mean(x > soglia & x <= nuova_soglia))
+stopifnot(max(abs(incremento - controllo)) < 1e-12)
+```
+
+La differenza fra cumulative conta l'intervallo aperto a sinistra e chiuso a destra. Cambiare una disuguaglianza può alterare il risultato quando esistono misure esattamente sulle soglie.
+
+## Errore da riconoscere
+
+Non leggere la cumulativa come densità: la sua altezza è una quota accumulata, non la frequenza locale. Non confondere una differenza verticale con una differenza di diametro.
+
+## Risposta alla domanda
+
+La cumulativa risponde direttamente a domande su soglie e intervalli senza scegliere classi. Occorre dichiarare le disuguaglianze, soprattutto quando misure arrotondate o ripetute producono salti consistenti.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M03_N15` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M03/M03_N15.R).

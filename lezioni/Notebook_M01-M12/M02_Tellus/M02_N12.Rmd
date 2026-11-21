@@ -1,0 +1,142 @@
+---
+title: "Convertire il testo senza nascondere gli errori"
+subtitle: "M02_N12 \u00b7 Tellus"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come distinguiamo una misura assente da una stringa non convertibile, mantenendo il testo ricevuto?
+
+## Obiettivi
+
+- Definire una grammatica numerica e codici mancanti espliciti.
+- Creare valori numerici affiancati a indicatori di conversione.
+
+**Prima di iniziare.** Saper eseguire una cella R e riconoscere vettori, assegnamenti e nomi di colonne.
+
+**Dati e unità.** Il CSV sintetico dei fossili contiene 25 record e tre misure in micrometri. I decimali possono usare punto o virgola; stringhe vuote, NA e ND sono trattate come mancanti secondo una regola dichiarata.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M02_N12/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M02_N12")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(2012)
+```
+
+## 1. Definire la conversione prima di applicarla
+
+La funzione conserva il testo, elimina spazi esterni e uniforma il separatore decimale. Prima di usare as.numeric verifica una grammatica di decimali semplici: una stringa non riconosciuta viene segnalata come conversione fallita, distinta da un codice mancante.
+
+```{r passo_01}
+converti_misura <- function(x) {
+  testo <- trimws(x)
+  mancante <- is.na(testo) | toupper(testo) %in% c("", "NA", "ND")
+  normalizzato <- gsub(",", ".", testo, fixed = TRUE)
+  # La grammatica accetta decimali semplici; non interpreta simboli di censura.
+  numerico <- !mancante & grepl("^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)$", normalizzato)
+  valore <- rep(NA_real_, length(x))
+  valore[numerico] <- as.numeric(normalizzato[numerico])
+  data.frame(originale = x, valore = valore, mancante = mancante,
+             fallito = !mancante & !numerico, stringsAsFactors = FALSE)
+}
+
+esempi <- c("6,40", " 5.4 ", "ND", "", "errore", "<0,05")
+prova <- converti_misura(esempi)
+print(prova)
+stopifnot(prova$valore[1] == 6.4, prova$mancante[3], prova$fallito[5])
+```
+
+**Lettura del risultato.** Il simbolo di censura non viene eliminato per ricavare un falso valore esatto. La grammatica non accetta notazione scientifica o separatori delle migliaia: se fossero previsti nel protocollo, occorrerebbe estendere e verificare la regola.
+
+## 2. Applicare la stessa regola alle tre misure
+
+Importiamo il file come testo e convertiamo ogni colonna misurata con la medesima funzione. Manteniamo separati oggetto originale, risultati della conversione e tabella numerica: così una trasformazione può essere controllata cella per cella.
+
+```{r passo_02}
+# Conservare anche stringhe vuote e codici testuali prima di interpretarli.
+raw <- carica_dati("fossili_da_controllare.csv", sep = ";",
+                   colClasses = "character", na.strings = character(),
+                   stringsAsFactors = FALSE)
+stopifnot(nrow(raw) == 25L)
+
+misure <- c("diametro_tot_um", "diametro_int_um", "diaframma_um")
+conversioni <- lapply(raw[misure], converti_misura)
+numerici <- raw[c("id", "morfotipo")]
+for (nome in misure) numerici[[nome]] <- conversioni[[nome]]$valore
+print(head(numerici, 6))
+stopifnot(all(vapply(numerici[misure], is.numeric, logical(1))))
+```
+
+**Lettura del risultato.** Il risultato numerico rende possibili formule e controlli geometrici. Un valore negativo è convertibile come numero e rimane tale: la correttezza sintattica non equivale all'ammissibilità fisica, che va verificata in un passaggio distinto.
+
+## 3. Produrre un audit per variabile
+
+Contiamo mancanti e fallimenti separatamente per ciascuna misura. Questa tabella aiuta a capire se il problema deriva da informazione assente o da una rappresentazione inattesa; la colonna originale rimane disponibile per una revisione mirata.
+
+```{r passo_03}
+audit <- do.call(rbind, lapply(names(conversioni), function(nome) {
+  z <- conversioni[[nome]]
+  data.frame(variabile = nome, celle = nrow(z), mancanti = sum(z$mancante),
+             fallite = sum(z$fallito), numeriche = sum(is.finite(z$valore)))
+}))
+print(audit)
+stopifnot(all(audit$celle == audit$mancanti + audit$fallite + audit$numeriche))
+confronto <- data.frame(id = raw$id, testo = raw$diametro_tot_um,
+                        numero = numerici$diametro_tot_um)
+print(head(confronto, 6))
+```
+
+**Lettura del risultato.** La riconciliazione dei conteggi vale per i decimali finiti presenti in questo esercizio. Se si ammettessero numeri oltre il campo rappresentabile, occorrerebbe aggiungere un controllo di finitezza anche dopo una conversione sintatticamente riuscita.
+
+## Variante svolta
+
+Estendere la prova a un valore negativo e mostrare che conversione e validità fisica sono diverse.
+
+```{r variante}
+esempio_negativo <- converti_misura(c("-5.1", "5.1"))
+esempio_negativo$misura_positiva <- is.finite(esempio_negativo$valore) & esempio_negativo$valore > 0
+print(esempio_negativo)
+stopifnot(!any(esempio_negativo$fallito), !esempio_negativo$misura_positiva[1])
+```
+
+Entrambe le stringhe rappresentano numeri validi, ma soltanto una può descrivere un diametro positivo. Tenere separati i due controlli permette di spiegare con precisione perché una misura venga rinviata alla revisione.
+
+## Errore da riconoscere
+
+Sopprimere gli avvisi di as.numeric senza un registro delle conversioni perde la distinzione fra dati assenti e testo inatteso. La soluzione controlla prima la grammatica e conserva esiti separati.
+
+## Risposta alla domanda
+
+La conversione produce numeri, indicatori e corrispondenze con il testo originale. Ogni mancato calcolo ha una ragione leggibile; la verifica fisica delle misure resta un passaggio successivo e autonomo.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M02_N12` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M02/M02_N12.R).

@@ -1,0 +1,139 @@
+---
+title: "Buffer e sensibilità alla scala"
+subtitle: "M11_N10 · Locus"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Come cambia una sintesi quando aumenta il raggio attorno allo stesso centro?
+
+## Obiettivi
+
+- Costruire appartenenze a dischi nel piano locale.
+- Confrontare numerosità e medie a tre raggi.
+- Riconoscere gli effetti di bordo e il supporto della media.
+
+**Prima di iniziare.** Sono richiesti vettori, tabelle, coordinate e funzioni R di base. I blocchi vanno eseguiti in ordine; il notebook è autonomo rispetto agli altri. I calcoli usano R base e i pacchetti standard.
+
+**Dati e unità.** 64 siti sintetici su una griglia 8 × 8, con passo 250 m e coordinate locali x_m e y_m fra 0 e 1750 m. Questo piano locale non ha un codice EPSG. La concentrazione è sintetica, in unità arbitrarie (u.a.); la quota è in metri sintetici. Ogni riga descrive un sito e il suo valore puntuale, non la media di una cella.
+
+## Preparazione
+
+Aprire il progetto autonomo di Locus o quello generale dei notebook. I CSV locali restano invariati. Gli output vanno in `Risultati/M11_N10/`. Nessun download o installazione viene eseguito nei blocchi.
+
+```{r preparazione}
+# Trova il modulo dal progetto autonomo o dal progetto generale dei notebook.
+.gs_cerca <- normalizePath(getwd(),winslash="/",mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca,file.path(.gs_cerca,"M11_Locus"),
+    file.path(.gs_cerca,"03_Notebook_svolti","M11_Locus"),
+    file.path(.gs_cerca,"M11","03_Notebook_svolti","M11_Locus"))
+  .gs_ok <- file.exists(file.path(.gs_candidati,"M11_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati,"R","funzioni_notebook.R"))
+  if(any(.gs_ok)) { .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]];break }
+  .gs_padre <- dirname(.gs_cerca)
+  if(.gs_padre==.gs_cerca) stop("Aprire il progetto M11_Locus o quello generale dei notebook.")
+  .gs_cerca <- .gs_padre
+}
+source(file.path(.gs_modulo,"R","funzioni_notebook.R"),local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo,"M11_N10")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88,digits=6)
+if(requireNamespace("knitr",quietly=TRUE)) {
+  knitr::opts_chunk$set(echo=TRUE,error=FALSE,warning=TRUE,message=TRUE,
+    fig.width=8,fig.height=5,dpi=150,fig.align="center")
+}
+set.seed(11010)
+```
+
+## 1. Il centro e il raggio definiscono la selezione
+
+Il centro è (750,750)m e i raggi sono 300,600,900 m, come nel laboratorio originale. Il calcolo è euclideo nel piano locale.
+
+```{r passo_01}
+d <- carica_dati("spazio_v3.csv")
+audit_spazio(d)
+ centro <- c(750,750);raggi <- c(300,600,900)
+ dist0 <- sqrt((d$x_m-centro[1])^2+(d$y_m-centro[2])^2)
+ selezione <- sapply(raggi,function(r) dist0<=r)
+ risultato <- data.frame(raggio_m=raggi,n=colSums(selezione),
+   media=vapply(seq_along(raggi),function(j) mean(d$concentrazione[selezione[,j]]),numeric(1)))
+ risultato
+ stopifnot(all(diff(risultato$n)>=0),all(!selezione[,1]|selezione[,2]),all(!selezione[,2]|selezione[,3]))
+```
+
+**Lettura del risultato.** I dischi sono annidati e il numero di siti non può diminuire. La media, invece, può aumentare o diminuire perché cambia l’insieme selezionato.
+
+## 2. La scala cambia l’oggetto riassunto
+
+La mappa mostra i dischi e i siti disponibili. Le parti di un disco fuori dalla griglia non contengono dati nel nostro archivio.
+
+```{r passo_02}
+stile_grafico()
+plot(d$x_m,d$y_m,pch=19,col="grey55",asp=1,xlim=c(-200,1800),ylim=c(-200,1800),
+  xlab="x locale (m)",ylab="y locale (m)",main="Tre raggi, stesso centro")
+angolo <- seq(0,2*pi,length.out=201)
+for(j in seq_along(raggi)) lines(centro[1]+raggi[j]*cos(angolo),
+  centro[2]+raggi[j]*sin(angolo),col=palette_geo[j],lwd=2)
+points(centro[1],centro[2],pch=4,cex=1.5,lwd=2)
+```
+
+**Lettura del risultato.** Il buffer geometrico non crea copertura campionaria. La media calcolata riguarda i siti selezionati e non tutte le posizioni del disco.
+
+## 3. Esportare selezione e sintesi
+
+La tabella di appartenenza permette di ricostruire i tre calcoli, compresi i casi esattamente sulla distanza limite.
+
+```{r passo_03}
+dettagli <- data.frame(id=d$id,distanza_dal_centro_m=dist0,
+  entro300=selezione[,1],entro600=selezione[,2],entro900=selezione[,3])
+write.csv(dettagli,percorso_risultati("appartenenza_buffer.csv"),row.names=FALSE)
+write.csv(risultato,percorso_risultati("sintesi_buffer.csv"),row.names=FALSE)
+risultato
+```
+
+**Lettura del risultato.** La convenzione ≤ include il bordo. Dichiarare centro, metrica, raggio e predicato rende riproducibile il supporto della sintesi.
+
+## Variante svolta
+
+**Lo stesso raggio sul bordo della griglia.** Spostare il centro nell’angolo (0,0), mantenendo 600 m.
+
+```{r variante}
+dist_angolo <- sqrt(d$x_m^2+d$y_m^2)
+s <- dist_angolo<=600
+data.frame(centro=c("750,750","0,0"),raggio_m=600,
+  n=c(sum(dist0<=600),sum(s)),
+  media=c(mean(d$concentrazione[dist0<=600]),mean(d$concentrazione[s])))
+```
+
+La numerosità disponibile e la configurazione cambiano al bordo. Confrontare i due numeri richiede riconoscere che i siti selezionati e la copertura sono diversi.
+
+## Errore da riconoscere
+
+Confondere una media dei punti entro il raggio con una media areale del disco, oppure scegliere il raggio dopo aver cercato la media più favorevole.
+
+## Risposta alla domanda
+
+Il raggio definisce una scala di osservazione. I confronti devono conservare centro, unità, inclusione del bordo e numerosità; una selezione più ampia non garantisce automaticamente una sintesi più rappresentativa.
+
+## Raccordo con le slide
+
+[Slide 39–40 della lezione Locus](../../02_PDF/M11_Locus/Locus_M11_statistica_spaziale.pdf#page=39). Il notebook conserva il tema del laboratorio originale e aggiunge verifiche e una variante svolta.
+
+
+## Riferimenti e provenienza
+
+Questo svolgimento sviluppa `M11_N10` del [modulo M11 del corso](https://marzione00.github.io/Lab_Geo/#modulo-M11). Il [codice originale](https://github.com/marzione00/Lab_Geo/blob/649f7cc577b96bd1044d81e78a2f530813e4f96b/materiali/laboratori/M11/M11_N10.R) è conservato immutato in `R/Originali_corso/`; la mappa allegata documenta gli ampliamenti. Dati e originali hanno impronte SHA-256 e SHA-1 Git verificate.
+
+Documentazione primaria delle operazioni: [R, dist](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/dist.html), [R, aggregate](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/aggregate.html), [R, sample](https://stat.ethz.ch/R-manual/R-devel/library/base/html/sample.html). Le definizioni spaziali e il riferimento inferenziale seguono il laboratorio originale, con le distinzioni esplicitate nel testo.

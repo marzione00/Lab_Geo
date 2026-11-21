@@ -1,0 +1,130 @@
+---
+title: "Importazione conservativa"
+subtitle: "M02_N11 \u00b7 Tellus"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come manteniamo un collegamento verificabile fra una cella importata e la sua posizione nel file ricevuto?
+
+## Obiettivi
+
+- Preservare stringhe originali e numero di riga di provenienza.
+- Separare un identificativo scientifico dalla posizione di importazione.
+
+**Prima di iniziare.** Saper eseguire una cella R e riconoscere vettori, assegnamenti e nomi di colonne.
+
+**Dati e unità.** Il file sintetico dei fossili da controllare contiene 25 righe e include un ID ripetuto con riga identica. L'intestazione occupa una riga; in questo file ogni record dati occupa una singola riga testuale.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M02_N11/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M02_N11")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(2011)
+```
+
+## 1. Conservare il testo e aggiungere una traccia
+
+Ripartiamo dal file ricevuto con tutte le colonne come testo. Aggiungiamo una numerazione di provenienza che resta stabile quando la copia viene ordinata o filtrata. Non usiamo l'ID come unico localizzatore, perché il file contiene un duplicato intenzionale.
+
+```{r passo_01}
+# Conservare anche stringhe vuote e codici testuali prima di interpretarli.
+raw <- carica_dati("fossili_da_controllare.csv", sep = ";",
+                   colClasses = "character", na.strings = character(),
+                   stringsAsFactors = FALSE)
+stopifnot(nrow(raw) == 25L)
+
+colonne_originali <- names(raw)
+raw$riga_origine <- seq_len(nrow(raw))
+raw$riga_file <- raw$riga_origine + 1L
+print(head(raw, 5))
+stopifnot(!anyDuplicated(raw$riga_origine))
+print(c(righe = nrow(raw), ID_distinti = length(unique(raw$id))))
+```
+
+**Lettura del risultato.** riga_origine distingue record anche quando l'ID coincide. riga_file aggiunge l'intestazione ed è valida per questo formato senza celle multilinea: non è una formula universale per qualsiasi CSV, che può contenere campi quotati su più righe.
+
+## 2. Inventariare le rappresentazioni da controllare
+
+Creiamo indicatori sul testo prima della conversione. Cerchiamo codici ND, campi vuoti e virgole decimali separatamente, perché indicano problemi diversi: disponibilità, convenzione di rappresentazione o possibile necessità di chiarimento.
+
+```{r passo_02}
+flag_ND <- trimws(raw$diametro_tot_um) == "ND"
+flag_vuoto <- trimws(raw$diaframma_um) == ""
+flag_virgola <- grepl(",", raw$diametro_tot_um, fixed = TRUE)
+da_leggere <- flag_ND | flag_vuoto | flag_virgola
+print(raw[da_leggere, c("riga_origine", "riga_file", "id", "diametro_tot_um", "diaframma_um")])
+print(c(ND = sum(flag_ND), vuoti = sum(flag_vuoto), virgole = sum(flag_virgola)))
+```
+
+**Lettura del risultato.** Una virgola decimale può essere perfettamente legittima, mentre un campo vuoto segnala informazione assente. Gli indicatori orientano il controllo e non costituiscono ancora una regola unica di esclusione dei fossili.
+
+## 3. Verificare la traccia dopo un riordinamento
+
+Ordiniamo la copia per ID e riga originaria, poi recuperiamo una cella tramite la provenienza. La corrispondenza con il testo del file dimostra come si possa risalire al record ricevuto anche quando la posizione nella tabella è cambiata.
+
+```{r passo_03}
+ordinato <- raw[order(raw$id, raw$riga_origine), , drop = FALSE]
+print(tail(ordinato[c("id", "riga_origine", "riga_file")], 4))
+riga_da_verificare <- raw$riga_file[which(flag_ND)[1]]
+testo_file <- readLines(percorso_dati("fossili_da_controllare.csv"), warn = FALSE)
+cat(testo_file[riga_da_verificare], "
+")
+stopifnot(setequal(ordinato$riga_origine, raw$riga_origine))
+stopifnot(identical(raw[colonne_originali],
+                   ordinato[match(raw$riga_origine, ordinato$riga_origine), colonne_originali]))
+```
+
+**Lettura del risultato.** Il controllo ricostruisce l'ordine iniziale mediante la traccia e confronta tutte le colonne originali. Una posizione di provenienza non sostituisce l'identificativo scientifico: serve a documentare il record, mentre l'ID identifica l'oggetto secondo il protocollo.
+
+## Variante svolta
+
+Individuare tutte le righe coinvolte in un ID ripetuto, comprese le prime occorrenze.
+
+```{r variante}
+id_ripetuto <- duplicated(raw$id) | duplicated(raw$id, fromLast = TRUE)
+print(raw[id_ripetuto, c("id", "riga_origine", "riga_file")])
+stopifnot(sum(id_ripetuto) >= 2L)
+```
+
+duplicated da solo segnala le occorrenze successive; la combinazione con fromLast include anche la prima. Per verificare un conflitto serve vedere l'intero gruppo di record, non soltanto una riga isolata.
+
+## Errore da riconoscere
+
+Usare il numero di riga corrente come provenienza dopo aver ordinato la tabella rende impossibile ritrovare il record originale. La traccia viene creata una volta all'importazione e poi conservata come colonna.
+
+## Risposta alla domanda
+
+L'importazione conservativa mantiene contenuto testuale e provenienza dei record. Queste informazioni permettono di distinguere trasformazioni, anomalie e duplicazioni quando si costruiranno le variabili numeriche.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M02_N11` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M02/M02_N11.R).

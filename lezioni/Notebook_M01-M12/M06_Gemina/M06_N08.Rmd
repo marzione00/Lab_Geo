@@ -1,0 +1,129 @@
+---
+title: "Effetto nelle unit\u00e0 originali e standardizzato"
+subtitle: "M06_N08 \u00b7 Gemina"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come affianchiamo al contrasto in micrometri un effetto standardizzato senza nasconderne il denominatore?
+
+## Obiettivi
+
+- Calcolare una differenza nelle unità originali.
+- Dichiarare la scala usata per standardizzare.
+
+**Prima di iniziare.** Vettori, indicizzazione, media, varianza e grafici di base in R.
+
+**Dati e unità.** Diametri totali sintetici Rounded e Spiky, ottanta osservazioni per gruppo. Rounded è il riferimento esplicito del contrasto.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M06_N08/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M06_N08")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(6008)
+```
+
+## 1. Conservare l'effetto nelle unità originali
+
+La differenza in micrometri permette un confronto diretto con risoluzione strumentale o soglie scientifiche, quando disponibili. Calcoliamo anche l'intervallo di Welch perché un effetto osservato va accompagnato dalla sua incertezza. L'interpretazione del segno resta Spiky meno Rounded.
+
+```{r passo_01}
+dati <- carica_dati("fossili_simulati.csv")
+a <- dati$diametro_tot_um[dati$morfotipo == "Rounded"]
+b <- dati$diametro_tot_um[dati$morfotipo == "Spiky"]
+delta <- mean(b) - mean(a)
+test <- t.test(b, a, var.equal = FALSE)
+print(c(differenza_um = delta,
+        inferiore_um = test$conf.int[1], superiore_um = test$conf.int[2]))
+print(c(SD_Rounded_um = sd(a), SD_Spiky_um = sd(b)))
+```
+
+**Lettura del risultato.** L'intervallo riguarda la differenza fra medie. Non è una fascia che contenga il novantacinque per cento delle differenze possibili fra singoli fossili.
+
+## 2. Rendere confrontabili due denominatori espliciti
+
+Una prima standardizzazione divide per la SD del gruppo di riferimento. Una seconda usa la SD pooled, pesata dai gradi di libertà. Le due quantità hanno denominatori diversi; la seconda ha un'interpretazione particolarmente naturale quando una dispersione comune è un modello adeguato.
+
+```{r passo_02}
+nA <- length(a)
+nB <- length(b)
+sd_riferimento <- sd(a)
+sd_pooled <- sqrt(((nA - 1) * var(a) + (nB - 1) * var(b)) / (nA + nB - 2))
+effetto_riferimento <- delta / sd_riferimento
+effetto_pooled <- delta / sd_pooled
+print(data.frame(scala = c("SD Rounded", "SD pooled"),
+  denominatore_um = c(sd_riferimento, sd_pooled),
+  effetto_standardizzato = c(effetto_riferimento, effetto_pooled)))
+```
+
+**Lettura del risultato.** L'assenza di unità non rende gli indici universalmente confrontabili: il denominatore conserva informazione sulla popolazione e sul disegno. Evitiamo soglie automatiche di effetto piccolo o grande.
+
+## 3. Distinguere standardizzazione e statistica del test
+
+Il test divide il contrasto per un errore standard, mentre l'effetto standardizzato lo divide per una dispersione individuale. Il SE dipende direttamente dalla numerosità. Scriviamo entrambe le divisioni per rendere visibile la diversa domanda.
+
+```{r passo_03}
+se_delta <- sqrt(var(a) / nA + var(b) / nB)
+t_welch <- delta / se_delta
+print(data.frame(quantita = c("Effetto su SD Rounded", "Statistica Welch"),
+  denominatore = c(sd_riferimento, se_delta),
+  valore = c(effetto_riferimento, t_welch)))
+stopifnot(isTRUE(all.equal(t_welch, unname(test$statistic))))
+print(c(p_bilaterale = test$p.value))
+```
+
+**Lettura del risultato.** Il valore t non è una misura standardizzata della grandezza dell'effetto nel senso usato sopra. Può crescere con la numerosità anche quando il contrasto e la dispersione individuale restano simili.
+
+## Variante svolta
+
+Cambiare da micrometri a millimetri e controllare l'invarianza della standardizzazione.
+
+```{r variante}
+delta_mm <- mean(b / 1000) - mean(a / 1000)
+effetto_mm <- delta_mm / sd(a / 1000)
+print(c(effetto_um = effetto_riferimento, effetto_mm = effetto_mm))
+stopifnot(isTRUE(all.equal(effetto_mm, effetto_riferimento)))
+stopifnot(isTRUE(all.equal(delta_mm, delta / 1000)))
+```
+
+Numeratore e denominatore cambiano dello stesso fattore, quindi l'effetto standardizzato resta invariato. Questa proprietà non elimina l'obbligo di dichiarare quale SD è stata scelta.
+
+## Errore da riconoscere
+
+Non chiamare ogni rapporto senza unità 'dimensione dell'effetto'. Specificare numeratore, denominatore, riferimento e ipotesi della comparazione.
+
+## Risposta alla domanda
+
+L'effetto nelle unità originali resta la descrizione principale. La standardizzazione può affiancarlo quando la scala di riferimento è dichiarata e utile alla domanda.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M06_N08` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M06/M06_N08.R).

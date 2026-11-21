@@ -1,0 +1,132 @@
+---
+title: "Una tabella per la probabilit\u00e0 condizionata"
+subtitle: "M04_N03 \u00b7 Aurea"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+La quota di segnali presenti nell'affioramento A coincide con la quota di campioni provenienti da A fra quelli con segnale?
+
+## Obiettivi
+
+- Cambiare correttamente il denominatore nel condizionamento.
+- Distinguere frequenza congiunta, marginale e condizionata.
+
+**Prima di iniziare.** Tabelle a doppia entrata e frequenze relative.
+
+**Dati e unità.** Tabella didattica costruita con sessanta campioni: in A, 18 con segnale e 12 senza; in B, 9 con segnale e 21 senza. Sono conteggi sintetici.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M04_N03/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M04_N03")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(4003)
+```
+
+## 1. Ricostruire conteggi e margini
+
+Le righe identificano l'affioramento e le colonne lo stato del segnale. I margini danno i totali necessari ai diversi denominatori; scrivere i nomi evita di affidarsi alla sola posizione numerica delle celle.
+
+```{r passo_01}
+# byrow = TRUE dispone prima i due conteggi di A, poi quelli di B.
+t <- matrix(c(18, 12, 9, 21), nrow = 2, byrow = TRUE,
+            dimnames = list(affioramento = c("A", "B"), segnale = c("presente", "assente")))
+print(addmargins(t))
+totale <- sum(t)
+n_A <- sum(t["A", ])
+n_presenti <- sum(t[, "presente"])
+print(c(totale = totale, in_A = n_A, con_segnale = n_presenti))
+```
+
+**Lettura del risultato.** Il numeratore 18 appartiene all'intersezione fra A e segnale presente. Da solo non specifica una probabilità: occorre decidere se dividere per tutti i campioni, per quelli di A o per quelli con segnale.
+
+## 2. Condizionare in due direzioni
+
+P(presente dato A) limita l'universo ai campioni di A. P(A dato presente) lo limita ai campioni con segnale. La parola 'dato' identifica l'informazione già conosciuta e quindi il denominatore.
+
+```{r passo_02}
+# La condizione A fissa il denominatore ai soli campioni di quell affioramento.
+p_presente_dato_A <- t["A", "presente"] / n_A
+p_A_dato_presente <- t["A", "presente"] / n_presenti
+p_intersezione <- t["A", "presente"] / totale
+print(c(presente_dato_A = p_presente_dato_A,
+        A_dato_presente = p_A_dato_presente, congiunta = p_intersezione))
+print(prop.table(t, margin = 1))
+print(prop.table(t, margin = 2))
+```
+
+**Lettura del risultato.** I risultati condizionati possono differire anche condividendo la stessa cella. La quota congiunta usa il totale e descrive l'evento 'A e presente'; non deve essere confrontata come se avesse lo stesso denominatore delle altre due.
+
+## 3. Verificare la regola del prodotto
+
+La relazione P(A e presente) = P(presente dato A) per P(A) collega congiunta e condizionata. La forma inversa permette di recuperare P(A dato presente), purché la probabilità del segnale sia positiva.
+
+```{r passo_03}
+p_A <- n_A / totale
+p_presente <- n_presenti / totale
+prodotto <- p_presente_dato_A * p_A
+# Il denominatore P(presente) normalizza rispetto al gruppo con segnale.
+bayes <- p_presente_dato_A * p_A / p_presente
+print(c(congiunta_diretta = p_intersezione, congiunta_prodotto = prodotto,
+        A_dato_presente_da_Bayes = bayes))
+stopifnot(abs(prodotto - p_intersezione) < 1e-12)
+stopifnot(abs(bayes - p_A_dato_presente) < 1e-12)
+```
+
+**Lettura del risultato.** Qui la formula è un'identità tra frequenze della stessa tabella. Trattare queste frequenze come probabilità di una popolazione richiederebbe ulteriori informazioni su come i sessanta campioni sono stati raccolti.
+
+## Variante svolta
+
+Raddoppiare i campioni di B conservandone la composizione interna e ricalcolare le due probabilità.
+
+```{r variante}
+t2 <- t
+t2["B", ] <- 2 * t2["B", ]
+print(addmargins(t2))
+nuova <- c(presente_dato_A = t2["A", "presente"] / sum(t2["A", ]),
+           A_dato_presente = t2["A", "presente"] / sum(t2[, "presente"]))
+print(nuova)
+stopifnot(nuova["presente_dato_A"] == p_presente_dato_A)
+```
+
+La composizione di A non cambia, mentre fra tutti i segnali presenti aumenta il contributo di B. La probabilità inversa dipende anche dalla frequenza degli affioramenti nel campione.
+
+## Errore da riconoscere
+
+Non invertire condizione ed evento per analogia linguistica. Non dimenticare che cambiare la composizione degli affioramenti può cambiare la probabilità inversa pur lasciando invariata quella entro A.
+
+## Risposta alla domanda
+
+Le due probabilità non coincidono in generale. La tabella chiarisce numeratore e denominatore; la regola del prodotto e Bayes rendono verificabile il passaggio fra frequenze marginali, congiunte e condizionate.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M04_N03` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M04/M04_N03.R).

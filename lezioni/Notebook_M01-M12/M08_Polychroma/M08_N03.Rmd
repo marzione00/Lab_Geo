@@ -1,0 +1,138 @@
+---
+title: "PCA: costruire nuovi assi"
+subtitle: "M08_N03 \u00b7 Polychroma"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Come si ottengono coordinate principali a partire dalla matrice delle misure?
+
+## Obiettivi
+
+- Distinguere scores e coefficienti.
+- Verificare il prodotto ZV.
+- Comprendere l’arbitrarietà del segno.
+
+**Prima di iniziare.** Lettura di un CSV, vettori, matrici, indicizzazione e funzioni di base in R.
+
+**Dati e unità.** Novanta rocce sintetiche del corso. SiO2, CaO, MgO e FeO sono percentuali in massa; densita è espressa in g/cm³ e grana_mm in millimetri. colore e fossili sono indici numerici convenzionali del simulatore, non misure mineralogiche o conteggi reali. La colonna litologia_generatrice descrive il gruppo usato nella simulazione e viene esclusa dalle stime.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Polychroma oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M08_Polychroma` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M08_Polychroma/Risultati/M08_N03/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M08_Polychroma"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M08_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M08_Polychroma o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M08_N03")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(8003)
+```
+
+## 1. La stima sulle otto variabili
+
+La PCA cerca assi ortogonali che descrivano, in ordine, la maggiore varianza disponibile nella matrice centrata. La standardizzazione è una scelta dichiarata: qui confrontiamo scarti espressi in deviazioni standard.
+
+```{r passo_01}
+# Seleziona le misure per nome: ID ed etichetta non entrano nella matrice.
+r <- carica_dati("rocce_simulate.csv")
+v <- c("SiO2", "CaO", "MgO", "FeO", "densita", "grana_mm", "colore", "fossili")
+X <- as.matrix(r[v])
+stopifnot(nrow(X)==90L, ncol(X)==8L, !anyDuplicated(r$id),
+          all(is.finite(X)), all(apply(X,2,sd)>0))
+Z <- scale(X)
+D <- dist(Z)
+# La PCA conserva medie, scale e rotazione per eventuali nuovi campioni.
+pc <- prcomp(X, center=TRUE, scale.=TRUE)
+lambda <- pc$sdev^2
+quota <- lambda/sum(lambda)
+summary(pc)
+head(pc$x[,1:2],4)
+pc$rotation[,1:2]
+```
+
+**Lettura del risultato.** x contiene una coordinata per campione e per componente. rotation contiene i coefficienti delle otto variabili che costruiscono ciascun asse. Le due matrici hanno ruoli e dimensioni differenti.
+
+## 2. Scores come prodotti scalari
+
+Indicando con $V$ la matrice della rotazione, gli scores sono $T=ZV$. Ogni riga di T descrive un campione nel nuovo sistema di riferimento.
+
+```{r passo_02}
+T_manuale <- Z %*% pc$rotation
+c(differenza_scores=max(abs(T_manuale-pc$x)),
+  errore_ortogonalita=max(abs(crossprod(pc$rotation)-diag(8))))
+# Nuovi assi, stessi campioni: nessuna etichetta di gruppo viene usata.
+plot(pc$x[,1:2],pch=19,col="#087C74",asp=1,
+ xlab="PC1",ylab="PC2")
+abline(h=0,v=0,lty=3,col="grey70")
+```
+
+**Lettura del risultato.** I prodotti scalari riproducono gli scores restituiti da R. I coefficienti di ogni asse hanno norma uno e gli assi sono ortogonali entro la precisione del calcolo.
+
+## 3. La proiezione di un singolo campione
+
+Calcoliamo lo score PC1 del primo campione sommando gli otto contributi. Il prodotto fra valore standardizzato e coefficiente rende visibile come ciascuna variabile contribuisce alla coordinata.
+
+```{r passo_03}
+contributi <- Z[1,]*pc$rotation[,1]
+data.frame(variabile=v,z=Z[1,],coefficiente=pc$rotation[,1],
+           contributo=contributi)
+c(somma=sum(contributi),score_R=pc$x[1,1])
+```
+
+**Lettura del risultato.** La somma dei contributi coincide con lo score del campione R001. Un grande coefficiente non implica da solo un grande contributo per ogni campione: conta anche quanto il campione si discosta dalla media in quella variabile.
+
+## Variante svolta
+
+Invertire il primo asse e verificare che la ricostruzione completa non cambi.
+
+```{r variante}
+T_inv <- pc$x;V_inv <- pc$rotation
+T_inv[,1] <- -T_inv[,1]
+V_inv[,1] <- -V_inv[,1]
+max(abs(T_inv %*% t(V_inv)-Z))
+```
+
+Il segno di score e coefficiente si annulla nel prodotto. Una componente orientata nel verso opposto descrive la stessa geometria.
+
+## Errore da riconoscere
+
+Interpretare PC1 come una misura fisica direttamente osservata: è una combinazione delle variabili, definita dal campione e dalla scala adottata.
+
+## Risposta alla domanda
+
+La PCA costruisce un sistema di assi ortogonali. Gli scores sono proiezioni dei campioni e si ricavano dalla matrice standardizzata e dai coefficienti della rotazione.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M08_N03` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M08/M08_N03.R).

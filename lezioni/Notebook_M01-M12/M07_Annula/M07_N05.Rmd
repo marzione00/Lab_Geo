@@ -1,0 +1,132 @@
+---
+title: "R\u00b2, dispersione residua e RMSE"
+subtitle: "M07_N05 \u00b7 Annula"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Quali informazioni diverse forniscono R² e gli errori espressi in micrometri?
+
+## Obiettivi
+
+- Collegare la domanda al calcolo riportato.
+- Interpretare il risultato usando variabili e unità del problema.
+
+**Prima di iniziare.** Vettori, data frame, indicizzazione e funzioni di base in R.
+
+**Dati e unità.** Fossili simulati del corso: 160 individui, 80 Rounded e 80 Spiky. Diametri e spessori sono espressi in micrometri. Nel generatore, diametro interno = diametro totale − 2 × spessore. La relazione contiene quindi un vincolo geometrico noto.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Annula oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M07_Annula` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M07_Annula/Risultati/M07_N05/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M07_Annula"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M07_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M07_Annula o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M07_N05")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(7005)
+```
+
+## 1. Una quota della variabilità osservata
+
+Con intercetta, $R^2=1-SSE/SST$, dove $SST=\sum(y_i-\bar y)^2$. Il confronto riguarda la retta e la previsione costante pari alla media sullo stesso campione.
+
+```{r passo_01}
+# Ogni riga identifica un fossile simulato.
+f <- carica_dati("fossili_simulati.csv")
+f$morfotipo <- factor(f$morfotipo, levels=c("Rounded", "Spiky"))
+x <- f$diametro_tot_um
+y <- f$diametro_int_um
+stopifnot(nrow(f)==160L, !anyDuplicated(f$id),
+          all(is.finite(x)), all(is.finite(y)))
+# La formula mette la risposta a sinistra della tilde.
+modello <- lm(diametro_int_um ~ diametro_tot_um, data=f)
+e <- residuals(modello)
+SSE <- sum(e^2)
+SST <- sum((y-mean(y))^2)
+R2 <- 1-SSE/SST
+c(SSE=SSE,SST=SST,R2=R2,R2_da_R=summary(modello)$r.squared)
+```
+
+**Lettura del risultato.** R² vale circa 0,932. Il modello riduce del 93,2% la somma dei quadrati rispetto alla media, su questi 160 dati usati per la stima. Questa quantità non è un tasso di previsioni corrette.
+
+## 2. La scala dell’errore
+
+La dispersione residua stimata è $s=\sqrt{SSE/(n-p)}$, con p numero di coefficienti stimati. Il RMSE sul campione usa invece $\sqrt{SSE/n}$. Entrambe le misure mantengono l’unità della risposta.
+
+```{r passo_02}
+n <- nrow(f)
+p <- length(coef(modello))
+data.frame(n=n,p=p,SD_residua=sqrt(SSE/(n-p)),
+           RMSE_campione=sqrt(SSE/n),MAE_campione=mean(abs(e)))
+stopifnot(abs(sqrt(SSE/(n-p))-summary(modello)$sigma)<1e-12)
+```
+
+**Lettura del risultato.** La dispersione residua è circa 0,260 µm e il RMSE sul campione circa 0,258 µm. La piccola differenza nasce dal denominatore, mentre la distinzione concettuale riguarda stima della varianza e sintesi dell’errore osservato.
+
+## 3. Il cambio di unità
+
+Moltiplicando la risposta per 1000 passiamo da micrometri a nanometri. R² resta uguale, mentre la scala dei residui si moltiplica per 1000.
+
+```{r passo_03}
+m_nm <- lm(I(1000*diametro_int_um)~diametro_tot_um,data=f)
+data.frame(unita=c("micrometri","nanometri"),
+ R2=c(summary(modello)$r.squared,summary(m_nm)$r.squared),
+ SD_residua=c(summary(modello)$sigma,summary(m_nm)$sigma))
+```
+
+**Lettura del risultato.** R² è privo di unità. La dispersione residua permette invece un confronto con precisione strumentale o tolleranze scientifiche, che devono usare la stessa unità.
+
+## Variante svolta
+
+Verificare l’identità R² = r² nella regressione semplice con intercetta.
+
+```{r variante}
+c(R2=summary(modello)$r.squared,r_quadrato=cor(x,y)^2)
+stopifnot(abs(summary(modello)$r.squared-cor(x,y)^2)<1e-12)
+```
+
+L’identità vale in questo caso specifico. Non estenderla automaticamente a modelli senza intercetta o a modelli con più predittori.
+
+## Errore da riconoscere
+
+Un R² alto su dati usati per adattare il modello non garantisce un errore piccolo su nuove osservazioni.
+
+## Risposta alla domanda
+
+R² descrive una riduzione relativa della variabilità. La dispersione residua e il RMSE indicano una scala di errore in µm.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M07_N05` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M07/M07_N05.R).

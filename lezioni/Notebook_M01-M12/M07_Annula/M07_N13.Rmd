@@ -1,0 +1,143 @@
+---
+title: "Ristima e valutazione sul test"
+subtitle: "M07_N13 \u00b7 Annula"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Qual è l’errore del modello scelto quando lo applichiamo ai 32 casi riservati?
+
+## Obiettivi
+
+- Collegare la domanda al calcolo riportato.
+- Interpretare il risultato usando variabili e unità del problema.
+
+**Prima di iniziare.** Vettori, data frame, indicizzazione e funzioni di base in R.
+
+**Dati e unità.** Fossili simulati del corso: 160 individui, 80 Rounded e 80 Spiky. Diametri e spessori sono espressi in micrometri. Nel generatore, diametro interno = diametro totale − 2 × spessore. La relazione contiene quindi un vincolo geometrico noto.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Annula oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M07_Annula` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M07_Annula/Risultati/M07_N13/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M07_Annula"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M07_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M07_Annula o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M07_N13")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(7013)
+```
+
+## 1. Ristima sulla totalità del training
+
+La scelta della formula e la stima finale sono operazioni distinte. Dopo la validazione interna, ristimiamo la formula scelta usando tutti i 128 casi di training.
+
+```{r passo_01}
+# Ogni riga identifica un fossile simulato.
+f <- carica_dati("fossili_simulati.csv")
+f$morfotipo <- factor(f$morfotipo, levels=c("Rounded", "Spiky"))
+x <- f$diametro_tot_um
+y <- f$diametro_int_um
+stopifnot(nrow(f)==160L, !anyDuplicated(f$id),
+          all(is.finite(x)), all(is.finite(y)))
+# Partizione fissata prima del confronto dei modelli.
+# Nel CSV didattico ogni quinto individuo forma il test.
+is_test <- seq_len(nrow(f)) %% 5L == 0L
+train <- f[!is_test, ]
+test <- f[is_test, ]
+stopifnot(nrow(train)==128L, nrow(test)==32L,
+          length(intersect(train$id, test$id))==0L)
+# La funzione ripete la stima su cinque partizioni del solo training.
+# Il suo codice completo e' spiegato nel notebook N12.
+scelta <- seleziona_modello(train, seme=714)
+finale <- lm(scelta$formule[[scelta$nome]], data=train)
+scelta$nome
+coef(finale)
+nobs(finale)
+```
+
+**Lettura del risultato.** Il modello selezionato comprende diametro totale e morfotipo. I coefficienti finali sfruttano tutto il training, mentre il test rimane escluso dalla loro stima.
+
+## 2. Lo stesso test per modello e riferimento
+
+Confrontiamo il modello selezionato con la costante pari alla media del training. Le due regole devono prevedere gli stessi individui per rendere leggibile il confronto.
+
+```{r passo_02}
+p_modello <- as.numeric(predict(finale,newdata=test))
+p_base <- rep(mean(train$diametro_int_um),nrow(test))
+errori <- rbind(media_training=metriche(test$diametro_int_um,p_base),
+               modello=metriche(test$diametro_int_um,p_modello))
+errori
+stopifnot(length(p_modello)==32L)
+```
+
+**Lettura del risultato.** Sul test il modello raggiunge RMSE circa 0,199 µm e MAE circa 0,172 µm. La media del training produce RMSE circa 1,003 µm e MAE circa 0,742 µm. Il confronto riguarda questi 32 individui del campione sintetico.
+
+## 3. Previsioni per individuo
+
+Una metrica aggregata può nascondere errori concentrati. La tabella per individuo mantiene l’associazione fra identificativo, osservazione e previsione.
+
+```{r passo_03}
+previsioni <- data.frame(id=test$id,osservato=test$diametro_int_um,
+ previsto=p_modello,residuo=test$diametro_int_um-p_modello)
+previsioni[order(abs(previsioni$residuo),decreasing=TRUE)[1:6],]
+plot(previsioni$osservato,previsioni$previsto,pch=19,col="#087C74",
+ xlab="Osservato nel test (micrometri)",ylab="Previsto (micrometri)")
+abline(0,1,lty=2)
+write.csv(previsioni,percorso_risultati("previsioni_test.csv"),row.names=FALSE)
+```
+
+**Lettura del risultato.** La bisettrice rappresenta previsione esatta. Ora che abbiamo guardato questi errori, ulteriori scelte suggerite da essi richiederebbero nuovi dati per una valutazione indipendente.
+
+## Variante svolta
+
+Calcolare la riduzione di RMSE rispetto al riferimento.
+
+```{r variante}
+riduzione <- 1-errori["modello","RMSE"]/errori["media_training","RMSE"]
+c(riduzione_RMSE_percento=100*riduzione)
+```
+
+La riduzione è circa l’80% in questa partizione. Non è una percentuale di individui correttamente previsti e non garantisce lo stesso risultato in un’altra popolazione.
+
+## Errore da riconoscere
+
+Ristimare sul training più test prima di riportare gli errori eliminerebbe la separazione necessaria alla valutazione.
+
+## Risposta alla domanda
+
+Il test confronta regole già definite. Qui il modello con morfotipo migliora nettamente la costante di riferimento sul campione riservato.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M07_N13` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M07/M07_N13.R).

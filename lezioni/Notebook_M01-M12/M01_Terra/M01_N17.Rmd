@@ -1,0 +1,137 @@
+---
+title: "Metadati minimi e registro delle scelte"
+subtitle: "M01_N17 \u00b7 Terra"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Quali informazioni permettono di ricostruire da dove provengono i dati e perché alcune densità non sono state calcolate?
+
+## Obiettivi
+
+- Costruire un dizionario delle variabili.
+- Collegare anomalie, decisioni e risultati attraverso gli identificativi.
+
+**Prima di iniziare.** Saper eseguire una cella R e riconoscere vettori, assegnamenti e nomi di colonne.
+
+**Dati e unità.** L'esercizio riparte dai 24 provini sintetici e introduce in una copia volume nullo per C02 e massa mancante per C04. Le anomalie sono modifiche didattiche documentate.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M01_N17/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M01_N17")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(1017)
+```
+
+## 1. Scrivere un dizionario essenziale
+
+Il dizionario spiega che cosa rappresenta ogni colonna e in quale unità viene interpretata. Non basta elencare i nomi: identificativi, categorie e misure richiedono descrizioni diverse, specialmente quando la tabella viene letta fuori dal notebook.
+
+```{r passo_01}
+# Ogni esecuzione riparte dal CSV condiviso, senza modificare il file.
+d <- carica_dati("campioni_modulo1.csv", stringsAsFactors = FALSE)
+stopifnot(nrow(d) == 24L, !anyDuplicated(d$id))
+
+dizionario <- data.frame(
+  campo = c("id", "affioramento", "stazione", "massa_g", "volume_cm3", "alterazione"),
+  significato = c("Identificativo del provino", "Gruppo di provenienza",
+                  "Punto di raccolta", "Massa del provino", "Volume del provino",
+                  "Classe qualitativa ordinata"),
+  unita = c("identificativo", "categoria", "identificativo", "g", "cm^3", "categoria"))
+print(dizionario)
+stopifnot(setequal(dizionario$campo, names(d)))
+```
+
+**Lettura del risultato.** Il controllo assicura che tutte le colonne originali siano documentate. L'unità 'categoria' evita di presentare una classe come una misura fisica; la descrizione della stazione chiarisce il livello superiore a cui appartengono i provini.
+
+## 2. Registrare trasformazioni e decisioni
+
+Un registro deve identificare la riga, il campo, il valore originario e la scelta compiuta. Conserviamo questi elementi prima di modificare la copia, così la spiegazione rimane verificabile e non dipende dalla memoria dell'autore.
+
+```{r passo_02}
+registro <- data.frame(id = c("C02", "C04"), campo = c("volume_cm3", "massa_g"),
+                        originale = c(d$volume_cm3[d$id == "C02"], d$massa_g[d$id == "C04"]),
+                        introdotto = c("0", "NA"),
+                        motivo = "Anomalia introdotta per esercitazione",
+                        decisione = "Conservare riga; densita non calcolabile")
+d$volume_cm3[d$id == "C02"] <- 0
+d$massa_g[d$id == "C04"] <- NA_real_
+print(registro)
+stopifnot(all(registro$id %in% d$id))
+```
+
+**Lettura del risultato.** La decisione riguarda l'utilizzo della densità, non l'esistenza del provino. Il registro distingue un'anomalia costruita da un errore rilevato nel file originale e conserva il valore necessario per ripristinare la copia.
+
+## 3. Salvare insieme dati e descrizioni
+
+Aggiungiamo un indicatore utilizzabile e salviamo tre file collegati. Una rilettura del registro controlla le chiavi: il pacchetto resta interpretabile soltanto se documentazione e tabella fanno riferimento agli stessi provini.
+
+```{r passo_03}
+d$utilizzabile <- is.finite(d$massa_g) & d$massa_g > 0 &
+                  is.finite(d$volume_cm3) & d$volume_cm3 > 0
+write.csv(d, percorso_risultati("provini_con_audit.csv"), row.names = FALSE)
+write.csv(dizionario, percorso_risultati("dizionario.csv"), row.names = FALSE)
+file_registro <- percorso_risultati("registro_decisioni.csv")
+write.csv(registro, file_registro, row.names = FALSE)
+verifica <- read.csv(file_registro, stringsAsFactors = FALSE)
+stopifnot(identical(verifica$id, registro$id))
+print(table(d$utilizzabile))
+```
+
+**Lettura del risultato.** I tre file hanno funzioni diverse: valori e indicatori, significato delle colonne, storia delle decisioni. Separarli rende il materiale leggibile senza ripetere lunghe note in ogni riga del dataset.
+
+## Variante svolta
+
+Ripristinare in una nuova copia i due valori usando il registro.
+
+```{r variante}
+ripristinato <- d
+for (i in seq_len(nrow(registro))) {
+  riga <- match(registro$id[i], ripristinato$id)
+  ripristinato[riga, registro$campo[i]] <- registro$originale[i]
+}
+print(ripristinato[ripristinato$id %in% registro$id, c("id", "massa_g", "volume_cm3")])
+stopifnot(all(is.finite(ripristinato$massa_g)), all(ripristinato$volume_cm3 > 0))
+```
+
+La ricostruzione mostra il valore pratico del registro. Gli indicatori derivati andrebbero ricalcolati dopo il ripristino: conservare un vecchio flag accanto a misure aggiornate produrrebbe una descrizione incoerente.
+
+## Errore da riconoscere
+
+Annotare soltanto 'dati puliti' nasconde criteri e trasformazioni. Una decisione leggibile nomina la riga interessata, la regola applicata e l'effetto sul calcolo successivo.
+
+## Risposta alla domanda
+
+Metadati e registro rendono verificabile la relazione fra tabella ricevuta e tabella analizzata. La documentazione deve aggiornarsi insieme ai dati e includere anche le variabili derivate aggiunte in seguito.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M01_N17` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M01/M01_N17.R).

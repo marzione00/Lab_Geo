@@ -1,0 +1,160 @@
+---
+title: "Consegna GeoJSON e verifica del contenuto"
+subtitle: "M11_N20 · Locus"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Come si consegna un GeoJSON mantenendo geometria, ID e attributi verificabili?
+
+## Obiettivi
+
+- Scrivere e rileggere un GeoJSON reale con sf.
+- Controllare coordinate, identità e attributi per ID.
+- Conservare una scheda che distingua geometria geografica e coordinate locali.
+
+**Prima di iniziare.** Sono richiesti vettori, tabelle, coordinate e funzioni R di base. I blocchi vanno eseguiti in ordine; il notebook è autonomo rispetto agli altri. Questo notebook richiede il pacchetto sf installato prima dell’analisi e usa le sue funzioni effettive.
+
+**Dati e unità.** 64 siti sintetici su una griglia 8 × 8, con passo 250 m e coordinate locali x_m e y_m fra 0 e 1750 m. Questo piano locale non ha un codice EPSG. La concentrazione è sintetica, in unità arbitrarie (u.a.); la quota è in metri sintetici. Ogni riga descrive un sito e il suo valore puntuale, non la media di una cella. Le colonne lon e lat forniscono un georiferimento sintetico separato, vicino a 9° E e 45° N, costruito con una relazione approssimata. Non sono coordinate UTM ottenute aggiungendo un’origine alle coordinate locali. Nel percorso geografico l’ordine è sempre longitudine, latitudine.
+
+## Preparazione
+
+Aprire il progetto autonomo di Locus o quello generale dei notebook. I CSV locali restano invariati. Gli output vanno in `Risultati/M11_N20/`. Nessun download o installazione viene eseguito nei blocchi.
+
+```{r preparazione}
+# Trova il modulo dal progetto autonomo o dal progetto generale dei notebook.
+.gs_cerca <- normalizePath(getwd(),winslash="/",mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca,file.path(.gs_cerca,"M11_Locus"),
+    file.path(.gs_cerca,"03_Notebook_svolti","M11_Locus"),
+    file.path(.gs_cerca,"M11","03_Notebook_svolti","M11_Locus"))
+  .gs_ok <- file.exists(file.path(.gs_candidati,"M11_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati,"R","funzioni_notebook.R"))
+  if(any(.gs_ok)) { .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]];break }
+  .gs_padre <- dirname(.gs_cerca)
+  if(.gs_padre==.gs_cerca) stop("Aprire il progetto M11_Locus o quello generale dei notebook.")
+  .gs_cerca <- .gs_padre
+}
+source(file.path(.gs_modulo,"R","funzioni_notebook.R"),local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo,"M11_N20")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88,digits=6)
+if(requireNamespace("knitr",quietly=TRUE)) {
+  knitr::opts_chunk$set(echo=TRUE,error=FALSE,warning=TRUE,message=TRUE,
+    fig.width=8,fig.height=5,dpi=150,fig.align="center")
+}
+set.seed(11020)
+```
+
+## 1. La geometria della consegna è geografica
+
+L’input sf usa OGC:CRS84 con ordine lon,lat. Manteniamo tutte le colonne originali come attributi: x_m/y_m restano un piano locale senza EPSG.
+
+```{r passo_01}
+d <- carica_dati("spazio_v3.csv")
+audit_spazio(d)
+richiedi_sf()
+ p <- sf::st_as_sf(d,coords=c("lon","lat"),crs="OGC:CRS84",remove=FALSE)
+ stopifnot(sf::st_is_longlat(p),!anyDuplicated(p$id))
+ data.frame(siti=nrow(p),geometria=as.character(unique(sf::st_geometry_type(p))),
+   CRS_ingresso=sf::st_crs(p)$input,attributi=ncol(sf::st_drop_geometry(p)))
+```
+
+**Lettura del risultato.** Il GeoJSON non viene costruito usando x_m/y_m come se fossero longitudine e latitudine. Il georiferimento è sintetico e questa natura accompagna la consegna.
+
+## 2. Il file viene scritto e riletto davvero
+
+Il driver GeoJSON usa l’opzione RFC7946 e conserva dieci cifre decimali nelle coordinate. Questa precisione di serializzazione non è accuratezza di rilievo. La rilettura attraverso sf verifica che il file possa essere interpretato come oggetto geografico.
+
+```{r passo_02}
+file <- percorso_risultati("campioni.geojson")
+sf::st_write(p,file,driver="GeoJSON",
+  layer_options=c("RFC7946=YES","COORDINATE_PRECISION=10"),delete_dsn=TRUE,quiet=TRUE)
+q <- sf::st_read(file,quiet=TRUE,stringsAsFactors=FALSE)
+data.frame(siti_scritti=nrow(p),siti_riletti=nrow(q),
+  ID_uguali=setequal(p$id,q$id),longlat_riletta=sf::st_is_longlat(q),bytes=file.info(file)$size)
+stopifnot(nrow(q)==64L,!anyDuplicated(q$id),setequal(p$id,q$id),sf::st_is_longlat(q))
+```
+
+**Lettura del risultato.** Contare 64 righe è necessario ma non sufficiente. Una consegna può conservare il numero di oggetti perdendo attributi, identità o coordinate.
+
+## 3. I controlli si allineano per ID
+
+Riallineiamo la rilettura al dataset originale. Confrontiamo coordinate con tolleranza 10⁻⁷ gradi e attributi numerici con tolleranza 10⁻⁸ nelle rispettive unità.
+
+```{r passo_03}
+q <- q[match(d$id,q$id),]
+attributi <- sf::st_drop_geometry(q)
+coordinate <- sf::st_coordinates(sf::st_transform(q,"OGC:CRS84"))
+numeriche <- names(d)[vapply(d,is.numeric,logical(1))]
+differenze <- vapply(numeriche,function(n) max(abs(attributi[[n]]-d[[n]])),numeric(1))
+audit <- data.frame(colonna=numeriche,massimo_scarto=unname(differenze),tolleranza=1e-8)
+audit
+audit_geometria <- data.frame(asse=c("longitudine","latitudine"),
+  massimo_scarto_gradi=c(max(abs(coordinate[,1]-d$lon)),max(abs(coordinate[,2]-d$lat))),
+  tolleranza_gradi=1e-7)
+audit_geometria
+write.csv(audit_geometria,percorso_risultati("audit_geometria_GeoJSON.csv"),row.names=FALSE)
+stopifnot(identical(as.character(q$id),d$id),identical(as.character(q$area),d$area),
+  all(differenze<1e-8),max(abs(coordinate[,1]-d$lon))<1e-7,
+  max(abs(coordinate[,2]-d$lat))<1e-7,all(sf::st_geometry_type(q)=="POINT"))
+write.csv(audit,percorso_risultati("audit_GeoJSON.csv"),row.names=FALSE)
+scheda <- c("64 siti SINTETICI; concentrazione in unita arbitrarie.",
+  "GeoJSON RFC7946: geometria geografica WGS84, ordine longitudine-latitudine.",
+  "Coordinate serializzate con dieci decimali; la precisione non e accuratezza di rilievo.",
+  "Attributi x_m/y_m: piano locale metrico senza EPSG; non sono offset UTM.",
+  "Attributi lon/lat: georiferimento sintetico approssimato del corso.",
+  "Verifica per ID: geometrie POINT, coordinate, numerosita e attributi.",
+  paste("sf",packageVersion("sf")),capture.output(sf::sf_extSoftVersion()))
+writeLines(scheda,percorso_risultati("scheda_consegna.txt"),useBytes=TRUE)
+stile_grafico()
+plot(sf::st_geometry(q),axes=TRUE,pch=19,col=palette_geo[1],
+  main="GeoJSON riletto: georiferimento sintetico",xlab="Longitudine",ylab="Latitudine")
+```
+
+**Lettura del risultato.** Le tolleranze riguardano serializzazione e calcolo, non accuratezza di rilievo. Il controllo completo collega geometria e attributi alla stessa identità del sito.
+
+## Variante svolta
+
+**L’ordine delle righe non è l’identità.** Invertire le righe rilette e mostrare che il confronto per ID ricostruisce l’associazione corretta.
+
+```{r variante}
+invertito <- q[nrow(q):1,]
+riallineato <- invertito[match(d$id,invertito$id),]
+stopifnot(identical(as.character(riallineato$id),d$id),
+  max(abs(riallineato$concentrazione-d$concentrazione))<1e-8)
+data.frame(ordine_invertito_identico=identical(as.character(invertito$id),d$id),
+  ID_riallineati_identici=identical(as.character(riallineato$id),d$id))
+```
+
+Una differenza nell’ordine non implica perdita di dati. Un confronto per posizione di riga potrebbe invece collegare misure e geometrie di siti diversi.
+
+## Errore da riconoscere
+
+Esportare coordinate locali come GeoJSON geografico, verificare soltanto il numero di righe o presumere che l’ordine delle righe sia un identificatore.
+
+## Risposta alla domanda
+
+La consegna conserva un GeoJSON WGS84 effettivamente scritto e riletto, con verifica per ID di geometrie, coordinate e attributi. Una scheda dichiara natura sintetica, unità e distinzione fra piano locale e georiferimento; il file geografico da solo non sostituisce questi metadati.
+
+## Raccordo con le slide
+
+[Slide 106–108 della lezione Locus](../../02_PDF/M11_Locus/Locus_M11_statistica_spaziale.pdf#page=106). Il notebook conserva il tema del laboratorio originale e aggiunge verifiche e una variante svolta.
+
+
+## Riferimenti e provenienza
+
+Questo svolgimento sviluppa `M11_N20` del [modulo M11 del corso](https://marzione00.github.io/Lab_Geo/#modulo-M11). Il [codice originale](https://github.com/marzione00/Lab_Geo/blob/649f7cc577b96bd1044d81e78a2f530813e4f96b/materiali/laboratori/M11/M11_N20.R) è conservato immutato in `R/Originali_corso/`; la mappa allegata documenta gli ampliamenti. Dati e originali hanno impronte SHA-256 e SHA-1 Git verificate.
+
+Documentazione primaria: [sf, trasformazione](https://r-spatial.github.io/sf/reference/st_transform.html), [sf, CRS](https://r-spatial.github.io/sf/reference/st_crs.html), [sf, scrittura](https://r-spatial.github.io/sf/reference/st_write.html), [GeoJSON RFC7946](https://www.rfc-editor.org/rfc/rfc7946).

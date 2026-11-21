@@ -1,0 +1,133 @@
+---
+title: "Una tabella completa per morfotipo"
+subtitle: "M03_N08 \u00b7 Iride"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come produrre lo stesso riassunto per ogni morfotipo senza ripetere manualmente i calcoli?
+
+## Obiettivi
+
+- Scrivere una funzione descrittiva controllata.
+- Separare, riassumere e ricombinare gruppi mantenendo le etichette.
+
+**Prima di iniziare.** Funzioni, vettori nominati e concetto di valore mancante.
+
+**Dati e unità.** Archivio didattico sintetico: 160 fossili, 80 Rounded e 80 Spiky. Diametri e spessori sono espressi in micrometri; ogni riga identifica un individuo.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M03_N08/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M03_N08")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(3008)
+```
+
+## 1. Definire una sola regola
+
+Scriviamo una funzione che conta separatamente righe ricevute e misure valide. La rimozione degli NA viene dichiarata nella funzione; pretendiamo almeno due misure finite per calcolare una deviazione standard campionaria.
+
+```{r passo_01}
+descrivi <- function(v) {
+  # Contiamo separatamente i valori ricevuti e quelli utilizzabili nei calcoli.
+  validi <- is.finite(v)
+  z <- v[validi]
+  stopifnot(length(z) >= 2)
+  q <- quantile(z, c(.25, .75), type = 7)
+  c(n = length(v), n_validi = length(z), media_um = mean(z),
+    mediana_um = median(z), sd_um = sd(z), Q1_um = unname(q[1]),
+    Q3_um = unname(q[2]), minimo_um = min(z), massimo_um = max(z))
+}
+print(descrivi(c(4, 5, 6, NA_real_)))
+```
+
+**Lettura del risultato.** Il piccolo esempio verifica che una misura mancante resti visibile attraverso la differenza fra n e n_validi. La funzione non sostituisce valori mancanti e non modifica i dati originali.
+
+## 2. Applicare la funzione ai gruppi
+
+split costruisce una lista di vettori numerici, uno per morfotipo. lapply applica la stessa funzione a ciascun elemento; rbind raccoglie i risultati in una tabella con colonne confrontabili.
+
+```{r passo_02}
+f <- carica_dati("fossili_simulati.csv")
+stopifnot(!anyNA(f$morfotipo))
+gruppi <- split(f$diametro_tot_um, f$morfotipo)
+# lapply applica la stessa definizione di riassunto a tutti i gruppi.
+risultati <- lapply(gruppi, descrivi)
+tabella <- as.data.frame(do.call(rbind, risultati))
+tabella$morfotipo <- rownames(tabella)
+print(tabella[, c("morfotipo", "n", "n_validi", "media_um", "sd_um", "mediana_um", "Q1_um", "Q3_um")])
+```
+
+**Lettura del risultato.** Le righe corrispondono a gruppi e non più a singoli fossili. Ogni numero deriva però dalle misure individuali dello stesso morfotipo: medie e dispersioni non sono state calcolate aggregando gruppi diversi.
+
+## 3. Controllare e conservare il risultato
+
+Verifichiamo che la suddivisione abbia conservato gli individui. Esportiamo la precisione numerica completa e riserviamo l'arrotondamento alla visualizzazione: il file può così essere riusato senza perdere cifre inutilmente.
+
+```{r passo_03}
+stopifnot(sum(tabella$n) == nrow(f))
+stopifnot(all(tabella$n_validi == tabella$n))
+print(round(tabella[c("media_um", "mediana_um", "sd_um")], 3))
+destinazione <- percorso_risultati("diametri_per_morfotipo.csv")
+# row.names = FALSE evita una colonna di indici estranea alla tabella didattica.
+write.csv(tabella, destinazione, row.names = FALSE)
+riletta <- read.csv(destinazione, stringsAsFactors = FALSE)
+stopifnot(nrow(riletta) == length(gruppi))
+```
+
+**Lettura del risultato.** La tabella salvata conserva l'etichetta del morfotipo come vera colonna. Questo evita di perderla quando un programma ignora i nomi di riga. Il controllo della numerosità intercetta categorie escluse o righe disperse.
+
+## Variante svolta
+
+Riutilizzare la stessa funzione per gli spessori e confrontare le due misure mantenendo le unità.
+
+```{r variante}
+gruppi_spessore <- split(f$spessore_um, f$morfotipo)
+spessori <- as.data.frame(do.call(rbind, lapply(gruppi_spessore, descrivi)))
+print(spessori[c("n_validi", "media_um", "mediana_um", "sd_um")])
+print(cbind(diametro_medio_um = tabella$media_um,
+            spessore_medio_um = spessori$media_um))
+stopifnot(identical(rownames(tabella), rownames(spessori)))
+```
+
+Il riuso è corretto perché entrambe le variabili sono in micrometri. Per una misura in millimetri occorrerebbe modificare anche i nomi delle colonne, non soltanto il vettore in ingresso.
+
+## Errore da riconoscere
+
+Non usare un vettore esterno dentro la funzione al posto dell'argomento v: produrrebbe risultati identici per tutti i gruppi anche quando le misure differiscono.
+
+## Risposta alla domanda
+
+Una funzione unica rende coerenti i riassunti e riduce gli errori di copia. Conteggi, etichette, unità e controlli restano parte del risultato: una tabella ordinata senza questi elementi sarebbe poco verificabile.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M03_N08` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M03/M03_N08.R).

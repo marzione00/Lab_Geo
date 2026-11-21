@@ -1,0 +1,139 @@
+---
+title: "Scores: che cosa rappresenta un punto?"
+subtitle: "M08_N05 \u00b7 Polychroma"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Come si legge la posizione di una roccia nel piano principale senza dimenticare le componenti escluse?
+
+## Obiettivi
+
+- Associare gli scores agli ID.
+- Etichettare gli assi con le quote di varianza.
+- Quantificare la contrazione delle distanze.
+
+**Prima di iniziare.** Lettura di un CSV, vettori, matrici, indicizzazione e funzioni di base in R.
+
+**Dati e unità.** Novanta rocce sintetiche del corso. SiO2, CaO, MgO e FeO sono percentuali in massa; densita è espressa in g/cm³ e grana_mm in millimetri. colore e fossili sono indici numerici convenzionali del simulatore, non misure mineralogiche o conteggi reali. La colonna litologia_generatrice descrive il gruppo usato nella simulazione e viene esclusa dalle stime.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Polychroma oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M08_Polychroma` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M08_Polychroma/Risultati/M08_N05/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M08_Polychroma"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M08_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M08_Polychroma o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M08_N05")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(8005)
+```
+
+## 1. Coordinate e identità del campione
+
+Ogni punto del piano PC1–PC2 rappresenta una riga della matrice. Conserviamo l’ID per collegare coordinate, misure e informazioni di contesto.
+
+```{r passo_01}
+# Seleziona le misure per nome: ID ed etichetta non entrano nella matrice.
+r <- carica_dati("rocce_simulate.csv")
+v <- c("SiO2", "CaO", "MgO", "FeO", "densita", "grana_mm", "colore", "fossili")
+X <- as.matrix(r[v])
+stopifnot(nrow(X)==90L, ncol(X)==8L, !anyDuplicated(r$id),
+          all(is.finite(X)), all(apply(X,2,sd)>0))
+Z <- scale(X)
+D <- dist(Z)
+# La PCA conserva medie, scale e rotazione per eventuali nuovi campioni.
+pc <- prcomp(X, center=TRUE, scale.=TRUE)
+lambda <- pc$sdev^2
+quota <- lambda/sum(lambda)
+scores <- data.frame(id=r$id,PC1=pc$x[,1],PC2=pc$x[,2])
+head(scores)
+write.csv(scores,percorso_risultati("scores_PC1_PC2.csv"),row.names=FALSE)
+```
+
+**Lettura del risultato.** Le coordinate non sono percentuali di ossido né densità. Sono combinazioni delle otto misure standardizzate. Il file conserva l’ID per evitare ambiguità dopo filtri e riordinamenti.
+
+## 2. La figura e la varianza rappresentata
+
+Gli assi dichiarano la quota di varianza associata alle componenti. Usiamo le etichette del simulatore soltanto per leggere il grafico dopo avere stimato gli assi.
+
+```{r passo_02}
+g <- factor(r$litologia_generatrice)
+palette <- c("#087C74","#C57E42","#7363AA")
+plot(scores$PC1,scores$PC2,pch=as.integer(g)+14,col=palette[g],asp=1,
+ xlab=sprintf("PC1 (%.2f%%)",100*quota[1]),
+ ylab=sprintf("PC2 (%.2f%%)",100*quota[2]))
+legend("topright",levels(g),col=palette,pch=15:17,bty="n",cex=.85)
+```
+
+**Lettura del risultato.** Nel caso sintetico le etichette si separano chiaramente nel piano. Il risultato descrive la struttura costruita dal simulatore e non prova che la stessa separazione si presenti in campioni naturali.
+
+## 3. Distanza nel piano e distanza completa
+
+Una proiezione ortogonale può accorciare le distanze. Per due campioni la distanza quadratica nel piano usa soltanto i primi due scarti; le altre sei componenti possono contenere differenze ulteriori.
+
+```{r passo_03}
+d_full <- as.matrix(dist(Z))
+d_piano <- as.matrix(dist(pc$x[,1:2]))
+stopifnot(all(d_piano<=d_full+1e-10))
+c(coppia_1_2_completa=d_full[1,2],coppia_1_2_piano=d_piano[1,2],
+  contrazione_massima=max(d_full-d_piano))
+```
+
+**Lettura del risultato.** Nessuna distanza proiettata supera quella completa, a parte arrotondamenti. Due punti vicini nella figura possono differire lungo componenti non mostrate.
+
+## Variante svolta
+
+Individuare la coppia con maggiore contrazione e recuperarne gli ID.
+
+```{r variante}
+scarto <- d_full-d_piano
+scarto[!upper.tri(scarto)] <- -Inf
+ij <- which(scarto==max(scarto),arr.ind=TRUE)[1,]
+data.frame(id1=r$id[ij[1]],id2=r$id[ij[2]],
+ completa=d_full[ij[1],ij[2]],piano=d_piano[ij[1],ij[2]])
+```
+
+La coppia selezionata mostra concretamente la differenza fra rappresentare due coordinate e conservare tutta la geometria del campione.
+
+## Errore da riconoscere
+
+Usare la distanza sullo schermo come se coincidesse sempre con la distanza impiegata nell’analisi a otto dimensioni.
+
+## Risposta alla domanda
+
+Un punto è un campione proiettato. ID, quota di varianza e componenti escluse sono necessari per interpretarne la posizione.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M08_N05` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M08/M08_N05.R).

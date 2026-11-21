@@ -1,0 +1,6 @@
+d <- carica_dati("spazio_v3.csv")
+audit_spazio(d)
+ posizione <- c(900,900);xy <- as.matrix(d[c("x_m","y_m")])
+ r <- sqrt((d$x_m-posizione[1])^2+(d$y_m-posizione[2])^2)
+ stopifnot(all(r>0))
+ data.frame(x_m=posizione[1],y_m=posizione[2],distanza_minima_m=min(r),distanza_massima_m=max(r))

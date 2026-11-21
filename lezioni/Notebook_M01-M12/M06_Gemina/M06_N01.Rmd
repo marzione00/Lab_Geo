@@ -1,0 +1,127 @@
+---
+title: "Una domanda e un contrasto con segno"
+subtitle: "M06_N01 \u00b7 Gemina"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Di quanto differisce il diametro totale medio dei fossili Spiky rispetto ai Rounded, mantenendo un verso dichiarato?
+
+## Obiettivi
+
+- Tradurre la domanda in un contrasto.
+- Conservare segno e unità in ogni rappresentazione.
+
+**Prima di iniziare.** Vettori, indicizzazione, media, varianza e grafici di base in R.
+
+**Dati e unità.** Fossili sintetici: ottanta Rounded e ottanta Spiky, diametro totale in micrometri. Il confronto descrive questi dati e non un effetto causale reale.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M06_N01/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M06_N01")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(6001)
+```
+
+## 1. Definire i due gruppi prima del calcolo
+
+Scriviamo il bersaglio come delta = media Spiky meno media Rounded. Il gruppo di riferimento è Rounded: un valore positivo indica diametri medi maggiori per Spiky. Controllare nomi e numerosità evita che un ordine alfabetico o un filtro errato inverta la domanda.
+
+```{r passo_01}
+dati <- carica_dati("fossili_simulati.csv")
+print(table(dati$morfotipo))
+stopifnot(setequal(unique(dati$morfotipo), c("Rounded", "Spiky")))
+a <- dati$diametro_tot_um[dati$morfotipo == "Rounded"]
+b <- dati$diametro_tot_um[dati$morfotipo == "Spiky"]
+stopifnot(all(is.finite(c(a, b))), all(c(a, b) > 0))
+nA <- length(a)
+nB <- length(b)
+```
+
+**Lettura del risultato.** La selezione contiene due insiemi distinti. Non esiste un abbinamento fra la prima riga Rounded e la prima riga Spiky soltanto perché i gruppi hanno la stessa numerosità.
+
+## 2. Calcolare il contrasto e mostrarne il segno
+
+Calcoliamo le medie separatamente e solo dopo la differenza. Il contrasto è espresso nella stessa unità dei diametri. Un valore vicino a zero indica medie vicine, ma non implica che le due distribuzioni abbiano la stessa dispersione o la stessa forma.
+
+```{r passo_02}
+mediaA <- mean(a)
+mediaB <- mean(b)
+delta <- mediaB - mediaA
+riepilogo <- data.frame(gruppo = c("Rounded", "Spiky"),
+  n = c(nA, nB), media_um = c(mediaA, mediaB), SD_um = c(sd(a), sd(b)))
+print(riepilogo)
+print(c(differenza_Spiky_Rounded_um = delta))
+stopifnot(isTRUE(all.equal(-delta, mediaA - mediaB)))
+```
+
+**Lettura del risultato.** Il risultato quantifica una differenza media osservata. La deviazione standard della tabella descrive la variabilità dei fossili; non è l'errore standard del contrasto.
+
+## 3. Collocare le medie dentro le distribuzioni
+
+Un grafico dei due gruppi aiuta a evitare che la differenza fra medie venga letta come separazione completa degli individui. Mostriamo le medie con un simbolo distinto dalle mediane del boxplot e manteniamo la stessa scala verticale.
+
+```{r passo_03}
+boxplot(list(Rounded = a, Spiky = b), col = c("#95BDD0", "#E7B977"),
+        ylab = "Diametro totale (um)", main = "Gruppi e medie osservate")
+points(1:2, c(mediaA, mediaB), pch = 18, cex = 1.5)
+legend("topleft", legend = "Media", pch = 18, bty = "n")
+print(rbind(Rounded = quantile(a, c(0.25, 0.5, 0.75)),
+            Spiky = quantile(b, c(0.25, 0.5, 0.75))))
+```
+
+**Lettura del risultato.** Le distribuzioni possono sovrapporsi anche quando le medie differiscono. Il contrasto non afferma che ogni Spiky sia più grande di ogni Rounded.
+
+## Variante svolta
+
+Esprimere gli stessi diametri in millimetri e controllare come cambia il contrasto.
+
+```{r variante}
+a_mm <- a / 1000
+b_mm <- b / 1000
+delta_mm <- mean(b_mm) - mean(a_mm)
+print(c(differenza_um = delta, differenza_mm = delta_mm))
+stopifnot(isTRUE(all.equal(delta_mm, delta / 1000)))
+```
+
+La differenza numerica cambia con l'unità, mentre il verso e il significato del confronto restano gli stessi. Ogni tabella e ogni asse devono dichiarare la scala usata.
+
+## Errore da riconoscere
+
+Non scrivere soltanto 'differenza fra gruppi': nominare il gruppo sottratto e mantenere il medesimo verso anche nella conclusione.
+
+## Risposta alla domanda
+
+Il contrasto Spiky meno Rounded rende espliciti bersaglio, segno e unità. La valutazione dell'incertezza richiede un passaggio successivo e un disegno di campionamento dichiarato.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M06_N01` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M06/M06_N01.R).

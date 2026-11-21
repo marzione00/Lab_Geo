@@ -1,0 +1,126 @@
+---
+title: "Differenziare troppo introduce dipendenza"
+subtitle: "M09_N14 \u00b7 Borealis"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Che cosa accade all’autocorrelazione quando differenziamo un rumore già bianco?
+
+## Obiettivi
+
+- Derivare varianza e covarianza delle differenze.
+- Confrontare teoria e simulazione.
+- Riconoscere una trasformazione superflua.
+
+**Prima di iniziare.** Lettura di CSV, vettori, indicizzazione e funzioni di base in R. I blocchi vanno eseguiti nell’ordine all’interno del singolo notebook.
+
+**Dati e unità.** Innovazioni normali standard simulate con semi espliciti. Tutte le quantità sono adimensionali.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Borealis oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M09_Borealis` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M09_Borealis/Risultati/M09_N14/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M09_Borealis"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M09_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M09_Borealis o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M09_N14")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(9014)
+```
+
+## 1. Una trasformazione superflua
+
+Simuliamo $e_t$ indipendenti con varianza uno e formiamo $d_t=e_t-e_{t-1}$. Due differenze consecutive condividono un termine con segno opposto.
+
+```{r passo_01}
+set.seed(1805)
+e <- rnorm(3000)
+delta <- diff(e)
+data.frame(serie=c("Bianco","Differenza del bianco"),
+ varianza=c(var(e),var(delta)),
+ ACF1=c(as.numeric(acf(e,plot=FALSE,lag.max=1)$acf[2]),
+ as.numeric(acf(delta,plot=FALSE,lag.max=1)$acf[2])))
+```
+
+**Lettura del risultato.** La varianza delle differenze è vicina a due e l’ACF al primo ritardo è vicina a −0,5. La trasformazione ha creato una dipendenza lineare riconoscibile.
+
+## 2. Derivare il riferimento
+
+Con innovazioni indipendenti di varianza $\sigma^2$, $\operatorname{Var}(d_t)=2\sigma^2$ e $\operatorname{Cov}(d_t,d_{t-1})=-\sigma^2$. Quindi $\rho_d(1)=-1/2$. Per lag maggiori non ci sono termini condivisi.
+
+```{r passo_02}
+teoria <- data.frame(lag=0:8,rho=c(1,-.5,rep(0,7)))
+campione <- as.numeric(acf(delta,plot=FALSE,lag.max=8)$acf)
+data.frame(teoria,stima=campione)
+acf(delta,lag.max=24,main="Differenza di rumore bianco")
+```
+
+**Lettura del risultato.** La formula descrive la correlazione del processo trasformato. Le stime del campione non devono coincidere esattamente con la teoria.
+
+## 3. Osservare il termine comune
+
+Scriviamo le prime coppie di incrementi. Il valore e₂ entra nella prima differenza con segno positivo e nella seconda con segno negativo.
+
+```{r passo_03}
+data.frame(t=2:6,precedente=e[1:5],corrente=e[2:6],
+ differenza=delta[1:5])
+# Ogni differenza e' una combinazione di due innovazioni.
+stopifnot(max(abs(delta-(tail(e,-1)-head(e,-1))))<1e-12)
+```
+
+**Lettura del risultato.** La condivisione con segni opposti produce la covarianza negativa. Non serve una relazione fisica di alternanza nelle innovazioni originarie.
+
+## Variante svolta
+
+Applicare una seconda differenza e osservare come cambia la forma dell’ACF.
+
+```{r variante}
+doppia <- diff(e,differences=2)
+c(varianza=var(doppia),ACF1=as.numeric(acf(doppia,plot=FALSE,lag.max=1)$acf[2]))
+acf(doppia,lag.max=12,main="Seconda differenza del bianco")
+```
+
+La seconda differenza combina coefficienti 1, −2, 1 e introduce struttura a più ritardi. Applicare altre differenze non elimina automaticamente la dipendenza.
+
+## Errore da riconoscere
+
+Usare una forte autocorrelazione negativa a lag uno come prova certa di sovradifferenziazione: altri processi possono produrre un segnale simile.
+
+## Risposta alla domanda
+
+La differenza del rumore bianco è dipendente. Il riferimento −1/2 aiuta a riconoscere un possibile eccesso di trasformazione e va interpretato insieme al modello originario.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M09_N14` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M09/M09_N14.R).

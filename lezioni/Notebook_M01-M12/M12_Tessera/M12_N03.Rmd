@@ -1,0 +1,147 @@
+---
+title: "GeoTIFF: leggere valori e georeferenziazione"
+subtitle: "M12_N03 · Tessera"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Il GeoTIFF contiene soltanto quote o anche una geometria da verificare?
+
+## Obiettivi
+
+- Leggere il GeoTIFF reale con terra.
+- Controllare risoluzione, estensione, CRS e centri.
+- Verificare l’orientamento confrontando tutte le quote con il CSV.
+
+**Prima di iniziare.** Sono richiesti vettori, matrici, tabelle e funzioni R di base. Eseguire i blocchi in ordine; ogni notebook è autonomo rispetto agli altri. Questo notebook richiede terra installato prima dell’analisi e usa le sue funzioni effettive.
+
+**Dati e unità.** Il raster è interamente sintetico: 24 righe × 30 colonne, 720 celle quadrate di lato 30 m. Nel CSV riga e colonna partono da zero; x_m = 30 × colonna e y_m = 30 × riga indicano i centri nel piano locale. La riga 0 è a Sud; la riga 23 è a Nord. Le quote sono in metri sintetici. I dati non descrivono un rilievo reale. Il GeoTIFF originale porta EPSG:32632, UTM zona 32 Nord, con georeferenziazione fittizia: corner Nord-Ovest E=500000, N=5000000; passo 30 m, PixelIsArea. I centri corrispondono a E=x_m+500015 e N=y_m+4999295. Le righe del TIFF procedono da Nord a Sud, al contrario della matrice locale.
+
+**Relazione usata.** $E=x_{\mathrm{locale}}+500015,\quad N=y_{\mathrm{locale}}+4999295.$
+
+## Preparazione
+
+Aprire il progetto autonomo di Tessera o quello generale dei notebook. I file originali restano invariati. Gli output vanno in `Risultati/M12_N03/`. Nessun download o installazione avviene nei blocchi.
+
+```{r preparazione}
+# Trova il modulo dal progetto autonomo o da quello generale dei notebook.
+.gs_cerca <- normalizePath(getwd(),winslash="/",mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca,file.path(.gs_cerca,"M12_Tessera"),
+    file.path(.gs_cerca,"03_Notebook_svolti","M12_Tessera"),
+    file.path(.gs_cerca,"M12","03_Notebook_svolti","M12_Tessera"))
+  .gs_ok <- file.exists(file.path(.gs_candidati,"M12_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati,"R","funzioni_notebook.R"))
+  if(any(.gs_ok)) { .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]];break }
+  .gs_padre <- dirname(.gs_cerca)
+  if(.gs_padre==.gs_cerca) stop("Aprire il progetto M12_Tessera o quello generale dei notebook.")
+  .gs_cerca <- .gs_padre
+}
+source(file.path(.gs_modulo,"R","funzioni_notebook.R"),local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo,"M12_N03")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88,digits=6)
+if(requireNamespace("knitr",quietly=TRUE)) {
+  knitr::opts_chunk$set(echo=TRUE,error=FALSE,warning=TRUE,message=TRUE,
+    fig.width=8,fig.height=5,dpi=150,fig.align="center")
+}
+set.seed(20261104)
+```
+
+## 1. Lettura effettiva del file
+
+Apriamo il TIFF originale immutato. L’etichetta EPSG appartiene al caso sintetico e non certifica un rilievo reale.
+
+```{r passo_01}
+d <- carica_dati("raster_v3.csv")
+audit_raster(d)
+d <- d[order(d$riga,d$colonna),]
+Z <- matrice_quote(d)
+richiedi_terra()
+r <- terra::rast(percorso_dati("raster_v3.tif"))
+ geometria <- data.frame(righe=nrow(r),colonne=ncol(r),celle=terra::ncell(r),
+   dx=terra::res(r)[1],dy=terra::res(r)[2],
+   xmin=terra::xmin(r),xmax=terra::xmax(r),ymin=terra::ymin(r),ymax=terra::ymax(r))
+ geometria
+ terra::crs(r,describe=TRUE)[,c("name","authority","code")]
+ stopifnot(terra::ncell(r)==720L,all(terra::res(r)==30),
+   max(abs(as.vector(terra::ext(r))-c(500000,500900,4999280,5000000)))<1e-9)
+```
+
+**Lettura del risultato.** La griglia è 24 × 30, con celle di 30 m. Il corner Nord-Ovest non coincide con il centro della prima cella.
+
+## 2. I centri verificano il mezzo pixel
+
+Le prime celle nel TIFF stanno sul bordo settentrionale. Confrontiamo i loro centri con la trasformazione dichiarata del piano locale.
+
+```{r passo_02}
+celle <- c(1,30,691,720)
+centri <- terra::xyFromCell(r,celle)
+risultato <- data.frame(cella_TIFF=celle,E=centri[,1],N=centri[,2],
+  x_locale=centri[,1]-500015,y_locale=centri[,2]-4999295)
+risultato
+stopifnot(identical(as.numeric(centri[1,]),c(500015,4999985)))
+```
+
+**Lettura del risultato.** Il centro della prima cella TIFF è E=500015, N=4999985 e corrisponde al centro locale x=0, y=690. Il mezzo pixel conta su entrambi gli assi.
+
+## 3. Tutte le quote tornano nelle celle corrette
+
+terra restituisce le righe dall’alto verso il basso. Le invertiamo per ricostruire la matrice locale dal Sud verso il Nord.
+
+```{r passo_03}
+letto <- matrice_locale(r)
+errore <- max(abs(letto-Z))
+data.frame(massimo_scarto_m=errore,terra=as.character(packageVersion("terra")))
+stopifnot(errore<1e-10)
+mappa_matrice(letto,titolo="GeoTIFF riletto: orientamento locale verificato")
+write.csv(geometria,percorso_risultati("geometria_GeoTIFF.csv"),row.names=FALSE)
+write.csv(risultato,percorso_risultati("centri_GeoTIFF.csv"),row.names=FALSE)
+writeLines(terra::crs(r),percorso_risultati("CRS_fittizio.wkt"))
+```
+
+**Lettura del risultato.** La verifica cella per cella è più forte del confronto della media. I valori FLOAT64 del TIFF e quelli del CSV risultano confrontabili senza trasformare il CRS.
+
+## Variante svolta
+
+**Omettere il ribaltamento.** Confrontare direttamente la matrice Nord-Sud di terra con quella locale Sud-Nord.
+
+```{r variante}
+nord_sud <- terra::as.matrix(r,wide=TRUE)
+data.frame(scarto_errato_m=max(abs(nord_sud-Z)),
+  scarto_corretto_m=max(abs(nord_sud[24:1,]-Z)),
+  media_invariata=abs(mean(nord_sud)-mean(Z))<1e-10)
+stopifnot(max(abs(nord_sud-Z))>0)
+```
+
+Il controllo sbagliato può conservare la media. L’identità delle celle va verificata insieme alla georeferenziazione.
+
+## Errore da riconoscere
+
+Interpretare il corner come centro oppure attribuire al raster una collocazione reale perché possiede EPSG:32632.
+
+## Risposta alla domanda
+
+Un GeoTIFF unisce valori, numero di celle, risoluzione, origine, CRS e convenzione di orientamento. Qui la georeferenziazione è fittizia; il confronto con il CSV verifica la costruzione del file, non la sua corrispondenza a un territorio reale.
+
+## Raccordo con le slide
+
+[Slide 8–10, 15–17, 19 della lezione Tessera](../../02_PDF/M12_Tessera/Tessera_M12_raster_telerilevamento_morfometria.pdf#page=8). La [mappa dei notebook e delle slide](MAPPA_SLIDE.csv) conserva il raccordo puntuale con la lezione estesa.
+
+## Riferimenti e provenienza
+
+Questo svolgimento sviluppa `M12_N03` del [modulo M12 del corso](https://marzione00.github.io/Lab_Geo/#modulo-M12). Il [codice originale](https://github.com/marzione00/Lab_Geo/blob/649f7cc577b96bd1044d81e78a2f530813e4f96b/materiali/laboratori/M12/M12_N03.R) è conservato immutato in `R/Originali_corso/`. Dati e originali hanno SHA-256 e SHA-1 Git verificati; gli ampliamenti sono dichiarati nella [mappa degli originali](MAPPA_ORIGINALI.csv).
+
+Documentazione primaria: [terra, rast](https://rspatial.github.io/terra/reference/rast.html), [terra, resample](https://rspatial.github.io/terra/reference/resample.html), [terra, readValues](https://rspatial.github.io/terra/reference/readValues.html), [terra, writeRaster](https://rspatial.github.io/terra/reference/writeRaster.html).

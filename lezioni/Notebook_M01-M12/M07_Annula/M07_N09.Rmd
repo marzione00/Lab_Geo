@@ -1,0 +1,140 @@
+---
+title: "Leva e influenza di un\u2019osservazione"
+subtitle: "M07_N09 \u00b7 Annula"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Come distinguere un punto lontano nel predittore da un punto che cambia molto la stima?
+
+## Obiettivi
+
+- Collegare la domanda al calcolo riportato.
+- Interpretare il risultato usando variabili e unità del problema.
+
+**Prima di iniziare.** Vettori, data frame, indicizzazione e funzioni di base in R.
+
+**Dati e unità.** Fossili simulati del corso: 160 individui, 80 Rounded e 80 Spiky. Diametri e spessori sono espressi in micrometri. Nel generatore, diametro interno = diametro totale − 2 × spessore. La relazione contiene quindi un vincolo geometrico noto.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Annula oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M07_Annula` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M07_Annula/Risultati/M07_N09/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M07_Annula"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M07_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M07_Annula o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M07_N09")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(7009)
+```
+
+## 1. Tre quantità per ogni individuo
+
+La leva $h_{ii}$ dipende dalla posizione del predittore. Il residuo misura lo scarto verticale. La distanza di Cook combina scarto e leva per descrivere quanto cambia l’adattamento quando si esclude un caso.
+
+```{r passo_01}
+# Ogni riga identifica un fossile simulato.
+f <- carica_dati("fossili_simulati.csv")
+f$morfotipo <- factor(f$morfotipo, levels=c("Rounded", "Spiky"))
+x <- f$diametro_tot_um
+y <- f$diametro_int_um
+stopifnot(nrow(f)==160L, !anyDuplicated(f$id),
+          all(is.finite(x)), all(is.finite(y)))
+# La formula mette la risposta a sinistra della tilde.
+modello <- lm(diametro_int_um ~ diametro_tot_um, data=f)
+e <- residuals(modello)
+diag <- data.frame(id=f$id,x=x,residuo=e,
+ leva=hatvalues(modello),Cook=cooks.distance(modello))
+diag[order(diag$Cook,decreasing=TRUE)[1:6],]
+c(somma_leve=sum(diag$leva),numero_coefficienti=length(coef(modello)))
+```
+
+**Lettura del risultato.** Le leve sommano al numero di coefficienti del modello, qui 2. Un punto con leva alta può avere influenza piccola quando segue bene la relazione stimata.
+
+## 2. Il grafico con dimensione proporzionale a Cook
+
+Mettiamo la leva sull’asse orizzontale e i residui standardizzati su quello verticale. La dimensione dei simboli rende leggibile il contributo congiunto all’influenza.
+
+```{r passo_02}
+rs <- rstandard(modello)
+plot(diag$leva,rs,pch=21,bg="#B9DDD7",col="#087C74",
+ cex=.8+3*sqrt(diag$Cook/max(diag$Cook)),
+ xlab="Leva",ylab="Residuo standardizzato")
+abline(h=0,lty=2)
+j <- which.max(diag$Cook)
+text(diag$leva[j],rs[j],labels=f$id[j],pos=2,cex=.8)
+```
+
+**Lettura del risultato.** Il caso etichettato è quello con Cook maggiore nel modello. La posizione nel grafico spiega se contribuisce soprattutto una leva elevata, uno scarto elevato o entrambi.
+
+## 3. Analisi di sensibilità documentata
+
+Ristimiamo il modello senza il caso più influente per descrivere la sensibilità. Non cancelliamo la riga dal dataset e non assumiamo che sia un errore.
+
+```{r passo_03}
+senza <- lm(diametro_int_um~diametro_tot_um,data=f[-j,])
+rbind(tutti=coef(modello),senza_caso=coef(senza))
+data.frame(id_escluso=f$id[j],Cook=diag$Cook[j],
+ variazione_pendenza=coef(senza)[2]-coef(modello)[2])
+```
+
+**Lettura del risultato.** La differenza fra coefficienti quantifica la sensibilità a quel caso. Un’eventuale esclusione reale richiede una ragione verificabile, per esempio un errore di trascrizione, e la documentazione dei risultati con e senza il punto.
+
+## Variante svolta
+
+Costruire due punti alla stessa x estrema: uno sulla retta e uno lontano dalla retta.
+
+```{r variante}
+u <- seq(0,5,length.out=24)
+set.seed(709)
+v <- 1+1.2*u+rnorm(24,sd=.5)
+con_punto <- function(y_nuovo) {
+ m <- lm(c(v,y_nuovo)~c(u,8))
+ c(leva=tail(hatvalues(m),1),Cook=tail(cooks.distance(m),1))
+}
+rbind(vicino_alla_retta=con_punto(1+1.2*8),lontano=con_punto(3))
+```
+
+La leva coincide perché i predittori sono identici. L’influenza differisce perché cambia lo scarto della risposta.
+
+## Errore da riconoscere
+
+Soglie come 4/n per Cook sono criteri orientativi per ispezionare casi, non regole automatiche di eliminazione.
+
+## Risposta alla domanda
+
+L’influenza dipende dal modello e dalla posizione del punto. L’analisi di sensibilità rende visibile la conseguenza di una scelta senza nasconderla.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M07_N09` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M07/M07_N09.R).

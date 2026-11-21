@@ -1,0 +1,8 @@
+letto <- matrice_locale(r)
+errore <- max(abs(letto-Z))
+data.frame(massimo_scarto_m=errore,terra=as.character(packageVersion("terra")))
+stopifnot(errore<1e-10)
+mappa_matrice(letto,titolo="GeoTIFF riletto: orientamento locale verificato")
+write.csv(geometria,percorso_risultati("geometria_GeoTIFF.csv"),row.names=FALSE)
+write.csv(risultato,percorso_risultati("centri_GeoTIFF.csv"),row.names=FALSE)
+writeLines(terra::crs(r),percorso_risultati("CRS_fittizio.wkt"))

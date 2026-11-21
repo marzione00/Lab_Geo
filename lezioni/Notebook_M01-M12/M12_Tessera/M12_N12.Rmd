@@ -1,0 +1,155 @@
+---
+title: "Hillshade: cambiare luce senza cambiare terreno"
+subtitle: "M12_N12 · Tessera"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Cambiare la luce modifica il rilievo o soltanto la sua rappresentazione?
+
+## Obiettivi
+
+- Conservare pendenza e esposizione del terreno.
+- Calcolare due illuminazioni con azimut opposti.
+- Verificare la formula con il prodotto fra normale e luce.
+
+**Prima di iniziare.** Sono richiesti vettori, matrici, tabelle e funzioni R di base. Eseguire i blocchi in ordine; ogni notebook è autonomo rispetto agli altri. I calcoli usano R base e i pacchetti standard.
+
+**Dati e unità.** Il raster è interamente sintetico: 24 righe × 30 colonne, 720 celle quadrate di lato 30 m. Nel CSV riga e colonna partono da zero; x_m = 30 × colonna e y_m = 30 × riga indicano i centri nel piano locale. La riga 0 è a Sud; la riga 23 è a Nord. Le quote sono in metri sintetici. I dati non descrivono un rilievo reale.
+
+**Relazione usata.** $I=\max(0,\mathbf n\cdot\mathbf l),\qquad \mathbf n=(-g_x,-g_y,1)/\sqrt{1+g_x^2+g_y^2}.$ La luce è un vettore unitario definito da azimut e altezza.
+
+## Preparazione
+
+Aprire il progetto autonomo di Tessera o quello generale dei notebook. I file originali restano invariati. Gli output vanno in `Risultati/M12_N12/`. Nessun download o installazione avviene nei blocchi.
+
+```{r preparazione}
+# Trova il modulo dal progetto autonomo o da quello generale dei notebook.
+.gs_cerca <- normalizePath(getwd(),winslash="/",mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca,file.path(.gs_cerca,"M12_Tessera"),
+    file.path(.gs_cerca,"03_Notebook_svolti","M12_Tessera"),
+    file.path(.gs_cerca,"M12","03_Notebook_svolti","M12_Tessera"))
+  .gs_ok <- file.exists(file.path(.gs_candidati,"M12_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati,"R","funzioni_notebook.R"))
+  if(any(.gs_ok)) { .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]];break }
+  .gs_padre <- dirname(.gs_cerca)
+  if(.gs_padre==.gs_cerca) stop("Aprire il progetto M12_Tessera o quello generale dei notebook.")
+  .gs_cerca <- .gs_padre
+}
+source(file.path(.gs_modulo,"R","funzioni_notebook.R"),local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo,"M12_N12")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88,digits=6)
+if(requireNamespace("knitr",quietly=TRUE)) {
+  knitr::opts_chunk$set(echo=TRUE,error=FALSE,warning=TRUE,message=TRUE,
+    fig.width=8,fig.height=5,dpi=150,fig.align="center")
+}
+set.seed(20261104)
+```
+
+## 1. La superficie rimane fissa
+
+Usiamo le 616 celle interne e altezza solare di 45°. Cambia soltanto l’azimut della sorgente luminosa.
+
+```{r passo_01}
+d <- carica_dati("raster_v3.csv")
+audit_raster(d)
+d <- d[order(d$riga,d$colonna),]
+Z <- matrice_quote(d)
+ g <- gradienti_centrali(Z)
+ h1 <- hillshade_esplicito(g$gx,g$gy,315,45)
+ h2 <- hillshade_esplicito(g$gx,g$gy,135,45)
+ risultato <- data.frame(azimut=c(315,135),altezza=45,media=c(mean(h1),mean(h2)),
+   minimo=c(min(h1),min(h2)),massimo=c(max(h1),max(h2)))
+ risultato
+ stopifnot(identical(dim(h1),c(22L,28L)),all(h1>=0&h1<=1),all(h2>=0&h2<=1))
+```
+
+**Lettura del risultato.** L’intensità modellata va da 0 a 1. Non è una nuova quota e non è una misura radiometrica osservata.
+
+## 2. Una seconda formulazione verifica segni e assi
+
+Il prodotto della normale unitaria con il vettore della luce deve coincidere con la formula basata su pendenza ed esposizione.
+
+```{r passo_02}
+errori <- vapply(c(315,135),function(az) {
+  luce <- c(sin(az*pi/180)*cos(pi/4),cos(az*pi/180)*cos(pi/4),sin(pi/4))
+  attesa <- (-g$gx*luce[1]-g$gy*luce[2]+luce[3])/sqrt(1+g$gx^2+g$gy^2)
+  attesa[attesa<0] <- 0
+  max(abs(hillshade_esplicito(g$gx,g$gy,az,45)-attesa))
+},numeric(1))
+data.frame(azimut=c(315,135),errore_massimo=errori)
+stopifnot(all(errori<1e-12))
+```
+
+**Lettura del risultato.** Questo controllo protegge la convenzione dell’azimut. Il modello considera illuminazione locale; non calcola ombre portate da rilievi lontani.
+
+## 3. Due luci, una scala di intensità comune
+
+Le due carte usano la stessa scala 0–1, così la differenza dipende dall’illuminazione dichiarata.
+
+```{r passo_03}
+op <- par(no.readonly=TRUE);layout(matrix(1:3,nrow=1),widths=c(4,4,.7))
+for(k in 1:2) {
+  stile_grafico();par(mar=c(4.2,4,3,.4),cex=.8)
+  image((1:28)*30,(1:22)*30,t(list(h1,h2)[[k]]),asp=1,col=gray.colors(40,start=0,end=1),
+    zlim=c(0,1),xlab="x locale (m)",ylab="y locale (m)",main=paste("Azimut",c(315,135)[k]),useRaster=TRUE)
+}
+par(mar=c(4.2,0,3,2.7));plot.new();plot.window(xlim=c(0,1),ylim=c(0,1))
+br <- seq(0,1,length.out=41)
+rect(0,head(br,-1),.5,tail(br,-1),col=gray.colors(40,start=0,end=1),border=NA)
+axis(4,at=c(0,.5,1),las=1);mtext("I",side=3,line=.5)
+layout(1);par(op)
+write.csv(risultato,percorso_risultati("illuminazioni.csv"),row.names=FALSE)
+```
+
+**Lettura del risultato.** Il contrasto visivo può cambiare molto senza che il DEM cambi. Un hillshade non sostituisce legenda delle quote, orientamento o controlli del terreno.
+
+## Variante svolta
+
+**Cambiare anche l’altezza della luce.** Confrontare 20° e 70° mantenendo azimut 315° e verificare la stessa formulazione vettoriale.
+
+```{r variante}
+verifica <- lapply(c(20,70),function(alt) {
+  h <- hillshade_esplicito(g$gx,g$gy,315,alt)
+  luce <- c(sin(315*pi/180)*cos(alt*pi/180),cos(315*pi/180)*cos(alt*pi/180),sin(alt*pi/180))
+  attesa <- (-g$gx*luce[1]-g$gy*luce[2]+luce[3])/sqrt(1+g$gx^2+g$gy^2)
+  attesa[attesa<0] <- 0
+  data.frame(altezza=alt,media=mean(h),errore=max(abs(h-attesa)))
+})
+verifica <- do.call(rbind,verifica);verifica
+stopifnot(all(verifica$errore<1e-12))
+```
+
+La prova con altezze diverse da 45° distingue correttamente seno e coseno dell’altezza luminosa.
+
+## Errore da riconoscere
+
+Interpretare i chiari e gli scuri come variazioni di quota o come una misura della riflettanza del terreno.
+
+## Risposta alla domanda
+
+L’hillshade è una rappresentazione condizionata a luce, convenzioni e modello di illuminazione. La topografia resta fissa; l’intensità cambia con azimut e altezza solare.
+
+## Raccordo con le slide
+
+[Slide 69–71, 74, 76 della lezione Tessera](../../02_PDF/M12_Tessera/Tessera_M12_raster_telerilevamento_morfometria.pdf#page=69). La [mappa dei notebook e delle slide](MAPPA_SLIDE.csv) conserva il raccordo puntuale con la lezione estesa.
+
+## Riferimenti e provenienza
+
+Questo svolgimento sviluppa `M12_N12` del [modulo M12 del corso](https://marzione00.github.io/Lab_Geo/#modulo-M12). Il [codice originale](https://github.com/marzione00/Lab_Geo/blob/649f7cc577b96bd1044d81e78a2f530813e4f96b/materiali/laboratori/M12/M12_N12.R) è conservato immutato in `R/Originali_corso/`. Dati e originali hanno SHA-256 e SHA-1 Git verificati; gli ampliamenti sono dichiarati nella [mappa degli originali](MAPPA_ORIGINALI.csv).
+
+Documentazione primaria delle operazioni: [R, matrix](https://stat.ethz.ch/R-manual/R-devel/library/base/html/matrix.html), [R, image](https://stat.ethz.ch/R-manual/R-devel/library/graphics/html/image.html), [R, quantile](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/quantile.html). Le ipotesi e le convenzioni specifiche sono esplicitate nello svolgimento.

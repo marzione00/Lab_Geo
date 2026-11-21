@@ -1,0 +1,135 @@
+---
+title: "Derivata su un piano noto: prova del codice"
+subtitle: "M12_N09 · Tessera"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Come si verifica una derivata numerica usando un piano di cui conosciamo il risultato?
+
+## Obiettivi
+
+- Costruire il piano analitico originale.
+- Verificare gx e gy su 616 celle interne.
+- Controllare denominatore e unità.
+
+**Prima di iniziare.** Sono richiesti vettori, matrici, tabelle e funzioni R di base. Eseguire i blocchi in ordine; ogni notebook è autonomo rispetto agli altri. I calcoli usano R base e i pacchetti standard.
+
+**Dati e unità.** Il raster è interamente sintetico: 24 righe × 30 colonne, 720 celle quadrate di lato 30 m. Nel CSV riga e colonna partono da zero; x_m = 30 × colonna e y_m = 30 × riga indicano i centri nel piano locale. La riga 0 è a Sud; la riga 23 è a Nord. Le quote sono in metri sintetici. I dati non descrivono un rilievo reale.
+
+**Relazione usata.** $g_x(i,j)\simeq\frac{z_{i,j+1}-z_{i,j-1}}{2\Delta x},\qquad g_y(i,j)\simeq\frac{z_{i+1,j}-z_{i-1,j}}{2\Delta y}.$ Gli indici della matrice locale crescono verso Est e Nord.
+
+## Preparazione
+
+Aprire il progetto autonomo di Tessera o quello generale dei notebook. I file originali restano invariati. Gli output vanno in `Risultati/M12_N09/`. Nessun download o installazione avviene nei blocchi.
+
+```{r preparazione}
+# Trova il modulo dal progetto autonomo o da quello generale dei notebook.
+.gs_cerca <- normalizePath(getwd(),winslash="/",mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca,file.path(.gs_cerca,"M12_Tessera"),
+    file.path(.gs_cerca,"03_Notebook_svolti","M12_Tessera"),
+    file.path(.gs_cerca,"M12","03_Notebook_svolti","M12_Tessera"))
+  .gs_ok <- file.exists(file.path(.gs_candidati,"M12_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati,"R","funzioni_notebook.R"))
+  if(any(.gs_ok)) { .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]];break }
+  .gs_padre <- dirname(.gs_cerca)
+  if(.gs_padre==.gs_cerca) stop("Aprire il progetto M12_Tessera o quello generale dei notebook.")
+  .gs_cerca <- .gs_padre
+}
+source(file.path(.gs_modulo,"R","funzioni_notebook.R"),local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo,"M12_N09")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88,digits=6)
+if(requireNamespace("knitr",quietly=TRUE)) {
+  knitr::opts_chunk$set(echo=TRUE,error=FALSE,warning=TRUE,message=TRUE,
+    fig.width=8,fig.height=5,dpi=150,fig.align="center")
+}
+set.seed(20261104)
+```
+
+## 1. Un caso con risposta nota
+
+Il piano sintetico è z(x,y)=900+0,12x+0,08y. Le pendenze parziali attese sono note prima del calcolo.
+
+```{r passo_01}
+d <- carica_dati("raster_v3.csv")
+audit_raster(d)
+d <- d[order(d$riga,d$colonna),]
+Z <- matrice_quote(d)
+ P <- outer((0:23)*30,(0:29)*30,function(y,x) 900+.12*x+.08*y)
+ gx <- (P[2:23,3:30]-P[2:23,1:28])/60
+ gy <- (P[3:24,2:29]-P[1:22,2:29])/60
+ risultato <- data.frame(componente=c("gx","gy"),atteso=c(.12,.08),
+   media=c(mean(gx),mean(gy)),errore_max=c(max(abs(gx-.12)),max(abs(gy-.08))))
+ risultato
+ stopifnot(all(risultato$errore_max<1e-12),length(gx)==616L)
+```
+
+**Lettura del risultato.** La differenza usa i centri a destra e a sinistra, separati da 60 m. Il bordo viene escluso perché manca uno dei due vicini.
+
+## 2. Confrontare la funzione di servizio con la formula
+
+La funzione usata negli altri notebook deve riprodurre il calcolo esplicito del piano.
+
+```{r passo_02}
+prova <- gradienti_centrali(P)
+data.frame(celle_interne=length(prova$gx),bordo_escluso=length(P)-length(prova$gx),
+  errore_gx=max(abs(prova$gx-gx)),errore_gy=max(abs(prova$gy-gy)))
+stopifnot(max(abs(prova$gx-gx))<1e-12,max(abs(prova$gy-gy))<1e-12)
+```
+
+**Lettura del risultato.** Un test analitico rivela errori di segno, assi o denominatore. Non dimostra che i dati reali siano privi di errore o che un modello di superficie sia adeguato.
+
+## 3. Il piano mantiene gradienti costanti
+
+Disegniamo il caso sintetico e salviamo gli scarti rispetto ai valori attesi.
+
+```{r passo_03}
+mappa_matrice(P,titolo="Piano noto: gx=0.12, gy=0.08")
+write.csv(risultato,percorso_risultati("prova_derivate.csv"),row.names=FALSE)
+```
+
+**Lettura del risultato.** La superficie cresce verso Est e verso Nord. Le due componenti della derivata sono rapporti fra metri verticali e metri orizzontali.
+
+## Variante svolta
+
+**Sbagliare la distanza fra i vicini raddoppia il risultato.** Usare 30 m nel denominatore al posto di 60 m e riconoscere l’errore.
+
+```{r variante}
+errata <- (P[2:23,3:30]-P[2:23,1:28])/30
+data.frame(gx_corretto=mean(gx),gx_errato=mean(errata),rapporto=mean(errata)/mean(gx))
+stopifnot(abs(mean(errata)-.24)<1e-12)
+```
+
+La distanza della differenza centrale è due volte il passo. La forma regolare della mappa non rende visibile da sola un errore di scala.
+
+## Errore da riconoscere
+
+Dividere per un solo passo, scambiare gx e gy o attribuire derivata ai bordi senza una regola specifica.
+
+## Risposta alla domanda
+
+Un piano noto fornisce un controllo indipendente: le 616 celle interne devono restituire 0,12 e 0,08 entro la tolleranza numerica dichiarata. Derivate e unità si verificano prima dell’interpretazione geomorfologica.
+
+## Raccordo con le slide
+
+[Slide 51, 53–55 della lezione Tessera](../../02_PDF/M12_Tessera/Tessera_M12_raster_telerilevamento_morfometria.pdf#page=51). La [mappa dei notebook e delle slide](MAPPA_SLIDE.csv) conserva il raccordo puntuale con la lezione estesa.
+
+## Riferimenti e provenienza
+
+Questo svolgimento sviluppa `M12_N09` del [modulo M12 del corso](https://marzione00.github.io/Lab_Geo/#modulo-M12). Il [codice originale](https://github.com/marzione00/Lab_Geo/blob/649f7cc577b96bd1044d81e78a2f530813e4f96b/materiali/laboratori/M12/M12_N09.R) è conservato immutato in `R/Originali_corso/`. Dati e originali hanno SHA-256 e SHA-1 Git verificati; gli ampliamenti sono dichiarati nella [mappa degli originali](MAPPA_ORIGINALI.csv).
+
+Documentazione primaria delle operazioni: [R, matrix](https://stat.ethz.ch/R-manual/R-devel/library/base/html/matrix.html), [R, image](https://stat.ethz.ch/R-manual/R-devel/library/graphics/html/image.html), [R, quantile](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/quantile.html). Le ipotesi e le convenzioni specifiche sono esplicitate nello svolgimento.

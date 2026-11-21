@@ -1,0 +1,141 @@
+---
+title: "Vicino più prossimo: escludere se stessi"
+subtitle: "M11_N11 · Locus"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Come si trova un vicino diverso dal sito stesso quando esistono pareggi?
+
+## Obiettivi
+
+- Escludere la diagonale dalla ricerca.
+- Riconoscere i pareggi nella griglia regolare.
+- Dichiarare la regola usata per sceglierne uno.
+
+**Prima di iniziare.** Sono richiesti vettori, tabelle, coordinate e funzioni R di base. I blocchi vanno eseguiti in ordine; il notebook è autonomo rispetto agli altri. I calcoli usano R base e i pacchetti standard.
+
+**Dati e unità.** 64 siti sintetici su una griglia 8 × 8, con passo 250 m e coordinate locali x_m e y_m fra 0 e 1750 m. Questo piano locale non ha un codice EPSG. La concentrazione è sintetica, in unità arbitrarie (u.a.); la quota è in metri sintetici. Ogni riga descrive un sito e il suo valore puntuale, non la media di una cella.
+
+## Preparazione
+
+Aprire il progetto autonomo di Locus o quello generale dei notebook. I CSV locali restano invariati. Gli output vanno in `Risultati/M11_N11/`. Nessun download o installazione viene eseguito nei blocchi.
+
+```{r preparazione}
+# Trova il modulo dal progetto autonomo o dal progetto generale dei notebook.
+.gs_cerca <- normalizePath(getwd(),winslash="/",mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca,file.path(.gs_cerca,"M11_Locus"),
+    file.path(.gs_cerca,"03_Notebook_svolti","M11_Locus"),
+    file.path(.gs_cerca,"M11","03_Notebook_svolti","M11_Locus"))
+  .gs_ok <- file.exists(file.path(.gs_candidati,"M11_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati,"R","funzioni_notebook.R"))
+  if(any(.gs_ok)) { .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]];break }
+  .gs_padre <- dirname(.gs_cerca)
+  if(.gs_padre==.gs_cerca) stop("Aprire il progetto M11_Locus o quello generale dei notebook.")
+  .gs_cerca <- .gs_padre
+}
+source(file.path(.gs_modulo,"R","funzioni_notebook.R"),local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo,"M11_N11")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88,digits=6)
+if(requireNamespace("knitr",quietly=TRUE)) {
+  knitr::opts_chunk$set(echo=TRUE,error=FALSE,warning=TRUE,message=TRUE,
+    fig.width=8,fig.height=5,dpi=150,fig.align="center")
+}
+set.seed(11011)
+```
+
+## 1. La distanza da sé non è un vicino
+
+La matrice euclidea ha diagonale nulla. Per cercare un altro sito, la sostituiamo con infinito soltanto nella copia usata dalla ricerca.
+
+```{r passo_01}
+d <- carica_dati("spazio_v3.csv")
+audit_spazio(d)
+ D <- as.matrix(dist(d[c("x_m","y_m")]))
+ ricerca <- D;diag(ricerca) <- Inf
+ j <- apply(ricerca,1,which.min)
+ risultato <- data.frame(id=d$id,vicino=d$id[j],distanza_m=ricerca[cbind(seq_len(nrow(d)),j)])
+ head(risultato,10)
+ stopifnot(all(risultato$id!=risultato$vicino),all(risultato$distanza_m==250),all(diag(D)==0))
+```
+
+**Lettura del risultato.** Il risultato dista sempre 250 m, perché la griglia ha quel passo. La matrice originale rimane disponibile con diagonale nulla per altre operazioni.
+
+## 2. Un minimo può avere più soluzioni
+
+Contiamo tutti i siti alla distanza minima. which.min restituisce il primo secondo l’ordine delle righe, non un vicino geograficamente privilegiato.
+
+```{r passo_02}
+minimi <- apply(ricerca,1,min)
+numero_pareggi <- rowSums(abs(ricerca-minimi)<1e-9)
+data.frame(vicini_alla_distanza_minima=as.integer(names(table(numero_pareggi))),
+  siti=as.integer(table(numero_pareggi)))
+d$id[which(abs(ricerca[1,]-minimi[1])<1e-9)]
+stopifnot(all(numero_pareggi>=2L))
+```
+
+**Lettura del risultato.** Angoli, bordi e interni hanno due, tre e quattro vicini equidistanti. Un algoritmo che sceglie un solo indice rompe il pareggio con una convenzione.
+
+## 3. Il collegamento scelto è una relazione diretta
+
+Disegniamo le frecce selezionate e salviamo anche il numero delle alternative equivalenti.
+
+```{r passo_03}
+stile_grafico()
+plot(d$x_m,d$y_m,type="n",asp=1,xlab="x locale (m)",ylab="y locale (m)",
+  main="Un vicino scelto per ordine delle righe")
+arrows(d$x_m,d$y_m,d$x_m[j],d$y_m[j],length=.06,col="grey60")
+points(d$x_m,d$y_m,pch=19,col=palette_geo[1])
+risultato$numero_pareggi <- numero_pareggi
+write.csv(risultato,percorso_risultati("vicino_piu_prossimo.csv"),row.names=FALSE)
+```
+
+**Lettura del risultato.** La relazione ottenuta scegliendo un solo minimo non è necessariamente reciproca. Il vicinato simmetrico entro una soglia è un oggetto diverso, costruito in N12.
+
+## Variante svolta
+
+**Cambiare l’ordine può cambiare il vincitore.** Invertire le righe, rifare la ricerca e riallineare per ID.
+
+```{r variante}
+inverso <- d[nrow(d):1,]
+Di <- as.matrix(dist(inverso[c("x_m","y_m")]));diag(Di) <- Inf
+ji <- apply(Di,1,which.min)
+vicini_i <- setNames(inverso$id[ji],inverso$id)
+confronto <- data.frame(id=d$id,prima=risultato$vicino,dopo=unname(vicini_i[d$id]))
+data.frame(scelte_cambiate=sum(confronto$prima!=confronto$dopo),siti=nrow(d))
+head(confronto,6)
+```
+
+La distanza minima resta 250 m, mentre l’identità scelta può cambiare. Per un’applicazione serve una politica dei pareggi esplicita e coerente.
+
+## Errore da riconoscere
+
+Lasciare la diagonale a zero, oppure interpretare il primo minimo come l’unico vicino possibile.
+
+## Risposta alla domanda
+
+La ricerca esclude il sito stesso e separa distanza minima da scelta dell’identità. Su una griglia regolare i pareggi sono la regola: conservarne il numero rende visibile la convenzione dell’algoritmo.
+
+## Raccordo con le slide
+
+[Slide 46 della lezione Locus](../../02_PDF/M11_Locus/Locus_M11_statistica_spaziale.pdf#page=46). Il notebook conserva il tema del laboratorio originale e aggiunge verifiche e una variante svolta.
+
+
+## Riferimenti e provenienza
+
+Questo svolgimento sviluppa `M11_N11` del [modulo M11 del corso](https://marzione00.github.io/Lab_Geo/#modulo-M11). Il [codice originale](https://github.com/marzione00/Lab_Geo/blob/649f7cc577b96bd1044d81e78a2f530813e4f96b/materiali/laboratori/M11/M11_N11.R) è conservato immutato in `R/Originali_corso/`; la mappa allegata documenta gli ampliamenti. Dati e originali hanno impronte SHA-256 e SHA-1 Git verificate.
+
+Documentazione primaria delle operazioni: [R, dist](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/dist.html), [R, aggregate](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/aggregate.html), [R, sample](https://stat.ethz.ch/R-manual/R-devel/library/base/html/sample.html). Le definizioni spaziali e il riferimento inferenziale seguono il laboratorio originale, con le distinzioni esplicitate nel testo.

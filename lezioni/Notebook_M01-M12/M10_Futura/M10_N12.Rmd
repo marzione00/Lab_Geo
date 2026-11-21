@@ -1,0 +1,132 @@
+---
+title: "Un grafico e una diagnostica utili alla domanda"
+subtitle: "M10_N12 · Futura"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Quali grafici distinguono adattamento e previsione?
+
+## Obiettivi
+
+- Disegnare osservato contro previsto nel test.
+- Esaminare i residui nel train.
+- Collegare gli assi alla quantità misurata.
+
+**Prima di iniziare.** Sono richiesti vettori, tabelle e funzioni R di base. I blocchi vanno eseguiti in ordine. Il notebook è autonomo rispetto agli altri.
+
+**Dati e unità.** 160 fossili sintetici del corso. Diametri e spessore sono espressi in micrometri. Il diametro interno deriva dal totale meno due volte lo spessore, entro l’arrotondamento del CSV. Il test contiene ogni quinta riga: 32 individui, separati dai 128 usati per stimare. È un protocollo didattico su dati già noti, non una validazione prospettica.
+
+## Preparazione
+
+Aprire il progetto autonomo di Futura o quello generale del corso. I calcoli usano R base e stats. Gli output del notebook vanno in `Risultati/M10_N12/`; i CSV originali restano invariati.
+
+```{r preparazione}
+# Trova la cartella M10 dal progetto autonomo o dal progetto generale.
+.gs_cerca <- normalizePath(getwd(),winslash="/",mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca,
+    file.path(.gs_cerca,"M10_Futura"),
+    file.path(.gs_cerca,"03_Notebook_svolti","M10_Futura"),
+    file.path(.gs_cerca,"M10","03_Notebook_svolti","M10_Futura"))
+  .gs_ok <- file.exists(file.path(.gs_candidati,"M10_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati,"R","funzioni_notebook.R"))
+  if(any(.gs_ok)) { .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]; break }
+  .gs_padre <- dirname(.gs_cerca)
+  if(.gs_padre==.gs_cerca) stop("Aprire il progetto M10_Futura o quello generale dei notebook.")
+  .gs_cerca <- .gs_padre
+}
+source(file.path(.gs_modulo,"R","funzioni_notebook.R"),local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo,"M10_N12")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88,digits=6)
+if(requireNamespace("knitr",quietly=TRUE)) {
+  knitr::opts_chunk$set(echo=TRUE,error=FALSE,warning=TRUE,message=TRUE,
+    fig.width=8,fig.height=5,dpi=150,fig.align="center")
+}
+set.seed(10012)
+```
+
+## 1. La bisettrice rappresenta una previsione esatta
+
+Ogni punto del test confronta lo stesso individuo previsto e osservato. Assi con uguale scala permettono di leggere la distanza dalla bisettrice.
+
+```{r passo_01}
+f <- carica_dati("fossili_simulati.csv"); s <- prepara_fossili(f)
+tr <- s$train; te <- s$test
+mod <- lm(diametro_int_um~diametro_tot_um,data=tr)
+prev <- as.numeric(predict(mod,newdata=te))
+stile_grafico()
+lim <- range(prev,te$diametro_int_um)
+plot(prev,te$diametro_int_um,pch=19,col=palette_geo[1],xlim=lim,ylim=lim,asp=1,
+  xlab="Previsto nel test (micrometri)",ylab="Osservato nel test (micrometri)",
+  main="32 individui esclusi dalla stima")
+abline(0,1,lty=2)
+```
+
+**Lettura del risultato.** La vicinanza alla bisettrice descrive la prestazione sui casi esclusi. Il grafico non mostra di per sé l’incertezza delle previsioni.
+
+## 2. I residui servono alla diagnosi del train
+
+Una struttura dei residui rispetto ai valori stimati può suggerire un andamento medio incompleto o una variabilità non costante.
+
+```{r passo_02}
+stile_grafico()
+plot(fitted(mod),residuals(mod),pch=19,col=palette_geo[2],
+  xlab="Stimato nel train (micrometri)",ylab="Residuo nel train (micrometri)",
+  main="Diagnostica della regressione")
+abline(h=0,lty=2)
+data.frame(n_train=nobs(mod),sd_residua=sigma(mod),df_residui=df.residual(mod))
+```
+
+**Lettura del risultato.** Questi residui appartengono all’insieme che ha determinato i coefficienti. Non vanno usati al posto degli errori del test.
+
+## 3. Il contesto del gruppo aiuta a leggere
+
+I morfotipi sono metadati della simulazione. Li usiamo qui per descrivere gli errori, senza cambiare il modello già valutato.
+
+```{r passo_03}
+errori <- data.frame(id=te$id,morfotipo=te$morfotipo,errore=te$diametro_int_um-prev)
+aggregate(errore~morfotipo,data=errori,FUN=mean)
+aggregate(abs(errore)~morfotipo,data=errori,FUN=mean)
+write.csv(errori,percorso_risultati("errori_per_individuo.csv"),row.names=FALSE)
+```
+
+**Lettura del risultato.** La descrizione per gruppo può orientare una successiva indagine. Un modello modificato dopo questo esame richiederebbe una nuova valutazione.
+
+## Variante svolta
+
+**Il QQ plot dei residui.** Esplorare la forma degli scarti del train.
+
+```{r variante}
+stile_grafico()
+qqnorm(residuals(mod),pch=19,col=palette_geo[1],main="Residui della regressione e riferimento normale")
+qqline(residuals(mod),col=palette_geo[2])
+```
+
+La forma della distribuzione ha rilievo per gli intervalli del modello. La previsione puntuale e il suo errore restano oggetti distinti.
+
+## Errore da riconoscere
+
+Sovrapporre residui di adattamento ed errori di previsione in un solo grafico senza identificare gli insiemi.
+
+## Risposta alla domanda
+
+Osservato contro previsto documenta il test. Residui contro stimato documenta l’adattamento. Le etichette chiariscono quale informazione sostiene ciascuna conclusione.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M10_N12` di [GeoStat Lab M10](https://marzione00.github.io/Lab_Geo/#indice). Il [codice originale del laboratorio](https://github.com/marzione00/Lab_Geo/blob/649f7cc577b96bd1044d81e78a2f530813e4f96b/materiali/laboratori/M10/M10_N12.R) è conservato anche in `R/Originali_corso`. Gli ampliamenti e le varianti sono identificati nella mappa allegata.
+
+Documentazione dei metodi: [R stats, arima](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/arima.html), [predict.Arima](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/predict.arima.html), [Box.test](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/box.test.html) e [p.adjust](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/p.adjust.html).

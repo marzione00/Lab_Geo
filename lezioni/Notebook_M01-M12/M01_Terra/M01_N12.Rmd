@@ -1,0 +1,139 @@
+---
+title: "Casuale, sistematico e di convenienza"
+subtitle: "M01_N12 \u00b7 Terra"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come cambia la copertura di uno stesso tratto quando usiamo tre procedure di selezione con dodici siti ciascuna?
+
+## Obiettivi
+
+- Implementare selezione casuale, sistematica e di convenienza.
+- Confrontare copertura spaziale e scarto rispetto alla media nota.
+
+**Prima di iniziare.** Saper eseguire una cella R e riconoscere vettori, assegnamenti e nomi di colonne.
+
+**Dati e unità.** Ricostruiamo la popolazione artificiale di 120 siti con gradiente lineare e rumore. Le distanze sono in metri e i valori in unità convenzionali; i tre campioni hanno numerosità 12.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M01_N12/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M01_N12")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(1012)
+```
+
+## 1. Costruire tre selezioni confrontabili
+
+Manteniamo fissa la popolazione e cambiamo soltanto la regola di selezione. Il campione sistematico usa un inizio casuale fra i primi dieci siti e un passo costante di dieci; quello di convenienza usa i siti iniziali.
+
+```{r passo_01}
+# Popolazione artificiale finita: la posizione contribuisce al valore.
+set.seed(102)
+siti <- data.frame(id_sito = sprintf("S%03d", 1:120),
+                   distanza_m = seq(0, 1190, by = 10))
+siti$valore <- 2.4 + 0.00035 * siti$distanza_m + rnorm(120, 0, 0.04)
+media_pop <- mean(siti$valore)
+
+set.seed(103)
+n <- 12L
+casuale <- sample(seq_len(nrow(siti)), n, replace = FALSE)
+inizio <- sample(1:10, 1)
+sistematico <- seq(inizio, nrow(siti), by = 10)
+convenienza <- seq_len(n)
+selezioni <- list(casuale = casuale, sistematico = sistematico,
+                  convenienza = convenienza)
+stopifnot(all(lengths(selezioni) == n))
+```
+
+**Lettura del risultato.** La partenza casuale distingue il campionamento sistematico da una scelta fissa della prima posizione. Tutti i metodi rispettano la stessa numerosità, ma non assegnano necessariamente le stesse possibilità di inclusione ai siti.
+
+## 2. Misurare centro e copertura
+
+Per ogni selezione calcoliamo media, scarto dalla popolazione e distanze estreme. Queste quantità descrivono la singola realizzazione e permettono di collegare uno scarto al tratto effettivamente visitato, senza attribuirlo soltanto alla numerosità.
+
+```{r passo_02}
+riassunto <- do.call(rbind, lapply(selezioni, function(ind) {
+  c(n = length(ind), media = mean(siti$valore[ind]),
+    errore = mean(siti$valore[ind]) - media_pop,
+    distanza_min_m = min(siti$distanza_m[ind]),
+    distanza_max_m = max(siti$distanza_m[ind]))
+}))
+print(riassunto)
+print(media_pop)
+```
+
+**Lettura del risultato.** Il metodo con errore più piccolo in questa esecuzione non è automaticamente il migliore in generale. Servono ripetizioni e ipotesi sul territorio per confrontare bias e variabilità; una sola estrazione mostra soltanto un esempio.
+
+## 3. Leggere la selezione nello spazio
+
+Rappresentiamo il medesimo insieme di siti in tre pannelli e sovrapponiamo i punti selezionati. Il confronto visivo rende riconoscibili intervalli regolari, dispersione casuale e concentrazione all'inizio del tratto.
+
+```{r passo_03}
+vecchio_par <- par(mfrow = c(1, 3))
+for (nome in names(selezioni)) {
+  ind <- selezioni[[nome]]
+  plot(siti$distanza_m, siti$valore, pch = 16, col = "grey75",
+       main = nome, xlab = "Distanza (m)", ylab = "Valore (u.c.)")
+  points(siti$distanza_m[ind], siti$valore[ind], pch = 19, col = "firebrick")
+  abline(h = media_pop, lty = 2)
+}
+par(vecchio_par)
+```
+
+**Lettura del risultato.** Il grafico collega la regola di selezione al gradiente presente nella simulazione. Un campione sistematico copre il tratto regolarmente, ma in una popolazione periodica un passo coincidente con il periodo potrebbe fornire una rappresentazione sfavorevole.
+
+## Variante svolta
+
+Valutare tutte le dieci partenze possibili del campionamento sistematico.
+
+```{r variante}
+medie_partenze <- vapply(1:10, function(i) {
+  mean(siti$valore[seq(i, nrow(siti), by = 10)])
+}, numeric(1))
+print(data.frame(partenza = 1:10, media = medie_partenze,
+                 errore = medie_partenze - media_pop))
+stopifnot(abs(mean(medie_partenze) - media_pop) < 1e-12)
+```
+
+Le dieci selezioni hanno uguale numerosità e, insieme, ripartiscono tutti i siti: per questo la media delle loro medie coincide con quella della popolazione. La precisione di una singola partenza rimane una questione distinta.
+
+## Errore da riconoscere
+
+Confondere 'regolare' con 'rappresentativo' trascura la struttura dei valori. Il passo sistematico va valutato rispetto a gradienti e periodicità, e la scelta di convenienza va dichiarata.
+
+## Risposta alla domanda
+
+A parità di numerosità, la regola di selezione modifica copertura e risultati. Il confronto dei metodi richiede guardare il disegno oltre alla media ottenuta in un singolo campione.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M01_N12` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M01/M01_N12.R).

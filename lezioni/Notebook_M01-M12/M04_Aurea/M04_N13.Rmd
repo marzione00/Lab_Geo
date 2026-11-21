@@ -1,0 +1,136 @@
+---
+title: "Disegnare l'esperimento di incertezza"
+subtitle: "M04_N13 \u00b7 Aurea"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Quali ipotesi occorre fissare prima di propagare l'incertezza di massa e volume alla densità?
+
+## Obiettivi
+
+- Associare a ogni ingresso valore nominale, unità e incertezza standard.
+- Dichiarare distribuzioni, dipendenza e dominio fisico prima della simulazione.
+
+**Prima di iniziare.** Densità come massa divisa per volume, deviazione standard e distribuzione normale.
+
+**Dati e unità.** Parametri didattici della misura: massa nominale 106 g, volume nominale 40 cm³, incertezze standard rispettivamente 1 g e 0,6 cm³. Le estrazioni sono simulate.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M04_N13/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M04_N13")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(4013)
+```
+
+## 1. Leggere il piano delle misure
+
+Il file contiene una riga di parametri, non misure replicate. Le colonne sd indicano incertezze standard assegnate agli ingressi: non sono automaticamente tolleranze massime, intervalli al 95 per cento o errori standard derivati da questo file.
+
+```{r passo_01}
+p <- carica_dati("parametri_densita.csv")
+stopifnot(nrow(p) == 1, all(is.finite(unlist(p[1, ], use.names = FALSE))))
+m0 <- p$massa_media_g[1]
+V0 <- p$volume_medio_cm3[1]
+um <- p$sd_massa_g[1]
+uV <- p$sd_volume_cm3[1]
+stopifnot(m0 > 0, V0 > 0, um > 0, uV > 0)
+# Nominale e incertezza standard di ogni ingresso devono usare la medesima unita.
+piano <- data.frame(ingresso = c("massa", "volume"), nominale = c(m0, V0),
+                    incertezza_standard = c(um, uV), unita = c("g", "cm^3"))
+print(piano)
+```
+
+**Lettura del risultato.** L'unità della densità risultante sarà g/cm³. Per usare parametri diversi occorre aggiornare valore, incertezza e unità insieme: una deviazione standard in milligrammi non può accompagnare una massa espressa in grammi senza conversione.
+
+## 2. Definire il modello locale
+
+Assumiamo errori normali centrati sui valori nominali e indipendenti. La normale del volume è un'approssimazione locale: ammette teoricamente valori non fisici, ma il valore nominale è molto distante da zero rispetto all'incertezza assegnata.
+
+```{r passo_02}
+densita_nominale <- m0 / V0
+relative <- c(massa = um / m0, volume = uV / V0)
+distanza_zero <- c(massa = m0 / um, volume = V0 / uV)
+# log.p = TRUE evita che una probabilita minuscola sia arrotondata numericamente a zero.
+log10_prob_non_positive <- c(massa = pnorm(0, m0, um, log.p = TRUE),
+                             volume = pnorm(0, V0, uV, log.p = TRUE)) / log(10)
+print(c(densita_nominale_g_cm3 = densita_nominale))
+print(data.frame(incertezza_relativa = relative, distanza_zero_in_sd = distanza_zero,
+                 log10_prob_non_positiva = log10_prob_non_positive))
+```
+
+**Lettura del risultato.** La probabilità non positiva può essere troppo piccola per una rappresentazione numerica diretta; il logaritmo evita di confondere un arrotondamento a zero con impossibilità teorica. Con incertezze grandi servirebbe riconsiderare il modello del volume.
+
+## 3. Controllare un primo insieme di ingressi
+
+Generiamo ingressi soltanto per verificare scale e dominio. Questa fase controlla l'implementazione delle ipotesi; non conferma che gli strumenti reali abbiano errori normali né che siano indipendenti.
+
+```{r passo_03}
+set.seed(413)
+B <- 1000
+# I due generatori sono separati per dichiarare l ipotesi di indipendenza.
+massa <- rnorm(B, m0, um)
+volume <- rnorm(B, V0, uV)
+stopifnot(all(massa > 0), all(volume > 0))
+print(rbind(massa = c(media = mean(massa), sd = sd(massa)),
+            volume = c(media = mean(volume), sd = sd(volume))))
+print(c(correlazione_simulata = cor(massa, volume)))
+```
+
+**Lettura del risultato.** Le medie e le deviazioni standard empiriche non coincidono esattamente con i parametri perché le estrazioni sono finite. Anche la correlazione campionaria oscilla attorno a zero pur essendo indipendenti i generatori.
+
+## Variante svolta
+
+Convertire massa e volume nel Sistema Internazionale e verificare la densità nominale.
+
+```{r variante}
+m0_kg <- m0 / 1000
+V0_m3 <- V0 / 1e6
+um_kg <- um / 1000
+uV_m3 <- uV / 1e6
+rho_kg_m3 <- m0_kg / V0_m3
+print(c(densita_kg_m3 = rho_kg_m3, um_kg = um_kg, uV_m3 = uV_m3))
+stopifnot(abs(rho_kg_m3 - 1000 * densita_nominale) < 1e-10)
+```
+
+La densità numerica aumenta di un fattore mille passando da g/cm³ a kg/m³. Le incertezze relative dei due ingressi restano invariate, perché valore e deviazione standard subiscono la stessa conversione.
+
+## Errore da riconoscere
+
+Non iniziare da rnorm senza una tabella di parametri e unità. Non interpretare una simulazione con volumi tutti positivi come prova che la normale rispetti il dominio fisico in tutta la sua coda.
+
+## Risposta alla domanda
+
+L'esperimento di incertezza è definito da ingressi, unità, distribuzioni, dipendenza e funzione di calcolo. Le ipotesi dichiarate rendono interpretabile la simulazione; i controlli numerici verificano il codice, non sostituiscono la calibrazione degli strumenti.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M04_N13` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M04/M04_N13.R).

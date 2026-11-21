@@ -1,0 +1,134 @@
+---
+title: "Stabilità e residui del sistema"
+subtitle: "M10_N15 · Futura"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+La dinamica stimata si attenua e quali scarti rimangono?
+
+## Obiettivi
+
+- Calcolare gli autovalori della matrice VAR.
+- Confrontare i moduli con uno.
+- Esaminare residui contemporanei e temporali.
+
+**Prima di iniziare.** Sono richiesti vettori, tabelle e funzioni R di base. I blocchi vanno eseguiti in ordine. Il notebook è autonomo rispetto agli altri.
+
+**Dati e unità.** Processi sintetici di 300 passi, senza unità fisica. Le colonne x_VAR e y_VAR costituiscono un sistema bivariato. Usiamo i passi 1–250 per stimare e, quando richiesto, 251–260 per una previsione a origine fissa. La prima riga è una condizione iniziale finita: l’esempio non equivale a una nuova serie osservativa.
+
+## Preparazione
+
+Aprire il progetto autonomo di Futura o quello generale del corso. I calcoli usano R base e stats. Gli output del notebook vanno in `Risultati/M10_N15/`; i CSV originali restano invariati.
+
+```{r preparazione}
+# Trova la cartella M10 dal progetto autonomo o dal progetto generale.
+.gs_cerca <- normalizePath(getwd(),winslash="/",mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca,
+    file.path(.gs_cerca,"M10_Futura"),
+    file.path(.gs_cerca,"03_Notebook_svolti","M10_Futura"),
+    file.path(.gs_cerca,"M10","03_Notebook_svolti","M10_Futura"))
+  .gs_ok <- file.exists(file.path(.gs_candidati,"M10_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati,"R","funzioni_notebook.R"))
+  if(any(.gs_ok)) { .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]; break }
+  .gs_padre <- dirname(.gs_cerca)
+  if(.gs_padre==.gs_cerca) stop("Aprire il progetto M10_Futura o quello generale dei notebook.")
+  .gs_cerca <- .gs_padre
+}
+source(file.path(.gs_modulo,"R","funzioni_notebook.R"),local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo,"M10_N15")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88,digits=6)
+if(requireNamespace("knitr",quietly=TRUE)) {
+  knitr::opts_chunk$set(echo=TRUE,error=FALSE,warning=TRUE,message=TRUE,
+    fig.width=8,fig.height=5,dpi=150,fig.align="center")
+}
+set.seed(10015)
+```
+
+## 1. La stabilità riguarda la matrice
+
+Per un VAR(1) la dinamica è stabile quando tutti gli autovalori di A hanno modulo inferiore a uno. La condizione riguarda il modello stimato.
+
+```{r passo_01}
+p <- carica_dati("processi_simulati.csv")
+mod <- stima_var(p)
+ev <- eigen(mod$A,only.values=TRUE)$values
+data.frame(parte_reale=Re(ev),parte_immaginaria=Im(ev),modulo=Mod(ev))
+data.frame(stabile=all(Mod(ev)<1))
+```
+
+**Lettura del risultato.** Una singola stima stabile non dimostra che ogni meccanismo reale sia stabile. Nel dataset sintetico conosciamo il contesto di simulazione, ma restano variabilità campionaria e avvio finito.
+
+## 2. Gli scarti possono condividere uno shock
+
+La correlazione contemporanea fra residui X e Y è diversa dall’autocorrelazione nel tempo.
+
+```{r passo_02}
+rx <- residuals(mod$fit_x); ry <- residuals(mod$fit_y)
+cov(cbind(X=rx,Y=ry))
+cor(rx,ry)
+stile_grafico()
+plot(rx,ry,pch=19,col=palette_geo[1],xlab="Residuo X",ylab="Residuo Y",
+     main="Scarti contemporanei del sistema")
+abline(h=0,v=0,lty=2,col="grey60")
+```
+
+**Lettura del risultato.** Una covarianza contemporanea richiede attenzione nell’incertezza congiunta. Non identifica da sola la direzione di una relazione fisica.
+
+## 3. La successione verifica memoria residua
+
+Le ACF delle due equazioni conservano la scala dei ritardi.
+
+```{r passo_03}
+stile_grafico(); acf(rx,lag.max=20,main="VAR: ACF residui equazione X")
+stile_grafico(); acf(ry,lag.max=20,main="VAR: ACF residui equazione Y")
+data.frame(equazione=c("X","Y"),n=c(length(rx),length(ry)),
+           media=c(mean(rx),mean(ry)),sd=c(sd(rx),sd(ry)))
+```
+
+**Lettura del risultato.** Residui con memoria suggeriscono una specifica incompleta. Grafici e test devono considerare la struttura del sistema e la stima dei parametri.
+
+## Variante svolta
+
+**Propagare una perturbazione nota.** Conservare la matrice stimata e osservare come evolve uno scostamento iniziale unitario in X, senza aggiungere innovazioni.
+
+```{r variante}
+stato <- c(1,0)
+risposta <- matrix(NA_real_,21,2)
+risposta[1,] <- stato
+for(k in 1:20) { stato <- as.numeric(mod$A%*%stato); risposta[k+1,] <- stato }
+head(data.frame(h=0:20,X=risposta[,1],Y=risposta[,2]),6)
+stile_grafico()
+matplot(0:20,risposta,type="l",lty=1,col=palette_geo[1:2],
+  xlab="Passi",ylab="Scostamento dal riferimento",main="Propagazione deterministica con A stimata")
+abline(h=0,lty=2)
+```
+
+Questa è una perturbazione dello stato, non un impulso strutturale identificato. Confronta la dinamica della matrice senza introdurre un’interpretazione causale.
+
+## Errore da riconoscere
+
+Controllare separatamente i coefficienti diagonali e trascurare gli autovalori dell’intera matrice.
+
+## Risposta alla domanda
+
+La stabilità dipende dal sistema complessivo. La diagnosi dei residui completa la verifica e mantiene distinta la dipendenza contemporanea dalla memoria temporale.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M10_N15` di [GeoStat Lab M10](https://marzione00.github.io/Lab_Geo/#indice). Il [codice originale del laboratorio](https://github.com/marzione00/Lab_Geo/blob/649f7cc577b96bd1044d81e78a2f530813e4f96b/materiali/laboratori/M10/M10_N15.R) è conservato anche in `R/Originali_corso`. Gli ampliamenti e le varianti sono identificati nella mappa allegata.
+
+Documentazione dei metodi: [R stats, arima](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/arima.html), [predict.Arima](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/predict.arima.html), [Box.test](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/box.test.html) e [p.adjust](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/p.adjust.html).

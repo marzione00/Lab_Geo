@@ -1,0 +1,142 @@
+---
+title: "Laboratorio applicativo: migliorare uno strumento"
+subtitle: "M04_N20 \u00b7 Aurea"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Conviene dimezzare l'incertezza della massa o quella del volume per ridurre maggiormente l'incertezza della densità?
+
+## Obiettivi
+
+- Confrontare interventi attraverso un bilancio di varianza.
+- Verificare il confronto con simulazioni appaiate fra scenari.
+
+**Prima di iniziare.** Propagazione lineare e simulata, incertezze relative e indipendenza degli ingressi.
+
+**Dati e unità.** Parametri didattici della misura: massa nominale 106 g, volume nominale 40 cm³, incertezze standard rispettivamente 1 g e 0,6 cm³. Le estrazioni sono simulate. Si confrontano scenario iniziale, incertezza della massa dimezzata e incertezza del volume dimezzata.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M04_N20/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M04_N20")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(4020)
+```
+
+## 1. Quantificare i contributi iniziali
+
+Confrontare un grammo e sei decimi di centimetro cubo direttamente non ha significato: le unità sono diverse. Convertiamo entrambi in contributi alla varianza della densità tramite i coefficienti di sensibilità.
+
+```{r passo_01}
+p <- carica_dati("parametri_densita.csv")
+m0 <- p$massa_media_g[1]; V0 <- p$volume_medio_cm3[1]
+um <- p$sd_massa_g[1]; uV <- p$sd_volume_cm3[1]
+rho0 <- m0 / V0
+# Confrontiamo varianze nella stessa unita, non errori grezzi di strumenti diversi.
+contributi <- c(massa = (um / V0)^2, volume = (m0 * uV / V0^2)^2)
+print(data.frame(ingresso = names(contributi), varianza = as.numeric(contributi),
+                 quota = as.numeric(contributi / sum(contributi))))
+u_iniziale <- sqrt(sum(contributi))
+print(c(u_densita_iniziale = u_iniziale))
+```
+
+**Lettura del risultato.** Il contributo maggiore identifica dove una stessa riduzione relativa dell'incertezza può avere più effetto. Non tiene ancora conto dei costi degli strumenti, dei tempi di misura o di vincoli pratici.
+
+## 2. Confrontare due interventi uguali in proporzione
+
+Dimezzare un'incertezza standard riduce a un quarto il suo contributo di varianza. Manteniamo invariati i valori nominali, l'altro strumento e l'ipotesi di indipendenza per attribuire la differenza al solo intervento studiato.
+
+```{r passo_02}
+scenari <- data.frame(nome = c("iniziale", "massa_dimezzata", "volume_dimezzato"),
+                              um = c(um, um / 2, um), uV = c(uV, uV, uV / 2))
+        scenari$u_lineare <- rho0 * sqrt((scenari$um / m0)^2 + (scenari$uV / V0)^2)
+        # La riduzione e riferita all incertezza iniziale, che resta il denominatore comune.
+        scenari$riduzione_percento <- 100 * (1 - scenari$u_lineare / u_iniziale)
+        print(scenari)
+        scelta <- scenari$nome[which.min(scenari$u_lineare)]
+        cat("Minore incertezza lineare nello scenario:", scelta, "
+")
+        stopifnot(scenari$u_lineare[3] < scenari$u_lineare[2])
+```
+
+**Lettura del risultato.** Con i parametri assegnati il miglioramento del volume riduce maggiormente l'incertezza totale. L'affermazione è condizionata a questi contributi iniziali; con un'altra bilancia o un'altra misura di volume l'ordine potrebbe invertirsi.
+
+## 3. Controllare con numeri casuali comuni
+
+Usiamo gli stessi errori standardizzati nei tre scenari. Questo appaiamento confronta interventi a parità di estrazioni di base e limita il rumore del confronto; entro ogni scenario massa e volume restano generati indipendentemente.
+
+```{r passo_03}
+set.seed(420)
+B <- 3000
+z_m <- rnorm(B)
+z_V <- rnorm(B)
+sd_simulata <- function(um_s, uV_s) {
+  m <- m0 + um_s * z_m
+  v <- V0 + uV_s * z_V
+  stopifnot(all(v > 0), all(m > 0))
+  sd(m / v)
+}
+# mapply applica a ogni scenario la coppia corretta di incertezze standard.
+scenari$sd_mc <- mapply(sd_simulata, scenari$um, scenari$uV)
+print(scenari)
+barplot(scenari$sd_mc, names.arg = c("Iniziale", "u massa / 2", "u volume / 2"),
+        col = c("#7363AA", "#1D7890", "#C57E42"),
+        xlab = "Scenario delle incertezze", ylab = "SD della densita (g/cm^3)")
+```
+
+**Lettura del risultato.** Le deviazioni simulate dovrebbero risultare vicine alle approssimazioni locali, senza coincidere esattamente. Il confronto non include bias o correlazioni degli errori: se presenti, entrambi richiederebbero una modifica del modello.
+
+## Variante svolta
+
+Dimezzare entrambe le incertezze e verificare il fattore previsto dalla propagazione lineare.
+
+```{r variante}
+u_entrambi <- rho0 * sqrt((um / 2 / m0)^2 + (uV / 2 / V0)^2)
+sd_entrambi <- sd_simulata(um / 2, uV / 2)
+print(c(u_lineare_entrambi = u_entrambi, sd_mc_entrambi = sd_entrambi,
+        rapporto_lineare = u_entrambi / u_iniziale))
+stopifnot(abs(u_entrambi / u_iniziale - .5) < 1e-12)
+print(c(riduzione_percento_lineare = 100 * (1 - u_entrambi / u_iniziale)))
+```
+
+Al primo ordine la riduzione comune di tutte le incertezze standard si trasmette con lo stesso fattore all'uscita. Il rapporto non lineare può introdurre piccoli scarti nella simulazione, insieme alla variabilità Monte Carlo.
+
+## Errore da riconoscere
+
+Non scegliere lo strumento da migliorare confrontando errori espressi in unità differenti. Non confondere una riduzione della componente casuale con la rimozione di un bias o di una dipendenza trascurata.
+
+## Risposta alla domanda
+
+Per questi parametri, dimezzare l'incertezza del volume offre il maggiore beneficio fra i due interventi singoli. Il bilancio di varianza spiega la scelta, la simulazione la controlla e i limiti del modello indicano quali informazioni servirebbero per una decisione strumentale reale.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M04_N20` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M04/M04_N20.R).

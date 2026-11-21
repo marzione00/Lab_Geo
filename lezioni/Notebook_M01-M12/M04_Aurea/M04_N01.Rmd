@@ -1,0 +1,132 @@
+---
+title: "Evento e probabilit\u00e0: una regola dichiarata"
+subtitle: "M04_N01 \u00b7 Aurea"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come distinguere la probabilità assegnata a un evento dalla frequenza che osserviamo in poche prove?
+
+## Obiettivi
+
+- Rappresentare un evento con un indicatore zero o uno.
+- Osservare la variabilità di una frequenza in esperimenti ripetuti.
+
+**Prima di iniziare.** Proporzioni, medie e vettori logici.
+
+**Dati e unità.** Esperimento interamente simulato: ogni prova ha due esiti e probabilità di successo p = 0,30, identica nelle prove indipendenti. Non sono dati osservati sul terreno.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M04_N01/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M04_N01")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(4001)
+```
+
+## 1. Dichiarare il modello prima delle estrazioni
+
+Definiamo successo come rilevamento di un segnale. rbinom con size = 1 genera l'indicatore dell'evento: uno per successo, zero per insuccesso. La probabilità p appartiene al modello; i singoli esiti rimangono variabili.
+
+```{r passo_01}
+set.seed(401)
+p <- .30
+n <- 20
+# size = 1 produce una prova di Bernoulli; n e il numero di prove generate.
+indicatore <- rbinom(n, size = 1, prob = p)
+print(data.frame(prova = seq_len(n), segnale = indicatore))
+stopifnot(all(indicatore %in% c(0, 1)))
+successi <- sum(indicatore)
+frequenza <- mean(indicatore)
+print(c(p_modello = p, successi = successi, frequenza_osservata = frequenza))
+```
+
+**Lettura del risultato.** La media di un indicatore è una proporzione perché la somma conta gli uno. Una frequenza diversa da 0,30 in venti prove è compatibile con il modello e non dimostra che la probabilità sia cambiata.
+
+## 2. Seguire l'accumulo delle prove
+
+La frequenza cumulata usa le prime k osservazioni per ogni posizione k. La traiettoria rende visibili oscillazioni anche dopo molti insuccessi o successi consecutivi; non esiste un obbligo di compensazione nella prova successiva.
+
+```{r passo_02}
+k <- seq_along(indicatore)
+# Il denominatore cresce insieme al numero di prove effettivamente accumulate.
+frequenza_cumulata <- cumsum(indicatore) / k
+plot(k, frequenza_cumulata, type = "b", pch = 16, ylim = c(0, 1),
+     col = "#1D7890", xlab = "Prove accumulate", ylab = "Frequenza del segnale")
+abline(h = p, col = "#C57E42", lty = 2, lwd = 2)
+stopifnot(tail(frequenza_cumulata, 1) == frequenza)
+```
+
+**Lettura del risultato.** La linea orizzontale è un parametro noto della simulazione, non una stima ottenuta dagli esiti. L'indipendenza implica che la probabilità della prova seguente resti p, qualunque sia la sequenza precedente.
+
+## 3. Ripetere l'intero esperimento
+
+Simuliamo molti esperimenti, ciascuno composto da venti prove. Qui B conta le repliche dell'esperimento, mentre n conta le prove entro una replica: confondere i due numeri cambierebbe la domanda.
+
+```{r passo_03}
+B <- 2000
+# Ogni replica ora contiene n prove: B conta gli esperimenti, non le prove interne.
+frequenze <- rbinom(B, size = n, prob = p) / n
+print(c(media_frequenze = mean(frequenze), sd_frequenze = sd(frequenze),
+        sd_teorica = sqrt(p * (1 - p) / n)))
+hist(frequenze, breaks = seq(-.025, 1.025, by = .05), col = "#1D7890",
+     xlab = "Frequenza in un esperimento di 20 prove", ylab = "Repliche (n)",
+     main = "Variazione fra esperimenti")
+abline(v = p, col = "#C57E42", lwd = 2)
+```
+
+**Lettura del risultato.** La distribuzione delle frequenze è centrata vicino al valore assegnato, ma conserva una dispersione determinata da n. Aumentare B rende più precisa la sua descrizione simulata; non riduce la variabilità di un esperimento di venti prove.
+
+## Variante svolta
+
+Portare a duecento le prove entro ciascun esperimento e confrontare la dispersione delle frequenze.
+
+```{r variante}
+n_grande <- 200
+frequenze_grandi <- rbinom(B, size = n_grande, prob = p) / n_grande
+print(rbind(n20 = c(media = mean(frequenze), sd = sd(frequenze)),
+            n200 = c(media = mean(frequenze_grandi), sd = sd(frequenze_grandi))))
+print(c(sd_teorica_20 = sqrt(p * (1 - p) / n),
+        sd_teorica_200 = sqrt(p * (1 - p) / n_grande)))
+```
+
+La deviazione standard teorica della frequenza diminuisce come uno su radice di n. Il risultato riguarda esperimenti indipendenti con probabilità costante e non garantisce che ogni singola frequenza più lunga sia più vicina a p.
+
+## Errore da riconoscere
+
+Non interpretare p = 0,30 come la promessa di esattamente sei successi su venti. Non aspettarsi che una sequenza di insuccessi renda più probabile il prossimo successo.
+
+## Risposta alla domanda
+
+La probabilità è una regola del modello, la frequenza un risultato dell'esperimento. La simulazione mostra come frequenze diverse possano nascere dallo stesso parametro e distingue la numerosità delle prove dal numero di repliche.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M04_N01` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M04/M04_N01.R).

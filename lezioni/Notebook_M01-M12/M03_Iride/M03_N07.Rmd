@@ -1,0 +1,130 @@
+---
+title: "Quantili e intervallo interquartile"
+subtitle: "M03_N07 \u00b7 Iride"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come descrivere la metà centrale dei diametri e valutarne la sensibilità a una misura estrema?
+
+## Obiettivi
+
+- Interpretare quartili e intervallo interquartile.
+- Documentare la convenzione di interpolazione dei quantili.
+
+**Prima di iniziare.** Ordinamento, media, mediana e deviazione standard.
+
+**Dati e unità.** Archivio didattico sintetico: 160 fossili, 80 Rounded e 80 Spiky. Diametri e spessori sono espressi in micrometri; ogni riga identifica un individuo.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M03_N07/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M03_N07")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(3007)
+```
+
+## 1. Localizzare le posizioni
+
+Un quantile campionario colloca una soglia nell'insieme ordinato. Per rendere il risultato riproducibile specifichiamo type = 7, la convenzione predefinita di R; con pochi dati altre convenzioni possono dare valori differenti.
+
+```{r passo_01}
+f <- carica_dati("fossili_simulati.csv")
+x <- f$diametro_tot_um
+probabilita <- c(0, .25, .50, .75, 1)
+# type = 7 rende esplicita la convenzione di interpolazione usata per i quantili.
+q <- quantile(x, probs = probabilita, type = 7)
+print(q)
+iqr <- unname(q[4] - q[2])
+print(c(IQR_um = iqr, IQR_funzione_um = IQR(x, type = 7)))
+```
+
+**Lettura del risultato.** Il primo e il terzo quartile delimitano la fascia centrale secondo l'interpolazione scelta. Non promettono che esattamente il cinquanta per cento dei valori cada fra due soglie in ogni piccolo campione con ripetizioni.
+
+## 2. Vedere centro e fascia centrale
+
+Disegniamo gli individui lungo una scala comune e sovrapponiamo quartili e mediana. La fascia colorata riguarda la distribuzione delle osservazioni; non rappresenta l'incertezza statistica della mediana stimata.
+
+```{r passo_02}
+plot(x, rep(1, length(x)), pch = 16, col = "#1D7890", yaxt = "n",
+     ylim = c(.5, 1.5), xlab = "Diametro totale (um)", ylab = "",
+     main = "Individui e metà centrale")
+# Il segmento mostra Q1-Q3; la sua lunghezza e espressa in micrometri.
+segments(q[2], 1.25, q[4], 1.25, lwd = 7, col = "#C57E42")
+abline(v = q[3], lty = 2, col = "#7363AA")
+text(c(q[2], q[4]), 1.38, labels = c("Q1", "Q3"))
+print(c(sotto_Q1 = mean(x <= q[2]), sopra_Q3 = mean(x >= q[4])))
+```
+
+**Lettura del risultato.** L'intervallo interquartile è la differenza Q3 meno Q1 e possiede l'unità delle misure. Due campioni possono avere lo stesso IQR e code molto differenti: i quartili non descrivono da soli tutti gli estremi.
+
+## 3. Modificare una sola osservazione
+
+Inseriamo un valore artificiale di 30 micrometri in una copia. La prova non è una procedura di pulizia: serve a confrontare la risposta degli indici quando cambia una sola osservazione.
+
+```{r passo_03}
+alterato <- x
+# La sostituzione artificiale serve a studiare sensibilita, non a correggere il file.
+alterato[1] <- 30
+descrivi <- function(v) c(media = mean(v), mediana = median(v),
+                          sd = sd(v), IQR = IQR(v, type = 7))
+confronto <- rbind(originale = descrivi(x), con_estremo = descrivi(alterato))
+print(confronto)
+print(confronto[2, ] - confronto[1, ])
+```
+
+**Lettura del risultato.** Media e deviazione standard possono reagire molto alla distanza dell'estremo. Mediana e IQR dipendono soprattutto dalle posizioni centrali, ma possono comunque cambiare perché la sostituzione modifica l'ordinamento delle osservazioni.
+
+## Variante svolta
+
+Calcolare quartili di cinque misure con due convenzioni e confrontarli.
+
+```{r variante}
+piccolo <- c(2, 3, 5, 8, 12)
+confronto_tipi <- rbind(tipo7 = quantile(piccolo, c(.25, .5, .75), type = 7),
+                        tipo8 = quantile(piccolo, c(.25, .5, .75), type = 8))
+print(confronto_tipi)
+print(apply(confronto_tipi, 1, function(z) z[3] - z[1]))
+stopifnot(all(is.finite(confronto_tipi)))
+```
+
+La differenza è un effetto della definizione campionaria, non un errore aritmetico. Registrare la convenzione è particolarmente utile nei campioni piccoli e nei confronti fra software.
+
+## Errore da riconoscere
+
+Non interpretare un valore fuori dalla fascia Q1–Q3 come un errore: circa metà della distribuzione può trovarsi fuori da quella fascia per definizione.
+
+## Risposta alla domanda
+
+Quartili e IQR descrivono posizione e ampiezza della metà centrale con minore sensibilità agli estremi. Per una descrizione completa devono essere accompagnati da numerosità, unità e informazioni sulle code.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M03_N07` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M03/M03_N07.R).

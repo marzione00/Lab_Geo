@@ -1,0 +1,130 @@
+---
+title: "Quanti campioni abbiamo davvero?"
+subtitle: "M01_N05 \u00b7 Terra"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come cambiano i conteggi quando distinguiamo provini, stazioni e affioramenti?
+
+## Obiettivi
+
+- Contare le unità ai diversi livelli del disegno.
+- Rappresentare la distribuzione dei provini fra stazioni.
+
+**Prima di iniziare.** Saper eseguire una cella R e riconoscere vettori, assegnamenti e nomi di colonne.
+
+**Dati e unità.** La tabella sintetica comprende 24 provini, sei stazioni e due affioramenti. Le stazioni sono contenute negli affioramenti; questi livelli non sono intercambiabili.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M01_N05/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M01_N05")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(1005)
+```
+
+## 1. Contare identificativi e livelli
+
+Il numero di righe coincide con il numero di provini soltanto se ogni identificativo compare una volta. Contiamo anche stazioni e affioramenti, così la struttura del disegno rimane visibile accanto alla dimensione della tabella.
+
+```{r passo_01}
+# Ogni esecuzione riparte dal CSV condiviso, senza modificare il file.
+d <- carica_dati("campioni_modulo1.csv", stringsAsFactors = FALSE)
+stopifnot(nrow(d) == 24L, !anyDuplicated(d$id))
+
+conteggi <- c(righe = nrow(d), provini = length(unique(d$id)),
+              stazioni = length(unique(d$stazione)),
+              affioramenti = length(unique(d$affioramento)))
+print(conteggi)
+stopifnot(conteggi["righe"] == conteggi["provini"])
+print(table(d$affioramento))
+```
+
+**Lettura del risultato.** Le quattro quantità rispondono a domande diverse. La verifica degli ID esclude duplicazioni nella tabella, ma non dimostra che i provini vicini siano statisticamente indipendenti o rappresentativi dell'intero territorio.
+
+## 2. Verificare come si annidano le unità
+
+Costruiamo una tabella incrociata fra affioramento e stazione. Le celle occupate mostrano dove sono stati raccolti i provini. Verifichiamo inoltre che ogni codice di stazione appartenga a un solo affioramento.
+
+```{r passo_02}
+incrocio <- table(d$affioramento, d$stazione)
+print(incrocio)
+appartenenze <- tapply(d$affioramento, d$stazione,
+                       function(x) length(unique(x)))
+print(appartenenze)
+stopifnot(all(appartenenze == 1L))
+stazioni <- unique(d[c("stazione", "affioramento")])
+print(table(stazioni$affioramento))
+```
+
+**Lettura del risultato.** Gli zeri della tabella esprimono la struttura di appartenenza, non misure mancanti di densità. La tabella delle stazioni contiene una riga per stazione: il suo totale non deve essere confuso con quello dei provini.
+
+## 3. Visualizzare lo sforzo di campionamento
+
+Un grafico dei conteggi rende immediati eventuali sbilanciamenti. Le altezze rappresentano provini presenti nel file, non densità medie e neppure quantità geologiche misurate. Manteniamo quindi l'unità corretta sull'asse verticale.
+
+```{r passo_03}
+n_stazione <- table(d$stazione)
+print(n_stazione)
+barplot(n_stazione, col = "steelblue", las = 1,
+        xlab = "Stazione", ylab = "Numero di provini")
+stopifnot(sum(n_stazione) == nrow(d))
+print(range(as.numeric(n_stazione)))
+```
+
+**Lettura del risultato.** Altezze uguali indicano lo stesso numero di provini per stazione in questo esempio. Il bilanciamento semplifica alcuni confronti, ma non elimina possibili differenze fra stazioni né sostituisce la conoscenza del metodo di raccolta.
+
+## Variante svolta
+
+Simulare la mancanza di due provini della prima stazione e rifare il conteggio.
+
+```{r variante}
+ridotto <- d[!d$id %in% c("C01", "C02"), , drop = FALSE]
+confronto <- data.frame(stazione = names(n_stazione),
+                        iniziale = as.integer(n_stazione),
+                        ridotto = as.integer(table(factor(ridotto$stazione,
+                                                        levels = names(n_stazione)))))
+print(confronto)
+```
+
+La stazione resta presente, ma contribuisce con meno provini. Questa distinzione sarà necessaria quando una media complessiva attribuirà implicitamente più peso alle stazioni con più osservazioni.
+
+## Errore da riconoscere
+
+Interpretare 24 righe come 24 repliche indipendenti dell'effetto affioramento trascura la struttura spaziale. Il conteggio corretto dipende dall'unità della domanda e dalle assunzioni del modello.
+
+## Risposta alla domanda
+
+Il disegno contiene tre livelli osservabili. Descriverli separatamente permette di scegliere una sintesi coerente e di rendere espliciti i limiti del confronto fra i due affioramenti.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M01_N05` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M01/M01_N05.R).

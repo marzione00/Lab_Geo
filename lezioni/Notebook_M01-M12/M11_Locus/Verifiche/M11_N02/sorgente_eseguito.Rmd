@@ -1,0 +1,138 @@
+---
+title: "Latitudine e longitudine invertite"
+subtitle: "M11_N02 · Locus"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Un controllo dei limiti globali riconosce longitudine e latitudine scambiate?
+
+## Obiettivi
+
+- Applicare controlli globali e contestuali.
+- Produrre un esempio che passa il controllo globale.
+- Esplicitare il ruolo della zona attesa.
+
+**Prima di iniziare.** Sono richiesti vettori, tabelle, coordinate e funzioni R di base. I blocchi vanno eseguiti in ordine; il notebook è autonomo rispetto agli altri. I calcoli usano R base e i pacchetti standard.
+
+**Dati e unità.** 64 siti sintetici su una griglia 8 × 8, con passo 250 m e coordinate locali x_m e y_m fra 0 e 1750 m. Questo piano locale non ha un codice EPSG. La concentrazione è sintetica, in unità arbitrarie (u.a.); la quota è in metri sintetici. Ogni riga descrive un sito e il suo valore puntuale, non la media di una cella. Le colonne lon e lat forniscono un georiferimento sintetico separato, vicino a 9° E e 45° N, costruito con una relazione approssimata. Non sono coordinate UTM ottenute aggiungendo un’origine alle coordinate locali. Nel percorso geografico l’ordine è sempre longitudine, latitudine.
+
+## Preparazione
+
+Aprire il progetto autonomo di Locus o quello generale dei notebook. I CSV locali restano invariati. Gli output vanno in `Risultati/M11_N02/`. Nessun download o installazione viene eseguito nei blocchi.
+
+```{r preparazione}
+# Trova il modulo dal progetto autonomo o dal progetto generale dei notebook.
+.gs_cerca <- normalizePath(getwd(),winslash="/",mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca,file.path(.gs_cerca,"M11_Locus"),
+    file.path(.gs_cerca,"03_Notebook_svolti","M11_Locus"),
+    file.path(.gs_cerca,"M11","03_Notebook_svolti","M11_Locus"))
+  .gs_ok <- file.exists(file.path(.gs_candidati,"M11_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati,"R","funzioni_notebook.R"))
+  if(any(.gs_ok)) { .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]];break }
+  .gs_padre <- dirname(.gs_cerca)
+  if(.gs_padre==.gs_cerca) stop("Aprire il progetto M11_Locus o quello generale dei notebook.")
+  .gs_cerca <- .gs_padre
+}
+source(file.path(.gs_modulo,"R","funzioni_notebook.R"),local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo,"M11_N02")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88,digits=6)
+if(requireNamespace("knitr",quietly=TRUE)) {
+  knitr::opts_chunk$set(echo=TRUE,error=FALSE,warning=TRUE,message=TRUE,
+    fig.width=8,fig.height=5,dpi=150,fig.align="center")
+}
+set.seed(11002)
+```
+
+## 1. I limiti ammissibili non bastano
+
+Costruiamo la copia errata dello script originale: la longitudine riceve la latitudine e viceversa.
+
+```{r passo_01}
+d <- carica_dati("spazio_v3.csv")
+audit_spazio(d)
+ invertite <- data.frame(lon=d$lat,lat=d$lon)
+ globale <- abs(invertite$lon)<=180 & abs(invertite$lat)<=90
+ locale <- invertite$lon>8 & invertite$lon<10 & invertite$lat>44 & invertite$lat<46
+ data.frame(controllo=c("Limiti globali","Zona sintetica attesa"),
+   passano=c(sum(globale),sum(locale)),totale=nrow(d))
+ stopifnot(all(globale),!any(locale))
+```
+
+**Lettura del risultato.** Tutti i valori scambiati sono ammissibili sul globo, ma nessuno cade nella zona attesa. La plausibilità numerica globale è un controllo debole.
+
+## 2. Il contesto è una condizione dichiarata
+
+La zona 8–10° E e 44–46° N è un controllo del nostro esempio. Va scelta dalla fonte e dalla domanda, prima di guardare la mappa.
+
+```{r passo_02}
+corretta <- d$lon>8 & d$lon<10 & d$lat>44 & d$lat<46
+data.frame(caso=c("Originale","Invertito"),
+  lon_primo=c(d$lon[1],invertite$lon[1]),lat_primo=c(d$lat[1],invertite$lat[1]),
+  siti_nella_zona=c(sum(corretta),sum(locale)))
+stopifnot(all(corretta))
+```
+
+**Lettura del risultato.** Una zona attesa non sostituisce i metadati del CRS. Riconosce questa inversione perché il contesto geografico è sufficientemente informativo.
+
+## 3. Il grafico rende visibile lo scambio
+
+Mostriamo due insiemi di coppie ordinate sullo stesso piano angolare. È un controllo di coordinate, non una carta metrica per calcolare distanze.
+
+```{r passo_03}
+stile_grafico()
+plot(c(d$lon,invertite$lon),c(d$lat,invertite$lat),type="n",asp=1,
+  xlab="Longitudine dichiarata (gradi)",ylab="Latitudine dichiarata (gradi)",
+  main="Coordinate corrette e assi scambiati")
+points(d$lon,d$lat,pch=19,col=palette_geo[1])
+points(invertite$lon,invertite$lat,pch=17,col=palette_geo[2])
+legend("center",c("Ordine lon, lat","Ordine invertito"),pch=c(19,17),col=palette_geo[1:2],bty="n")
+write.csv(data.frame(id=d$id,globale=globale,locale=locale),
+  percorso_risultati("controllo_inversione.csv"),row.names=FALSE)
+```
+
+**Lettura del risultato.** Una mappa può disegnare correttamente numeri sbagliati. Il controllo della coppia ordinata deve precedere l’interpretazione geografica.
+
+## Variante svolta
+
+**Una zona troppo ampia perde potere diagnostico.** Usare un intervallo che include sia 9 sia 45 per entrambi gli assi.
+
+```{r variante}
+zona_larga <- invertite$lon>0 & invertite$lon<50 & invertite$lat>0 & invertite$lat<50
+data.frame(siti_errati_accettati=sum(zona_larga),totale=nrow(d))
+stopifnot(all(zona_larga))
+```
+
+Il controllo perde efficacia quando la sua regione di accettazione è troppo ampia. La scelta del controllo è parte del ragionamento sul dato.
+
+## Errore da riconoscere
+
+Considerare corretti tutti i punti che rispettano −180 ≤ lon ≤ 180 e −90 ≤ lat ≤ 90.
+
+## Risposta alla domanda
+
+Il controllo globale non riconosce questa inversione. Serve un controllo coerente con la zona attesa, accompagnato da metadati e ordine degli assi espliciti. Non tutti gli errori di coordinate sono individuabili dai soli intervalli.
+
+## Raccordo con le slide
+
+[Slide 18 della lezione Locus](../../02_PDF/M11_Locus/Locus_M11_statistica_spaziale.pdf#page=18). Il notebook conserva il tema del laboratorio originale e aggiunge verifiche e una variante svolta.
+
+
+## Riferimenti e provenienza
+
+Questo svolgimento sviluppa `M11_N02` del [modulo M11 del corso](https://marzione00.github.io/Lab_Geo/#modulo-M11). Il [codice originale](https://github.com/marzione00/Lab_Geo/blob/649f7cc577b96bd1044d81e78a2f530813e4f96b/materiali/laboratori/M11/M11_N02.R) è conservato immutato in `R/Originali_corso/`; la mappa allegata documenta gli ampliamenti. Dati e originali hanno impronte SHA-256 e SHA-1 Git verificate.
+
+Documentazione primaria delle operazioni: [R, dist](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/dist.html), [R, aggregate](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/aggregate.html), [R, sample](https://stat.ethz.ch/R-manual/R-devel/library/base/html/sample.html). Le definizioni spaziali e il riferimento inferenziale seguono il laboratorio originale, con le distinzioni esplicitate nel testo.

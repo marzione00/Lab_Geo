@@ -1,0 +1,11 @@
+d <- carica_dati("raster_v3.csv")
+audit_raster(d)
+d <- d[order(d$riga,d$colonna),]
+Z <- matrice_quote(d)
+ rosso <- .2+.05*cos(d$y_m/150)
+ nir <- .4+.1*sin(d$x_m/180)
+ indice <- (nir-rosso)/(nir+rosso)
+ risultato <- data.frame(riga=d$riga,colonna=d$colonna,rosso=rosso,NIR=nir,indice=indice)
+ head(risultato,6)
+ data.frame(minimo=min(indice),massimo=max(indice),denominatore_min=min(nir+rosso))
+ stopifnot(all(nir+rosso>0),all(abs(indice)<=1))

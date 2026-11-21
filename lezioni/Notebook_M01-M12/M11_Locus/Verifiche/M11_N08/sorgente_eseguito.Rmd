@@ -1,0 +1,133 @@
+---
+title: "Confini e appartenenza: regole semiaperte"
+subtitle: "M11_N08 · Locus"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Come si assegna una posizione sul confine a una sola area?
+
+## Obiettivi
+
+- Costruire una partizione esaustiva e disgiunta.
+- Dichiarare a quale lato appartiene x=1000.
+- Distinguere la partizione descrittiva dal test geografico.
+
+**Prima di iniziare.** Sono richiesti vettori, tabelle, coordinate e funzioni R di base. I blocchi vanno eseguiti in ordine; il notebook è autonomo rispetto agli altri. I calcoli usano R base e i pacchetti standard.
+
+**Dati e unità.** 64 siti sintetici su una griglia 8 × 8, con passo 250 m e coordinate locali x_m e y_m fra 0 e 1750 m. Questo piano locale non ha un codice EPSG. La concentrazione è sintetica, in unità arbitrarie (u.a.); la quota è in metri sintetici. Ogni riga descrive un sito e il suo valore puntuale, non la media di una cella.
+
+## Preparazione
+
+Aprire il progetto autonomo di Locus o quello generale dei notebook. I CSV locali restano invariati. Gli output vanno in `Risultati/M11_N08/`. Nessun download o installazione viene eseguito nei blocchi.
+
+```{r preparazione}
+# Trova il modulo dal progetto autonomo o dal progetto generale dei notebook.
+.gs_cerca <- normalizePath(getwd(),winslash="/",mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca,file.path(.gs_cerca,"M11_Locus"),
+    file.path(.gs_cerca,"03_Notebook_svolti","M11_Locus"),
+    file.path(.gs_cerca,"M11","03_Notebook_svolti","M11_Locus"))
+  .gs_ok <- file.exists(file.path(.gs_candidati,"M11_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati,"R","funzioni_notebook.R"))
+  if(any(.gs_ok)) { .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]];break }
+  .gs_padre <- dirname(.gs_cerca)
+  if(.gs_padre==.gs_cerca) stop("Aprire il progetto M11_Locus o quello generale dei notebook.")
+  .gs_cerca <- .gs_padre
+}
+source(file.path(.gs_modulo,"R","funzioni_notebook.R"),local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo,"M11_N08")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88,digits=6)
+if(requireNamespace("knitr",quietly=TRUE)) {
+  knitr::opts_chunk$set(echo=TRUE,error=FALSE,warning=TRUE,message=TRUE,
+    fig.width=8,fig.height=5,dpi=150,fig.align="center")
+}
+set.seed(11008)
+```
+
+## 1. Il confine usa una regola semiaperta
+
+Nel laboratorio descrittivo Ovest significa x<1000 ed Est x ≥ 1000. È una partizione 32/32, diversa dallo split 40/24 della validazione N19.
+
+```{r passo_01}
+d <- carica_dati("spazio_v3.csv")
+audit_spazio(d)
+ ovest <- d$x_m<1000;est <- !ovest
+ stopifnot(!any(ovest&est),all(ovest|est),sum(ovest)==32L,sum(est)==32L)
+ aree <- ifelse(ovest,"Ovest","Est")
+ table(aree)
+ stopifnot(identical(aree,d$area))
+```
+
+**Lettura del risultato.** L’uguaglianza con la colonna area controlla la convenzione del file. I punti sul confine sono assegnati a Est e non duplicati.
+
+## 2. La sintesi dipende dall’appartenenza
+
+Calcoliamo la media puntuale in ciascuna area e conserviamo anche le numerosità.
+
+```{r passo_02}
+risultato <- data.frame(area=c("Ovest","Est"),n=c(sum(ovest),sum(est)),
+  media=c(mean(d$concentrazione[ovest]),mean(d$concentrazione[est])))
+risultato
+data.frame(siti_sul_confine=sum(d$x_m==1000),area_assegnata=unique(aree[d$x_m==1000]))
+write.csv(risultato,percorso_risultati("sintesi_aree.csv"),row.names=FALSE)
+```
+
+**Lettura del risultato.** La media descrive le misure dei siti assegnati. Non è automaticamente una media dell’intera superficie territoriale.
+
+## 3. Il disegno conserva il confine
+
+La linea passa attraverso una colonna di punti: la regola logica specifica il lato a cui appartengono.
+
+```{r passo_03}
+stile_grafico()
+plot(d$x_m,d$y_m,pch=19,col=palette_geo[ifelse(ovest,1,2)],asp=1,
+  xlab="x locale (m)",ylab="y locale (m)",main="Ovest x<1000; Est x>=1000")
+abline(v=1000,lty=2,col="grey40")
+data.frame(id=d$id[d$x_m==1000],x_m=d$x_m[d$x_m==1000],area=aree[d$x_m==1000])
+```
+
+**Lettura del risultato.** Un confine disegnato non risolve da solo l’appartenenza. La regola deve essere parte del codice e dei metadati.
+
+## Variante svolta
+
+**Due disuguaglianze inclusive duplicano il confine.** Usare x ≤ 1000 e x ≥ 1000 e contare le appartenenze doppie.
+
+```{r variante}
+A <- d$x_m<=1000;B <- d$x_m>=1000
+data.frame(punti=nrow(d),appartenenze=sum(A)+sum(B),punti_doppi=sum(A&B))
+stopifnot(sum(A&B)==8L)
+```
+
+La sovrapposizione può essere corretta se le aree sono intenzionalmente sovrapposte. È un errore se si voleva costruire una partizione.
+
+## Errore da riconoscere
+
+Usare due limiti inclusivi e poi trattare la tabella come una partizione, oppure riutilizzare area per lo split predittivo di N19.
+
+## Risposta alla domanda
+
+Una partizione assegna ogni sito una sola volta. La regola x<1000 / x ≥ 1000 documenta il confine; ha finalità descrittiva e non sostituisce il protocollo di validazione con soglia 1250.
+
+## Raccordo con le slide
+
+[Slide 34–36 della lezione Locus](../../02_PDF/M11_Locus/Locus_M11_statistica_spaziale.pdf#page=34). Il notebook conserva il tema del laboratorio originale e aggiunge verifiche e una variante svolta.
+
+
+## Riferimenti e provenienza
+
+Questo svolgimento sviluppa `M11_N08` del [modulo M11 del corso](https://marzione00.github.io/Lab_Geo/#modulo-M11). Il [codice originale](https://github.com/marzione00/Lab_Geo/blob/649f7cc577b96bd1044d81e78a2f530813e4f96b/materiali/laboratori/M11/M11_N08.R) è conservato immutato in `R/Originali_corso/`; la mappa allegata documenta gli ampliamenti. Dati e originali hanno impronte SHA-256 e SHA-1 Git verificate.
+
+Documentazione primaria delle operazioni: [R, dist](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/dist.html), [R, aggregate](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/aggregate.html), [R, sample](https://stat.ethz.ch/R-manual/R-devel/library/base/html/sample.html). Le definizioni spaziali e il riferimento inferenziale seguono il laboratorio originale, con le distinzioni esplicitate nel testo.

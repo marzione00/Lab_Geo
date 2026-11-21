@@ -1,0 +1,126 @@
+---
+title: "Parametro, campione e statistica"
+subtitle: "M05_N01 \u00b7 Pelago"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Possiamo distinguere la media di una popolazione costruita dalla media dei provini che abbiamo estratto?
+
+## Obiettivi
+
+- Definire popolazione, parametro e campione.
+- Seguire la variabilità della statistica prima di osservare un campione.
+
+**Prima di iniziare.** Vettori, indicizzazione, media, varianza e grafici di base in R.
+
+**Dati e unità.** Costruiamo sessanta densità in g/cm³: è una popolazione didattica interamente nota, non un'indagine geologica.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M05_N01/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M05_N01")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(5001)
+```
+
+## 1. Costruire una popolazione con un parametro noto
+
+L'elenco completo è disponibile soltanto perché lo abbiamo costruito. La sua media è il parametro di questa popolazione finita. Gli identificativi distinguono i provini, anche quando due valori fossero uguali; l'unità selezionata dal campionamento è il provino.
+
+```{r passo_01}
+popolazione <- data.frame(id = sprintf("P%02d", 1:60),
+                          densita = seq(2.4, 3.0, length.out = 60))
+Npop <- nrow(popolazione)
+mu <- mean(popolazione$densita)
+stopifnot(!anyDuplicated(popolazione$id), Npop == 60)
+print(c(numero_provini = Npop, media_popolazione = mu))
+range(popolazione$densita)
+```
+
+**Lettura del risultato.** Il valore di mu appartiene all'elenco completo. Non cambia quando cambiamo il seme del generatore, perché il seme modifica la selezione e non le densità già definite.
+
+## 2. Estrarre un campione e calcolare la stima
+
+Estraiamo dodici identificativi senza reinserimento: uno stesso provino non può apparire due volte nel campione. La media campionaria è una statistica; dopo l'estrazione assume un valore osservato. In questa simulazione possiamo anche misurarne lo scarto dal parametro.
+
+```{r passo_02}
+set.seed(501)
+n <- 12
+indici <- sample.int(Npop, size = n, replace = FALSE)
+campione <- popolazione[indici, ]
+stima <- mean(campione$densita)
+print(campione)
+print(c(stima = stima, parametro = mu, errore = stima - mu))
+```
+
+**Lettura del risultato.** Lo scarto con segno distingue sovrastima e sottostima. Nei dati di campo il parametro è generalmente ignoto, quindi questa sottrazione non è disponibile direttamente.
+
+## 3. Ripetere il disegno di campionamento
+
+Ogni colonna della simulazione corrisponde idealmente a una nuova indagine con lo stesso numero di provini. Manteniamo fissa la popolazione e ripetiamo la selezione; così isoliamo la variabilità introdotta dal campionamento.
+
+```{r passo_03}
+B <- 2000
+medie <- replicate(B, mean(popolazione$densita[
+  sample.int(Npop, n, replace = FALSE)]))
+print(c(media_stime = mean(medie), sd_stime = sd(medie)))
+hist(medie, breaks = 25, col = "#95BDD0", border = "white", ylab = "Frequenza",
+     main = "Medie di campioni di 12 provini", xlab = "Densita media (g/cm3)")
+abline(v = mu, col = "#A33B31", lwd = 2)
+```
+
+**Lettura del risultato.** La linea indica lo stesso parametro in tutte le repliche. L'istogramma descrive le stime ottenibili dal disegno, non la distribuzione delle densità individuali.
+
+## Variante svolta
+
+Ripetere l'esperimento usando trenta provini per campione.
+
+```{r variante}
+set.seed(502)
+medie30 <- replicate(B, mean(sample(popolazione$densita, 30, replace = FALSE)))
+confronto <- data.frame(n = c(n, 30), sd_medie = c(sd(medie), sd(medie30)))
+print(confronto)
+print(c(errore_medio_12 = mean(medie) - mu, errore_medio_30 = mean(medie30) - mu))
+```
+
+Una maggiore frazione della popolazione tende a ridurre la variabilità delle medie. I piccoli scarti delle medie simulate da mu dipendono anche dal numero finito di repliche.
+
+## Errore da riconoscere
+
+Non chiamare parametro la media dei dodici valori osservati: specificare sempre quale popolazione e quale elenco entrano nel calcolo.
+
+## Risposta alla domanda
+
+Il parametro rimane fisso; la statistica cambia fra campioni. La stima osservata è una realizzazione della statistica e non coincide necessariamente con il parametro.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M05_N01` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M05/M05_N01.R).

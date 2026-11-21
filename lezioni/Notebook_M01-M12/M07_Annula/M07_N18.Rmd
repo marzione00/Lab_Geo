@@ -1,0 +1,147 @@
+---
+title: "Calibrazione descrittiva con pochi dati"
+subtitle: "M07_N18 \u00b7 Annula"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Fra i casi cui assegniamo una probabilità simile, la frequenza dell’evento è coerente con quella probabilità?
+
+## Obiettivi
+
+- Collegare la domanda al calcolo riportato.
+- Interpretare il risultato usando variabili e unità del problema.
+
+**Prima di iniziare.** Vettori, data frame, indicizzazione e funzioni di base in R.
+
+**Dati e unità.** Fossili simulati del corso: 160 individui, 80 Rounded e 80 Spiky. Diametri e spessori sono espressi in micrometri. Nel generatore, diametro interno = diametro totale − 2 × spessore. La relazione contiene quindi un vincolo geometrico noto.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Annula oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M07_Annula` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M07_Annula/Risultati/M07_N18/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M07_Annula"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M07_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M07_Annula o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M07_N18")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(7018)
+```
+
+## 1. Fasce fissate in anticipo
+
+Raggruppiamo le probabilità nelle fasce [0,0,2], (0,2,0,4] e così via. In ogni fascia confrontiamo media delle probabilità e frequenza osservata di Spiky. Con 32 casi alcune fasce saranno poco popolate.
+
+```{r passo_01}
+# Ogni riga identifica un fossile simulato.
+f <- carica_dati("fossili_simulati.csv")
+f$morfotipo <- factor(f$morfotipo, levels=c("Rounded", "Spiky"))
+x <- f$diametro_tot_um
+y <- f$diametro_int_um
+stopifnot(nrow(f)==160L, !anyDuplicated(f$id),
+          all(is.finite(x)), all(is.finite(y)))
+# Partizione fissata prima del confronto dei modelli.
+# Nel CSV didattico ogni quinto individuo forma il test.
+is_test <- seq_len(nrow(f)) %% 5L == 0L
+train <- f[!is_test, ]
+test <- f[is_test, ]
+stopifnot(nrow(train)==128L, nrow(test)==32L,
+          length(intersect(train$id, test$id))==0L)
+# Spiky=1 e Rounded=0: la probabilita' riguarda Spiky.
+train$spiky <- as.integer(train$morfotipo=="Spiky")
+test$spiky <- as.integer(test$morfotipo=="Spiky")
+logit <- glm(spiky ~ diametro_tot_um + rapporto_int_tot,
+             data=train, family=binomial())
+stopifnot(logit$converged)
+prob <- as.numeric(predict(logit, newdata=test, type="response"))
+stopifnot(all(is.finite(prob)), all(prob>=0 & prob<=1))
+val <- data.frame(prob=prob,osservato=test$spiky,
+ fascia=cut(prob,breaks=seq(0,1,.2),include.lowest=TRUE))
+table(val$fascia)
+head(val)
+```
+
+**Lettura del risultato.** La numerosità di fascia è essenziale: uno scarto osservato su due individui ha una stabilità diversa dallo stesso scarto su duecento.
+
+## 2. Una tabella con le numerosità
+
+La calibrazione ideale soddisfa $E(Y\mid p)=p$. Il raggruppamento è una sintesi descrittiva di questa proprietà e dipende dai limiti delle fasce.
+
+```{r passo_02}
+cal <- aggregate(cbind(prob,osservato)~fascia,val,mean)
+numeri <- aggregate(osservato~fascia,val,length)
+names(numeri)[2] <- "n"
+cal <- merge(cal,numeri,by="fascia",all.x=TRUE)
+cal
+```
+
+**Lettura del risultato.** La colonna `prob` contiene la previsione media e `osservato` la frequenza di Spiky. Le differenze descrivono questo test. Non bastano a stabilire che il modello sia calibrato in una popolazione più ampia.
+
+## 3. Un grafico leggibile
+
+La bisettrice indica coincidenza fra probabilità media e frequenza. Etichettiamo ogni punto con la numerosità della fascia per evitare che simboli identici suggeriscano la stessa precisione.
+
+```{r passo_03}
+plot(cal$prob,cal$osservato,xlim=c(0,1),ylim=c(-.04,1.12),pch=19,
+ col="#087C74",xlab="Probabilita' media prevista",
+ ylab="Frequenza osservata di Spiky")
+abline(0,1,lty=2,col="grey50")
+text(cal$prob,cal$osservato,labels=paste0("n=",cal$n),pos=3,cex=.8)
+write.csv(cal,percorso_risultati("calibrazione_descrittiva.csv"),row.names=FALSE)
+```
+
+**Lettura del risultato.** I punti sopra la bisettrice hanno frequenza osservata superiore alla probabilità media assegnata, e viceversa. La piccola numerosità richiede di mantenere questa lettura descrittiva.
+
+## Variante svolta
+
+Cambiare la partizione in due fasce [0,0,5] e (0,5,1] e confrontare le sintesi.
+
+```{r variante}
+val$fascia2 <- cut(prob,c(0,.5,1),include.lowest=TRUE)
+aggregate(cbind(prob,osservato)~fascia2,val,mean)
+table(val$fascia2)
+```
+
+Le fasce più ampie contengono più casi ma nascondono differenze interne. Cercare le fasce che rendono il grafico più vicino alla bisettrice non migliora la calibrazione del modello.
+
+## Errore da riconoscere
+
+Una curva costruita con poche osservazioni e molti intervalli può mostrare grandi oscillazioni dovute al caso.
+
+## Risposta alla domanda
+
+La tabella di calibrazione deve riportare le numerosità. La scelta delle fasce e la dimensione del test limitano ciò che si può concludere.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M07_N18` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M07/M07_N18.R).

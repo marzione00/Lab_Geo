@@ -1,0 +1,129 @@
+---
+title: "Welch: differenza tra medie senza imporre varianze uguali"
+subtitle: "M06_N06 \u00b7 Gemina"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come ricostruiamo il test e l'intervallo di Welch per il contrasto Spiky meno Rounded?
+
+## Obiettivi
+
+- Calcolare errore standard e gradi di libertà di Welch.
+- Verificare formule e verso del contrasto con t.test.
+
+**Prima di iniziare.** Vettori, indicizzazione, media, varianza e grafici di base in R.
+
+**Dati e unità.** Ottanta diametri sintetici per morfotipo, in micrometri. I due campioni sono trattati come indipendenti; non imponiamo uguaglianza delle varianze.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M06_N06/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M06_N06")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(6006)
+```
+
+## 1. Scomporre la varianza del contrasto
+
+Per campioni indipendenti la varianza stimata della differenza è sB²/nB + sA²/nA. Conserviamo separati i contributi dei gruppi. L'indipendenza giustifica l'assenza di un termine di covarianza; l'uguaglianza delle varianze non è necessaria per questa costruzione.
+
+```{r passo_01}
+dati <- carica_dati("fossili_simulati.csv")
+a <- dati$diametro_tot_um[dati$morfotipo == "Rounded"]
+b <- dati$diametro_tot_um[dati$morfotipo == "Spiky"]
+nA <- length(a)
+nB <- length(b)
+vA <- var(a) / nA
+vB <- var(b) / nB
+delta <- mean(b) - mean(a)
+se <- sqrt(vA + vB)
+print(c(differenza_um = delta, contributo_A = vA, contributo_B = vB, SE_um = se))
+```
+
+**Lettura del risultato.** La somma contiene variabilità di entrambi i gruppi. Welch non corregge dipendenza tra osservazioni, selezione dei campioni o errori nella definizione delle unità.
+
+## 2. Calcolare statistica, gradi di libertà e intervallo
+
+La formula di Welch-Satterthwaite approssima i gradi di libertà usando i due contributi di varianza. Il risultato può non essere intero e non va arrotondato prima di calcolare probabilità o quantili. La nulla di questo confronto è delta uguale a zero.
+
+```{r passo_02}
+df <- (vA + vB)^2 / (vA^2 / (nA - 1) + vB^2 / (nB - 1))
+delta0 <- 0
+t_obs <- (delta - delta0) / se
+p <- 2 * pt(-abs(t_obs), df = df)
+critico <- qt(0.975, df = df)
+intervallo <- delta + c(-1, 1) * critico * se
+print(c(t = t_obs, gradi_liberta = df, p_bilaterale = p))
+print(c(inferiore_um = intervallo[1], superiore_um = intervallo[2]))
+```
+
+**Lettura del risultato.** L'intervallo esprime la differenza nelle unità originali. Il p-value valuta il contrasto rispetto a zero sotto le ipotesi del metodo e non misura la probabilità di un effetto causale.
+
+## 3. Verificare il verso degli argomenti R
+
+Per ottenere Spiky meno Rounded passiamo b come primo vettore e a come secondo. La verifica di statistica, p-value ed estremi aiuta a intercettare inversioni del segno. Non serve eseguire un test preliminare delle varianze per decidere se usare Welch.
+
+```{r passo_03}
+automatico <- t.test(b, a, var.equal = FALSE, conf.level = 0.95)
+stopifnot(isTRUE(all.equal(unname(automatico$statistic), t_obs)))
+stopifnot(isTRUE(all.equal(automatico$p.value, p)))
+stopifnot(isTRUE(all.equal(as.numeric(automatico$conf.int), intervallo)))
+print(automatico)
+```
+
+**Lettura del risultato.** La coincidenza controlla l'implementazione della formula. Le condizioni sul disegno e la plausibilità dell'approssimazione restano da discutere sulla base dell'esperimento e delle distribuzioni.
+
+## Variante svolta
+
+Invertire l'ordine degli argomenti e verificare quali risultati cambiano.
+
+```{r variante}
+invertito <- t.test(a, b, var.equal = FALSE)
+print(c(t_originale = t_obs, t_invertito = unname(invertito$statistic)))
+print(rbind(Spiky_Rounded = intervallo,
+            Rounded_Spiky = as.numeric(invertito$conf.int)))
+stopifnot(isTRUE(all.equal(p, invertito$p.value)))
+stopifnot(isTRUE(all.equal(as.numeric(invertito$conf.int), -rev(intervallo))))
+```
+
+Il test bilaterale mantiene lo stesso p-value, mentre statistica e intervallo cambiano verso. Una conclusione verbale deve seguire il contrasto effettivamente calcolato.
+
+## Errore da riconoscere
+
+Non arrotondare i gradi di libertà e non chiamare Welch una soluzione per dati appaiati o raggruppati trattati come indipendenti.
+
+## Risposta alla domanda
+
+Welch confronta medie di campioni indipendenti senza imporre varianze uguali. Formula, ordine degli argomenti, unità e limiti del disegno devono essere coerenti.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M06_N06` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M06/M06_N06.R).

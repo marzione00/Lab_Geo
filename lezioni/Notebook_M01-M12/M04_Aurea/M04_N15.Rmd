@@ -1,0 +1,135 @@
+---
+title: "Leggere la distribuzione del risultato"
+subtitle: "M04_N15 \u00b7 Aurea"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come riassumere una distribuzione simulata della densità senza confondere dispersione, intervallo centrale e confidenza?
+
+## Obiettivi
+
+- Calcolare quantili e copertura empirica di un intervallo centrale.
+- Valutare quanto i bordi numerici dipendono dalle repliche Monte Carlo.
+
+**Prima di iniziare.** Propagazione massa-volume, istogramma e quantili.
+
+**Dati e unità.** Parametri didattici della misura: massa nominale 106 g, volume nominale 40 cm³, incertezze standard rispettivamente 1 g e 0,6 cm³. Le estrazioni sono simulate.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M04_N15/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M04_N15")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(4015)
+```
+
+## 1. Ricostruire la simulazione
+
+Generiamo in modo autonomo massa e volume secondo il modello locale indipendente. Ogni notebook conserva i propri parametri e il proprio seme, così il risultato non dipende dall'esecuzione di un esercizio precedente.
+
+```{r passo_01}
+p <- carica_dati("parametri_densita.csv")
+m0 <- p$massa_media_g[1]; V0 <- p$volume_medio_cm3[1]
+um <- p$sd_massa_g[1]; uV <- p$sd_volume_cm3[1]
+set.seed(415)
+B <- 3000
+massa <- rnorm(B, m0, um)
+volume <- rnorm(B, V0, uV)
+# Il rapporto richiede ingressi fisici positivi in tutte le repliche utilizzate.
+stopifnot(all(volume > 0), all(massa > 0))
+rho <- massa / volume
+rho0 <- m0 / V0
+```
+
+**Lettura del risultato.** I parametri descrivono l'incertezza assegnata a una misura di densità. Non rappresentano automaticamente la variabilità di una formazione rocciosa e non includono errori sistematici che non siano stati dichiarati negli ingressi.
+
+## 2. Trovare la fascia centrale
+
+I quantili 2,5 e 97,5 per cento lasciano circa il cinque per cento delle repliche nelle due code. Conserviamo la convenzione type = 7 e calcoliamo anche l'ampiezza della fascia nella stessa unità della densità.
+
+```{r passo_02}
+# I livelli .025 e .975 selezionano una fascia centrale al 95 per cento.
+q <- quantile(rho, c(.025, .5, .975), type = 7)
+copertura_empirica <- mean(rho >= q[1] & rho <= q[3])
+print(q)
+print(c(ampiezza_g_cm3 = unname(q[3] - q[1]), quota_interna = copertura_empirica))
+distanze <- c(sotto_mediana = unname(q[2] - q[1]), sopra_mediana = unname(q[3] - q[2]))
+print(distanze)
+stopifnot(q[1] < q[2], q[2] < q[3])
+```
+
+**Lettura del risultato.** La fascia è un intervallo centrale della distribuzione propagata sotto le ipotesi assegnate. Non è automaticamente un intervallo di confidenza per una media ignota, e la sua simmetria non è garantita dalla simmetria degli ingressi.
+
+## 3. Leggere grafico e variabilità numerica
+
+Segniamo quantili e valore nominale sull'istogramma. Confrontiamo poi i quantili delle due metà della simulazione: le differenze mostrano che anche i bordi dell'intervallo sono stimati con precisione finita.
+
+```{r passo_03}
+hist(rho, breaks = "FD", col = "#D5E9EE", border = "white",
+     xlab = "Densita (g/cm^3)", ylab = "Repliche (n)", main = "Intervallo centrale propagato")
+abline(v = q[c(1, 3)], col = "#C57E42", lty = 2, lwd = 2)
+abline(v = rho0, col = "#1D7890", lwd = 2)
+meta <- B / 2
+# Le due meta quantificano una sensibilita numerica dei bordi, non un nuovo intervallo di confidenza.
+quantili_meta <- rbind(prima = quantile(rho[seq_len(meta)], c(.025, .975)),
+                       seconda = quantile(rho[(meta + 1):B], c(.025, .975)))
+print(quantili_meta)
+print(quantili_meta[2, ] - quantili_meta[1, ])
+```
+
+**Lettura del risultato.** Il confronto delle metà è un controllo di stabilità, non un intervallo di confidenza dei quantili. Per una valutazione più precisa del loro errore numerico servirebbero repliche aggiuntive o un metodo dedicato ai quantili.
+
+## Variante svolta
+
+Calcolare una fascia centrale al 90 per cento e confrontarne ampiezza e quota empirica.
+
+```{r variante}
+q90 <- quantile(rho, c(.05, .95), type = 7)
+larghezze <- c(centrale_90 = diff(q90), centrale_95 = q[3] - q[1])
+print(larghezze)
+print(c(quota_nella_fascia_90 = mean(rho >= q90[1] & rho <= q90[2])))
+stopifnot(q90[1] >= q[1], q90[2] <= q[3])
+print(c(code_90 = mean(rho < q90[1] | rho > q90[2])))
+```
+
+La fascia al 90 per cento è più stretta perché lascia più probabilità nelle code. Non è un miglioramento della misura: cambia il livello di copertura dichiarato, mentre gli ingressi e la loro incertezza restano gli stessi.
+
+## Errore da riconoscere
+
+Non presentare i quantili con molte cifre come se fossero esatti. Non chiamare la fascia 'confidenza della media' e non ridurne arbitrariamente l'ampiezza cambiando il livello senza dichiararlo.
+
+## Risposta alla domanda
+
+Quantili, unità e livello di copertura rendono interpretabile la distribuzione propagata. La stabilità numerica va distinta dall'incertezza fisica; la fascia resta condizionata alle distribuzioni e alle dipendenze adottate per gli ingressi.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M04_N15` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M04/M04_N15.R).

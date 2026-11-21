@@ -1,0 +1,134 @@
+---
+title: "LOESS: il ruolo dello span"
+subtitle: "M09_N07 \u00b7 Borealis"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Quanto cambia una curva descrittiva quando cambiamo l’estensione della regressione locale?
+
+## Obiettivi
+
+- Interpretare lo span.
+- Confrontare smoothing e dati.
+- Controllare dipendenza residua e bordi.
+
+**Prima di iniziare.** Lettura di CSV, vettori, indicizzazione e funzioni di base in R. I blocchi vanno eseguiti nell’ordine all’interno del singolo notebook.
+
+**Dati e unità.** Archivio storico CO₂ 1958–2001, copia del dataset settimanale statsmodels attribuito a Keeling, Whorf e CDIAC. Le concentrazioni sono espresse in ppm. Le medie mensili del corso derivano dai valori settimanali assegnati al mese della data e differiscono per definizione da una serie mensile ufficiale.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Borealis oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M09_Borealis` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M09_Borealis/Risultati/M09_N07/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M09_Borealis"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M09_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M09_Borealis o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M09_N07")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(9007)
+```
+
+## 1. Due estensioni locali
+
+LOESS stima regressioni locali ponderate. Lo span è una frazione indicativa delle osservazioni coinvolte nei vicinati, non una durata fissa in mesi. Qui l’asse regolare permette di esprimere il tempo mediante l’indice.
+
+```{r passo_01}
+d <- carica_dati("co2_1985_2001.csv")
+d$data <- as.Date(d$data)
+d <- d[order(d$data), ]
+attese <- seq(as.Date("1985-01-01"), as.Date("2001-12-01"), by="month")
+stopifnot(identical(d$data, attese), !anyNA(d$co2_ppm))
+y <- ts(d$co2_ppm, start=c(1985,1), frequency=12)
+tempo <- seq_along(y)
+corto <- loess(as.numeric(y)~tempo,span=.15)
+lungo <- loess(as.numeric(y)~tempo,span=.45)
+c(n=length(y),vicini_indicativi_corto=.15*length(y),
+ vicini_indicativi_lungo=.45*length(y))
+```
+
+**Lettura del risultato.** Il vicinato più ampio combina una parte maggiore della serie. I valori stampati aiutano a interpretare lo span, ma non sostituiscono i dettagli dei pesi e del trattamento dei bordi.
+
+## 2. Confrontare la forma
+
+Sovrapponiamo le due curve alle misure. Un adattamento più flessibile può seguire variazioni locali e rumore; uno più ampio può attenuare cambiamenti scientificamente interessanti.
+
+```{r passo_02}
+plot(d$data,as.numeric(y),type="l",col="grey70",
+ xlab="Data",ylab="CO2 (ppm)")
+lines(d$data,fitted(corto),col="#087C74",lwd=2)
+lines(d$data,fitted(lungo),col="#C57E42",lwd=2)
+legend("topleft",c("span 0.15","span 0.45"),
+ col=c("#087C74","#C57E42"),lty=1,bty="n")
+```
+
+**Lettura del risultato.** Le curve descrivono la stessa serie con scale locali diverse. La scelta dello span va collegata alla domanda e mantenuta visibile nel resoconto.
+
+## 3. Controllare il resto
+
+La differenza fra dato e curva può conservare periodicità e dipendenza. Smoothing non equivale a costruire residui indipendenti.
+
+```{r passo_03}
+resto <- as.numeric(y)-fitted(lungo)
+acf(resto,lag.max=36,main="Resto dopo LOESS, span 0.45")
+c(SD_osservata=sd(y),SD_resto=sd(resto),
+ ACF12=as.numeric(acf(resto,plot=FALSE,lag.max=12)$acf[13]))
+```
+
+**Lettura del risultato.** Il ciclo stagionale può rimanere nel resto perché la curva ampia descrive soprattutto l’andamento graduale. Una deviazione standard più piccola non dimostra l’assenza di struttura temporale.
+
+## Variante svolta
+
+Ripetere la stima soltanto sui primi 150 mesi e confrontarla vicino al limite.
+
+```{r variante}
+primi <- 1:150
+parziale <- loess(as.numeric(y)[primi]~tempo[primi],span=.45)
+data.frame(data=tail(d$data[primi],6),
+ stima_solo_passato=tail(fitted(parziale),6),
+ stima_intero_archivio=fitted(lungo)[145:150])
+```
+
+I vicinati vicini al limite e la quantità totale di dati cambiano. Il confronto mostra perché una curva calcolata sull’intero archivio non va trattata come disponibile a una data precedente.
+
+## Errore da riconoscere
+
+Leggere span=0.15 come una finestra di 15 mesi o usare la bontà visiva dell’adattamento come misura di capacità predittiva.
+
+## Risposta alla domanda
+
+LOESS dipende dallo span e dai dati disponibili. Il resto richiede una diagnosi separata e l’uso predittivo deve rispettare l’ordine temporale.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M09_N07` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M09/M09_N07.R).

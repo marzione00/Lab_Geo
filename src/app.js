@@ -477,8 +477,11 @@
     },
     exercises: r => {
       window.GeoLessons.exercises(main, window.GEO_LESSONS[r.id], r.card, announce);
-      document.title = config.title + ' · Quaderno di ' + window.GEO_LESSONS[r.id].planet + ' · Esercizio ' + r.card;
-      announce('Esercizio ' + r.card);
+      const L = window.GEO_LESSONS[r.id];
+      document.title =
+        config.title +
+        (L.exercises ? ' · Quaderno di ' + L.planet + ' · Esercizio ' + r.card : ' · Notebook di ' + L.planet);
+      announce(L.exercises ? 'Esercizio ' + r.card : 'Notebook svolti di ' + L.planet);
     },
     taccuino: () => window.GeoNarrative.journal(main),
     indice: r => home(r.type),
@@ -519,13 +522,21 @@
     else codePage(m);
     return true;
   }
+  const companionText = l =>
+    l.cards && l.notebooks
+      ? ' Gli esercizi del quaderno e i ' + l.notebooks + ' notebook svolti sono sul pianeta compagno del sistema.'
+      : l.cards
+        ? ' Gli esercizi del quaderno sono sul pianeta compagno del sistema.'
+        : l.notebooks
+          ? ' I ' + l.notebooks + ' notebook svolti sono sul pianeta compagno del sistema.'
+          : '';
   // Modules with a lesson point to its tappe; the earlier slides stay readable.
   function lessonNotice(m) {
     const l = lessonIndex[m.id];
     if (!l) return;
     const box = document.createElement('section');
     box.className = 'lesson-notice';
-    box.innerHTML = html`<p class="eyebrow">LEZIONE A TAPPE</p><h2>${l.planet}: ${l.title}</h2><p>Ognuna delle ${l.pages} slide della lezione ha una tappa sul sito, con il testo, il codice R eseguibile e i laboratori con gli stessi parametri.${l.cards ? ' Gli esercizi del quaderno sono sul pianeta compagno del sistema.' : ''}</p><div class="lab-actions"><a class="button" href="#lezione-${m.id}">Tappe della lezione →</a>${l.cards ? html`<a class="button secondary" href="#esercizi-${m.id}">Quaderno degli esercizi →</a>` : ''}</div>`;
+    box.innerHTML = html`<p class="eyebrow">LEZIONE A TAPPE</p><h2>${l.planet}: ${l.title}</h2><p>Ognuna delle ${l.pages} slide della lezione ha una tappa sul sito, con il testo, il codice R eseguibile e i laboratori con gli stessi parametri.${companionText(l)}</p><div class="lab-actions"><a class="button" href="#lezione-${m.id}">Tappe della lezione →</a>${l.cards || l.notebooks ? html`<a class="button secondary" href="#esercizi-${m.id}">${l.cards ? 'Quaderno degli esercizi' : 'Notebook svolti'} →</a>` : ''}</div>`;
     (main.querySelector('.module-head') || main.firstElementChild)?.after(box);
   }
   function markNavigation(r) {

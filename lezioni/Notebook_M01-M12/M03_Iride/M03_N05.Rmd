@@ -1,0 +1,132 @@
+---
+title: "Media e mediana: due domande differenti"
+subtitle: "M03_N05 \u00b7 Iride"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Perché un valore molto grande cambia la media più della mediana, e quale centro descrive meglio i dati osservati?
+
+## Obiettivi
+
+- Calcolare media e mediana anche senza funzioni dedicate.
+- Riconoscere la sensibilità della media ai valori estremi.
+
+**Prima di iniziare.** Vettori numerici, ordinamento e indici.
+
+**Dati e unità.** Primo esempio costruito con quattro misure in micrometri: 3, 4, 5 e 100. Il secondo utilizza i 160 diametri dei fossili sintetici.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M03_N05/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M03_N05")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(3005)
+```
+
+## 1. Calcolare il centro a mano
+
+La media ripartisce equamente la somma delle misure. La mediana divide l'insieme ordinato in due metà; con numerosità pari R usa la media dei due valori centrali. Le due operazioni riassumono aspetti diversi.
+
+```{r passo_01}
+x <- c(3, 4, 5, 100)
+ordinati <- sort(x)
+n <- length(x)
+media_manual <- sum(x) / n
+# Con n pari selezioniamo le due posizioni centrali del vettore ordinato.
+mediana_manual <- mean(ordinati[c(n / 2, n / 2 + 1)])
+print(c(media = media_manual, mediana = mediana_manual))
+stopifnot(media_manual == mean(x), mediana_manual == median(x))
+```
+
+**Lettura del risultato.** La media risente dell'intera grandezza del valore 100, mentre la mediana dipende qui solo da 4 e 5. Nessuna delle due funzioni sta sbagliando: stanno rispondendo a domande diverse sul centro.
+
+## 2. Isolare l'effetto dell'estremo
+
+Sostituiamo soltanto il quarto valore e manteniamo fisse le prime tre misure. La tabella permette di vedere la risposta dei due indici senza confondere la variazione del campione con quella della numerosità.
+
+```{r passo_02}
+estremi <- c(6, 20, 100, 200)
+# Cambiamo soltanto il massimo: le prime tre osservazioni restano fisse.
+confronto <- data.frame(ultimo_um = estremi,
+  media_um = sapply(estremi, function(v) mean(c(3, 4, 5, v))),
+  mediana_um = sapply(estremi, function(v) median(c(3, 4, 5, v))))
+print(confronto)
+matplot(confronto$ultimo_um, confronto[c("media_um", "mediana_um")],
+        type = "b", pch = c(16, 17), col = c("#1D7890", "#C57E42"),
+        xlab = "Quarta misura (um)", ylab = "Centro (um)")
+legend("topleft", c("Media", "Mediana"), col = c("#1D7890", "#C57E42"), pch = c(16, 17))
+```
+
+**Lettura del risultato.** La mediana resta stabile in questa particolare sostituzione perché il valore modificato rimane il massimo. Non significa che la mediana sia sempre costante, né che ogni osservazione estrema debba essere eliminata.
+
+## 3. Tornare ai fossili
+
+Descriviamo i diametri per morfotipo, così una possibile differenza fra gruppi non viene nascosta in un unico centro. Affianchiamo numerosità, media e mediana, mantenendo la stessa unità delle misure.
+
+```{r passo_03}
+f <- carica_dati("fossili_simulati.csv")
+# La divisione per morfotipo evita di confondere centri entro gruppo e centro complessivo.
+gruppi <- split(f$diametro_tot_um, f$morfotipo)
+centri <- t(sapply(gruppi, function(v)
+  c(n = length(v), media_um = mean(v), mediana_um = median(v))))
+print(centri)
+print(c(media_totale_um = mean(f$diametro_tot_um),
+        mediana_totale_um = median(f$diametro_tot_um)))
+```
+
+**Lettura del risultato.** Una media vicina alla mediana è compatibile con una distribuzione abbastanza equilibrata, ma non dimostra simmetria. Per valutare la forma occorre osservare anche i dati o un grafico della distribuzione.
+
+## Variante svolta
+
+Aggiungere un quinto valore invece di sostituire il quarto e ricalcolare entrambi i centri.
+
+```{r variante}
+cinque <- c(x, 6)
+print(sort(cinque))
+confronto_n <- rbind(quattro = c(n = length(x), media = mean(x), mediana = median(x)),
+                     cinque = c(n = length(cinque), media = mean(cinque), mediana = median(cinque)))
+print(confronto_n)
+stopifnot(median(cinque) == sort(cinque)[3])
+```
+
+Con cinque osservazioni la mediana coincide con una misura centrale. Aggiungere un individuo modifica sia il totale sia la posizione centrale: è un'operazione diversa dalla sostituzione di una misura.
+
+## Errore da riconoscere
+
+Non scegliere la mediana soltanto perché appare più rassicurante. L'indice deve corrispondere alla domanda e la presenza di valori estremi va documentata.
+
+## Risposta alla domanda
+
+La media descrive una ripartizione della somma; la mediana individua la posizione centrale nell'ordine. Riportarle insieme aiuta a riconoscere l'influenza degli estremi, ma non sostituisce l'esame della distribuzione.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M03_N05` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M03/M03_N05.R).

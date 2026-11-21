@@ -1,0 +1,136 @@
+---
+title: "Un arco sulla sfera: haversine"
+subtitle: "M11_N04 · Locus"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Come si trasforma una separazione angolare in un arco di lunghezza dichiarata?
+
+## Obiettivi
+
+- Convertire gradi in radianti.
+- Applicare haversine con il raggio dello script originale.
+- Distinguere modello sferico, piano locale ed ellissoide.
+
+**Prima di iniziare.** Sono richiesti vettori, tabelle, coordinate e funzioni R di base. I blocchi vanno eseguiti in ordine; il notebook è autonomo rispetto agli altri. I calcoli usano R base e i pacchetti standard.
+
+**Dati e unità.** 64 siti sintetici su una griglia 8 × 8, con passo 250 m e coordinate locali x_m e y_m fra 0 e 1750 m. Questo piano locale non ha un codice EPSG. La concentrazione è sintetica, in unità arbitrarie (u.a.); la quota è in metri sintetici. Ogni riga descrive un sito e il suo valore puntuale, non la media di una cella. Le colonne lon e lat forniscono un georiferimento sintetico separato, vicino a 9° E e 45° N, costruito con una relazione approssimata. Non sono coordinate UTM ottenute aggiungendo un’origine alle coordinate locali. Nel percorso geografico l’ordine è sempre longitudine, latitudine.
+
+## Preparazione
+
+Aprire il progetto autonomo di Locus o quello generale dei notebook. I CSV locali restano invariati. Gli output vanno in `Risultati/M11_N04/`. Nessun download o installazione viene eseguito nei blocchi.
+
+```{r preparazione}
+# Trova il modulo dal progetto autonomo o dal progetto generale dei notebook.
+.gs_cerca <- normalizePath(getwd(),winslash="/",mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca,file.path(.gs_cerca,"M11_Locus"),
+    file.path(.gs_cerca,"03_Notebook_svolti","M11_Locus"),
+    file.path(.gs_cerca,"M11","03_Notebook_svolti","M11_Locus"))
+  .gs_ok <- file.exists(file.path(.gs_candidati,"M11_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati,"R","funzioni_notebook.R"))
+  if(any(.gs_ok)) { .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]];break }
+  .gs_padre <- dirname(.gs_cerca)
+  if(.gs_padre==.gs_cerca) stop("Aprire il progetto M11_Locus o quello generale dei notebook.")
+  .gs_cerca <- .gs_padre
+}
+source(file.path(.gs_modulo,"R","funzioni_notebook.R"),local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo,"M11_N04")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88,digits=6)
+if(requireNamespace("knitr",quietly=TRUE)) {
+  knitr::opts_chunk$set(echo=TRUE,error=FALSE,warning=TRUE,message=TRUE,
+    fig.width=8,fig.height=5,dpi=150,fig.align="center")
+}
+set.seed(11004)
+```
+
+## 1. L’arco usa angoli in radianti
+
+La formula sferica è $d=2 R\arcsin\sqrt{h}$, con $h=\sin^2(\Delta\varphi/2)+\cos\varphi_1\cos\varphi_2\sin^2(\Delta\lambda/2)$. Qui $R=6371$ km, come nel laboratorio originale.
+
+```{r passo_01}
+d <- carica_dati("spazio_v3.csv")
+audit_spazio(d)
+ lon <- d$lon*pi/180;lat <- d$lat*pi/180
+ h <- sin((lat-lat[1])/2)^2+cos(lat)*cos(lat[1])*sin((lon-lon[1])/2)^2
+ km <- 2*6371*asin(sqrt(pmin(1,pmax(0,h))))
+ stopifnot(km[1]==0,all(km>=0))
+ head(data.frame(id=d$id,distanza_sferica_km=km),10)
+```
+
+**Lettura del risultato.** Il limite fra zero e uno protegge la funzione inversa da piccoli errori numerici. Il risultato è un arco su una sfera del raggio dichiarato, non una geodetica ellissoidale.
+
+## 2. Una seconda implementazione controlla il calcolo
+
+La funzione di servizio usa la stessa formula. Il confronto con le distanze locali riguarda due rappresentazioni sintetiche collegate approssimativamente.
+
+```{r passo_02}
+altro <- haversine_km(d$lon[1],d$lat[1],d$lon,d$lat)
+euclidea_m <- sqrt((d$x_m-d$x_m[1])^2+(d$y_m-d$y_m[1])^2)
+stopifnot(max(abs(km-altro))<1e-10)
+confronto <- data.frame(id=d$id,locale_m=euclidea_m,sfera_m=1000*km,
+  differenza_m=1000*km-euclidea_m)
+confronto[c(1,8,57,64),]
+```
+
+**Lettura del risultato.** Una differenza piccola in questo esempio non rende intercambiabili le coordinate. Il georiferimento lon–lat è stato costruito con una relazione approssimata e il modello terrestre è esplicito.
+
+## 3. Il confronto conserva le unità
+
+Confrontiamo le due distanze nella stessa unità e scriviamo entrambe le colonne.
+
+```{r passo_03}
+stile_grafico()
+plot(confronto$locale_m,confronto$sfera_m,pch=19,col=palette_geo[1],
+  xlab="Distanza nel piano locale (m)",ylab="Arco sferico (m)",main="Due metriche dichiarate")
+abline(0,1,lty=2,col=palette_geo[2])
+write.csv(confronto,percorso_risultati("distanze_confrontate.csv"),row.names=FALSE)
+data.frame(massimo_scarto_m=max(abs(confronto$differenza_m)))
+```
+
+**Lettura del risultato.** La bisettrice aiuta a vedere l’ordine di grandezza. Per quantificare uno scarto piccolo si usa la tabella, non lo spessore della linea.
+
+## Variante svolta
+
+**Cambiare il raggio dichiarato.** Usare 6371.0088 km e misurare l’effetto del parametro, senza chiamarlo una trasformazione ellissoidale.
+
+```{r variante}
+km2 <- haversine_km(d$lon[1],d$lat[1],d$lon,d$lat,R=6371.0088)
+data.frame(raggio_originale_km=6371,raggio_variante_km=6371.0088,
+  variazione_massima_m=max(abs(km2-km))*1000)
+stopifnot(max(abs(km2-km*(6371.0088/6371)))<1e-10)
+```
+
+La distanza scala linearmente con il raggio. Restano invariati gli angoli e l’ipotesi sferica.
+
+## Errore da riconoscere
+
+Passare gradi a funzioni trigonometriche che aspettano radianti oppure confrontare chilometri e metri senza conversione.
+
+## Risposta alla domanda
+
+Haversine produce una lunghezza solo dopo aver dichiarato raggio e unità degli angoli. Il controllo su un punto coincidente e la conversione delle unità rendono il risultato verificabile; la sfera resta un modello geometrico.
+
+## Raccordo con le slide
+
+[Slide 22–24 della lezione Locus](../../02_PDF/M11_Locus/Locus_M11_statistica_spaziale.pdf#page=22). Il notebook conserva il tema del laboratorio originale e aggiunge verifiche e una variante svolta.
+
+
+## Riferimenti e provenienza
+
+Questo svolgimento sviluppa `M11_N04` del [modulo M11 del corso](https://marzione00.github.io/Lab_Geo/#modulo-M11). Il [codice originale](https://github.com/marzione00/Lab_Geo/blob/649f7cc577b96bd1044d81e78a2f530813e4f96b/materiali/laboratori/M11/M11_N04.R) è conservato immutato in `R/Originali_corso/`; la mappa allegata documenta gli ampliamenti. Dati e originali hanno impronte SHA-256 e SHA-1 Git verificate.
+
+Documentazione primaria delle operazioni: [R, dist](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/dist.html), [R, aggregate](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/aggregate.html), [R, sample](https://stat.ethz.ch/R-manual/R-devel/library/base/html/sample.html). Le definizioni spaziali e il riferimento inferenziale seguono il laboratorio originale, con le distinzioni esplicitate nel testo.

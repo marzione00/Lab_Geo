@@ -1,0 +1,149 @@
+---
+title: "Un riferimento di permutazione spaziale"
+subtitle: "M11_N14 · Locus"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Quanto è insolita l’associazione positiva rispetto a etichette ricollocate sulle stesse posizioni?
+
+## Obiettivi
+
+- Conservare le 100 permutazioni originali dal file u.
+- Usare il conteggio con correzione +1.
+- Distinguere precisione Monte Carlo e ipotesi di scambiabilità.
+
+**Prima di iniziare.** Sono richiesti vettori, tabelle, coordinate e funzioni R di base. I blocchi vanno eseguiti in ordine; il notebook è autonomo rispetto agli altri. I calcoli usano R base e i pacchetti standard.
+
+**Dati e unità.** 64 siti sintetici su una griglia 8 × 8, con passo 250 m e coordinate locali x_m e y_m fra 0 e 1750 m. Questo piano locale non ha un codice EPSG. La concentrazione è sintetica, in unità arbitrarie (u.a.); la quota è in metri sintetici. Ogni riga descrive un sito e il suo valore puntuale, non la media di una cella. Le permutazioni originali derivano dai primi 6400 valori u di casuali_comuni_v3.csv, in 100 blocchi consecutivi da 64.
+
+## Preparazione
+
+Aprire il progetto autonomo di Locus o quello generale dei notebook. I CSV locali restano invariati. Gli output vanno in `Risultati/M11_N14/`. Nessun download o installazione viene eseguito nei blocchi.
+
+```{r preparazione}
+# Trova il modulo dal progetto autonomo o dal progetto generale dei notebook.
+.gs_cerca <- normalizePath(getwd(),winslash="/",mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca,file.path(.gs_cerca,"M11_Locus"),
+    file.path(.gs_cerca,"03_Notebook_svolti","M11_Locus"),
+    file.path(.gs_cerca,"M11","03_Notebook_svolti","M11_Locus"))
+  .gs_ok <- file.exists(file.path(.gs_candidati,"M11_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati,"R","funzioni_notebook.R"))
+  if(any(.gs_ok)) { .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]];break }
+  .gs_padre <- dirname(.gs_cerca)
+  if(.gs_padre==.gs_cerca) stop("Aprire il progetto M11_Locus o quello generale dei notebook.")
+  .gs_cerca <- .gs_padre
+}
+source(file.path(.gs_modulo,"R","funzioni_notebook.R"),local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo,"M11_N14")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88,digits=6)
+if(requireNamespace("knitr",quietly=TRUE)) {
+  knitr::opts_chunk$set(echo=TRUE,error=FALSE,warning=TRUE,message=TRUE,
+    fig.width=8,fig.height=5,dpi=150,fig.align="center")
+}
+set.seed(11014)
+```
+
+## 1. Statistica e riferimento sono dichiarati prima del conteggio
+
+L’alternativa è un’associazione positiva. Le posizioni e A rimangono fisse; si permutano i valori centrati della concentrazione.
+
+```{r passo_01}
+d <- carica_dati("spazio_v3.csv")
+audit_spazio(d)
+ A <- pesi_spaziali(d,260)$A
+ v <- d$concentrazione-mean(d$concentrazione)
+ f <- function(a) length(a)/sum(A)*sum(A*outer(a,a))/sum(a^2)
+ osservato <- f(v)
+ u <- carica_dati("casuali_comuni_v3.csv")$u
+ B <- 100L
+ stopifnot(length(u)>=B*length(v))
+ data.frame(I_osservato=osservato,B=B,uniformi_usati=B*length(v),alternativa="positiva")
+```
+
+**Lettura del risultato.** Il riferimento richiede che la ricollocazione dei valori sulle posizioni sia una rappresentazione appropriata dell’ipotesi nulla. Non è una prova automatica di un meccanismo geologico.
+
+## 2. I blocchi u ricostruiscono le permutazioni originali
+
+L’ordine dei 64 uniformi in ogni blocco genera una permutazione completa. Manteniamo la sequenza originale del sito.
+
+```{r passo_02}
+nullo <- sapply(seq_len(B),function(b) {
+  ind <- ((b-1L)*64L+1L):(b*64L)
+  stopifnot(!anyDuplicated(u[ind]))
+  permutazione <- order(u[ind])
+  f(v[permutazione])
+})
+eccedenze <- sum(nullo>=osservato)
+p <- (1+eccedenze)/(B+1)
+risultato <- data.frame(I=osservato,eccedenze=eccedenze,B=B,p_unilaterale=p,
+  risoluzione=1/(B+1),media_permutata=mean(nullo))
+risultato
+stopifnot(p>=1/101,p<=1)
+```
+
+**Lettura del risultato.** La correzione +1 evita un valore zero quando nessuna delle 100 permutazioni supera l’osservato. La risoluzione minima è 1/101; un numero piccolo non elimina le ipotesi del riferimento.
+
+## 3. La figura include anche l’osservato
+
+L’asse orizzontale contiene sia le statistiche permutate sia l’osservato, anche quando quest’ultimo è lontano dall’istogramma.
+
+```{r passo_03}
+stile_grafico()
+hist(nullo,breaks=15,xlim=range(c(nullo,osservato)),col="#CFE2E5",border="white",
+  xlab="Moran I con A binaria",main="100 permutazioni originali: alternativa positiva")
+abline(v=osservato,col=palette_geo[2],lwd=2,lty=2)
+legend("topright","I osservato",lty=2,lwd=2,col=palette_geo[2],bty="n")
+write.csv(data.frame(permutazione=seq_len(B),I=nullo),percorso_risultati("permutazioni_originali.csv"),row.names=FALSE)
+write.csv(risultato,percorso_risultati("riferimento_Moran.csv"),row.names=FALSE)
+```
+
+**Lettura del risultato.** Il risultato riguarda la disposizione osservata rispetto a questo riferimento condizionato. Dipendenza spaziale, trend e processo generatore richiedono ulteriore interpretazione.
+
+## Variante svolta
+
+**Una variante con 999 nuove permutazioni.** Usare un nuovo seme esplicito per 999 permutazioni generate da R. Questa variante non ricicla né prolunga artificiosamente il file u originale.
+
+```{r variante}
+set.seed(20261114)
+B2 <- 999L
+nullo2 <- replicate(B2,f(v[sample.int(length(v))]))
+p2 <- (1+sum(nullo2>=osservato))/(B2+1)
+data.frame(protocollo=c("Originale: file u","Variante: seed 20261114"),
+  B=c(B,B2),p=c(p,p2),risoluzione=c(1/(B+1),1/(B2+1)))
+write.csv(data.frame(permutazione=seq_len(B2),I=nullo2),percorso_risultati("permutazioni_variante999.csv"),row.names=FALSE)
+```
+
+Più simulazioni affinano la risoluzione Monte Carlo, ma non aggiungono siti né rendono vera l’ipotesi di scambiabilità. I due protocolli restano identificati separatamente.
+
+## Errore da riconoscere
+
+Riportare p=0, scegliere la coda dopo aver visto l’esito o trattare le permutazioni come nuovi campioni del territorio.
+
+## Risposta alla domanda
+
+Il conteggio con +1 produce un riferimento Monte Carlo verificabile per l’alternativa positiva. Le 100 permutazioni originali sono riproducibili dal file u; l’interpretazione resta condizionata a posizioni, pesi e scambiabilità dichiarati.
+
+## Raccordo con le slide
+
+[Slide 63–70 della lezione Locus](../../02_PDF/M11_Locus/Locus_M11_statistica_spaziale.pdf#page=63). Il notebook conserva il tema del laboratorio originale e aggiunge verifiche e una variante svolta.
+
+
+## Riferimenti e provenienza
+
+Questo svolgimento sviluppa `M11_N14` del [modulo M11 del corso](https://marzione00.github.io/Lab_Geo/#modulo-M11). Il [codice originale](https://github.com/marzione00/Lab_Geo/blob/649f7cc577b96bd1044d81e78a2f530813e4f96b/materiali/laboratori/M11/M11_N14.R) è conservato immutato in `R/Originali_corso/`; la mappa allegata documenta gli ampliamenti. Dati e originali hanno impronte SHA-256 e SHA-1 Git verificate.
+
+Documentazione primaria delle operazioni: [R, dist](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/dist.html), [R, aggregate](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/aggregate.html), [R, sample](https://stat.ethz.ch/R-manual/R-devel/library/base/html/sample.html). Le definizioni spaziali e il riferimento inferenziale seguono il laboratorio originale, con le distinzioni esplicitate nel testo.

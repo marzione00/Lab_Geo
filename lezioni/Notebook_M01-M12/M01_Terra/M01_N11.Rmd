@@ -1,0 +1,129 @@
+---
+title: "Simulare una popolazione finita: un'aggiunta esplicita"
+subtitle: "M01_N11 \u00b7 Terra"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Che cosa possiamo imparare dal campionamento quando conosciamo tutti i valori di una popolazione costruita?
+
+## Obiettivi
+
+- Costruire una popolazione finita con un andamento spaziale dichiarato.
+- Distinguere il parametro noto della simulazione dalla sintesi di un campione.
+
+**Prima di iniziare.** Saper eseguire una cella R e riconoscere vettori, assegnamenti e nomi di colonne.
+
+**Dati e unità.** Creiamo 120 siti artificiali, distanti 10 m, con un valore in unità convenzionali. Il modello aggiunge a un andamento lineare un rumore normale con deviazione standard 0,04.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M01_N11/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M01_N11")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(1011)
+```
+
+## 1. Dichiarare il modello generatore
+
+La simulazione rende osservabile un riferimento che sul campo spesso non conosciamo. Definiamo identificativi e distanze, poi aggiungiamo un andamento e una componente casuale. Il seme permette di ricostruire esattamente questa popolazione nelle esecuzioni successive.
+
+```{r passo_01}
+# Popolazione artificiale finita: la posizione contribuisce al valore.
+set.seed(102)
+siti <- data.frame(id_sito = sprintf("S%03d", 1:120),
+                   distanza_m = seq(0, 1190, by = 10))
+siti$valore <- 2.4 + 0.00035 * siti$distanza_m + rnorm(120, 0, 0.04)
+media_pop <- mean(siti$valore)
+
+print(head(siti, 4))
+print(tail(siti, 3))
+stopifnot(nrow(siti) == 120L, !anyDuplicated(siti$id_sito))
+```
+
+**Lettura del risultato.** Ogni riga è un sito della popolazione artificiale. Il rumore rappresenta una componente del modello didattico, non un errore strumentale misurato: le sue proprietà sono state scelte da noi e limitano le conclusioni dell'esperimento.
+
+## 2. Descrivere la popolazione completa
+
+Avendo tutti i siti, possiamo calcolare la media della popolazione finita senza errore di campionamento. Il grafico mostra perché scegliere soltanto una parte del tratto potrebbe produrre una sintesi diversa da quella dell'intera estensione.
+
+```{r passo_02}
+print(c(N = nrow(siti), media_popolazione = media_pop,
+        minimo = min(siti$valore), massimo = max(siti$valore)))
+plot(siti$distanza_m, siti$valore, pch = 19, cex = 0.6,
+     xlab = "Distanza (m)", ylab = "Valore (unita convenzionali)")
+abline(h = media_pop, col = "firebrick", lwd = 2)
+andamento <- 2.4 + 0.00035 * siti$distanza_m
+print(mean(andamento))
+```
+
+**Lettura del risultato.** La media realizzata include il rumore dei 120 siti e può differire dalla media dell'andamento senza rumore. Tenere separati questi riferimenti evita di confondere il modello generatore con la particolare popolazione estratta da esso.
+
+## 3. Estrarre un primo campione
+
+Selezioniamo dodici siti senza reinserimento, in modo che nessun sito compaia due volte. Confrontiamo la media del campione con il riferimento noto: in una simulazione possiamo misurare direttamente lo scarto di questa singola estrazione.
+
+```{r passo_03}
+set.seed(103)
+indici <- sample(seq_len(nrow(siti)), size = 12, replace = FALSE)
+campione <- siti[indici, , drop = FALSE]
+media_campione <- mean(campione$valore)
+errore <- media_campione - media_pop
+print(c(media_campione = media_campione, errore = errore))
+print(campione[order(campione$distanza_m), ])
+stopifnot(!anyDuplicated(campione$id_sito))
+```
+
+**Lettura del risultato.** Lo scarto è l'errore di campionamento della specifica estrazione. Non è ancora il bias del metodo, che riguarda il comportamento medio su estrazioni ripetute, e non quantifica da solo la variabilità delle possibili medie.
+
+## Variante svolta
+
+Calcolare la media dei primi dodici siti e confrontarne l'estensione spaziale.
+
+```{r variante}
+comodi <- siti[1:12, , drop = FALSE]
+print(c(media = mean(comodi$valore), errore = mean(comodi$valore) - media_pop))
+print(rbind(casuale = range(campione$distanza_m),
+            primi_siti = range(comodi$distanza_m)))
+```
+
+La selezione dei siti iniziali copre soltanto una parte del gradiente. La stessa numerosità non implica quindi la stessa copertura; il confronto rende concreta l'importanza della lista da cui si campiona.
+
+## Errore da riconoscere
+
+Presentare i valori simulati come osservazioni di campo attribuirebbe al dataset un'origine che non ha. Specificare modello, unità convenzionali e seme rende chiaro che cosa viene dimostrato.
+
+## Risposta alla domanda
+
+La popolazione costruita offre un parametro noto con cui confrontare campioni diversi. Le conclusioni riguardano il meccanismo simulato; l'applicazione a un caso reale richiede verificare che il modello ne rappresenti gli aspetti rilevanti.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M01_N11` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M01/M01_N11.R).

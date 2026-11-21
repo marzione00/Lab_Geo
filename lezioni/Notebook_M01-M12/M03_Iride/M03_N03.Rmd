@@ -1,0 +1,131 @@
+---
+title: "Quando mancano le categorie"
+subtitle: "M03_N03 \u00b7 Iride"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Quale percentuale di Spiky possiamo riportare se alcuni fossili non sono stati classificati?
+
+## Obiettivi
+
+- Distinguere categoria assente e classificazione mancante.
+- Calcolare percentuali sul totale e sui soli classificati.
+
+**Prima di iniziare.** Valori NA, filtri logici, table e somme di condizioni.
+
+**Dati e unità.** Archivio didattico sintetico: 160 fossili, 80 Rounded e 80 Spiky. Diametri e spessori sono espressi in micrometri; ogni riga identifica un individuo. Introduciamo sei classificazioni mancanti in una copia per studiare i denominatori.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M03_N03/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M03_N03")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(3003)
+```
+
+## 1. Costruire e mostrare il problema
+
+Lasciamo intatto il file originale. Nella copia rimuoviamo le prime sei etichette: NA rappresenta una classificazione sconosciuta, non un terzo morfotipo biologico e neppure l'assenza di fossili.
+
+```{r passo_01}
+f <- carica_dati("fossili_simulati.csv")
+incompleti <- f
+# La modifica riguarda una copia: le etichette del file originale restano disponibili.
+incompleti$morfotipo[1:6] <- NA_character_
+# useNA conserva la classe dei dati non classificati nella tabella.
+print(table(incompleti$morfotipo, useNA = "ifany"))
+noti <- !is.na(incompleti$morfotipo)
+print(c(totale = nrow(incompleti), classificati = sum(noti),
+        non_classificati = sum(!noti)))
+```
+
+**Lettura del risultato.** La tabella rende visibile quanta informazione manca. Eliminare le righe con NA dal conteggio può essere utile per un calcolo condizionato, ma nasconderebbe il problema se non dichiarassimo il numero eliminato.
+
+## 2. Rispondere a due domande diverse
+
+Calcoliamo la quota di Spiky accertati fra tutti gli individui e la quota di Spiky fra quelli classificati. Entrambe sono corrette, ma rispondono a domande differenti e richiedono etichette diverse.
+
+```{r passo_02}
+# na.rm consente il conteggio dei casi noti; non assegna una categoria agli ignoti.
+n_spiky <- sum(incompleti$morfotipo == "Spiky", na.rm = TRUE)
+n_totale <- nrow(incompleti)
+n_noti <- sum(noti)
+quote <- c(sul_totale = n_spiky / n_totale,
+           fra_classificati = n_spiky / n_noti)
+print(100 * quote)
+stopifnot(n_noti + sum(!noti) == n_totale)
+```
+
+**Lettura del risultato.** L'argomento na.rm evita che una somma diventi NA; non recupera le etichette perdute. La seconda percentuale descrive i classificati e si estende agli altri solo con ipotesi sul meccanismo della mancata classificazione.
+
+## 3. Delimitare ciò che non sappiamo
+
+Senza ipotesi aggiuntive possiamo assegnare tutti gli ignoti prima all'altro morfotipo e poi a Spiky. Otteniamo limiti logici per la quota di Spiky nell'intero archivio, non un intervallo di confidenza.
+
+```{r passo_03}
+n_ignoti <- sum(!noti)
+# Gli estremi corrispondono a nessun ignoto Spiky oppure a tutti gli ignoti Spiky.
+limiti <- c(minimo = n_spiky / n_totale,
+            massimo = (n_spiky + n_ignoti) / n_totale)
+print(100 * limiti)
+quota_originale <- mean(f$morfotipo == "Spiky")
+print(quota_originale)
+stopifnot(quota_originale >= limiti[1], quota_originale <= limiti[2])
+```
+
+**Lettura del risultato.** Nel laboratorio conosciamo il file completo e possiamo verificare i limiti. In una raccolta reale le etichette originali potrebbero essere irrecuperabili: i limiti resterebbero una descrizione dell'incertezza da informazione mancante.
+
+## Variante svolta
+
+Ripetere il calcolo cancellando le etichette di sei Spiky, per mostrare l'effetto di una mancanza selettiva.
+
+```{r variante}
+selettivi <- f$morfotipo
+selettivi[head(which(selettivi == "Spiky"), 6)] <- NA_character_
+tab_selettiva <- table(selettivi, useNA = "ifany")
+print(tab_selettiva)
+print(c(sul_totale = sum(selettivi == "Spiky", na.rm = TRUE) / length(selettivi),
+        sui_noti = mean(selettivi[!is.na(selettivi)] == "Spiky")))
+```
+
+La quota fra classificati cambia quando la mancanza colpisce selettivamente una categoria. La sola esclusione degli NA non garantisce una composizione rappresentativa del campione iniziale.
+
+## Errore da riconoscere
+
+Non trasformare NA nella categoria meno frequente e non interpretare na.rm = TRUE come una correzione del possibile errore di selezione.
+
+## Risposta alla domanda
+
+La percentuale va accompagnata dal suo denominatore e dalla numerosità non classificata. Quando le etichette mancanti possono dipendere dal morfotipo, occorrono limiti o informazioni aggiuntive prima di estendere il risultato.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M03_N03` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M03/M03_N03.R).

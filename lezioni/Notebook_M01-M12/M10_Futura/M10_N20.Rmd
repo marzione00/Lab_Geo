@@ -1,0 +1,133 @@
+---
+title: "Laboratorio applicativo: baseline stagionale"
+subtitle: "M10_N20 · Futura"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Come si costruiscono diciotto mesi usando soltanto l’ultimo anno del train?
+
+## Obiettivi
+
+- Associare ogni bersaglio al mese di riferimento.
+- Ripetere il ciclo oltre i primi dodici passi.
+- Controllare che il test non entri nella formula.
+
+**Prima di iniziare.** Sono richiesti vettori, tabelle e funzioni R di base. I blocchi vanno eseguiti in ordine. Il notebook è autonomo rispetto agli altri.
+
+**Dati e unità.** CO₂ storica: 204 mesi da gennaio 1985 a dicembre 2001, concentrazione in ppm. Le medie derivano dalle osservazioni settimanali attribuite al mese della data, secondo la convenzione del corso. Sono dati storici, distinti da una serie mensile ufficiale e da una misura attuale. Il protocollo usa 168 mesi per l’adattamento (1985–1998) e 36 per il test (1999–2001).
+
+## Preparazione
+
+Aprire il progetto autonomo di Futura o quello generale del corso. I calcoli usano R base e stats. Gli output del notebook vanno in `Risultati/M10_N20/`; i CSV originali restano invariati.
+
+```{r preparazione}
+# Trova la cartella M10 dal progetto autonomo o dal progetto generale.
+.gs_cerca <- normalizePath(getwd(),winslash="/",mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca,
+    file.path(.gs_cerca,"M10_Futura"),
+    file.path(.gs_cerca,"03_Notebook_svolti","M10_Futura"),
+    file.path(.gs_cerca,"M10","03_Notebook_svolti","M10_Futura"))
+  .gs_ok <- file.exists(file.path(.gs_candidati,"M10_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati,"R","funzioni_notebook.R"))
+  if(any(.gs_ok)) { .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]; break }
+  .gs_padre <- dirname(.gs_cerca)
+  if(.gs_padre==.gs_cerca) stop("Aprire il progetto M10_Futura o quello generale dei notebook.")
+  .gs_cerca <- .gs_padre
+}
+source(file.path(.gs_modulo,"R","funzioni_notebook.R"),local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo,"M10_N20")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88,digits=6)
+if(requireNamespace("knitr",quietly=TRUE)) {
+  knitr::opts_chunk$set(echo=TRUE,error=FALSE,warning=TRUE,message=TRUE,
+    fig.width=8,fig.height=5,dpi=150,fig.align="center")
+}
+set.seed(10020)
+```
+
+## 1. L’ultimo anno è il riferimento disponibile
+
+Il protocollo usa la stessa origine del caso SARIMA. Costruiamo diciotto mesi senza consultare i valori del test.
+
+```{r passo_01}
+c2 <- prepara_co2(carica_dati("co2_1985_2001.csv"))
+train <- c2$train; test <- c2$test; h <- c2$h
+ h18 <- 18L
+ ultimo_anno <- as.numeric(tail(train,12))
+ pred18 <- rep(ultimo_anno,length.out=h18)
+ data.frame(h=1:h18,data=as.character(c2$date_test[1:h18]),
+            mese_riferimento=rep(as.character(c2$dati$data[157:168]),length.out=h18),
+            previsto=pred18)
+```
+
+**Lettura del risultato.** Gennaio 2000 usa ancora gennaio 1998 nella previsione a origine fissa dicembre 1998. Gennaio 1999 osservato appartiene al futuro di quell’origine.
+
+## 2. La periodicità diventa un controllo
+
+La regola è verificabile senza conoscere il test: i passi 13–18 ripetono i primi sei valori dell’ultimo anno.
+
+```{r passo_02}
+stopifnot(identical(pred18[13:18],ultimo_anno[1:6]),
+          identical(pred18[1:12],ultimo_anno))
+data.frame(controllo=c("Primo anno uguale all'ultimo train","Mesi 13-18 ripetono 1-6"),esito=TRUE)
+stile_grafico()
+plot(1:h18,pred18,type="b",pch=19,col=palette_geo[1],xlab="Mesi dall'origine",
+  ylab="CO2 prevista (ppm)",main="Baseline stagionale a 18 mesi")
+abline(v=12.5,lty=2)
+```
+
+**Lettura del risultato.** La curva conserva la stagione ma non aggiunge crescita. Questa ipotesi va discussa quando la serie ha un trend.
+
+## 3. Il confronto usa esattamente diciotto bersagli
+
+Calcoliamo le metriche sul sottoinsieme dichiarato. Non confrontiamo direttamente queste metriche con quelle su 36 mesi senza segnalare il cambio di orizzonte.
+
+```{r passo_03}
+obs18 <- as.numeric(test)[1:h18]
+fit <- stima_sarima(train)
+ar18 <- as.numeric(predict(fit,n.ahead=h18)$pred)
+rbind(Stagionale=metriche(obs18,pred18),SARIMA=metriche(obs18,ar18))
+write.csv(data.frame(data=c2$date_test[1:h18],osservato=obs18,
+  stagionale=pred18,SARIMA=ar18),percorso_risultati("baseline_18_mesi.csv"),row.names=FALSE)
+```
+
+**Lettura del risultato.** I due metodi condividono origine e bersagli. Il risultato riguarda questa finestra e non tutti i possibili periodi futuri.
+
+## Variante svolta
+
+**Trenta mesi senza accesso al futuro.** Estendere la regola e verificare il terzo ciclo parziale.
+
+```{r variante}
+pred30 <- rep(ultimo_anno,length.out=30)
+stopifnot(identical(pred30[25:30],ultimo_anno[1:6]))
+data.frame(h=25:30,previsto=pred30[25:30])
+```
+
+L’estensione richiede solo il calendario della previsione. Per aggiornare il riferimento con nuovi valori servirebbe dichiarare una nuova origine.
+
+## Errore da riconoscere
+
+Costruire la baseline con y del mese precedente dell’anno del test per gli orizzonti superiori a dodici, senza dichiarare l’aggiornamento.
+
+## Risposta alla domanda
+
+La baseline stagionale ripete l’ultimo ciclo osservato all’origine. Una tabella di corrispondenza fra mesi rende il calcolo trasparente e impedisce l’uso accidentale di osservazioni future.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M10_N20` di [GeoStat Lab M10](https://marzione00.github.io/Lab_Geo/#indice). Il [codice originale del laboratorio](https://github.com/marzione00/Lab_Geo/blob/649f7cc577b96bd1044d81e78a2f530813e4f96b/materiali/laboratori/M10/M10_N20.R) è conservato anche in `R/Originali_corso`. Gli ampliamenti e le varianti sono identificati nella mappa allegata.
+
+Documentazione dei metodi: [R stats, arima](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/arima.html), [predict.Arima](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/predict.arima.html), [Box.test](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/box.test.html) e [p.adjust](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/p.adjust.html).

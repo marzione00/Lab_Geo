@@ -1,0 +1,133 @@
+---
+title: "Il numero di osservazioni cambia l\u2019incertezza"
+subtitle: "M06_N07 \u00b7 Gemina"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+A parità di effetto e variabilità, come cambia la precisione quando aumentano le unità indipendenti?
+
+## Obiettivi
+
+- Isolare il ruolo della numerosità nel SE.
+- Distinguere rilevanza dell'effetto ed evidenza contro la nulla.
+
+**Prima di iniziare.** Vettori, indicizzazione, media, varianza e grafici di base in R.
+
+**Dati e unità.** Modello didattico con differenza media 0,3 unità convenzionali e deviazioni standard di popolazione pari a uno in entrambi i gruppi.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M06_N07/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M06_N07")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(6007)
+```
+
+## 1. Confrontare errori standard teorici
+
+Per gruppi indipendenti e ugualmente numerosi, il SE teorico è la radice di 2 sigma²/n. Manteniamo fisso l'effetto biologico ipotizzato e cambiamo soltanto n. Così il confronto non è confuso da nuove realizzazioni casuali dei valori.
+
+```{r passo_01}
+delta <- 0.3
+sigmaA <- 1
+sigmaB <- 1
+numerosita <- c(10, 25, 100, 400)
+se_teorico <- sqrt(sigmaA^2 / numerosita + sigmaB^2 / numerosita)
+piano <- data.frame(n_per_gruppo = numerosita, effetto = delta,
+                   SE_teorico = se_teorico)
+piano$effetto_su_SE <- delta / se_teorico
+print(piano)
+```
+
+**Lettura del risultato.** L'effetto resta identico nelle unità originali. Aumenta invece il rapporto fra effetto e incertezza: un campione grande può rendere evidente anche una differenza piccola.
+
+## 2. Valutare ripetuti campioni sotto lo stesso modello
+
+Generiamo nuove coppie di campioni per ciascuna numerosità e applichiamo Welch. Registriamo la differenza osservata e il p-value. La quota di p-value sotto 0,05 stima la potenza in questo specifico modello, con errore Monte Carlo.
+
+```{r passo_02}
+set.seed(607)
+B <- 1000
+simulazioni <- lapply(numerosita, function(nn) {
+  replicate(B, {
+    a <- rnorm(nn, mean = 0, sd = sigmaA)
+    b <- rnorm(nn, mean = delta, sd = sigmaB)
+    c(differenza = mean(b) - mean(a), p = t.test(b, a)$p.value)
+  })
+})
+potenza <- vapply(simulazioni, function(z) mean(z["p", ] < 0.05), numeric(1))
+print(data.frame(n = numerosita, potenza_stimata = potenza,
+  MCSE = sqrt(potenza * (1 - potenza) / B)))
+```
+
+**Lettura del risultato.** La potenza riguarda l'alternativa, le varianze, il livello e il metodo scelti. Non è la probabilità che un singolo risultato significativo corrisponda a una differenza scientificamente importante.
+
+## 3. Mostrare la distribuzione delle differenze
+
+Confrontiamo le stime ottenute a numerosità diverse. Le scatole si riferiscono a campioni ripetuti, non a misure individuali. Una linea orizzontale indica il medesimo effetto generatore in tutti gli scenari.
+
+```{r passo_03}
+differenze <- lapply(simulazioni, function(z) z["differenza", ])
+names(differenze) <- paste0("n=", numerosita)
+boxplot(differenze, col = "#95BDD0", ylab = "Differenza B - A (u.c.)",
+        main = "Stesso effetto, diversa precisione")
+abline(h = delta, col = "#A33B31", lwd = 2)
+print(data.frame(n = numerosita,
+  media_stime = vapply(differenze, mean, numeric(1)),
+  SD_stime = vapply(differenze, sd, numeric(1))))
+```
+
+**Lettura del risultato.** La distribuzione si concentra attorno allo stesso effetto. Per una singola coppia di campioni il p-value può aumentare o diminuire al variare dei dati: non esiste una monotonia campione per campione.
+
+## Variante svolta
+
+Confrontare allocazioni bilanciate e sbilanciate con duecento unità complessive.
+
+```{r variante}
+allocazioni <- data.frame(nA = c(100, 150, 180), nB = c(100, 50, 20))
+allocazioni$SE <- sqrt(sigmaA^2 / allocazioni$nA + sigmaB^2 / allocazioni$nB)
+print(allocazioni)
+stopifnot(all(allocazioni$nA + allocazioni$nB == 200))
+```
+
+Con varianze uguali e costi uguali, il bilanciamento minimizza il SE a totale fissato. Varianze o costi differenti richiedono un diverso ragionamento di allocazione.
+
+## Errore da riconoscere
+
+Non equiparare p-value piccolo ed effetto grande. Riportare la differenza nelle unità originali e la sua incertezza, insieme al numero di unità indipendenti.
+
+## Risposta alla domanda
+
+La numerosità modifica la precisione e la capacità di rilevare un effetto. La rilevanza scientifica richiede una soglia o una domanda sostantiva, non soltanto il superamento di 0,05.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M06_N07` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M06/M06_N07.R).

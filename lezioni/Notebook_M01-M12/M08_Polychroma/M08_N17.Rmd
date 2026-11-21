@@ -1,0 +1,149 @@
+---
+title: "Stabilit\u00e0 senza confrontare i nomi dei cluster"
+subtitle: "M08_N17 \u00b7 Polychroma"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+La partizione cambia davvero, oppure sono cambiati soltanto i numeri assegnati ai gruppi?
+
+## Obiettivi
+
+- Confrontare partizioni invarianti ai nomi.
+- Misurare la sensibilità agli avvii.
+- Distinguere perturbazione simulata e incertezza strumentale.
+
+**Prima di iniziare.** Lettura di un CSV, vettori, matrici, indicizzazione e funzioni di base in R.
+
+**Dati e unità.** Novanta rocce sintetiche del corso. SiO2, CaO, MgO e FeO sono percentuali in massa; densita è espressa in g/cm³ e grana_mm in millimetri. colore e fossili sono indici numerici convenzionali del simulatore, non misure mineralogiche o conteggi reali. La colonna litologia_generatrice descrive il gruppo usato nella simulazione e viene esclusa dalle stime.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Polychroma oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M08_Polychroma` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M08_Polychroma/Risultati/M08_N17/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M08_Polychroma"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M08_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M08_Polychroma o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M08_N17")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(8017)
+```
+
+## 1. Una permutazione delle etichette
+
+Scambiare i nomi dei cluster lascia invariati i gruppi di campioni. Un confronto riga per riga dei numeri fallisce; confrontiamo invece quali coppie risultano nello stesso gruppo.
+
+```{r passo_01}
+# Seleziona le misure per nome: ID ed etichetta non entrano nella matrice.
+r <- carica_dati("rocce_simulate.csv")
+v <- c("SiO2", "CaO", "MgO", "FeO", "densita", "grana_mm", "colore", "fossili")
+X <- as.matrix(r[v])
+stopifnot(nrow(X)==90L, ncol(X)==8L, !anyDuplicated(r$id),
+          all(is.finite(X)), all(apply(X,2,sd)>0))
+Z <- scale(X)
+D <- dist(Z)
+# Gli avvii multipli confrontano soluzioni locali sullo stesso spazio.
+set.seed(816)
+km <- kmeans(Z, centers=3, nstart=50, iter.max=100)
+rinominata <- c(3,1,2)[km$cluster]
+c(uguaglianza_dei_numeri=mean(km$cluster==rinominata),
+ accordo_coppie=accordo_coppie(km$cluster,rinominata),
+ ARI=indice_rand_corretto(km$cluster,rinominata))
+table(originale=km$cluster,rinominata=rinominata)
+```
+
+**Lettura del risultato.** L’uguaglianza dei numeri vale zero, mentre entrambi gli indici di partizione valgono uno. L’accordo fra coppie include anche coppie separate da entrambi i metodi; l’ARI corregge l’accordo atteso secondo il proprio modello casuale.
+
+## 2. Variare gli avvii
+
+Ripetiamo trenta stime con un solo avvio, mantenendo fissi dati, k e distanza. Il risultato quantifica la sensibilità all’inizializzazione, distinta dalla sensibilità a misure o campionamento.
+
+```{r passo_02}
+set.seed(818)
+avvii <- lapply(1:30,function(b)kmeans(Z,3,nstart=1,iter.max=100))
+stabilita <- data.frame(ripetizione=1:30,
+ WSS=vapply(avvii,function(m)m$tot.withinss,numeric(1)),
+ accordo=vapply(avvii,function(m)accordo_coppie(m$cluster,km$cluster),numeric(1)),
+ ARI=vapply(avvii,function(m)indice_rand_corretto(m$cluster,km$cluster),numeric(1)))
+stabilita
+plot(stabilita$WSS,stabilita$ARI,pch=19,col="#087C74",
+ xlab="WSS dell'avvio",ylab="ARI con il fit di riferimento")
+```
+
+**Lettura del risultato.** Alcuni avvii raggiungono una soluzione peggiore, con WSS più alta e accordo inferiore. Per questi trenta tentativi l’accordo fra coppie minimo è circa 0,720: non tutte le inizializzazioni recuperano la stessa partizione.
+
+## 3. Perturbare i dati
+
+Aggiungiamo rumore nella scala standardizzata mantenuta fissa. È un esperimento controllato di sensibilità, non un modello calibrato dell’errore strumentale e non una probabilità di correttezza dei cluster.
+
+```{r passo_03}
+set.seed(819)
+ampiezze <- c(0,.1,.4,.8)
+esperimenti <- do.call(rbind,lapply(ampiezze,function(sigma){
+ do.call(rbind,lapply(1:10,function(b){
+  Zp <- Z+matrix(rnorm(length(Z),sd=sigma),nrow(Z))
+  mp <- kmeans(Zp,3,nstart=50,iter.max=100)
+  data.frame(sigma=sigma,ripetizione=b,ARI=indice_rand_corretto(mp$cluster,km$cluster))
+ }))
+}))
+aggregate(ARI~sigma,esperimenti,function(x)c(media=mean(x),minimo=min(x)))
+```
+
+**Lettura del risultato.** L’output riporta l’accordo osservato per ciascuna ampiezza. La stabilità dipende da come vengono perturbati i dati: una perturbazione plausibile per densità non si ricava automaticamente da quella per un indice simulato.
+
+## Variante svolta
+
+Confrontare in trenta ripetizioni l’uso di uno e di dieci avvii.
+
+```{r variante}
+set.seed(820)
+dieci <- lapply(1:30,function(b)kmeans(Z,3,nstart=10,iter.max=100))
+data.frame(nstart=c(1,10),WSS_media=c(mean(stabilita$WSS),
+ mean(vapply(dieci,function(m)m$tot.withinss,numeric(1)))),
+ ARI_medio=c(mean(stabilita$ARI),
+ mean(vapply(dieci,function(m)indice_rand_corretto(m$cluster,km$cluster),numeric(1)))))
+```
+
+Aumentare gli avvii riduce in questo esperimento la sensibilità all’inizializzazione. La tabella riporta una verifica osservata, senza promettere il raggiungimento dell’ottimo globale per ogni possibile dataset.
+
+## Errore da riconoscere
+
+Misurare la stabilità con mean(cluster1 == cluster2), oppure scambiare stabilità algoritmica e validità geologica.
+
+## Risposta alla domanda
+
+La stabilità va riferita a una perturbazione specifica. Avvii, rumore sulle misure e ricampionamento rappresentano domande differenti.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M08_N17` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M08/M08_N17.R).

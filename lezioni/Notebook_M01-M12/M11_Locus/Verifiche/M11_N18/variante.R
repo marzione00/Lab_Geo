@@ -1,0 +1,5 @@
+esatto <- idw_pred(xy,d$concentrazione,xy[1,,drop=FALSE],2)
+duplicati <- matrix(c(0,0,0,0,100,0),ncol=2,byrow=TRUE)
+esempio <- idw_pred(duplicati,c(10,14,100),matrix(c(0,0),nrow=1),2)
+data.frame(caso=c("S01 osservato","Due valori coincidenti 10 e 14"),previsione=c(esatto,esempio))
+stopifnot(abs(esatto-d$concentrazione[1])<1e-12,esempio==12)

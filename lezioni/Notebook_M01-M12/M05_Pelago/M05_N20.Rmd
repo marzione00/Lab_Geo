@@ -1,0 +1,132 @@
+---
+title: "Mediana e confronto fra statistiche"
+subtitle: "M05_N20 \u00b7 Pelago"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come differiscono media e mediana nello stesso campione e come cambia il loro comportamento quando modifichiamo un valore estremo?
+
+## Obiettivi
+
+- Ricampionare statistiche diverse sugli stessi indici.
+- Separare robustezza, precisione e parametro stimato.
+
+**Prima di iniziare.** Vettori, indicizzazione, media, varianza e grafici di base in R.
+
+**Dati e unità.** Ottanta diametri sintetici Rounded in micrometri. La variante altera intenzionalmente un valore per studiare la sensibilità, senza modificare il CSV originale.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M05_N20/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M05_N20")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(5020)
+```
+
+## 1. Definire due bersagli distinti
+
+La media usa tutte le distanze numeriche; la mediana identifica il centro in termini di ordine. Coincidono in alcune popolazioni, ma non definiscono lo stesso parametro in generale. Calcolarle entrambe è utile soltanto se manteniamo chiara questa differenza.
+
+```{r passo_01}
+dati <- carica_dati("fossili_simulati.csv")
+x <- dati$diametro_tot_um[dati$morfotipo == "Rounded"]
+stopifnot(all(is.finite(x)), all(x > 0))
+n <- length(x)
+osservate <- c(media = mean(x), mediana = median(x))
+print(c(n = n, osservate))
+print(quantile(x, c(0, 0.25, 0.5, 0.75, 1)))
+```
+
+**Lettura del risultato.** La distanza fra i due indici descrive questo campione. Non autorizza a scegliere la statistica soltanto perché restituisce il valore preferito nella conclusione.
+
+## 2. Usare le stesse repliche per entrambe le statistiche
+
+Selezioniamo una volta gli indici di ogni replica e calcoliamo sia media sia mediana. Così le differenze osservate dipendono dalla statistica applicata agli stessi valori ricampionati. Il numero di repliche è identico e il seme è registrato.
+
+```{r passo_02}
+set.seed(520)
+B <- 2000
+boot <- replicate(B, {
+  z <- x[sample.int(n, n, replace = TRUE)]
+  c(media = mean(z), mediana = median(z))
+})
+se <- apply(boot, 1, sd)
+intervalli <- t(apply(boot, 1, quantile, probs = c(0.025, 0.975)))
+print(data.frame(statistica = names(osservate), stima = osservate,
+                 SE_boot = se, intervalli))
+```
+
+**Lettura del risultato.** La dispersione delle repliche riguarda due stimatori di parametri diversi. Un SE più piccolo non stabilisce da solo quale statistica risponda meglio alla domanda scientifica.
+
+## 3. Leggere la forma delle distribuzioni bootstrap
+
+Confrontiamo gli istogrammi usando lo stesso asse orizzontale. La mediana può produrre una distribuzione più discreta perché dipende da pochi valori ordinati vicini al centro. Questa caratteristica va distinta da una maggiore o minore precisione in generale.
+
+```{r passo_03}
+limiti <- range(boot)
+vecchio <- par(mfrow = c(1, 2))
+hist(boot["media", ], breaks = 25, xlim = limiti, col = "#95BDD0",
+     border = "white", ylab = "Frequenza", main = "Media", xlab = "Diametro centrale (um)")
+hist(boot["mediana", ], breaks = 25, xlim = limiti, col = "#E7B977",
+     border = "white", ylab = "Frequenza", main = "Mediana", xlab = "Diametro centrale (um)")
+par(vecchio)
+print(c(correlazione_repliche = cor(boot["media", ], boot["mediana", ])))
+```
+
+**Lettura del risultato.** Le due statistiche sono correlate perché usano le stesse osservazioni. Le differenze di forma vanno lette insieme alle definizioni dei parametri e alla distribuzione dei dati.
+
+## Variante svolta
+
+Aggiungere venti micrometri al valore massimo in una copia del vettore e ricalcolare gli indici.
+
+```{r variante}
+alterato <- x
+posizione <- which.max(alterato)
+alterato[posizione] <- alterato[posizione] + 20
+nuove <- c(media = mean(alterato), mediana = median(alterato))
+print(data.frame(statistica = names(osservate), originale = osservate,
+                 alterata = nuove, variazione = nuove - osservate))
+stopifnot(isTRUE(all.equal(unname(nuove["media"] - osservate["media"]), 20 / n)))
+```
+
+La media aumenta esattamente di venti diviso n; la mediana resta invariata perché non cambiano i valori centrali. È una prova di sensibilità controllata, non una giustificazione per correggere o eliminare valori reali.
+
+## Errore da riconoscere
+
+Non confondere robustezza rispetto a un estremo con precisione universalmente maggiore. La scelta del parametro precede il confronto delle distribuzioni bootstrap.
+
+## Risposta alla domanda
+
+Media e mediana rispondono a domande diverse sul centro. Il bootstrap ne descrive il comportamento condizionato ai dati, mentre la variante rende esplicita la sensibilità a un estremo.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M05_N20` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M05/M05_N20.R).

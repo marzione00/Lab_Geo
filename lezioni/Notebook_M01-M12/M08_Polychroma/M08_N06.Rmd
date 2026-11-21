@@ -1,0 +1,137 @@
+---
+title: "Loadings e correlazioni con le componenti"
+subtitle: "M08_N06 \u00b7 Polychroma"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Un coefficiente della rotazione coincide con la correlazione fra variabile e componente?
+
+## Obiettivi
+
+- Distinguere coefficienti e correlazioni.
+- Verificare la relazione con gli autovalori.
+- Misurare la qualità di rappresentazione delle variabili.
+
+**Prima di iniziare.** Lettura di un CSV, vettori, matrici, indicizzazione e funzioni di base in R.
+
+**Dati e unità.** Novanta rocce sintetiche del corso. SiO2, CaO, MgO e FeO sono percentuali in massa; densita è espressa in g/cm³ e grana_mm in millimetri. colore e fossili sono indici numerici convenzionali del simulatore, non misure mineralogiche o conteggi reali. La colonna litologia_generatrice descrive il gruppo usato nella simulazione e viene esclusa dalle stime.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Polychroma oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M08_Polychroma` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M08_Polychroma/Risultati/M08_N06/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M08_Polychroma"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M08_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M08_Polychroma o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M08_N06")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(8006)
+```
+
+## 1. Coefficienti degli assi
+
+Ogni score è $t_{ik}=\sum_j z_{ij}v_{jk}$. I coefficienti $v_{jk}$ costruiscono l’asse; il quadrato dei coefficienti della stessa componente somma a uno.
+
+```{r passo_01}
+# Seleziona le misure per nome: ID ed etichetta non entrano nella matrice.
+r <- carica_dati("rocce_simulate.csv")
+v <- c("SiO2", "CaO", "MgO", "FeO", "densita", "grana_mm", "colore", "fossili")
+X <- as.matrix(r[v])
+stopifnot(nrow(X)==90L, ncol(X)==8L, !anyDuplicated(r$id),
+          all(is.finite(X)), all(apply(X,2,sd)>0))
+Z <- scale(X)
+D <- dist(Z)
+# La PCA conserva medie, scale e rotazione per eventuali nuovi campioni.
+pc <- prcomp(X, center=TRUE, scale.=TRUE)
+lambda <- pc$sdev^2
+quota <- lambda/sum(lambda)
+round(pc$rotation[,1:2],4)
+colSums(pc$rotation^2)
+```
+
+**Lettura del risultato.** Nel verso scelto da R, PC1 contrappone soprattutto CaO e l’indice fossili a FeO, MgO e all’indice colore. Il segno dell’intera componente può essere invertito senza cambiare l’analisi.
+
+## 2. Correlazioni calcolate sulla scala corretta
+
+Per una colonna standardizzata e una componente con varianza positiva, $\operatorname{Cor}(Z_j,T_k)=\sqrt{\lambda_k}v_{jk}$. La moltiplicazione per sdev distingue la correlazione dal coefficiente.
+
+```{r passo_02}
+corr_PC <- sweep(pc$rotation,2,pc$sdev,"*")
+confronto <- cbind(coefficiente_PC1=pc$rotation[,1],
+ correlazione_PC1=corr_PC[,1],correlazione_PC2=corr_PC[,2])
+round(confronto,3)
+stopifnot(max(abs(corr_PC-cor(Z,pc$x)))<1e-10)
+barplot(t(corr_PC[,1:2]),beside=TRUE,horiz=TRUE,las=1,
+ col=c("#087C74","#C57E42"),xlim=c(-1,1),
+ xlab="Correlazione con la componente",cex.names=.75)
+legend("bottomright",c("PC1","PC2"),fill=c("#087C74","#C57E42"),bty="n",cex=.8)
+```
+
+**Lettura del risultato.** I numeri differiscono dai coefficienti, ma coincidono con cor(Z,pc$x). L’indice colore ha correlazione circa −0,903 con PC1; la granulometria è quasi incorrelata con PC1 e correlata circa −0,829 con PC2.
+
+## 3. La qualità per ciascuna variabile
+
+La somma dei quadrati delle correlazioni con le prime q componenti esprime la quota di varianza della singola colonna rappresentata da quel sottospazio.
+
+```{r passo_03}
+qualita <- rowSums(corr_PC[,1:2,drop=FALSE]^2)
+data.frame(variabile=v,quota_rappresentata=qualita,
+ quota_omessa=1-qualita)[order(qualita),]
+stopifnot(all(qualita>=0),all(qualita<=1+1e-10))
+```
+
+**Lettura del risultato.** La qualità non è uguale per tutte le colonne. La granulometria richiede anche PC3: il piano può conservare molta varianza globale e perdere una parte rilevante di una proprietà specifica.
+
+## Variante svolta
+
+Confrontare la qualità per variabile usando due e tre componenti.
+
+```{r variante}
+data.frame(variabile=v,due_PC=rowSums(corr_PC[,1:2]^2),
+ tre_PC=rowSums(corr_PC[,1:3]^2))
+```
+
+La terza componente migliora soprattutto la rappresentazione della granulometria, coerentemente con il suo coefficiente elevato su PC3.
+
+## Errore da riconoscere
+
+Chiamare indistintamente loadings sia gli autovettori sia le correlazioni senza dichiarare la convenzione: le due quantità hanno scale differenti.
+
+## Risposta alla domanda
+
+I coefficienti costruiscono gli assi, le correlazioni ne descrivono l’associazione con le variabili. La qualità del piano va controllata anche colonna per colonna.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M08_N06` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M08/M08_N06.R).

@@ -1,0 +1,132 @@
+---
+title: "Laboratorio applicativo \u2014 Campionamento pi\u00f9 ampio"
+subtitle: "M01_N19 \u00b7 Terra"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Raddoppiare il numero di siti campionati corregge una lista di selezione che copre soltanto la parte iniziale del territorio?
+
+## Obiettivi
+
+- Separare effetto della numerosità ed effetto della copertura.
+- Confrontare tre distribuzioni simulate di medie campionarie.
+
+**Prima di iniziare.** Saper eseguire una cella R e riconoscere vettori, assegnamenti e nomi di colonne.
+
+**Dati e unità.** La popolazione sintetica contiene 120 siti lungo un gradiente. Confrontiamo campioni di 12 e 24 siti dai primi 30 e campioni di 24 siti dall'intera popolazione; ogni procedura è ripetuta 1.000 volte.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M01_N19/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M01_N19")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(1019)
+```
+
+## 1. Definire tre procedure distinte
+
+Le due domande sono diverse: che cosa cambia aumentando n nella stessa lista, e che cosa cambia ampliando la lista? Manteniamo invariata la popolazione e organizziamo tre procedure che rendono separabili questi confronti.
+
+```{r passo_01}
+# Popolazione artificiale finita: la posizione contribuisce al valore.
+set.seed(102)
+siti <- data.frame(id_sito = sprintf("S%03d", 1:120),
+                   distanza_m = seq(0, 1190, by = 10))
+siti$valore <- 2.4 + 0.00035 * siti$distanza_m + rnorm(120, 0, 0.04)
+media_pop <- mean(siti$valore)
+
+lista_ridotta <- 1:30
+lista_intera <- seq_len(nrow(siti))
+set.seed(202)
+B <- 1000L
+stopifnot(24L <= length(lista_ridotta))
+print(c(media_popolazione = media_pop, media_lista_ridotta = mean(siti$valore[lista_ridotta])))
+```
+
+**Lettura del risultato.** Il riferimento per tutti gli errori resta la media dei 120 siti. La media dei primi trenta aiuta a riconoscere il limite di copertura; non viene sostituita al parametro obiettivo per far apparire migliore una procedura.
+
+## 2. Simulare l'aumento di numerosità
+
+Ogni estrazione avviene senza reinserimento. Con 24 siti su una lista di 30, il campione descrive gran parte di quella lista, ma continua a non visitare gli altri novanta siti. La terza procedura modifica invece la copertura possibile.
+
+```{r passo_02}
+medie <- list(
+  limitata_n12 = replicate(B, mean(siti$valore[sample(lista_ridotta, 12)])),
+  limitata_n24 = replicate(B, mean(siti$valore[sample(lista_ridotta, 24)])),
+  intera_n24 = replicate(B, mean(siti$valore[sample(lista_intera, 24)])))
+stopifnot(all(lengths(medie) == B))
+print(lapply(medie, head, 3))
+```
+
+**Lettura del risultato.** Le medie ottenute sono repliche dell'esperimento virtuale. Le differenze casuali fra simulazioni non richiedono che ogni singolo campione più grande sia più vicino al riferimento: il confronto riguarda il comportamento delle distribuzioni.
+
+## 3. Confrontare precisione e scarto sistematico
+
+Calcoliamo dispersione, scarto medio e radice dell'errore quadratico medio. Quest'ultima combina distanza dal riferimento e variabilità, mentre le prime due quantità aiutano a capire perché una procedura produca errori maggiori.
+
+```{r passo_03}
+sintesi <- function(x) c(n_simulazioni = length(x),
+                         scarto_medio = mean(x) - media_pop,
+                         sd_medie = sd(x),
+                         RMSE = sqrt(mean((x - media_pop)^2)))
+tabella <- do.call(rbind, lapply(medie, sintesi))
+print(tabella)
+boxplot(medie, names = c("Lista 30; n=12", "Lista 30; n=24", "Lista 120; n=24"),
+        ylab = "Media campionaria (u.c.)", col = c("wheat", "orange", "lightblue"))
+abline(h = media_pop, col = "firebrick", lwd = 2)
+```
+
+**Lettura del risultato.** Una distribuzione stretta può rimanere lontana dal valore obiettivo. L'aumento di n riduce la variabilità entro una lista finita, mentre ampliare la copertura affronta una fonte diversa di errore. I valori della tabella sono approssimazioni Monte Carlo.
+
+## Variante svolta
+
+Usare tutti i trenta siti della lista ridotta e calcolare lo scarto residuo.
+
+```{r variante}
+media_censimento_locale <- mean(siti$valore[lista_ridotta])
+print(c(n = length(lista_ridotta), media = media_censimento_locale,
+        errore_vs_territorio = media_censimento_locale - media_pop))
+print(c(quota_territorio = length(lista_ridotta) / nrow(siti)))
+```
+
+Il censimento locale elimina l'incertezza da selezione entro quei trenta siti. Rimane però una differenza rispetto all'intero territorio, perché osservare perfettamente una parte non equivale a osservare tutta la popolazione.
+
+## Errore da riconoscere
+
+Affermare che 'più dati risolvono il problema' senza specificare da dove arrivano confonde numerosità e copertura. Occorre valutare quale componente dell'errore sia effettivamente modificata dal nuovo disegno.
+
+## Risposta alla domanda
+
+L'esercizio distingue una stima più stabile della stessa porzione da una raccolta capace di rappresentare il territorio obiettivo. La scelta del campionamento viene prima dell'aumento indiscriminato delle osservazioni.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M01_N19` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M01/M01_N19.R).

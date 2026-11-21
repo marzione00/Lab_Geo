@@ -165,8 +165,55 @@ function checkLesson(root, id, lesson) {
     if (!exists(f)) throw Error('File della lezione assente: ' + f);
 }
 
+// Solved notebooks of a lesson: self-contained HTML pages listed on the companion world.
+function notebooks(root, id, lesson, all) {
+  const nb = all[id];
+  if (!nb) return {};
+  if (!fs.existsSync(path.join(root, nb.download))) throw Error('Archivio dei notebook assente: ' + nb.download);
+  for (const item of nb.notebooks)
+    if (item.pages.some(p => p < 1 || p > lesson.pages)) throw Error('Tappa inesistente per ' + item.id);
+  return { notebooks: nb.notebooks, notebookDownload: nb.download };
+}
+
+// Publishes the notebook pages and the files they link to, keeping the folders of the archive. Links to the
+// slides of the original PDF become links to the tappe; pages with scripts or remote resources are refused.
+const ACTIVE =
+  /<script|<iframe|<object|<embed|<link\b|<form|\bon[a-z]+\s*=|\bsrc\s*=\s*["']?(?:https?:|\/\/)|href\s*=\s*["']?javascript:/i;
+export function publishNotebooks(root, out, all) {
+  const base = path.join(root, 'lezioni/Notebook_M01-M12'),
+    dest = path.join(out, 'notebook'),
+    seen = new Set(),
+    queue = Object.values(all).flatMap(nb => nb.notebooks.map(n => n.html.replace(/^notebook\//, '')));
+  while (queue.length) {
+    const rel = queue.shift();
+    if (seen.has(rel)) continue;
+    seen.add(rel);
+    fs.mkdirSync(path.dirname(path.join(dest, rel)), { recursive: true });
+    if (!rel.endsWith('.html')) {
+      fs.copyFileSync(path.join(base, rel), path.join(dest, rel));
+      continue;
+    }
+    const page = fs
+      .readFileSync(path.join(base, rel), 'utf8')
+      .replace(/href="(?:\.\.\/)+02_PDF\/(M\d{2})_[A-Za-z]+\/[\w.-]+\.pdf#page=(\d+)"/g, (_, m, p) => {
+        const up = '../'.repeat(rel.split('/').length);
+        return 'href="' + up + 'index.html#lezione-' + m + '/' + p + '"';
+      });
+    if (ACTIVE.test(page)) throw Error('Contenuto attivo in ' + rel);
+    fs.writeFileSync(path.join(dest, rel), page);
+    for (const [, ref] of page.matchAll(/(?:href|src)="([^"#:?][^"#?]*)/g)) {
+      const target = path.posix.normalize(path.posix.join(path.posix.dirname(rel), decodeURI(ref)));
+      if (target.startsWith('..') || target.includes('Sorgenti_generazione/')) continue;
+      if (fs.existsSync(path.join(base, target)) && fs.statSync(path.join(base, target)).isFile()) queue.push(target);
+    }
+  }
+  return seen.size;
+}
+
 export function buildLessons(root, out) {
   const config = JSON.parse(fs.readFileSync(path.join(root, 'lezioni/lezioni.json'), 'utf8'));
+  const nbFile = path.join(root, 'content/notebook.json');
+  const allNotebooks = fs.existsSync(nbFile) ? JSON.parse(fs.readFileSync(nbFile, 'utf8')) : {};
   const index = {};
   fs.mkdirSync(path.join(out, 'assets/lessons'), { recursive: true });
   for (const [id, cfg] of Object.entries(config)) {
@@ -180,7 +227,8 @@ export function buildLessons(root, out) {
       : { intro: [], notes: {} };
     const files = projectFiles(path.join(root, cfg.source), lesson.project.files);
     checkLesson(root, id, lesson);
-    const data = { ...lesson, intro, notes, exercises, project: { ...lesson.project, files } };
+    const nb = notebooks(root, id, lesson, allNotebooks);
+    const data = { ...lesson, intro, notes, exercises, ...nb, project: { ...lesson.project, files } };
     fs.writeFileSync(
       path.join(out, 'assets/lessons', id + '.js'),
       'window.GEO_LESSONS=window.GEO_LESSONS||{};window.GEO_LESSONS.' + id + '=' + safe(data) + ';\n',
@@ -194,8 +242,10 @@ export function buildLessons(root, out) {
       explained: Object.keys(notes).map(Number),
       sections: lesson.sections,
       cards: exercises ? exercises.cards.length : 0,
+      notebooks: nb.notebooks ? nb.notebooks.length : 0,
     };
   }
   fs.writeFileSync(path.join(out, 'assets/lesson-index.js'), 'window.GEO_LESSON_INDEX=' + safe(index) + ';\n');
+  publishNotebooks(root, out, allNotebooks);
   return index;
 }

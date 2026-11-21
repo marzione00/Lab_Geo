@@ -1,0 +1,135 @@
+---
+title: "Propagare l'incertezza con molte estrazioni"
+subtitle: "M04_N14 \u00b7 Aurea"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Quale dispersione della densità deriva dalle incertezze assegnate a massa e volume?
+
+## Obiettivi
+
+- Propagare ogni coppia di ingressi attraverso il rapporto massa su volume.
+- Distinguere dispersione del risultato e precisione della simulazione.
+
+**Prima di iniziare.** Disegno dell'esperimento di incertezza e generatori normali.
+
+**Dati e unità.** Parametri didattici della misura: massa nominale 106 g, volume nominale 40 cm³, incertezze standard rispettivamente 1 g e 0,6 cm³. Le estrazioni sono simulate.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M04_N14/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M04_N14")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(4014)
+```
+
+## 1. Generare ingressi coerenti
+
+Assumiamo massa e volume indipendenti con errori normali locali. Le repliche non rappresentano nuovi campioni di roccia: descrivono valori plausibili degli ingressi secondo le incertezze e i valori nominali assegnati.
+
+```{r passo_01}
+p <- carica_dati("parametri_densita.csv")
+m0 <- p$massa_media_g[1]; V0 <- p$volume_medio_cm3[1]
+um <- p$sd_massa_g[1]; uV <- p$sd_volume_cm3[1]
+set.seed(414)
+B <- 3000
+# B indica estrazioni dal modello delle incertezze, non nuove misure sperimentali.
+massa <- rnorm(B, mean = m0, sd = um)
+volume <- rnorm(B, mean = V0, sd = uV)
+stopifnot(all(is.finite(massa)), all(is.finite(volume)))
+stopifnot(all(massa > 0), all(volume > 0))
+print(c(B = B, correlazione_ingressi = cor(massa, volume)))
+```
+
+**Lettura del risultato.** L'indipendenza è un'ipotesi del generatore e va verificata sul sistema di misura reale prima di applicare il risultato. Il controllo di positività evita rapporti non fisici in questa esecuzione, ma non valida globalmente le code normali.
+
+## 2. Calcolare una densità per replica
+
+Il rapporto è calcolato elemento per elemento: la massa della replica i viene divisa per il volume della stessa replica. Non dividiamo tutte le masse per il volume nominale, perché così perderemmo una fonte di incertezza.
+
+```{r passo_02}
+# La divisione vettoriale usa massa e volume della stessa replica.
+rho <- massa / volume
+rho0 <- m0 / V0
+riassunto <- c(nominale_g_cm3 = rho0, media_simulata_g_cm3 = mean(rho),
+               mediana_g_cm3 = median(rho), sd_g_cm3 = sd(rho))
+print(riassunto)
+print(quantile(rho, c(.025, .975), type = 7))
+stopifnot(length(rho) == B, all(is.finite(rho)))
+print(head(data.frame(massa_g = massa, volume_cm3 = volume, densita_g_cm3 = rho)))
+```
+
+**Lettura del risultato.** La deviazione standard delle densità descrive la dispersione propagata nel regime simulato. La media del rapporto non coincide necessariamente con il rapporto dei valori nominali: una trasformazione non lineare può produrre uno spostamento.
+
+## 3. Separare dispersione e precisione numerica
+
+Mostriamo la distribuzione e calcoliamo s diviso radice di B come stima locale dell'errore Monte Carlo della media. Il modello normale del denominatore è usato solo nel regime di piccole incertezze, lontano da zero.
+
+```{r passo_03}
+# Questa precisione della media simulata va distinta dalla dispersione sd(rho).
+se_media_mc <- sd(rho) / sqrt(B)
+print(c(dispersione_propagata = sd(rho), errore_mc_media = se_media_mc))
+hist(rho, breaks = "FD", col = "#1D7890", border = "white",
+     xlab = "Densita (g/cm^3)", ylab = "Repliche (n)", main = "Propagazione delle incertezze")
+abline(v = rho0, col = "#C57E42", lwd = 2)
+write.csv(data.frame(massa_g = massa, volume_cm3 = volume, densita_g_cm3 = rho),
+          percorso_risultati("repliche_densita.csv"), row.names = FALSE)
+```
+
+**Lettura del risultato.** Aumentare B rende più stabile il riassunto numerico, ma non rende più precisi gli strumenti. Vicino a volume zero il rapporto diventa instabile e i momenti globali della normale al denominatore non vanno trattati come se fossero quelli di un modello fisicamente limitato.
+
+## Variante svolta
+
+Bloccare il volume al valore nominale per isolare il contributo della massa e confrontare le dispersioni.
+
+```{r variante}
+rho_solo_massa <- massa / V0
+rho_solo_volume <- m0 / volume
+confronto <- c(entrambi = sd(rho), solo_massa = sd(rho_solo_massa),
+               solo_volume = sd(rho_solo_volume))
+print(confronto)
+print(c(solo_massa_teorico = um / V0))
+stopifnot(abs(sd(rho_solo_massa) - sd(massa) / V0) < 1e-12)
+```
+
+Tenere fisso un ingresso elimina artificialmente il suo contributo. È un confronto utile per capire le fonti di dispersione, ma non sostituisce il modello completo se entrambe le misure sono incerte.
+
+## Errore da riconoscere
+
+Non interpretare le 3000 repliche come 3000 misure sperimentali. Non dividere la deviazione standard propagata per radice di B e riportarla come incertezza della densità fisica.
+
+## Risposta alla domanda
+
+La propagazione applica la funzione fisica a ogni replica degli ingressi. La dispersione risultante dipende dalle incertezze assegnate; la precisione Monte Carlo dipende da B, e le conclusioni restano legate al modello locale adottato.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M04_N14` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M04/M04_N14.R).

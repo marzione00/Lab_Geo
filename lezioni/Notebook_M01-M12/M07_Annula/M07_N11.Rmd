@@ -1,0 +1,150 @@
+---
+title: "Una previsione di riferimento"
+subtitle: "M07_N11 \u00b7 Annula"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Quanto deve migliorare un modello per giustificare l’uso dei predittori?
+
+## Obiettivi
+
+- Collegare la domanda al calcolo riportato.
+- Interpretare il risultato usando variabili e unità del problema.
+
+**Prima di iniziare.** Vettori, data frame, indicizzazione e funzioni di base in R.
+
+**Dati e unità.** Fossili simulati del corso: 160 individui, 80 Rounded e 80 Spiky. Diametri e spessori sono espressi in micrometri. Nel generatore, diametro interno = diametro totale − 2 × spessore. La relazione contiene quindi un vincolo geometrico noto.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Annula oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M07_Annula` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M07_Annula/Risultati/M07_N11/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M07_Annula"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M07_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M07_Annula o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M07_N11")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(7011)
+```
+
+## 1. Il riferimento usa soltanto il training
+
+La previsione costante pari alla media del training minimizza SSE fra le costanti su quel campione. Fornisce un confronto semplice, definito senza stimare nulla sulle risposte del test.
+
+```{r passo_01}
+# Ogni riga identifica un fossile simulato.
+f <- carica_dati("fossili_simulati.csv")
+f$morfotipo <- factor(f$morfotipo, levels=c("Rounded", "Spiky"))
+x <- f$diametro_tot_um
+y <- f$diametro_int_um
+stopifnot(nrow(f)==160L, !anyDuplicated(f$id),
+          all(is.finite(x)), all(is.finite(y)))
+# Partizione fissata prima del confronto dei modelli.
+# Nel CSV didattico ogni quinto individuo forma il test.
+is_test <- seq_len(nrow(f)) %% 5L == 0L
+train <- f[!is_test, ]
+test <- f[is_test, ]
+stopifnot(nrow(train)==128L, nrow(test)==32L,
+          length(intersect(train$id, test$id))==0L)
+media_training <- mean(train$diametro_int_um)
+mediana_training <- median(train$diametro_int_um)
+c(media=media_training,mediana=mediana_training)
+```
+
+**Lettura del risultato.** La media del training è circa 5,418 µm. La mediana offre un secondo riferimento se la metrica di interesse è MAE, perché minimizza la somma degli errori assoluti.
+
+## 2. Due funzioni di perdita
+
+Per errori $e_i=y_i-\hat y_i$, $MAE=n^{-1}\sum |e_i|$ e $RMSE=\sqrt{n^{-1}\sum e_i^2}$. Il secondo attribuisce più peso agli errori grandi. Definiamo una funzione che controlla anche lunghezza e finitezza.
+
+```{r passo_02}
+metriche <- function(osservato,previsto) {
+ stopifnot(length(osservato)==length(previsto),
+           all(is.finite(osservato)),all(is.finite(previsto)))
+ c(MAE=mean(abs(osservato-previsto)),
+   RMSE=sqrt(mean((osservato-previsto)^2)))
+}
+rbind(media=metriche(train$diametro_int_um,
+                    rep(media_training,nrow(train))),
+      mediana=metriche(train$diametro_int_um,
+                      rep(mediana_training,nrow(train))))
+```
+
+**Lettura del risultato.** Le metriche sono in micrometri. Il confronto sul training illustra le funzioni di perdita, ma non è la valutazione finale su individui nuovi.
+
+## 3. Il riferimento nelle partizioni interne
+
+In ciascuna divisione interna, la costante deve essere ricalcolata sulla parte usata per la stima. Usare la media dell’intero training includerebbe anche le risposte della porzione temporaneamente tenuta fuori.
+
+```{r passo_03}
+set.seed(714)
+fold <- sample(rep(1:5,length.out=nrow(train)))
+base_cv <- do.call(rbind,lapply(1:5,function(k) {
+ stima <- train[fold!=k,]
+ verifica <- train[fold==k,]
+ p <- rep(mean(stima$diametro_int_um),nrow(verifica))
+ data.frame(fold=k,t(metriche(verifica$diametro_int_um,p)))
+}))
+base_cv
+colMeans(base_cv[,c("MAE","RMSE")])
+```
+
+**Lettura del risultato.** Ogni fold valuta una previsione costruita senza le proprie risposte. Questa è la stessa separazione che dovranno rispettare anche i modelli più complessi.
+
+## Variante svolta
+
+Aggiungere un errore di 3 µm a una previsione e confrontare l’aumento di MAE e RMSE.
+
+```{r variante}
+osservato <- c(5,5,5,5)
+buono <- c(5.1,4.9,5.1,4.9)
+con_errore <- buono
+con_errore[4] <- osservato[4]+3
+rbind(piccoli_errori=metriche(osservato,buono),
+      un_errore_grande=metriche(osservato,con_errore))
+```
+
+RMSE reagisce più nettamente al grande errore. La scelta della metrica deve riflettere quale tipo di errore conta nel problema.
+
+## Errore da riconoscere
+
+Calcolare il riferimento con la media delle risposte del test usa informazioni che non sarebbero disponibili al momento della previsione.
+
+## Risposta alla domanda
+
+Un modello è utile quando migliora un riferimento pertinente, usando la stessa metrica e gli stessi casi di valutazione.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M07_N11` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M07/M07_N11.R).

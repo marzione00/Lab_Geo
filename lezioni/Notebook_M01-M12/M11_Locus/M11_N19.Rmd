@@ -1,0 +1,148 @@
+---
+title: "Validazione spaziale: lasciare fuori Est"
+subtitle: "M11_N19 · Locus"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Quanto funziona una previsione quando l’intero settore Est viene escluso dall’adattamento?
+
+## Obiettivi
+
+- Fissare train 40 e test 24 con soglia 1250 m.
+- Confrontare IDW p 2, media del train e vicino più prossimo.
+- Leggere gli errori senza ottimizzare sul test.
+
+**Prima di iniziare.** Sono richiesti vettori, tabelle, coordinate e funzioni R di base. I blocchi vanno eseguiti in ordine; il notebook è autonomo rispetto agli altri. I calcoli usano R base e i pacchetti standard.
+
+**Dati e unità.** 64 siti sintetici su una griglia 8 × 8, con passo 250 m e coordinate locali x_m e y_m fra 0 e 1750 m. Questo piano locale non ha un codice EPSG. La concentrazione è sintetica, in unità arbitrarie (u.a.); la quota è in metri sintetici. Ogni riga descrive un sito e il suo valore puntuale, non la media di una cella.
+
+## Preparazione
+
+Aprire il progetto autonomo di Locus o quello generale dei notebook. I CSV locali restano invariati. Gli output vanno in `Risultati/M11_N19/`. Nessun download o installazione viene eseguito nei blocchi.
+
+```{r preparazione}
+# Trova il modulo dal progetto autonomo o dal progetto generale dei notebook.
+.gs_cerca <- normalizePath(getwd(),winslash="/",mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca,file.path(.gs_cerca,"M11_Locus"),
+    file.path(.gs_cerca,"03_Notebook_svolti","M11_Locus"),
+    file.path(.gs_cerca,"M11","03_Notebook_svolti","M11_Locus"))
+  .gs_ok <- file.exists(file.path(.gs_candidati,"M11_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati,"R","funzioni_notebook.R"))
+  if(any(.gs_ok)) { .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]];break }
+  .gs_padre <- dirname(.gs_cerca)
+  if(.gs_padre==.gs_cerca) stop("Aprire il progetto M11_Locus o quello generale dei notebook.")
+  .gs_cerca <- .gs_padre
+}
+source(file.path(.gs_modulo,"R","funzioni_notebook.R"),local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo,"M11_N19")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88,digits=6)
+if(requireNamespace("knitr",quietly=TRUE)) {
+  knitr::opts_chunk$set(echo=TRUE,error=FALSE,warning=TRUE,message=TRUE,
+    fig.width=8,fig.height=5,dpi=150,fig.align="center")
+}
+set.seed(11019)
+```
+
+## 1. Il test è un settore geografico escluso
+
+Il train usa x<1250 m: cinque colonne,40 siti. Il test usa x ≥ 1250 m: tre colonne,24 siti. Tutti i bersagli sono a Est del massimo x del train, quindi questo è un trasferimento fuori dalla sua copertura geografica.
+
+```{r passo_01}
+d <- carica_dati("spazio_v3.csv")
+audit_spazio(d)
+ tr <- d$x_m<1250;te <- !tr
+ stopifnot(sum(tr)==40L,sum(te)==24L,!any(tr&te),all(tr|te))
+ data.frame(ruolo=c("Train","Test"),n=c(sum(tr),sum(te)),
+   minimo_x=c(min(d$x_m[tr]),min(d$x_m[te])),massimo_x=c(max(d$x_m[tr]),max(d$x_m[te])))
+ table(area_del_CSV=d$area,ruolo=ifelse(tr,"Train","Test"))
+```
+
+**Lettura del risultato.** La colonna area usa la diversa soglia 1000 m e non può sostituire questo split. Nel train entrano anche gli 8 siti che il CSV chiama Est a x=1000.
+
+## 2. Tutte le previsioni usano soltanto il train
+
+Fissiamo p=2 come nel laboratorio. I due riferimenti condividono gli stessi 40 siti: media del train e valore del sito più vicino, con pareggi risolti per ordine delle righe.
+
+```{r passo_02}
+xy_tr <- d[tr,c("x_m","y_m")];xy_te <- d[te,c("x_m","y_m")]
+pred_idw <- idw_pred(xy_tr,d$concentrazione[tr],xy_te,p=2)
+pred_media <- rep(mean(d$concentrazione[tr]),sum(te))
+dist_te <- distanze_incrociate(xy_te,xy_tr)
+vicino <- apply(dist_te,1,which.min)
+pred_vicino <- d$concentrazione[tr][vicino]
+previsioni <- data.frame(id=d$id[te],x_m=d$x_m[te],y_m=d$y_m[te],
+  IDW_p2=pred_idw,Media_train=pred_media,Vicino=pred_vicino)
+head(previsioni,6)
+stopifnot(all(is.finite(as.matrix(previsioni[,4:6]))))
+```
+
+**Lettura del risultato.** I valori della concentrazione nel test non entrano né nei pesi né nei riferimenti. Le posizioni dei bersagli sono note perché definiscono dove si vuole prevedere.
+
+## 3. Il test viene aperto per misurare gli errori
+
+La convenzione è osservato−previsto. Il confronto mantiene gli stessi 24 bersagli per ogni metodo e non viene usato qui per cambiare p.
+
+```{r passo_03}
+osservato <- d$concentrazione[te]
+metriche_test <- as.data.frame(do.call(rbind,lapply(previsioni[,4:6],function(pr) metriche(osservato,pr))))
+metriche_test$metodo <- rownames(metriche_test);rownames(metriche_test) <- NULL
+metriche_test
+previsioni$osservato <- osservato;previsioni$errore_IDW <- osservato-pred_idw
+stile_grafico()
+plot(previsioni$x_m,previsioni$errore_IDW,pch=19,col=palette_geo[1],
+  xlab="x del bersaglio escluso (m)",ylab="Osservato - IDW p2 (u.a.)",main="Errori nel settore Est escluso")
+abline(h=0,lty=2,col="grey50")
+write.csv(metriche_test,percorso_risultati("metriche_test_spaziale.csv"),row.names=FALSE)
+write.csv(previsioni,percorso_risultati("previsioni_test_spaziale.csv"),row.names=FALSE)
+```
+
+**Lettura del risultato.** La prestazione riguarda questa separazione geografica. IDW è una regola di media pesata anche fuori dal dominio del train, ma l’uso qui comporta extrapolazione geografica e non garantisce di seguire un trend verso Est.
+
+## Variante svolta
+
+**Conservare la distanza dal train nella lettura.** Riassumere gli errori IDW per colonna esclusa, senza scegliere un altro parametro dopo il confronto.
+
+```{r variante}
+previsioni$distanza_train_m <- apply(dist_te,1,min)
+per_colonna <- do.call(rbind,lapply(split(previsioni,previsioni$x_m),function(a)
+  data.frame(x_m=a$x_m[1],n=nrow(a),distanza_minima_train_m=mean(a$distanza_train_m),
+    MAE=mean(abs(a$errore_IDW)),bias=mean(a$errore_IDW))))
+rownames(per_colonna) <- NULL
+per_colonna
+write.csv(per_colonna,percorso_risultati("errori_per_colonna.csv"),row.names=FALSE)
+```
+
+Le tre colonne condividono un solo split e valori spazialmente dipendenti. Una lettura per distanza è descrittiva; non fornisce tre verifiche indipendenti del modello.
+
+## Errore da riconoscere
+
+Confondere la partizione x<1000 con il train x<1250, includere dati del test nei pesi o scegliere la potenza che minimizza il test finale.
+
+## Risposta alla domanda
+
+La verifica geografica misura un compito dichiarato: prevedere 24 siti orientali usando solo 40 siti più a Ovest. Metodi e riferimenti vanno fissati prima di aprire i valori del test; gli errori vanno interpretati rispetto alla copertura e al trasferimento richiesto.
+
+## Raccordo con le slide
+
+[Slide 96–99 e 105 della lezione Locus](../../02_PDF/M11_Locus/Locus_M11_statistica_spaziale.pdf#page=96). Il notebook conserva il tema del laboratorio originale e aggiunge verifiche e una variante svolta.
+
+
+## Riferimenti e provenienza
+
+Questo svolgimento sviluppa `M11_N19` del [modulo M11 del corso](https://marzione00.github.io/Lab_Geo/#modulo-M11). Il [codice originale](https://github.com/marzione00/Lab_Geo/blob/649f7cc577b96bd1044d81e78a2f530813e4f96b/materiali/laboratori/M11/M11_N19.R) è conservato immutato in `R/Originali_corso/`; la mappa allegata documenta gli ampliamenti. Dati e originali hanno impronte SHA-256 e SHA-1 Git verificate.
+
+Documentazione primaria delle operazioni: [R, dist](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/dist.html), [R, aggregate](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/aggregate.html), [R, sample](https://stat.ethz.ch/R-manual/R-devel/library/base/html/sample.html). Le definizioni spaziali e il riferimento inferenziale seguono il laboratorio originale, con le distinzioni esplicitate nel testo.

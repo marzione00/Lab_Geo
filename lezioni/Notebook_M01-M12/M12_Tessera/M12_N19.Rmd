@@ -1,0 +1,156 @@
+---
+title: "Stessa forma, origini diverse"
+subtitle: "M12_N19 · Tessera"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Due raster con la stessa forma e lo stesso passo sono necessariamente allineati?
+
+## Obiettivi
+
+- Costruire due geometrie terra traslate di mezzo pixel.
+- Controllare estensione, centri e origine.
+- Eseguire un ricampionamento esplicito e verificarne il bersaglio.
+
+**Prima di iniziare.** Sono richiesti vettori, matrici, tabelle e funzioni R di base. Eseguire i blocchi in ordine; ogni notebook è autonomo rispetto agli altri. Questo notebook richiede terra installato prima dell’analisi e usa le sue funzioni effettive.
+
+**Dati e unità.** Il raster è interamente sintetico: 24 righe × 30 colonne, 720 celle quadrate di lato 30 m. Nel CSV riga e colonna partono da zero; x_m = 30 × colonna e y_m = 30 × riga indicano i centri nel piano locale. La riga 0 è a Sud; la riga 23 è a Nord. Le quote sono in metri sintetici. I dati non descrivono un rilievo reale. Il GeoTIFF originale porta EPSG:32632, UTM zona 32 Nord, con georeferenziazione fittizia: corner Nord-Ovest E=500000, N=5000000; passo 30 m, PixelIsArea. I centri corrispondono a E=x_m+500015 e N=y_m+4999295. Le righe del TIFF procedono da Nord a Sud, al contrario della matrice locale.
+
+## Preparazione
+
+Aprire il progetto autonomo di Tessera o quello generale dei notebook. I file originali restano invariati. Gli output vanno in `Risultati/M12_N19/`. Nessun download o installazione avviene nei blocchi.
+
+```{r preparazione}
+# Trova il modulo dal progetto autonomo o da quello generale dei notebook.
+.gs_cerca <- normalizePath(getwd(),winslash="/",mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca,file.path(.gs_cerca,"M12_Tessera"),
+    file.path(.gs_cerca,"03_Notebook_svolti","M12_Tessera"),
+    file.path(.gs_cerca,"M12","03_Notebook_svolti","M12_Tessera"))
+  .gs_ok <- file.exists(file.path(.gs_candidati,"M12_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati,"R","funzioni_notebook.R"))
+  if(any(.gs_ok)) { .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]];break }
+  .gs_padre <- dirname(.gs_cerca)
+  if(.gs_padre==.gs_cerca) stop("Aprire il progetto M12_Tessera o quello generale dei notebook.")
+  .gs_cerca <- .gs_padre
+}
+source(file.path(.gs_modulo,"R","funzioni_notebook.R"),local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo,"M12_N19")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88,digits=6)
+if(requireNamespace("knitr",quietly=TRUE)) {
+  knitr::opts_chunk$set(echo=TRUE,error=FALSE,warning=TRUE,message=TRUE,
+    fig.width=8,fig.height=5,dpi=150,fig.align="center")
+}
+set.seed(20261104)
+```
+
+## 1. La traslazione cambia la posizione delle celle
+
+Usiamo il GeoTIFF originale e una copia spostata di 15 m verso Est. Quote e dimensioni restano uguali in memoria.
+
+```{r passo_01}
+d <- carica_dati("raster_v3.csv")
+audit_raster(d)
+d <- d[order(d$riga,d$colonna),]
+Z <- matrice_quote(d)
+richiedi_terra()
+r <- terra::rast(percorso_dati("raster_v3.tif"))
+ spostato <- terra::shift(r,dx=15,dy=0)
+ risultato <- data.frame(stessa_forma=nrow(r)==nrow(spostato)&ncol(r)==ncol(spostato),
+   stesso_passo=all(terra::res(r)==terra::res(spostato)),
+   stessa_geometria=terra::compareGeom(r,spostato,stopOnError=FALSE),
+   shift_pixel=(terra::xmin(spostato)-terra::xmin(r))/terra::res(r)[1])
+ risultato
+ data.frame(raster=c("Originale","Spostato"),xmin=c(terra::xmin(r),terra::xmin(spostato)),
+   xmax=c(terra::xmax(r),terra::xmax(spostato)))
+ stopifnot(risultato$stessa_forma,risultato$stesso_passo,!risultato$stessa_geometria,
+   risultato$shift_pixel==.5)
+```
+
+**Lettura del risultato.** Dimensioni uguali permettono operazioni elemento per elemento che possono essere geograficamente sbagliate. La posizione dei centri è una parte del dato.
+
+## 2. Allineare significa scegliere una nuova regola numerica
+
+Ricampioniamo realmente la copia traslata sulla griglia originale con bilinear. Il bersaglio torna uguale, i valori possono cambiare.
+
+```{r passo_02}
+riallineato <- terra::resample(spostato,r,method="bilinear")
+v0 <- as.numeric(terra::values(r));v1 <- as.numeric(terra::values(riallineato))
+validi <- is.finite(v0)&is.finite(v1)
+audit <- data.frame(geometria_target=terra::compareGeom(r,riallineato,stopOnError=FALSE),
+  coppie_valide=sum(validi),media_scarto_m=mean(v1[validi]-v0[validi]),
+  massimo_scarto_m=max(abs(v1[validi]-v0[validi])))
+audit
+stopifnot(audit$geometria_target,audit$coppie_valide>0)
+```
+
+**Lettura del risultato.** Il ricampionamento corregge la compatibilità delle griglie secondo una regola dichiarata. Non recupera informazioni indipendenti che la traslazione abbia reso indisponibili.
+
+## 3. Il mezzo pixel diventa visibile nei centri
+
+Mostriamo sei centri effettivi delle due geometrie in coordinate relative al corner del riquadro.
+
+```{r passo_03}
+celle <- c(1:3,31:33)
+a <- terra::xyFromCell(r,celle);b <- terra::xyFromCell(spostato,celle)
+a <- sweep(a,2,c(500000,4999940),"-");b <- sweep(b,2,c(500000,4999940),"-")
+stile_grafico()
+plot(a,type="n",asp=1,xlim=c(-5,115),ylim=c(-5,90),
+  xlab="E relativo al corner (m)",ylab="N relativo al riquadro (m)",
+  main="Stesse dimensioni: centri traslati di 15 m")
+for(x in seq(0,90,30)) segments(x,0,x,60,col="#B6CDD5")
+for(y in seq(0,60,30)) segments(0,y,90,y,col="#B6CDD5")
+arrows(a[,1],a[,2],b[,1],b[,2],length=.07,col="grey55")
+points(a,pch=19,col=palette_geo[1]);points(b,pch=17,col=palette_geo[2])
+legend("topleft",c("Originale","Traslato"),pch=c(19,17),col=palette_geo[1:2],bty="n",cex=.8)
+write.csv(risultato,percorso_risultati("disallineamento.csv"),row.names=FALSE)
+write.csv(audit,percorso_risultati("ricampionamento.csv"),row.names=FALSE)
+```
+
+**Lettura del risultato.** Il disegno usa centri estratti da terra, non coordinate inventate per suggerire uno spostamento.
+
+## Variante svolta
+
+**Anche una traslazione intera cambia l’estensione.** Spostare di 30 m e controllare che la forma e il passo non bastino ancora.
+
+```{r variante}
+intero <- terra::shift(r,dx=30,dy=0)
+data.frame(shift_pixel=(terra::xmin(intero)-terra::xmin(r))/30,
+  stessa_geometria=terra::compareGeom(r,intero,stopOnError=FALSE),
+  stesso_passo=all(terra::res(r)==terra::res(intero)))
+stopifnot(!terra::compareGeom(r,intero,stopOnError=FALSE))
+```
+
+La coincidenza della griglia periodica non implica uguaglianza del dominio. Prima di combinare raster servono anche estensione e corrispondenza delle celle.
+
+## Errore da riconoscere
+
+Sommare raster perché hanno lo stesso numero di righe e colonne o chiamare allineamento la sola assegnazione di un CRS.
+
+## Risposta alla domanda
+
+La compatibilità richiede CRS, passo, origine, estensione e orientamento coerenti. Ricampionare è un’operazione esplicita sul valore, non una semplice modifica dell’etichetta.
+
+## Raccordo con le slide
+
+[Slide 43–45, 48, 83 della lezione Tessera](../../02_PDF/M12_Tessera/Tessera_M12_raster_telerilevamento_morfometria.pdf#page=43). La [mappa dei notebook e delle slide](MAPPA_SLIDE.csv) conserva il raccordo puntuale con la lezione estesa.
+
+## Riferimenti e provenienza
+
+Questo svolgimento sviluppa `M12_N19` del [modulo M12 del corso](https://marzione00.github.io/Lab_Geo/#modulo-M12). Il [codice originale](https://github.com/marzione00/Lab_Geo/blob/649f7cc577b96bd1044d81e78a2f530813e4f96b/materiali/laboratori/M12/M12_N19.R) è conservato immutato in `R/Originali_corso/`. Dati e originali hanno SHA-256 e SHA-1 Git verificati; gli ampliamenti sono dichiarati nella [mappa degli originali](MAPPA_ORIGINALI.csv).
+
+Documentazione primaria: [terra, rast](https://rspatial.github.io/terra/reference/rast.html), [terra, resample](https://rspatial.github.io/terra/reference/resample.html), [terra, readValues](https://rspatial.github.io/terra/reference/readValues.html), [terra, writeRaster](https://rspatial.github.io/terra/reference/writeRaster.html).

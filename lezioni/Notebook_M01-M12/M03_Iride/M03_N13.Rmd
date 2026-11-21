@@ -1,0 +1,132 @@
+---
+title: "Densit\u00e0 e area: non confondere altezza e frequenza"
+subtitle: "M03_N13 \u00b7 Iride"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come si leggono le probabilità empiriche quando le classi dell'istogramma hanno ampiezze diverse?
+
+## Obiettivi
+
+- Calcolare densità come frequenza relativa divisa per ampiezza.
+- Leggere l'area delle barre e distinguere istogramma e curva stimata.
+
+**Prima di iniziare.** Frequenze relative, istogrammi e area di un rettangolo.
+
+**Dati e unità.** Archivio didattico sintetico: 160 fossili, 80 Rounded e 80 Spiky. Diametri e spessori sono espressi in micrometri; ogni riga identifica un individuo.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M03_N13/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M03_N13")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(3013)
+```
+
+## 1. Costruire classi disuguali
+
+Scegliamo confini da quantili distanziati in modo diverso. Le ampiezze non sono uguali: usare direttamente i conteggi come altezze farebbe dipendere l'area sia dalla numerosità sia dalla larghezza della classe.
+
+```{r passo_01}
+f <- carica_dati("fossili_simulati.csv")
+x <- f$diametro_tot_um
+confini <- as.numeric(quantile(x, c(0, .1, .35, .8, 1), type = 7))
+stopifnot(all(diff(confini) > 0))
+h <- hist(x, breaks = confini, include.lowest = TRUE, plot = FALSE)
+ampiezze <- diff(h$breaks)
+quote <- h$counts / length(x)
+# L altezza e quota divisa per ampiezza: la probabilita empirica resta un area.
+densita <- quote / ampiezze
+```
+
+**Lettura del risultato.** Ogni quota è la frazione di fossili appartenente a una classe. La densità divide quella quota per l'ampiezza in micrometri e ha quindi unità inverse rispetto al diametro.
+
+## 2. Ricostruire le aree
+
+Moltiplichiamo ogni altezza per la sua base e confrontiamo il risultato con le frequenze relative. Il controllo rende concreta la regola geometrica: la probabilità empirica è un'area, non l'altezza della barra.
+
+```{r passo_02}
+# Ricostruiamo ogni quota con l area del rettangolo e controlliamo la somma unitaria.
+aree <- densita * ampiezze
+tab <- data.frame(da_um = head(h$breaks, -1), a_um = tail(h$breaks, -1),
+                  ampiezza_um = ampiezze, n = h$counts,
+                  frequenza = quote, densita_per_um = densita, area = aree)
+print(tab)
+stopifnot(max(abs(aree - quote)) < 1e-12)
+stopifnot(abs(sum(aree) - 1) < 1e-12)
+stopifnot(max(abs(densita - h$density)) < 1e-12)
+```
+
+**Lettura del risultato.** Una barra stretta può essere più alta pur contenendo meno individui di una barra larga. Sommare le altezze non restituisce una probabilità; sommare le aree di classi disgiunte sì.
+
+## 3. Confrontare con una curva smussata
+
+Sovrapponiamo una stima di densità ottenuta da density. La curva è un riassunto continuo che dipende dalla banda di smussamento: non sono nuove osservazioni e non è una distribuzione teorica identificata dai soli dati.
+
+```{r passo_03}
+# density sceglie una banda di smussamento: la curva non e un nuovo campione.
+stima <- density(x)
+plot(h, freq = FALSE, col = "#C57E42", border = "white", ylim = c(0, max(c(h$density, stima$y)) * 1.05),
+     xlab = "Diametro totale (um)", ylab = "Densita (1/um)",
+     main = "L'area rappresenta la frequenza relativa")
+lines(stima, col = "#1D7890", lwd = 2)
+print(c(banda_um = stima$bw, massimo_densita = max(stima$y)))
+legend("topright", "Stima smussata", col = "#1D7890", lwd = 2, bty = "n")
+```
+
+**Lettura del risultato.** La curva e l'istogramma usano la stessa unità verticale ma aggregano in modi diversi. Piccoli massimi possono apparire o sparire cambiando banda, proprio come cambiando i confini delle classi nell'istogramma.
+
+## Variante svolta
+
+Confrontare due bande di smussamento mantenendo le osservazioni e la scala degli assi.
+
+```{r variante}
+fine <- density(x, bw = stima$bw / 2)
+larga <- density(x, bw = stima$bw * 2)
+plot(fine, col = "#1D7890", lwd = 2, ylim = c(0, max(c(fine$y, larga$y))),
+     xlab = "Diametro totale (um)", ylab = "Densita (1/um)", main = "Effetto della banda")
+lines(larga, col = "#7363AA", lwd = 2)
+legend("topright", c("Banda dimezzata", "Banda raddoppiata"), col = c("#1D7890", "#7363AA"), lwd = 2)
+```
+
+La banda piccola segue maggiormente le oscillazioni locali, quella grande le attenua. La scelta non modifica i dati e non autorizza da sola a identificare sottopopolazioni.
+
+## Errore da riconoscere
+
+Non interpretare una densità superiore a uno come probabilità impossibile: la densità ha un'unità e diventa probabilità solo dopo integrazione su un intervallo.
+
+## Risposta alla domanda
+
+Con classi disuguali è l'area delle barre a rappresentare le quote. La densità rende possibile questa lettura, mentre una curva smussata offre un'altra descrizione che dipende da una scelta esplicita di banda.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M03_N13` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M03/M03_N13.R).

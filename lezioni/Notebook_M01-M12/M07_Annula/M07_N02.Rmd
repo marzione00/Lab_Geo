@@ -1,0 +1,129 @@
+---
+title: "Pearson, Spearman e forma della relazione"
+subtitle: "M07_N02 \u00b7 Annula"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Quale parte della nuvola riassumono i coefficienti di Pearson e Spearman?
+
+## Obiettivi
+
+- Collegare la domanda al calcolo riportato.
+- Interpretare il risultato usando variabili e unità del problema.
+
+**Prima di iniziare.** Vettori, data frame, indicizzazione e funzioni di base in R.
+
+**Dati e unità.** Fossili simulati del corso: 160 individui, 80 Rounded e 80 Spiky. Diametri e spessori sono espressi in micrometri. Nel generatore, diametro interno = diametro totale − 2 × spessore. La relazione contiene quindi un vincolo geometrico noto.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Annula oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M07_Annula` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M07_Annula/Risultati/M07_N02/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M07_Annula"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M07_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M07_Annula o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M07_N02")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(7002)
+```
+
+## 1. I due coefficienti sui fossili
+
+Pearson riassume l’associazione lineare. Spearman applica Pearson ai ranghi e descrive un andamento monotono. Entrambi assumono valori fra −1 e 1, ma nessuno ricostruisce la forma completa della nuvola.
+
+```{r passo_01}
+# Ogni riga identifica un fossile simulato.
+f <- carica_dati("fossili_simulati.csv")
+f$morfotipo <- factor(f$morfotipo, levels=c("Rounded", "Spiky"))
+x <- f$diametro_tot_um
+y <- f$diametro_int_um
+stopifnot(nrow(f)==160L, !anyDuplicated(f$id),
+          all(is.finite(x)), all(is.finite(y)))
+data.frame(metodo=c("Pearson","Spearman"),
+ coefficiente=c(cor(x,y),cor(x,y,method="spearman")))
+plot(x,y,pch=19,col=adjustcolor("#087C74",.6),
+ xlab="Diametro totale (micrometri)",ylab="Diametro interno (micrometri)")
+```
+
+**Lettura del risultato.** Pearson è circa 0,965 e Spearman circa 0,952. Il segno positivo concorda con la nuvola crescente. La vicinanza a 1 descrive questa associazione, senza rendere deterministica ogni previsione.
+
+## 2. Unità di misura e simmetria
+
+Per $a>0$, trasformare $X$ in $aX$ lascia invariata la correlazione. La pendenza di una regressione, invece, cambia unità e valore. Inoltre $r(X,Y)=r(Y,X)$, mentre le due regressioni rispondono a domande condizionate diverse.
+
+```{r passo_02}
+# Da micrometri a nanometri: moltiplicazione per 1000.
+c(r_um=cor(x,y),r_nm=cor(1000*x,y),r_invertito=cor(y,x))
+c(pendenza_um=unname(coef(lm(y~x))[2]),
+  pendenza_nm=unname(coef(lm(y~I(1000*x)))[2]))
+```
+
+**Lettura del risultato.** Le correlazioni coincidono. La pendenza per nanometro è un millesimo di quella per micrometro, perché un’unità di incremento del predittore è diventata mille volte più piccola.
+
+## 3. Una curva può avere correlazione nulla
+
+Costruiamo una relazione a U, $Y=X^2$, con valori di $X$ simmetrici. La risposta dipende perfettamente da $X$, ma l’associazione lineare si annulla.
+
+```{r passo_03}
+u <- seq(-2,2,length.out=101)
+v <- u^2
+c(Pearson=cor(u,v),Spearman=cor(u,v,method="spearman"))
+plot(u,v,type="l",lwd=2,col="#5146A5",xlab="X simulato",ylab="Y = X^2")
+```
+
+**Lettura del risultato.** Entrambi i coefficienti sono prossimi a zero. La relazione è forte ma non monotona sull’intero dominio. Il grafico impedisce di confondere assenza di associazione lineare con assenza di relazione.
+
+## Variante svolta
+
+Limitare l’ultima curva al ramo X ≥ 0 e ricalcolare i coefficienti.
+
+```{r variante}
+ramo <- u>=0
+c(Pearson=cor(u[ramo],v[ramo]),
+  Spearman=cor(u[ramo],v[ramo],method="spearman"))
+```
+
+Sul ramo crescente Spearman vale 1, mentre Pearson resta inferiore a 1 perché la forma è curva. La scelta del dominio cambia la proprietà riassunta.
+
+## Errore da riconoscere
+
+Riferire soltanto un coefficiente può nascondere curvatura, sottogruppi o pochi punti influenti.
+
+## Risposta alla domanda
+
+Sui fossili entrambi i coefficienti descrivono una forte associazione positiva. L’esempio a U mostra perché il diagramma di dispersione resta necessario.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M07_N02` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M07/M07_N02.R).

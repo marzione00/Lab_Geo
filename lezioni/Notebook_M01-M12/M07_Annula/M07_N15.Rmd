@@ -1,0 +1,152 @@
+---
+title: "Trasformazioni apprese nel training"
+subtitle: "M07_N15 \u00b7 Annula"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Come standardizzare un predittore senza usare informazioni dei casi riservati?
+
+## Obiettivi
+
+- Collegare la domanda al calcolo riportato.
+- Interpretare il risultato usando variabili e unità del problema.
+
+**Prima di iniziare.** Vettori, data frame, indicizzazione e funzioni di base in R.
+
+**Dati e unità.** Fossili simulati del corso: 160 individui, 80 Rounded e 80 Spiky. Diametri e spessori sono espressi in micrometri. Nel generatore, diametro interno = diametro totale − 2 × spessore. La relazione contiene quindi un vincolo geometrico noto.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Annula oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M07_Annula` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M07_Annula/Risultati/M07_N15/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M07_Annula"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M07_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M07_Annula o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M07_N15")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(7015)
+```
+
+## 1. Media e scala sono parametri stimati
+
+La standardizzazione $z=(x-\mu)/s_x$ richiede media e deviazione standard. Quando la trasformazione fa parte di una procedura predittiva, questi parametri vanno appresi nel training.
+
+```{r passo_01}
+# Ogni riga identifica un fossile simulato.
+f <- carica_dati("fossili_simulati.csv")
+f$morfotipo <- factor(f$morfotipo, levels=c("Rounded", "Spiky"))
+x <- f$diametro_tot_um
+y <- f$diametro_int_um
+stopifnot(nrow(f)==160L, !anyDuplicated(f$id),
+          all(is.finite(x)), all(is.finite(y)))
+# Partizione fissata prima del confronto dei modelli.
+# Nel CSV didattico ogni quinto individuo forma il test.
+is_test <- seq_len(nrow(f)) %% 5L == 0L
+train <- f[!is_test, ]
+test <- f[is_test, ]
+stopifnot(nrow(train)==128L, nrow(test)==32L,
+          length(intersect(train$id, test$id))==0L)
+mu <- mean(train$diametro_tot_um)
+sx <- sd(train$diametro_tot_um)
+stopifnot(sx>0)
+train$z <- (train$diametro_tot_um-mu)/sx
+test$z <- (test$diametro_tot_um-mu)/sx
+c(media_training=mean(train$z),sd_training=sd(train$z),
+  media_test=mean(test$z),sd_test=sd(test$z))
+```
+
+**Lettura del risultato.** Training ha media zero e deviazione standard uno per costruzione. Il test può avere media e scala diverse: conserva le proprie differenze, espresse con la scala del training.
+
+## 2. Le previsioni sulla stessa scala
+
+Una regressione lineare semplice con intercetta conserva le previsioni dopo una trasformazione affine invertibile del predittore, purché la stessa trasformazione sia applicata a tutti i casi.
+
+```{r passo_02}
+m_x <- lm(diametro_int_um~diametro_tot_um,data=train)
+m_z <- lm(diametro_int_um~z,data=train)
+p_x <- predict(m_x,test)
+p_z <- predict(m_z,test)
+c(massima_differenza=max(abs(p_x-p_z)))
+coef(m_z)
+stopifnot(max(abs(p_x-p_z))<1e-10)
+```
+
+**Lettura del risultato.** L’intercetta ora riguarda il diametro totale medio del training. La pendenza indica una variazione della risposta per una deviazione standard del predittore. L’invarianza delle previsioni qui è una proprietà specifica di questa parametrizzazione.
+
+## 3. La trasformazione all’interno di ogni fold
+
+Nella validazione interna ripetiamo anche la stima di media e scala. Una trasformazione appresa su tutto il dataset prima della divisione può trasferire informazione fra parti che si intendono separare.
+
+```{r passo_03}
+set.seed(714)
+fold <- sample(rep(1:5,length.out=nrow(train)))
+scale_cv <- do.call(rbind,lapply(1:5,function(k) {
+ a <- train[fold!=k,];b <- train[fold==k,]
+ media_k <- mean(a$diametro_tot_um)
+ sd_k <- sd(a$diametro_tot_um)
+ a$z <- (a$diametro_tot_um-media_k)/sd_k
+ b$z <- (b$diametro_tot_um-media_k)/sd_k
+ m <- lm(diametro_int_um~z,data=a)
+ data.frame(fold=k,media=media_k,sd=sd_k,
+  RMSE=metriche(b$diametro_int_um,predict(m,b))["RMSE"])
+}))
+scale_cv
+```
+
+**Lettura del risultato.** Ogni fold ha i propri parametri di trasformazione. La stessa regola si estende a imputazione dei mancanti, selezione delle variabili e altre operazioni apprese dai dati.
+
+## Variante svolta
+
+Standardizzare il test con la propria media e mostrare l’errore di applicare il modello addestrato sulla scala del training.
+
+```{r variante}
+test_errato <- test
+test_errato$z <- as.numeric(scale(test$diametro_tot_um))
+p_errate <- predict(m_z,test_errato)
+head(data.frame(previsione_coerente=p_z,previsione_scala_errata=p_errate))
+```
+
+Il modello interpreta z=0 come la media del training. Ricalibrare lo zero sul test cambia il significato del predittore e quindi le previsioni.
+
+## Errore da riconoscere
+
+Standardizzare separatamente ogni insieme non significa applicare la stessa trasformazione.
+
+## Risposta alla domanda
+
+La procedura deve salvare e riutilizzare i parametri di trasformazione insieme ai coefficienti del modello.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M07_N15` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M07/M07_N15.R).

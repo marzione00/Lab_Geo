@@ -1,0 +1,129 @@
+---
+title: "Distribuzione delle medie"
+subtitle: "M05_N03 \u00b7 Pelago"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Perché un istogramma di valori individuali e uno di medie campionarie rispondono a domande diverse?
+
+## Obiettivi
+
+- Simulare una distribuzione campionaria.
+- Collegare varianza individuale e varianza della media.
+
+**Prima di iniziare.** Vettori, indicizzazione, media, varianza e grafici di base in R.
+
+**Dati e unità.** Campioni indipendenti da una distribuzione esponenziale con media dieci unità convenzionali; i dati sono costruiti.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M05_N03/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M05_N03")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(5003)
+```
+
+## 1. Definire la popolazione generatrice
+
+L'esponenziale produce un'evidente coda destra. Il modello ha media 1/lambda e deviazione standard uguale alla media. Generiamo un ampio insieme soltanto per visualizzare la distribuzione individuale: questi valori non sono ancora le repliche delle medie.
+
+```{r passo_01}
+set.seed(504)
+lambda <- 0.1
+mu <- 1 / lambda
+sigma <- 1 / lambda
+individui <- rexp(10000, rate = lambda)
+print(c(media_teorica = mu, sd_teorica = sigma))
+hist(individui, breaks = 40, col = "#95BDD0", border = "white", ylab = "Frequenza",
+     main = "Valori individuali", xlab = "Misura (u.c.)")
+```
+
+**Lettura del risultato.** La coda destra riguarda le misure dei singoli oggetti. La dispersione di questo grafico va confrontata con sigma, non con l'errore standard della media.
+
+## 2. Ripetere campioni di dimensione fissata
+
+Costruiamo tremila campioni di venticinque osservazioni ciascuno. La funzione replicate ripete l'intera estrazione e conserva soltanto la media di ogni campione. Le repliche esterne sono indipendenti, mentre ogni media combina venticinque misure.
+
+```{r passo_02}
+n <- 25
+B <- 3000
+medie <- replicate(B, mean(rexp(n, rate = lambda)))
+se_teorico <- sigma / sqrt(n)
+print(c(media_delle_medie = mean(medie), sd_delle_medie = sd(medie),
+        se_teorico = se_teorico))
+hist(medie, breaks = 30, col = "#E7B977", border = "white", ylab = "Frequenza",
+     main = "Medie di campioni indipendenti", xlab = "Media di 25 misure (u.c.)")
+abline(v = mu, col = "#A33B31", lwd = 2)
+```
+
+**Lettura del risultato.** La distribuzione delle medie è più concentrata. Il suo centro resta vicino alla media della popolazione; la sua deviazione standard è confrontabile con sigma diviso la radice di n.
+
+## 3. Standardizzare rispetto alla variabilità corretta
+
+Sottraiamo il valore atteso e dividiamo per l'errore standard teorico. Il confronto con la normale valuta un'approssimazione della distribuzione campionaria; non dimostra che i valori individuali siano normali.
+
+```{r passo_03}
+z <- (medie - mu) / se_teorico
+quantili <- c(0.025, 0.5, 0.975)
+print(data.frame(probabilita = quantili,
+                 simulati = as.numeric(quantile(z, quantili)),
+                 normali = qnorm(quantili)))
+print(c(media_z = mean(z), sd_z = sd(z)))
+```
+
+**Lettura del risultato.** Gli scarti nei quantili mostrano dove l'approssimazione normale è meno accurata. Con una popolazione asimmetrica, anche la distribuzione delle medie può mantenere una certa asimmetria a numerosità moderata.
+
+## Variante svolta
+
+Ripetere il confronto per campioni di cento osservazioni.
+
+```{r variante}
+n2 <- 100
+medie2 <- replicate(B, mean(rexp(n2, rate = lambda)))
+z2 <- (medie2 - mu) / (sigma / sqrt(n2))
+print(data.frame(n = c(n, n2), sd_media = c(sd(medie), sd(medie2)),
+                 SE_teorico = sigma / sqrt(c(n, n2))))
+print(quantile(z2, quantili))
+```
+
+Quadruplicare n dimezza l'errore standard teorico sotto indipendenza. I quantili standardizzati possono essere confrontati con gli stessi riferimenti normali perché la scala è stata adattata.
+
+## Errore da riconoscere
+
+Non usare B al denominatore dell'errore standard dei dati: B controlla la simulazione, mentre n descrive ciascuna indagine.
+
+## Risposta alla domanda
+
+La distribuzione delle medie descrive la precisione della stima. La distribuzione individuale descrive l'eterogeneità degli oggetti misurati.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M05_N03` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M05/M05_N03.R).

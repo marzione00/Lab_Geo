@@ -1,0 +1,134 @@
+---
+title: "Quante osservazioni restano dopo le differenze?"
+subtitle: "M09_N19 \u00b7 Borealis"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Perché la differenza stagionale seguita da quella ordinaria conserva 191 mesi?
+
+## Obiettivi
+
+- Derivare n−s−1.
+- Controllare l’inizio temporale.
+- Distinguere posizioni e valori finiti.
+
+**Prima di iniziare.** Lettura di CSV, vettori, indicizzazione e funzioni di base in R. I blocchi vanno eseguiti nell’ordine all’interno del singolo notebook.
+
+**Dati e unità.** Archivio storico CO₂ 1958–2001, copia del dataset settimanale statsmodels attribuito a Keeling, Whorf e CDIAC. Le concentrazioni sono espresse in ppm. Le medie mensili del corso derivano dai valori settimanali assegnati al mese della data e differiscono per definizione da una serie mensile ufficiale.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Borealis oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M09_Borealis` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M09_Borealis/Risultati/M09_N19/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M09_Borealis"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M09_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M09_Borealis o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M09_N19")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(9019)
+```
+
+## 1. Contare i valori utilizzabili
+
+Da n osservazioni complete, diff con lag s e una differenza perde s posizioni iniziali. Applicare poi il lag uno perde un’altra posizione: $n-s-1$.
+
+```{r passo_01}
+d <- carica_dati("co2_1985_2001.csv")
+d$data <- as.Date(d$data)
+d <- d[order(d$data), ]
+attese <- seq(as.Date("1985-01-01"), as.Date("2001-12-01"), by="month")
+stopifnot(identical(d$data, attese), !anyNA(d$co2_ppm))
+y <- ts(d$co2_ppm, start=c(1985,1), frequency=12)
+n <- length(y); s <- 12L
+stagionale <- diff(y,lag=s)
+combinata <- diff(stagionale)
+c(n=n,n_stagionale=length(stagionale),n_combinata=length(combinata),
+ formula=n-s-1L)
+stopifnot(length(combinata)==191L)
+```
+
+**Lettura del risultato.** La perdita è di tredici posizioni. Il primo valore combinato usa quattro osservazioni dei mesi t, t−1, t−12 e t−13.
+
+## 2. Contare attraverso il calendario
+
+Il numero dei valori non basta: bisogna sapere da quando decorrono. Confrontiamo i metadati ts e le date originali.
+
+```{r passo_02}
+data.frame(serie=c("livello","stagionale","combinata"),
+ prima=c(as.character(d$data[1]),as.character(d$data[13]),as.character(d$data[14])),
+ ultima=rep(as.character(tail(d$data,1)),3),
+ n=c(length(y),length(stagionale),length(combinata)))
+list(inizio_combinata=start(combinata),fine_combinata=end(combinata))
+```
+
+**Lettura del risultato.** Tutte le serie finiscono a dicembre 2001. La combinata inizia a febbraio 1986 e mantiene la frequenza mensile.
+
+## 3. Un buco interno cambia il conteggio dei valori finiti
+
+La formula n−s−1 conta le posizioni restituite su una griglia completa. Un NA interno può propagarsi in più differenze e ridurre ulteriormente il numero di valori osservabili.
+
+```{r passo_03}
+con_buco <- y; con_buco[80] <- NA_real_
+diff_buco <- diff(diff(con_buco,lag=12))
+c(posizioni=length(diff_buco),valori_finiti=sum(is.finite(diff_buco)),
+ valori_NA=sum(is.na(diff_buco)))
+which(is.na(diff_buco))
+```
+
+**Lettura del risultato.** Le posizioni restano 191, ma quattro valori combinati diventano NA perché il termine mancante compare in quattro confronti. Lunghezza della griglia e numero di valori finiti sono quantità diverse.
+
+## Variante svolta
+
+Verificare il conteggio per lag stagionali 4, 6 e 12.
+
+```{r variante}
+do.call(rbind,lapply(c(4L,6L,12L),function(s) {
+ z<-diff(diff(y,lag=s))
+ data.frame(lag=s,n_effettivo=length(z),n_formula=length(y)-s-1L)
+}))
+```
+
+La verifica riguarda l’algebra dell’operazione. Usare lag 4 o 6 su dati mensili non implica che tali ritardi abbiano un significato stagionale appropriato.
+
+## Errore da riconoscere
+
+Confondere length(z) con sum(is.finite(z)) quando il calendario contiene assenze interne.
+
+## Risposta alla domanda
+
+La serie completa di 204 mesi produce 191 posizioni dopo la differenza combinata. Assenze interne richiedono anche un conteggio dei valori finiti e del loro calendario.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M09_N19` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M09/M09_N19.R).

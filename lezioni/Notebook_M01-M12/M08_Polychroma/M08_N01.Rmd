@@ -1,0 +1,133 @@
+---
+title: "La matrice delle misure e le colonne da escludere"
+subtitle: "M08_N01 \u00b7 Polychroma"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Quali colonne descrivono i campioni e quali informazioni devono restare fuori dalla distanza?
+
+## Obiettivi
+
+- Selezionare le colonne usando i nomi.
+- Distinguere misure, identificativi ed etichette del simulatore.
+- Mantenere gli ID nelle tabelle dei risultati.
+
+**Prima di iniziare.** Lettura di un CSV, vettori, matrici, indicizzazione e funzioni di base in R.
+
+**Dati e unità.** Novanta rocce sintetiche del corso. SiO2, CaO, MgO e FeO sono percentuali in massa; densita è espressa in g/cm³ e grana_mm in millimetri. colore e fossili sono indici numerici convenzionali del simulatore, non misure mineralogiche o conteggi reali. La colonna litologia_generatrice descrive il gruppo usato nella simulazione e viene esclusa dalle stime.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Polychroma oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M08_Polychroma` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M08_Polychroma/Risultati/M08_N01/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M08_Polychroma"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M08_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M08_Polychroma o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M08_N01")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(8001)
+```
+
+## 1. Campioni e variabili
+
+Una riga rappresenta una roccia simulata. La scelta esplicita delle otto colonne separa misure, identificativi e metadati. Prima di calcolare una distanza controlliamo numerosità, valori finiti e dispersione positiva.
+
+```{r passo_01}
+# Seleziona le misure per nome: ID ed etichetta non entrano nella matrice.
+r <- carica_dati("rocce_simulate.csv")
+v <- c("SiO2", "CaO", "MgO", "FeO", "densita", "grana_mm", "colore", "fossili")
+X <- as.matrix(r[v])
+stopifnot(nrow(X)==90L, ncol(X)==8L, !anyDuplicated(r$id),
+          all(is.finite(X)), all(apply(X,2,sd)>0))
+Z <- scale(X)
+D <- dist(Z)
+dim(X)
+head(data.frame(id=r$id,X),4)
+data.frame(variabile=v,media=colMeans(X),SD=apply(X,2,sd))
+```
+
+**Lettura del risultato.** La matrice ha 90 righe e otto colonne. Le deviazioni standard sono espresse nelle unità delle rispettive misure: confrontarle direttamente non misura ancora l’importanza scientifica delle proprietà.
+
+## 2. La colonna numerica non basta
+
+La selezione automatica delle colonne numeriche includerebbe anche resto_wt. Questa parte completa gli ossidi al 100%, ma non appartiene alle otto variabili del percorso principale. La scelta deve dipendere dalla domanda, non soltanto dal tipo memorizzato in R.
+
+```{r passo_02}
+# Mostra che il tipo numerico non decide da solo la matrice di analisi.
+numeriche <- names(r)[vapply(r,is.numeric,logical(1))]
+list(colonne_numeriche=numeriche,
+     analisi_principale=v,
+     numeriche_escluse=setdiff(numeriche,v))
+table(r$litologia_generatrice)
+```
+
+**Lettura del risultato.** resto_wt è numerica ma viene riservata all’approfondimento composizionale. Le etichette del generatore comprendono tre gruppi di 30 casi; questa informazione non deve fissare anticipatamente la risposta del clustering.
+
+## 3. Conservare gli identificativi
+
+Un risultato deve poter essere ricondotto al campione originale. L’identificativo accompagna i valori trasformati, senza contribuire a distanze o componenti.
+
+```{r passo_03}
+tabella <- data.frame(id=r$id,Z,check.names=FALSE)
+head(tabella,3)
+stopifnot(identical(tabella$id,r$id))
+# Salva una tabella leggibile conservando gli ID.
+write.csv(tabella,percorso_risultati("matrice_standardizzata.csv"),row.names=FALSE)
+```
+
+**Lettura del risultato.** Ogni riga standardizzata mantiene il proprio ID. Dopo un ordinamento o un filtro, l’associazione va ricostruita mediante l’ID e non assumendo che le righe siano ancora nella stessa posizione.
+
+## Variante svolta
+
+Riordinare i risultati per SiO2 e recuperare la litologia senza usare il numero di riga come chiave.
+
+```{r variante}
+ordinata <- tabella[order(tabella$SiO2),]
+ordinata$generatore <- r$litologia_generatrice[match(ordinata$id,r$id)]
+head(ordinata[,c("id","SiO2","generatore")],5)
+```
+
+match cerca gli ID originali dopo il riordinamento. Il generatore viene aggiunto alla tabella per leggerla, non inserito nella matrice usata dagli algoritmi.
+
+## Errore da riconoscere
+
+Convertire le litologie in 1, 2 e 3 e inserirle fra le misure introduce nella distanza proprio il raggruppamento che si vorrebbe riconoscere.
+
+## Risposta alla domanda
+
+La matrice di analisi contiene otto misure dichiarate. ID ed etichette restano separati e permettono di ricondurre ogni risultato ai campioni.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M08_N01` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M08/M08_N01.R).

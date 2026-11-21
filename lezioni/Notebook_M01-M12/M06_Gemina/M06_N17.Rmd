@@ -1,0 +1,135 @@
+---
+title: "Pi\u00f9 gruppi: ANOVA come confronto globale"
+subtitle: "M06_N17 \u00b7 Gemina"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come confrontiamo le densità medie di più litologie senza trasformare subito il problema in molti test a coppie?
+
+## Obiettivi
+
+- Ricostruire scomposizione della variabilità e statistica F.
+- Distinguere conclusione globale e identificazione delle coppie diverse.
+
+**Prima di iniziare.** Vettori, indicizzazione, media, varianza e grafici di base in R.
+
+**Dati e unità.** Novanta rocce sintetiche in rocce_simulate.csv, raggruppate per litologia_generatrice; densità in g/cm³.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M06_N17/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M06_N17")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(6017)
+```
+
+## 1. Definire gruppi e domanda globale
+
+La nulla globale afferma che tutte le medie di litologia sono uguali. Rifiutarla fornisce evidenza di almeno una differenza, ma non dice automaticamente quali coppie differiscono. Prima del test osserviamo numerosità, medie e dispersioni per gruppo.
+
+```{r passo_01}
+dati <- carica_dati("rocce_simulate.csv")
+stopifnot(all(is.finite(dati$densita)), !anyNA(dati$litologia_generatrice))
+dati$gruppo <- factor(dati$litologia_generatrice)
+gruppi <- split(dati$densita, dati$gruppo)
+n_g <- lengths(gruppi)
+medie_g <- vapply(gruppi, mean, numeric(1))
+sd_g <- vapply(gruppi, sd, numeric(1))
+print(data.frame(gruppo = names(gruppi), n = n_g, media = medie_g, SD = sd_g))
+boxplot(densita ~ gruppo, data = dati, col = "#95BDD0",
+        xlab = "Litologia generatrice", ylab = "Densita (g/cm3)")
+```
+
+**Lettura del risultato.** I gruppi provengono da una generazione didattica. Le etichette non sono classificazioni ottenute dal test e non dimostrano che una differenza osservata abbia una causa geologica reale.
+
+## 2. Scomporre la variabilità e calcolare F
+
+L'ANOVA classica confronta variabilità fra medie di gruppo e variabilità entro gruppi. Ponderiamo gli scarti delle medie per la numerosità e dividiamo le somme dei quadrati per i rispettivi gradi di libertà. Il riferimento F richiede indipendenza, errori normali e varianza comune.
+
+```{r passo_02}
+Ntot <- nrow(dati)
+k <- length(gruppi)
+media_totale <- mean(dati$densita)
+SS_fra <- sum(n_g * (medie_g - media_totale)^2)
+SS_entro <- sum(vapply(gruppi, function(x) sum((x - mean(x))^2), numeric(1)))
+SS_totale <- sum((dati$densita - media_totale)^2)
+stopifnot(isTRUE(all.equal(SS_totale, SS_fra + SS_entro)))
+F_obs <- (SS_fra / (k - 1)) / (SS_entro / (Ntot - k))
+p_F <- pf(F_obs, k - 1, Ntot - k, lower.tail = FALSE)
+print(c(F = F_obs, df_fra = k - 1, df_entro = Ntot - k, p = p_F))
+```
+
+**Lettura del risultato.** Il rapporto confronta due fonti di variabilità, non una differenza media con segno. Un valore F non identifica direttamente la litologia con densità maggiore.
+
+## 3. Verificare ANOVA e confrontare il metodo di Welch
+
+La funzione aov permette di controllare la ricostruzione manuale. Se la varianza comune non è un modello adeguato, oneway.test con var.equal = FALSE offre un confronto globale di Welch. La scelta non deve derivare da quale restituisce il p-value minore.
+
+```{r passo_03}
+modello <- aov(densita ~ gruppo, data = dati)
+tabella <- summary(modello)[[1]]
+stopifnot(isTRUE(all.equal(unname(tabella[1, "F value"]), F_obs)))
+print(summary(modello))
+welch <- oneway.test(densita ~ gruppo, data = dati, var.equal = FALSE)
+print(welch)
+print(c(p_classico = p_F, p_Welch = welch$p.value))
+```
+
+**Lettura del risultato.** I due metodi fanno ipotesi differenti sulle varianze. Una conclusione deve dichiarare il metodo scelto e restare globale finché non si definiscono confronti specifici.
+
+## Variante svolta
+
+Definire tutti i confronti a coppie e presentarli con correzione di Holm come famiglia separata.
+
+```{r variante}
+coppie <- combn(names(gruppi), 2, simplify = FALSE)
+confronti <- do.call(rbind, lapply(coppie, function(g) {
+  z <- t.test(gruppi[[g[2]]], gruppi[[g[1]]], var.equal = FALSE)
+  data.frame(contrasto = paste(g[2], "-", g[1]),
+    differenza = mean(gruppi[[g[2]]]) - mean(gruppi[[g[1]]]), p = z$p.value)
+}))
+confronti$p_Holm <- p.adjust(confronti$p, method = "holm")
+print(confronti)
+```
+
+Le coppie rispondono a domande più specifiche e formano una famiglia di confronti. La loro correzione non trasforma il test globale in una lista di differenze certe.
+
+## Errore da riconoscere
+
+Non concludere che tutti i gruppi differiscono quando l'ANOVA rifiuta la nulla. Il risultato globale sostiene almeno una differenza, sotto le ipotesi adottate.
+
+## Risposta alla domanda
+
+L'ANOVA organizza un confronto globale fra medie. Identificare differenze specifiche richiede contrasti dichiarati, stime nelle unità originali e attenzione alla molteplicità.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M06_N17` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M06/M06_N17.R).

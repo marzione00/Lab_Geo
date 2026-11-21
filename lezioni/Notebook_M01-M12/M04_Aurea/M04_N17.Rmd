@@ -1,0 +1,141 @@
+---
+title: "Che cosa cambia se gli errori sono correlati?"
+subtitle: "M04_N17 \u00b7 Aurea"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Perché una correlazione positiva fra massa e volume può ridurre l'incertezza del loro rapporto?
+
+## Obiettivi
+
+- Generare due errori normali con correlazione assegnata.
+- Includere il termine di covarianza nella propagazione al primo ordine.
+
+**Prima di iniziare.** Propagazione dell'incertezza, correlazione e sensibilità del rapporto.
+
+**Dati e unità.** Parametri didattici della misura: massa nominale 106 g, volume nominale 40 cm³, incertezze standard rispettivamente 1 g e 0,6 cm³. Le estrazioni sono simulate. Confrontiamo correlazioni degli errori pari a −0,7, 0 e 0,7.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M04_N17/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M04_N17")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(4017)
+```
+
+## 1. Costruire errori dipendenti
+
+Partiamo da due normali standard indipendenti. L'errore del volume combina una parte condivisa con quello della massa e una parte indipendente; la radice di uno meno r al quadrato conserva la varianza unitaria.
+
+```{r passo_01}
+p <- carica_dati("parametri_densita.csv")
+m0 <- p$massa_media_g[1]; V0 <- p$volume_medio_cm3[1]
+um <- p$sd_massa_g[1]; uV <- p$sd_volume_cm3[1]
+set.seed(417)
+B <- 3000
+z1 <- rnorm(B)
+z2 <- rnorm(B)
+r <- .7
+massa <- m0 + um * z1
+# La componente condivisa z1 introduce correlazione mantenendo la varianza nominale del volume.
+volume <- V0 + uV * (r * z1 + sqrt(1 - r^2) * z2)
+stopifnot(all(volume > 0))
+print(c(correlazione_assegnata = r, correlazione_simulata = cor(massa, volume)))
+```
+
+**Lettura del risultato.** La correlazione simulata si avvicina a quella assegnata ma non coincide esattamente con essa. Qui r descrive gli errori di misura; non è la correlazione geologica fra massa e volume di rocce diverse.
+
+## 2. Inserire la covarianza
+
+La varianza approssimata contiene i due contributi marginali e due volte il prodotto delle sensibilità per la covarianza. Le sensibilità del rapporto hanno segni opposti, quindi una covarianza positiva sottrae variabilità al risultato.
+
+```{r passo_02}
+dm <- 1 / V0
+dV <- -m0 / V0^2
+covarianza <- r * um * uV
+var_base <- (dm * um)^2 + (dV * uV)^2
+# Le sensibilita hanno segni opposti: con covarianza positiva il contributo e negativo.
+termine_cov <- 2 * dm * dV * covarianza
+u_correlata <- sqrt(var_base + termine_cov)
+rho <- massa / volume
+print(c(var_senza_covarianza = var_base, contributo_covarianza = termine_cov,
+        u_lineare = u_correlata, sd_simulata = sd(rho)))
+```
+
+**Lettura del risultato.** Se massa e volume aumentano insieme, una parte dei loro effetti si compensa nel rapporto. Con correlazione negativa gli effetti si rinforzano. Il risultato dipende dalla funzione fisica: non è una regola generale per ogni somma o prodotto.
+
+## 3. Confrontare tre ipotesi
+
+Riutilizziamo gli stessi z1 e z2 per confrontare le ipotesi in modo controllato. Le repliche fra scenari sono quindi collegate, mentre ciascuno scenario conserva la distribuzione marginale richiesta agli ingressi.
+
+```{r passo_03}
+simula_scenario <- function(correlazione) {
+  v <- V0 + uV * (correlazione * z1 + sqrt(1 - correlazione^2) * z2)
+  stopifnot(all(v > 0))
+  c(cor_empirica = cor(massa, v), sd_mc = sd(massa / v),
+    u_lineare = sqrt(var_base + 2 * dm * dV * correlazione * um * uV))
+}
+# Gli scenari cambiano soltanto la correlazione, conservando nominali e incertezze marginali.
+ipotesi <- c(-.7, 0, .7)
+confronto <- t(sapply(ipotesi, simula_scenario))
+print(data.frame(cor_assegnata = ipotesi, confronto))
+plot(ipotesi, confronto[, "sd_mc"], type = "b", pch = 16, col = "#1D7890",
+     xlab = "Correlazione degli errori", ylab = "SD della densita (g/cm^3)")
+```
+
+**Lettura del risultato.** Il confronto mostra quanto il risultato dipenda dall'ipotesi di dipendenza, a parità di incertezze marginali. Se r non è noto, presentare più scenari è più onesto che dichiarare indipendenza senza motivazione.
+
+## Variante svolta
+
+Calcolare una curva analitica dell'incertezza per correlazioni da −0,9 a 0,9.
+
+```{r variante}
+griglia_r <- seq(-.9, .9, by = .1)
+u_griglia <- sqrt(var_base + 2 * dm * dV * griglia_r * um * uV)
+print(data.frame(correlazione = griglia_r, u_densita = u_griglia))
+plot(griglia_r, u_griglia, type = "l", lwd = 2, col = "#C57E42",
+     xlab = "Correlazione ipotizzata", ylab = "Incertezza lineare (g/cm^3)")
+stopifnot(all(is.finite(u_griglia)), all(u_griglia > 0))
+```
+
+La curva è un'analisi di sensibilità rispetto a un parametro assunto. Non stima quale correlazione abbia davvero il sistema di misura: per questo servono dati di calibrazione o conoscenza del meccanismo comune agli strumenti.
+
+## Errore da riconoscere
+
+Non usare la correlazione fra rocce di dimensioni diverse come stima automatica della correlazione degli errori. Non inserire un termine di covarianza senza unità o con segno scelto intuitivamente.
+
+## Risposta alla domanda
+
+La dipendenza degli ingressi può modificare sensibilmente l'incertezza del rapporto. La formula con le sensibilità spiega il segno dell'effetto, mentre la simulazione permette di confrontare scenari dichiarati senza fingere che la correlazione sia nota.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M04_N17` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M04/M04_N17.R).

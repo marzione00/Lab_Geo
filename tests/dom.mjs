@@ -249,6 +249,12 @@ assert.equal(
   d.querySelectorAll('#table-form input').length,
   2 * (w.GEO_LESSONS.M06.exercises.cards[0].table.length - 1),
 );
+// A companion world with notebooks only, and a tappa that cites a notebook in the slide footer.
+w.location.hash = '#esercizi-M01';
+await until(() => d.querySelectorAll('.lesson-notebook-list li').length === 20);
+w.location.hash = '#lezione-M10/10';
+await until(() => d.querySelector('.page-counter')?.textContent === '10 / 110');
+assert(d.querySelector('#lesson-nb-title + ul a').getAttribute('href').endsWith('M10_Futura/M10_N01.html'));
 // Every other lesson: each tappa renders its slide panel, and a lesson without a workbook has no exercises route.
 let lessonPages = 0,
   lessonFormulas = 0;
@@ -269,7 +275,7 @@ for (const id of lessonIds) {
     assert(d.querySelector('.breadcrumb').textContent.includes('Sistema ' + w.GeoAstro.generate(id, 0).name));
     lessonPages++;
   }
-  if (!w.GEO_LESSON_INDEX[id].cards) {
+  if (!w.GEO_LESSON_INDEX[id].cards && !w.GEO_LESSON_INDEX[id].notebooks) {
     w.location.hash = '#esercizi-' + id;
     await until(() => d.querySelector('.error h1')?.textContent === 'Pagina non trovata');
   }

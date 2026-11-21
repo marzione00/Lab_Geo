@@ -1,0 +1,132 @@
+---
+title: "Confronti multipli: la famiglia di domande"
+subtitle: "M06_N18 \u00b7 Gemina"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come cambia la decisione quando quattro p-value appartengono alla stessa famiglia di domande?
+
+## Obiettivi
+
+- Ricostruire la correzione sequenziale di Holm.
+- Definire la famiglia e il rischio di almeno un falso positivo.
+
+**Prima di iniziare.** Vettori, indicizzazione, media, varianza e grafici di base in R.
+
+**Dati e unità.** Quattro p-value didattici, 0,003, 0,018, 0,041 e 0,200, associati a quattro ipotesi definite prima dell'analisi.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M06_N18/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M06_N18")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(6018)
+```
+
+## 1. Dichiarare la famiglia e ordinare i p-value
+
+La molteplicità riguarda l'insieme delle domande per cui desideriamo controllare almeno un falso rifiuto. Qui la famiglia contiene quattro ipotesi. Ordiniamo i p-value per il calcolo, ma conserviamo i nomi per restituire i risultati alle ipotesi originali.
+
+```{r passo_01}
+p <- c(H3 = 0.041, H1 = 0.003, H4 = 0.200, H2 = 0.018)
+alpha <- 0.05
+m <- length(p)
+ordine <- order(p)
+p_ordinati <- p[ordine]
+soglie <- alpha / (m:1)
+print(data.frame(ipotesi = names(p_ordinati), p = p_ordinati, soglia_Holm = soglie))
+print(c(numero_ipotesi = m, livello_famiglia = alpha))
+```
+
+**Lettura del risultato.** L'ordine iniziale è volutamente diverso da quello dei p-value. Il controllo dei nomi impedisce di attribuire a un'ipotesi il risultato corretto di un'altra.
+
+## 2. Applicare la regola sequenziale
+
+Holm confronta il p-value più piccolo con alpha/m e procede solo se il confronto consente il rifiuto. Al primo mancato rifiuto si fermano anche i rifiuti successivi. La funzione cumprod traduce questa regola, senza trattare i confronti come decisioni isolate.
+
+```{r passo_02}
+supera <- p_ordinati <= soglie
+rifiuta_ordinato <- as.logical(cumprod(as.integer(supera)))
+aggiustati_ordinati <- pmin(1, cummax((m:1) * p_ordinati))
+aggiustati <- numeric(m)
+aggiustati[ordine] <- aggiustati_ordinati
+names(aggiustati) <- names(p)
+print(data.frame(ipotesi = names(p_ordinati), p = p_ordinati,
+                 p_Holm = aggiustati_ordinati, rifiuta = rifiuta_ordinato))
+stopifnot(isTRUE(all.equal(aggiustati, p.adjust(p, method = "holm"))))
+```
+
+**Lettura del risultato.** Il massimo cumulativo impedisce ai p-value aggiustati di diminuire lungo l'ordine. Il secondo confronto può interrompere la sequenza anche quando un successivo p-value sarebbe inferiore a 0,05 senza correzione.
+
+## 3. Quantificare il rischio della famiglia in un modello semplice
+
+Se tutti i nulli sono veri e i p-value sono uniformi indipendenti, la probabilità di almeno un p-value sotto alpha è 1−(1−alpha)^m. Simuliamo questo caso e lo confrontiamo con Holm. La formula di indipendenza non va trasferita automaticamente a test correlati.
+
+```{r passo_03}
+set.seed(618)
+B <- 3000
+simulati <- replicate(B, runif(m))
+errore_grezzo <- mean(apply(simulati, 2, function(z) any(z <= alpha)))
+errore_Holm <- mean(apply(simulati, 2, function(z)
+  any(p.adjust(z, "holm") <= alpha)))
+print(c(FWER_grezzo_teorico = 1 - (1 - alpha)^m,
+        FWER_grezzo_simulato = errore_grezzo, FWER_Holm_simulato = errore_Holm))
+print(c(MCSE_Holm = sqrt(errore_Holm * (1 - errore_Holm) / B)))
+```
+
+**Lettura del risultato.** Holm controlla la probabilità di almeno un falso rifiuto anche con dipendenza fra test, purché i singoli p-value siano validi. La simulazione indipendente mostra un caso, non dimostra tutta la proprietà.
+
+## Variante svolta
+
+Confrontare Holm e Bonferroni mantenendo la stessa famiglia e gli stessi nomi.
+
+```{r variante}
+confronto <- data.frame(ipotesi = names(p), p = as.numeric(p),
+  Holm = as.numeric(p.adjust(p, "holm")),
+  Bonferroni = as.numeric(p.adjust(p, "bonferroni")))
+confronto$rifiuta_Holm <- confronto$Holm <= alpha
+confronto$rifiuta_Bonferroni <- confronto$Bonferroni <= alpha
+print(confronto)
+```
+
+Le correzioni possono produrre decisioni diverse. La famiglia resta quella dichiarata prima dell'analisi: non si eliminano ipotesi dalla lista dopo aver visto quali risultati sono scomodi.
+
+## Errore da riconoscere
+
+Non correggere soltanto i p-value già piccoli o rinominare famiglie a posteriori per ottenere più rifiuti. Documentare quali domande appartengono al controllo comune.
+
+## Risposta alla domanda
+
+La correzione multipla richiede una famiglia definita e p-value validi. Holm ordina le evidenze, applica soglie sequenziali e restituisce risultati interpretabili per le ipotesi originali.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M06_N18` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M06/M06_N18.R).

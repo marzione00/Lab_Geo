@@ -1,0 +1,134 @@
+---
+title: "Laboratorio applicativo \u2014 Conservare gli errori"
+subtitle: "M01_N20 \u00b7 Terra"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come si consegna una tabella controllata mantenendo traccia delle anomalie e dei criteri di utilizzo?
+
+## Obiettivi
+
+- Registrare più motivi di controllo per la stessa riga.
+- Produrre un audit completo e una tabella analitica coerente.
+
+**Prima di iniziare.** Saper eseguire una cella R e riconoscere vettori, assegnamenti e nomi di colonne.
+
+**Dati e unità.** Creiamo una copia dei 24 provini sintetici con volume nullo per C02 e massa mancante per C04. Nella variante una riga presenta due problemi contemporaneamente, per verificare il registro dei motivi.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M01_N20/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M01_N20")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(1020)
+```
+
+## 1. Preparare una copia e regole separate
+
+Una sola colonna generica 'errore' non spiega che cosa sia accaduto. Definiamo indicatori distinti per massa e volume e conserviamo gli identificativi: la stessa riga potrebbe violare più di una regola e richiedere verifiche differenti.
+
+```{r passo_01}
+# Ogni esecuzione riparte dal CSV condiviso, senza modificare il file.
+d <- carica_dati("campioni_modulo1.csv", stringsAsFactors = FALSE)
+stopifnot(nrow(d) == 24L, !anyDuplicated(d$id))
+
+d$volume_cm3[d$id == "C02"] <- 0
+d$massa_g[d$id == "C04"] <- NA_real_
+flag_massa <- !is.finite(d$massa_g) | d$massa_g <= 0
+flag_volume <- !is.finite(d$volume_cm3) | d$volume_cm3 <= 0
+stopifnot(!anyNA(flag_massa), !anyNA(flag_volume))
+print(table(flag_massa, flag_volume))
+```
+
+**Lettura del risultato.** Gli indicatori distinguono le condizioni problematiche senza cancellare osservazioni. La somma dei singoli flag conterebbe violazioni, mentre l'unione dei flag conta righe da controllare: le due quantità possono essere diverse.
+
+## 2. Costruire un registro leggibile
+
+Convertiamo gli indicatori in motivi testuali e manteniamo una riga per provino. L'operazione raccoglie tutte le violazioni applicabili, evitando una catena di condizioni che restituisca soltanto il primo problema incontrato.
+
+```{r passo_02}
+motivi <- vapply(seq_len(nrow(d)), function(i) {
+  problemi <- c(if (flag_massa[i]) "massa non finita o non positiva",
+                if (flag_volume[i]) "volume non finito o non positivo")
+  if (length(problemi) == 0L) "nessuna anomalia secondo le regole" else paste(problemi, collapse = "; ")
+}, character(1))
+audit <- data.frame(id = d$id, flag_massa = flag_massa,
+                    flag_volume = flag_volume, motivo = motivi,
+                    utilizzabile = !(flag_massa | flag_volume))
+print(audit[!audit$utilizzabile, ])
+stopifnot(identical(audit$id, d$id))
+```
+
+**Lettura del risultato.** Il testo specifica il criterio applicato, senza inventare una causa strumentale. 'Nessuna anomalia secondo le regole' non significa dato perfetto: segnala soltanto che questi controlli limitati non hanno trovato impedimenti alla formula.
+
+## 3. Conservare il completo e consegnare il sottoinsieme
+
+Calcoliamo densità soltanto dove possibile e salviamo sia la tabella completa con audit sia il sottoinsieme utilizzato. Il lettore può così ricostruire il denominatore e riesaminare le osservazioni escluse senza cercare una versione precedente del file.
+
+```{r passo_03}
+completo <- cbind(d, audit[setdiff(names(audit), "id")])
+completo$densita_g_cm3 <- NA_real_
+ok <- completo$utilizzabile
+completo$densita_g_cm3[ok] <- completo$massa_g[ok] / completo$volume_cm3[ok]
+analitico <- completo[ok, , drop = FALSE]
+write.csv(completo, percorso_risultati("audit_completo.csv"), row.names = FALSE)
+write.csv(analitico, percorso_risultati("provini_utilizzabili.csv"), row.names = FALSE)
+print(c(righe = nrow(completo), utilizzabili = nrow(analitico), da_verificare = sum(!ok)))
+stopifnot(nrow(analitico) + sum(!ok) == nrow(d))
+```
+
+**Lettura del risultato.** I due file hanno ruoli complementari. Il completo conserva la storia delle osservazioni; l'analitico esplicita quali provini entrano nei calcoli della densità. Nessuna riga viene corretta o eliminata silenziosamente dal file originale.
+
+## Variante svolta
+
+Verificare una riga con due problemi e distinguere numero di righe e numero di violazioni.
+
+```{r variante}
+prova <- data.frame(id = c("P1", "P2"), massa_g = c(NA, 10), volume_cm3 = c(0, 5))
+f_m <- !is.finite(prova$massa_g) | prova$massa_g <= 0
+f_v <- !is.finite(prova$volume_cm3) | prova$volume_cm3 <= 0
+print(data.frame(id = prova$id, massa = f_m, volume = f_v))
+print(c(righe_segnalate = sum(f_m | f_v), violazioni = sum(f_m) + sum(f_v)))
+```
+
+La prima riga genera due violazioni, ma rimane un solo provino da verificare. Esplicitare entrambi i conteggi evita percentuali incoerenti e permette di organizzare una revisione per tipo di problema.
+
+## Errore da riconoscere
+
+Usare un unico ifelse annidato può conservare soltanto il primo motivo e nascondere errori concomitanti. Indicatori separati e un registro composto mantengono l'informazione necessaria alla revisione.
+
+## Risposta alla domanda
+
+Una consegna verificabile conserva osservazioni, regole e decisioni. Il risultato analitico resta collegato alla tabella completa e può essere ricostruito o aggiornato quando una misura viene controllata nuovamente.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M01_N20` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M01/M01_N20.R).

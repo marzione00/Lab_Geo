@@ -1,0 +1,136 @@
+---
+title: "Facoltativo: costruire una figura a strati"
+subtitle: "M03_N18 \u00b7 Iride"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come tradurre la grammatica di ggplot2 in una figura equivalente eseguibile con R base?
+
+## Obiettivi
+
+- Separare dati, associazioni agli assi, elementi grafici ed etichette.
+- Costruire un confronto fra gruppi senza richiedere pacchetti aggiuntivi.
+
+**Prima di iniziare.** Boxplot, punti individuali e funzioni grafiche di R base.
+
+**Dati e unità.** Archivio didattico sintetico: 160 fossili, 80 Rounded e 80 Spiky. Diametri e spessori sono espressi in micrometri; ogni riga identifica un individuo.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M03_N18/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M03_N18")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(3018)
+```
+
+## 1. Dichiarare i dati e le associazioni
+
+Nella grammatica di ggplot2 i dati sono la tabella, le associazioni collegano morfotipo all'asse orizzontale e diametro a quello verticale, gli strati aggiungono scatole e punti. R base permette di dichiarare gli stessi elementi in chiamate successive.
+
+```{r passo_01}
+f <- carica_dati("fossili_simulati.csv")
+f$morfotipo <- factor(f$morfotipo, levels = c("Rounded", "Spiky"))
+# I nomi associano i colori alle categorie e ne conservano il significato.
+colori <- c(Rounded = "#1D7890", Spiky = "#C57E42")
+print(table(f$morfotipo))
+print(head(f[c("morfotipo", "diametro_tot_um")]))
+stopifnot(!anyNA(f$morfotipo), all(is.finite(f$diametro_tot_um)))
+```
+
+**Lettura del risultato.** La scelta dei livelli stabilisce l'ordine dei gruppi, mentre i colori sono associati ai loro nomi. Questa dichiarazione evita che un filtro o un ordinamento diverso cambi silenziosamente il significato cromatico.
+
+## 2. Costruire scatole e punti
+
+Il primo comando crea assi e boxplot; il secondo aggiunge gli individui. Non servono pacchetti esterni. Il jitter è solo orizzontale, quindi ogni punto conserva il diametro realmente misurato.
+
+```{r passo_02}
+disegna_morfotipi <- function(d) {
+  set.seed(318)
+  boxplot(diametro_tot_um ~ morfotipo, data = d, outline = FALSE,
+          ylim = range(d$diametro_tot_um), col = c("#D5E9EE", "#F1DFCF"), border = colori,
+          xlab = "Morfotipo", ylab = "Diametro totale (um)",
+          main = "Scatole e osservazioni individuali")
+  posizione <- as.numeric(d$morfotipo)
+  # amount limita lo spostamento orizzontale; i diametri verticali restano invariati.
+  punti_x <- jitter(posizione, amount = .12)
+  points(punti_x, d$diametro_tot_um, pch = 16, cex = .65,
+         col = colori[as.character(d$morfotipo)])
+  stopifnot(all(abs(punti_x - posizione) <= .12))
+}
+disegna_morfotipi(f)
+```
+
+**Lettura del risultato.** In un ambiente con ggplot2 già installato, la sequenza facoltativa non eseguita sarebbe: ggplot(f, aes(morfotipo, diametro_tot_um)) + geom_boxplot(outlier.shape = NA) + geom_jitter(width = 0.12, height = 0) + labs(x = 'Morfotipo', y = 'Diametro totale (um)'). Le chiamate geom aggiungono strati, aes dichiara associazioni e labs definisce etichette.
+
+## 3. Aggiungere un riassunto distinto
+
+Sovrapponiamo le medie con un simbolo diverso dalla mediana già contenuta nelle scatole. La legenda identifica il nuovo elemento, così il lettore non deve indovinare quale indice sia stato aggiunto.
+
+```{r passo_03}
+medie <- tapply(f$diametro_tot_um, f$morfotipo, mean)
+mediane <- tapply(f$diametro_tot_um, f$morfotipo, median)
+# Ricreiamo il grafico anche se il blocco precedente ha chiuso il dispositivo.
+disegna_morfotipi(f)
+# Il rombo bianco distingue la media dalla mediana gia presente nella scatola.
+points(seq_along(medie), medie, pch = 23, bg = "white", col = "black", cex = 1.4)
+legend("topleft", "Media", pch = 23, pt.bg = "white", bty = "n")
+print(data.frame(morfotipo = names(medie), media_um = medie, mediana_um = mediane))
+mtext(paste("Campione sintetico; n =", nrow(f)), side = 3, cex = .8)
+```
+
+**Lettura del risultato.** La costruzione per strati rende chiaro quali informazioni provengono dagli individui e quali da riassunti. Aggiungere elementi ha senso quando chiarisce una domanda; accumulare simboli senza legenda può rendere la figura meno leggibile.
+
+## Variante svolta
+
+Produrre una versione senza jitter che mostri soltanto medie e mediane, dichiarando l'informazione persa.
+
+```{r variante}
+intervallo <- range(c(medie, mediane))
+plot(seq_along(medie), medie, xaxt = "n", pch = 16, col = "#1D7890",
+     ylim = intervallo + c(-.1, .1), xlab = "Morfotipo", ylab = "Diametro centrale (um)")
+axis(1, at = seq_along(medie), labels = names(medie))
+points(seq_along(mediane), mediane, pch = 17, col = "#C57E42")
+legend("topleft", c("Media", "Mediana"), pch = c(16, 17), col = c("#1D7890", "#C57E42"), bty = "n")
+```
+
+La figura compatta confronta due indici ma non mostra dispersione, estremi o numerosità. Non sostituisce il boxplot con punti se la domanda riguarda la distribuzione degli individui.
+
+## Errore da riconoscere
+
+Non lasciare il jitter verticale predefinito quando interessa la posizione esatta delle misure. Non interpretare un nuovo strato grafico come nuova evidenza statistica.
+
+## Risposta alla domanda
+
+Dati, associazioni, strati ed etichette sono decisioni separabili. La versione R base realizza la stessa logica senza dipendenze; l'esempio ggplot2 resta facoltativo e va eseguito solo in un ambiente che disponga del pacchetto.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M03_N18` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M03/M03_N18.R).

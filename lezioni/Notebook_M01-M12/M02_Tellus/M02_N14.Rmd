@@ -1,0 +1,150 @@
+---
+title: "Controlli geometrici e disponibilit\u00e0"
+subtitle: "M02_N14 \u00b7 Tellus"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Quali fossili hanno misure disponibili e geometricamente ammissibili per un'analisi che richiede tutti e tre i diametri?
+
+## Obiettivi
+
+- Separare disponibilità, positività e ordine dei diametri.
+- Costruire una regola analitica e un audit con motivi multipli.
+
+**Prima di iniziare.** Saper eseguire una cella R e riconoscere vettori, assegnamenti e nomi di colonne.
+
+**Dati e unità.** Usiamo 25 record sintetici con diametro esterno, diametro interno e diaframma in micrometri. Il file include assenze, un diametro negativo, un interno maggiore dell'esterno e una copia esatta.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M02_N14/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M02_N14")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(2014)
+```
+
+## 1. Convertire senza perdere il riferimento originale
+
+L'esercizio ricostruisce autonomamente la conversione delle tre misure e conserva l'ordine del file. I controlli fisici si applicano ai numeri convertiti, mentre il testo rimane disponibile per distinguere problemi di rappresentazione e anomalie della misura.
+
+```{r passo_01}
+# Conservare anche stringhe vuote e codici testuali prima di interpretarli.
+raw <- carica_dati("fossili_da_controllare.csv", sep = ";",
+                   colClasses = "character", na.strings = character(),
+                   stringsAsFactors = FALSE)
+stopifnot(nrow(raw) == 25L)
+
+converti_misura <- function(x) {
+  testo <- trimws(x)
+  mancante <- is.na(testo) | toupper(testo) %in% c("", "NA", "ND")
+  normalizzato <- gsub(",", ".", testo, fixed = TRUE)
+  # La grammatica accetta decimali semplici; non interpreta simboli di censura.
+  numerico <- !mancante & grepl("^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)$", normalizzato)
+  valore <- rep(NA_real_, length(x))
+  valore[numerico] <- as.numeric(normalizzato[numerico])
+  data.frame(originale = x, valore = valore, mancante = mancante,
+             fallito = !mancante & !numerico, stringsAsFactors = FALSE)
+}
+
+misure <- c("diametro_tot_um", "diametro_int_um", "diaframma_um")
+conversioni <- lapply(raw[misure], converti_misura)
+f <- raw
+for (nome in misure) f[[nome]] <- conversioni[[nome]]$valore
+f$riga_origine <- seq_len(nrow(f))
+
+stopifnot(!any(vapply(conversioni, function(x) any(x$fallito), logical(1))))
+print(head(f, 6))
+```
+
+**Lettura del risultato.** L'assenza di fallimenti sintattici non implica che tutte le misure siano disponibili o positive. ND e campo vuoto hanno già un significato dichiarato come mancanti; il diametro negativo è invece un numero convertito che richiede un controllo fisico.
+
+## 2. Definire indicatori indipendenti
+
+La disponibilità di tutte le misure è diversa dalla loro ammissibilità geometrica. Costruiamo indicatori separati, facendo in modo che ciascuno sia sempre vero o falso, anche quando una misura manca. Aggiungiamo categoria e duplicato senza cancellare le righe.
+
+```{r passo_02}
+f$completo <- rowSums(is.finite(as.matrix(f[misure]))) == length(misure)
+f$nonpositivo <- rowSums(sapply(f[misure], function(x) is.finite(x) & x <= 0)) > 0
+f$interno_maggiore <- is.finite(f$diametro_tot_um) & is.finite(f$diametro_int_um) &
+                      f$diametro_int_um > f$diametro_tot_um
+f$categoria_ok <- tolower(trimws(f$morfotipo)) %in% c("rounded", "spiky")
+f$duplicato_esatto <- duplicated(raw)
+flag <- f[c("completo", "nonpositivo", "interno_maggiore", "categoria_ok", "duplicato_esatto")]
+stopifnot(!anyNA(flag))
+print(f[!f$completo | f$nonpositivo | f$interno_maggiore | f$duplicato_esatto,
+        c("id", "riga_origine", names(flag))])
+```
+
+**Lettura del risultato.** Una riga può comparire in più categorie di problema. Il vincolo interno minore o uguale all'esterno usa il modello geometrico del fossile; non viene deciso sulla base della distribuzione statistica dei valori osservati.
+
+## 3. Dichiarare la disponibilità per questa analisi
+
+L'analisi proposta richiede tutti e tre i valori, positività, geometria coerente e una sola copia per record identico. La colonna utilizzabile riunisce questi requisiti, mentre i singoli indicatori spiegano perché una riga non vi rientra.
+
+```{r passo_03}
+f$utilizzabile <- f$completo & !f$nonpositivo & !f$interno_maggiore &
+                  f$categoria_ok & !f$duplicato_esatto
+print(c(totali = nrow(f), utilizzabili = sum(f$utilizzabile),
+        da_verificare = sum(!f$utilizzabile)))
+motivi <- c(incompleto = sum(!f$completo), nonpositivo = sum(f$nonpositivo),
+             geometria = sum(f$interno_maggiore), copia = sum(f$duplicato_esatto))
+print(motivi)
+write.csv(f, percorso_risultati("fossili_audit_geometrico.csv"), row.names = FALSE)
+stopifnot(sum(f$utilizzabile) + sum(!f$utilizzabile) == nrow(raw))
+```
+
+**Lettura del risultato.** Il totale dei motivi può superare le righe segnalate quando una riga viola più requisiti. L'indicatore è specifico per l'analisi dichiarata: un fossile senza diaframma potrebbe ancora avere diametri sufficienti per calcolare lo spessore.
+
+## Variante svolta
+
+Definire una disponibilità separata per il solo rapporto fra diametri interno ed esterno.
+
+```{r variante}
+ok_rapporto <- is.finite(f$diametro_tot_um) & f$diametro_tot_um > 0 &
+               is.finite(f$diametro_int_um) & f$diametro_int_um > 0 &
+               !f$interno_maggiore & f$categoria_ok & !f$duplicato_esatto
+print(f[ok_rapporto & !f$utilizzabile, c("id", "diametro_tot_um", "diametro_int_um", "diaframma_um")])
+print(c(tre_misure = sum(f$utilizzabile), rapporto = sum(ok_rapporto)))
+```
+
+Cambiare il requisito non significa ignorare un'anomalia: significa riconoscere che formule diverse richiedono informazioni diverse. I due denominatori devono accompagnare i rispettivi risultati per evitare confronti fra insiemi non dichiarati.
+
+## Errore da riconoscere
+
+Applicare un unico filtro di completezza a qualunque analisi può eliminare osservazioni utilizzabili per una specifica domanda. La disponibilità va definita in relazione alle variabili effettivamente necessarie.
+
+## Risposta alla domanda
+
+L'audit distingue testo, geometria e disponibilità analitica. Il sottoinsieme utilizzabile è una scelta documentata e riesaminabile, mentre il file completo mantiene tutti i record e i motivi di controllo.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M02_N14` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M02/M02_N14.R).

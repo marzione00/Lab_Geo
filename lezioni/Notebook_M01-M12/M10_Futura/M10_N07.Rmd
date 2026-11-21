@@ -1,0 +1,132 @@
+---
+title: "Aprire il test e confrontare gli errori"
+subtitle: "M10_N07 · Futura"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Come si confrontano i metodi sul periodo escluso?
+
+## Obiettivi
+
+- Usare gli stessi 36 bersagli per tutti i metodi.
+- Calcolare MAE, RMSE e bias con segno esplicito.
+- Distinguere valutazione finale e nuova selezione.
+
+**Prima di iniziare.** Sono richiesti vettori, tabelle e funzioni R di base. I blocchi vanno eseguiti in ordine. Il notebook è autonomo rispetto agli altri.
+
+**Dati e unità.** CO₂ storica: 204 mesi da gennaio 1985 a dicembre 2001, concentrazione in ppm. Le medie derivano dalle osservazioni settimanali attribuite al mese della data, secondo la convenzione del corso. Sono dati storici, distinti da una serie mensile ufficiale e da una misura attuale. Il protocollo usa 168 mesi per l’adattamento (1985–1998) e 36 per il test (1999–2001).
+
+## Preparazione
+
+Aprire il progetto autonomo di Futura o quello generale del corso. I calcoli usano R base e stats. Gli output del notebook vanno in `Risultati/M10_N07/`; i CSV originali restano invariati.
+
+```{r preparazione}
+# Trova la cartella M10 dal progetto autonomo o dal progetto generale.
+.gs_cerca <- normalizePath(getwd(),winslash="/",mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca,
+    file.path(.gs_cerca,"M10_Futura"),
+    file.path(.gs_cerca,"03_Notebook_svolti","M10_Futura"),
+    file.path(.gs_cerca,"M10","03_Notebook_svolti","M10_Futura"))
+  .gs_ok <- file.exists(file.path(.gs_candidati,"M10_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati,"R","funzioni_notebook.R"))
+  if(any(.gs_ok)) { .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]; break }
+  .gs_padre <- dirname(.gs_cerca)
+  if(.gs_padre==.gs_cerca) stop("Aprire il progetto M10_Futura o quello generale dei notebook.")
+  .gs_cerca <- .gs_padre
+}
+source(file.path(.gs_modulo,"R","funzioni_notebook.R"),local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo,"M10_N07")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88,digits=6)
+if(requireNamespace("knitr",quietly=TRUE)) {
+  knitr::opts_chunk$set(echo=TRUE,error=FALSE,warning=TRUE,message=TRUE,
+    fig.width=8,fig.height=5,dpi=150,fig.align="center")
+}
+set.seed(10007)
+```
+
+## 1. Le previsioni precedono il confronto
+
+I metodi sono quelli del protocollo già dichiarato. Il test viene usato qui per quantificare la prestazione.
+
+```{r passo_01}
+c2 <- prepara_co2(carica_dati("co2_1985_2001.csv"))
+train <- c2$train; test <- c2$test; h <- c2$h
+fit <- stima_sarima(train)
+ pred <- baseline_co2(train,h)[c("Ultimo","Stagionale","Deriva")]
+ pred$SARIMA <- as.numeric(predict(fit,n.ahead=h)$pred)
+ stopifnot(all(vapply(pred,length,integer(1))==length(test)))
+ data.frame(h=1:3,osservato=as.numeric(test)[1:3],
+            previsto_SARIMA=pred$SARIMA[1:3])
+```
+
+**Lettura del risultato.** Tutti i metodi partono dal dicembre 1998. Nessuno aggiorna la previsione usando i valori del test nei mesi successivi.
+
+## 2. Tre metriche descrivono aspetti diversi
+
+Definiamo $e_h=y_{T+h}-\hat y_{T+h}$, $MAE=\operatorname{media}|e_h|$ e $RMSE=\sqrt{\operatorname{media}(e_h^2)}$. Un bias positivo indica sottostima media.
+
+```{r passo_02}
+risultati <- as.data.frame(do.call(rbind,lapply(pred,function(p) metriche(test,p))))
+risultati$modello <- rownames(risultati)
+rownames(risultati) <- NULL
+risultati <- risultati[,c("modello","MAE","RMSE","bias_osservato_meno_previsto")]
+risultati
+write.csv(risultati,percorso_risultati("metriche_test.csv"),row.names=FALSE)
+```
+
+**Lettura del risultato.** MAE e RMSE restano in ppm. RMSE pesa maggiormente gli errori ampi, mentre il bias può nascondere compensazioni fra segni.
+
+## 3. Il calendario localizza gli errori
+
+La prestazione riassuntiva va accompagnata dalla successione degli scarti per riconoscere errori persistenti.
+
+```{r passo_03}
+errori <- sapply(pred,function(p) as.numeric(test)-p)
+stile_grafico()
+matplot(1:h,errori,type="l",lty=1,col=palette_geo,lwd=1.7,
+  xlab="Mesi dall'origine",ylab="Osservato - previsto (ppm)",main="Errori nel test storico")
+abline(h=0,lty=2)
+legend("topleft",names(pred),col=palette_geo,lty=1,bty="n",cex=.8)
+```
+
+**Lettura del risultato.** Le curve rendono visibili scostamenti sistematici e stagionalità residua. Un solo holdout resta una verifica limitata di trasferibilità.
+
+## Variante svolta
+
+**MAE e RMSE ordinano allo stesso modo?.** Ordinare le tabelle secondo due perdite e confrontare la graduatoria.
+
+```{r variante}
+data.frame(posizione=seq_len(nrow(risultati)),
+  ordine_MAE=risultati$modello[order(risultati$MAE)],
+  ordine_RMSE=risultati$modello[order(risultati$RMSE)])
+```
+
+Una graduatoria diversa può riflettere il peso degli errori grandi. La metrica va scelta in rapporto alla domanda prima di usare il test per decidere.
+
+## Errore da riconoscere
+
+Dopo aver visto la graduatoria del test, cambiare ordini finché il modello supera i riferimenti e riportare lo stesso test come indipendente.
+
+## Risposta alla domanda
+
+Il confronto usa gli stessi bersagli, le stesse unità e un’origine comune. La tabella finale quantifica ciò che accade in questo segmento storico, con il protocollo fissato.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M10_N07` di [GeoStat Lab M10](https://marzione00.github.io/Lab_Geo/#indice). Il [codice originale del laboratorio](https://github.com/marzione00/Lab_Geo/blob/649f7cc577b96bd1044d81e78a2f530813e4f96b/materiali/laboratori/M10/M10_N07.R) è conservato anche in `R/Originali_corso`. Gli ampliamenti e le varianti sono identificati nella mappa allegata.
+
+Documentazione dei metodi: [R stats, arima](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/arima.html), [predict.Arima](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/predict.arima.html), [Box.test](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/box.test.html) e [p.adjust](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/p.adjust.html).

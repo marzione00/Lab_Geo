@@ -1,0 +1,139 @@
+---
+title: "Salvare una figura e una didascalia"
+subtitle: "M03_N19 \u00b7 Iride"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come consegnare una figura autonoma, con unità, origine dei dati e didascalia coerente con i calcoli?
+
+## Obiettivi
+
+- Riutilizzare una funzione di disegno per anteprima ed esportazione.
+- Salvare un PDF vettoriale e documentare campione e simboli.
+
+**Prima di iniziare.** Scatterplot, funzioni e percorsi dei risultati.
+
+**Dati e unità.** Archivio didattico sintetico: 160 fossili, 80 Rounded e 80 Spiky. Diametri e spessori sono espressi in micrometri; ogni riga identifica un individuo.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M03_N19/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M03_N19")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(3019)
+```
+
+## 1. Preparare il disegno riutilizzabile
+
+Una funzione raccoglie tutte le decisioni grafiche. La stessa funzione verrà richiamata sul dispositivo di anteprima e nel PDF, evitando che un'etichetta corretta in una versione resti sbagliata nell'altra.
+
+```{r passo_01}
+f <- carica_dati("fossili_simulati.csv")
+# Una sola funzione mantiene coerenti anteprima e file esportato.
+disegna <- function(d) {
+  g <- factor(d$morfotipo)
+  palette <- c("#1D7890", "#C57E42")
+  plot(d$diametro_tot_um, d$diametro_int_um, pch = c(16, 17)[g],
+       col = palette[g], xlab = "Diametro totale (um)",
+       ylab = "Diametro interno (um)", main = "Geometria dei fossili sintetici")
+  legend("topleft", levels(g), col = palette, pch = c(16, 17), bty = "n")
+}
+disegna(f)
+```
+
+**Lettura del risultato.** La funzione riceve la tabella da rappresentare, senza leggerla di nuovo né modificare il file originale. Colore e simbolo comunicano la stessa categoria, rendendo la figura leggibile anche in stampa monocromatica.
+
+## 2. Aprire e chiudere il dispositivo
+
+Il PDF conserva linee e testo come elementi vettoriali. La funzione di esportazione usa on.exit per chiudere il dispositivo anche se il disegno genera un errore; il file viene scritto soltanto nella cartella dei risultati.
+
+```{r passo_02}
+salva_pdf <- function(d, nome) {
+  destinazione <- percorso_risultati(nome)
+  grDevices::pdf(destinazione, width = 7, height = 5, useDingbats = FALSE)
+  # La chiusura del dispositivo e garantita anche se il disegno si interrompe.
+  on.exit(grDevices::dev.off(), add = TRUE)
+  disegna(d)
+  invisible(destinazione)
+}
+file_figura <- salva_pdf(f, "diametri_fossili.pdf")
+stopifnot(file.exists(file_figura), file.info(file_figura)$size > 0)
+print(data.frame(file = basename(file_figura), bytes = file.info(file_figura)$size))
+```
+
+**Lettura del risultato.** Le dimensioni sono in pollici e determinano lo spazio disponibile per assi e legenda. Un file esistente e non vuoto conferma la scrittura; non dimostra da solo che le etichette siano ben posizionate, perciò va anche osservata l'anteprima.
+
+## 3. Scrivere una didascalia autonoma
+
+La didascalia identifica unità osservativa, numerosità e natura sintetica dei dati. Specifica inoltre che la figura mostra un'associazione descrittiva: il lettore deve capirne il significato anche senza il testo del notebook.
+
+```{r passo_03}
+n_gruppi <- table(f$morfotipo)
+        # Le numerosita della didascalia sono ricavate dai dati utilizzati nella figura.
+        dettagli <- paste(paste(names(n_gruppi), as.integer(n_gruppi), sep = " n="), collapse = "; ")
+        didascalia <- sprintf(paste("Diametro interno in funzione del diametro totale per %d fossili sintetici.",
+          "Ogni punto rappresenta un individuo; entrambe le misure sono in micrometri.",
+          "Colori e simboli distinguono i morfotipi (%s). Il grafico descrive il campione."), nrow(f), dettagli)
+        file_didascalia <- percorso_risultati("diametri_fossili_didascalia.txt")
+        writeLines(didascalia, file_didascalia, useBytes = TRUE)
+        cat(readLines(file_didascalia, warn = FALSE), "
+")
+```
+
+**Lettura del risultato.** La didascalia non deve promettere una relazione causale o una significatività non analizzata. Poiché le numerosità sono ricavate dalla tabella, una nuova esecuzione con un sottoinsieme può aggiornare automaticamente la descrizione.
+
+## Variante svolta
+
+Esportare soltanto Rounded con un nome diverso e produrre una didascalia specifica.
+
+```{r variante}
+rounded <- f[f$morfotipo == "Rounded", , drop = FALSE]
+        secondo_pdf <- salva_pdf(rounded, "diametri_rounded.pdf")
+        seconda_didascalia <- sprintf("Diametri di %d fossili Rounded sintetici; un punto per individuo; misure in micrometri.", nrow(rounded))
+        writeLines(seconda_didascalia, percorso_risultati("diametri_rounded_didascalia.txt"), useBytes = TRUE)
+        stopifnot(file.exists(secondo_pdf), nrow(rounded) < nrow(f))
+        cat(seconda_didascalia, "
+")
+```
+
+Il nome distinto conserva entrambe le figure. La nuova didascalia non deve riportare la numerosità totale o menzionare un confronto con Spiky che non è più visibile.
+
+## Errore da riconoscere
+
+Non dimenticare dev.off dopo un'esportazione e non usare una didascalia copiata senza aggiornare numerosità e categorie. Non sovrascrivere i dati per salvare i risultati.
+
+## Risposta alla domanda
+
+Figura e didascalia formano una consegna verificabile quando condividono dati, unità e categorie. La funzione di disegno evita divergenze fra anteprima e file; percorsi separati conservano l'archivio originale.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M03_N19` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M03/M03_N19.R).

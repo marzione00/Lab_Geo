@@ -15,7 +15,9 @@
     if (!l || !modules.some(x => x.id === m[2])) return { type: 'notfound' };
     if (m[1] === 'lezione')
       return n === null || n <= l.pages ? { type: 'lesson', id: m[2], page: n } : { type: 'notfound' };
-    return l.cards > 0 && (n === null || n <= l.cards)
+    // The companion world exists with workbook cards or solved notebooks; a card number needs a card.
+    const companion = l.cards > 0 || l.notebooks > 0;
+    return companion && (n === null || n <= (l.cards || 0))
       ? { type: 'exercises', id: m[2], card: n || 1 }
       : { type: 'notfound' };
   }

@@ -1,0 +1,130 @@
+---
+title: "Il calendario prima di ts"
+subtitle: "M09_N04 \u00b7 Borealis"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Quando possiamo rappresentare il segmento CO₂ come una serie mensile regolare?
+
+## Obiettivi
+
+- Verificare la griglia mensile.
+- Leggere start, end, frequency e cycle.
+- Conservare le posizioni mancanti.
+
+**Prima di iniziare.** Lettura di CSV, vettori, indicizzazione e funzioni di base in R. I blocchi vanno eseguiti nell’ordine all’interno del singolo notebook.
+
+**Dati e unità.** Archivio storico CO₂ 1958–2001, copia del dataset settimanale statsmodels attribuito a Keeling, Whorf e CDIAC. Le concentrazioni sono espresse in ppm. Le medie mensili del corso derivano dai valori settimanali assegnati al mese della data e differiscono per definizione da una serie mensile ufficiale.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Borealis oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M09_Borealis` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M09_Borealis/Risultati/M09_N04/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M09_Borealis"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M09_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M09_Borealis o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M09_N04")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(9004)
+```
+
+## 1. Verificare tutte le date attese
+
+L’intervallo 1985–2001 contiene diciassette anni completi. L’uguaglianza con la sequenza delle date controlla insieme ordine, duplicati e presenza di ogni mese.
+
+```{r passo_01}
+d <- carica_dati("co2_1985_2001.csv")
+d$data <- as.Date(d$data)
+d <- d[order(d$data), ]
+attese <- seq(as.Date("1985-01-01"), as.Date("2001-12-01"), by="month")
+stopifnot(identical(d$data, attese), !anyNA(d$co2_ppm))
+y <- ts(d$co2_ppm, start=c(1985,1), frequency=12)
+c(n=nrow(d), copertura_minima=min(d$n_settimane))
+stopifnot(nrow(d)==204L, all(d$n_settimane>=3L))
+head(data.frame(data=d$data, co2=as.numeric(y)), 3)
+```
+
+**Lettura del risultato.** Sono disponibili 204 mesi, tutti con almeno tre medie settimanali. Il calendario mensile è regolare anche se i mesi civili hanno durate diverse in giorni.
+
+## 2. Leggere gli attributi temporali
+
+ts conserva inizio, fine e frequenza convenzionale. Non conserva una colonna di date civili per ogni valore. Per una serie mensile frequency=12 indica dodici passi per anno.
+
+```{r passo_02}
+list(inizio=start(y), fine=end(y), frequenza=frequency(y),
+ primi_tempi=head(time(y)), primi_mesi=head(cycle(y)))
+plot(d$data, as.numeric(y), type="l", col="#087C74",
+ xlab="Data", ylab="CO2 (ppm)")
+```
+
+**Lettura del risultato.** Gli indici decimali di time(y) sono adatti alla griglia di ts. La tabella d rimane il riferimento per etichette, unioni e esportazioni con il calendario civile.
+
+## 3. Rendere visibile un mese mancante
+
+Eliminare un mese e chiamare ts sulla colonna accorcerebbe artificialmente il calendario. Costruiamo invece la griglia e reinseriamo una riga con NA mediante merge.
+
+```{r passo_03}
+senza <- d[-5, c("data","co2_ppm")]
+completa <- merge(data.frame(data=attese), senza, by="data", all.x=TRUE)
+completa[3:7, ]
+stopifnot(nrow(completa)==204L, sum(is.na(completa$co2_ppm))==1L)
+con_buco <- ts(completa$co2_ppm, start=c(1985,1), frequency=12)
+end(con_buco)
+```
+
+**Lettura del risultato.** La posizione di maggio 1985 rimane al suo posto e la fine resta dicembre 2001. La gestione dell’NA dipenderà dalla procedura successiva.
+
+## Variante svolta
+
+Controllare che un’assenza e un valore zero siano distinguibili.
+
+```{r variante}
+c(valori_assenti=sum(is.na(con_buco)),
+ valori_zero=sum(con_buco==0,na.rm=TRUE),
+ posizioni_totali=length(con_buco))
+```
+
+NA segnala assenza del valore. Zero sarebbe una misura numerica e modificherebbe medie, grafici e dipendenza.
+
+## Errore da riconoscere
+
+Usare frequency=12 come prova della regolarità del file: quel parametro assegna un calendario e non controlla le date ricevute.
+
+## Risposta alla domanda
+
+Il controllo del calendario giustifica la costruzione di ts. La tabella con le date resta necessaria per conservare il significato di ogni osservazione.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M09_N04` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M09/M09_N04.R).

@@ -1,0 +1,147 @@
+---
+title: "Laboratorio applicativo: quattro gruppi"
+subtitle: "M08_N19 \u00b7 Polychroma"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Che cosa cambia scegliendo quattro gruppi per le stesse novanta rocce?
+
+## Obiettivi
+
+- Eseguire il laboratorio con k=4.
+- Descrivere la suddivisione aggiuntiva.
+- Salvare assegnazioni e diagnostica con gli identificativi.
+
+**Prima di iniziare.** Lettura di un CSV, vettori, matrici, indicizzazione e funzioni di base in R.
+
+**Dati e unità.** Novanta rocce sintetiche del corso. SiO2, CaO, MgO e FeO sono percentuali in massa; densita è espressa in g/cm³ e grana_mm in millimetri. colore e fossili sono indici numerici convenzionali del simulatore, non misure mineralogiche o conteggi reali. La colonna litologia_generatrice descrive il gruppo usato nella simulazione e viene esclusa dalle stime.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Polychroma oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M08_Polychroma` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M08_Polychroma/Risultati/M08_N19/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M08_Polychroma"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M08_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M08_Polychroma o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M08_N19")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(8019)
+```
+
+## 1. Riprodurre la richiesta con k fissato
+
+Manteniamo le otto misure e la stessa standardizzazione. Fissiamo k=4 come scelta del laboratorio, senza presentarlo come il numero stabilito dai criteri del notebook 13.
+
+```{r passo_01}
+# Seleziona le misure per nome: ID ed etichetta non entrano nella matrice.
+r <- carica_dati("rocce_simulate.csv")
+v <- c("SiO2", "CaO", "MgO", "FeO", "densita", "grana_mm", "colore", "fossili")
+X <- as.matrix(r[v])
+stopifnot(nrow(X)==90L, ncol(X)==8L, !anyDuplicated(r$id),
+          all(is.finite(X)), all(apply(X,2,sd)>0))
+Z <- scale(X)
+D <- dist(Z)
+set.seed(1601)
+km4 <- kmeans(Z,4,nstart=50,iter.max=100)
+km4$size
+c(WSS=km4$tot.withinss,silhouette=mean(silhouette_base(km4$cluster,D)))
+profili4 <- aggregate(r[v],list(cluster=km4$cluster),mean)
+round(profili4,3)
+```
+
+**Lettura del risultato.** I quattro gruppi hanno WSS circa 100,96 e silhouette media circa 0,544. La maggiore granularità riduce la dispersione interna ma non aumenta la separazione media rispetto alla soluzione a tre gruppi.
+
+## 2. Confronto con la soluzione a tre gruppi
+
+Confrontiamo le due partizioni, poi riapriamo le etichette del generatore per capire dove si colloca la suddivisione aggiuntiva. La differenza è descritta attraverso profili osservati.
+
+```{r passo_02}
+# Gli avvii multipli confrontano soluzioni locali sullo stesso spazio.
+set.seed(816)
+km <- kmeans(Z, centers=3, nstart=50, iter.max=100)
+table(k3=km$cluster,k4=km4$cluster)
+table(k4=km4$cluster,generatore=r$litologia_generatrice)
+profili4[,c("cluster","SiO2","CaO","densita","grana_mm")]
+data.frame(k=c(3,4),WSS=c(km$tot.withinss,km4$tot.withinss),
+ silhouette=c(mean(silhouette_base(km$cluster,D)),mean(silhouette_base(km4$cluster,D))))
+```
+
+**Lettura del risultato.** Con questo seme la divisione aggiuntiva interessa le arenarie: i due sottogruppi hanno granulometria media circa 1,297 e 0,454 mm. La divisione descrive variabilità del simulatore; non introduce una nuova litologia validata.
+
+## 3. Visualizzare e conservare la soluzione
+
+Coloriamo il piano PCA con i quattro gruppi stimati sulle otto misure e salviamo ID, cluster e silhouette. La tabella rende il risultato verificabile campione per campione.
+
+```{r passo_03}
+# La PCA conserva medie, scale e rotazione per eventuali nuovi campioni.
+pc <- prcomp(X, center=TRUE, scale.=TRUE)
+lambda <- pc$sdev^2
+quota <- lambda/sum(lambda)
+colori <- c("#087C74", "#C57E42", "#7363AA", "#1D7890", "#A17B19", "#657180", "#B55353")
+plot(pc$x[,1:2],pch=19,col=colori[km4$cluster],asp=1,
+ xlab="PC1",ylab="PC2")
+legend("topright",legend=paste("Cluster",1:4),col=colori[1:4],pch=19,bty="n")
+risultato4 <- data.frame(id=r$id,cluster=km4$cluster,
+ silhouette=silhouette_base(km4$cluster,D))
+write.csv(risultato4,percorso_risultati("assegnazioni_k4.csv"),row.names=FALSE)
+head(risultato4,4)
+```
+
+**Lettura del risultato.** La separazione visibile delle arenarie lungo il piano è coerente con il peso della granulometria sulla seconda componente. La figura resta una proiezione e non mostra tutta la variabilità usata nel fit.
+
+## Variante svolta
+
+Ripetere il calcolo con cinque gruppi e descrivere la riduzione di WSS insieme alla silhouette.
+
+```{r variante}
+set.seed(1602)
+km5 <- kmeans(Z,5,nstart=50,iter.max=100)
+data.frame(k=c(4,5),WSS=c(km4$tot.withinss,km5$tot.withinss),
+ silhouette=c(mean(silhouette_base(km4$cluster,D)),mean(silhouette_base(km5$cluster,D))))
+table(k4=km4$cluster,k5=km5$cluster)
+```
+
+Aggiungere gruppi permette una descrizione più fine e può diminuire WSS. La tabella mostra se la partizione più fine mantiene una separazione relativa utile; non basta scegliere il minimo della WSS.
+
+## Errore da riconoscere
+
+Trasformare ogni cluster aggiuntivo in una nuova categoria geologica senza osservazioni indipendenti.
+
+## Risposta alla domanda
+
+Il risultato con k=4 è riproducibile e interpretabile come scelta operativa. Il confronto con k=3 esplicita che cosa si guadagna e che cosa si perde.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M08_N19` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M08/M08_N19.R).

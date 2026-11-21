@@ -1,0 +1,132 @@
+---
+title: "Ripetere l'esperimento di campionamento"
+subtitle: "M01_N13 \u00b7 Terra"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Una procedura che campiona soltanto la parte iniziale del tratto recupera la media dell'intera popolazione se viene ripetuta molte volte?
+
+## Obiettivi
+
+- Simulare distribuzioni di medie campionarie.
+- Distinguere scarto medio e dispersione delle medie.
+
+**Prima di iniziare.** Saper eseguire una cella R e riconoscere vettori, assegnamenti e nomi di colonne.
+
+**Dati e unità.** La popolazione artificiale comprende 120 siti. Eseguiamo 1.000 estrazioni di 12 siti dall'intera popolazione e 1.000 dai soli primi 30 siti, sempre senza reinserimento all'interno del campione.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M01_N13/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M01_N13")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(1013)
+```
+
+## 1. Separare popolazione e lista accessibile
+
+Ricostruiamo la popolazione e dichiariamo due liste di selezione. Entrambe consentono una scelta casuale, ma solo una comprende tutti i siti della popolazione di interesse: casualità della selezione e copertura sono proprietà distinte.
+
+```{r passo_01}
+# Popolazione artificiale finita: la posizione contribuisce al valore.
+set.seed(102)
+siti <- data.frame(id_sito = sprintf("S%03d", 1:120),
+                   distanza_m = seq(0, 1190, by = 10))
+siti$valore <- 2.4 + 0.00035 * siti$distanza_m + rnorm(120, 0, 0.04)
+media_pop <- mean(siti$valore)
+
+lista_completa <- seq_len(nrow(siti))
+lista_limitata <- 1:30
+media_lista_limitata <- mean(siti$valore[lista_limitata])
+print(c(popolazione = media_pop, lista_limitata = media_lista_limitata))
+print(range(siti$distanza_m[lista_limitata]))
+```
+
+**Lettura del risultato.** La media della lista limitata è un secondo riferimento noto. Campionare correttamente da quella lista tende a rappresentare i suoi siti; non elimina la differenza rispetto al territorio escluso dalla selezione.
+
+## 2. Ripetere estrazioni autonome
+
+replicate esegue molte volte la stessa operazione e raccoglie i risultati. Ogni campione contiene dodici siti distinti; un sito può ricomparire in esperimenti differenti. Questo riproduce la variabilità della procedura su campionamenti ipoteticamente ripetuti.
+
+```{r passo_02}
+set.seed(104)
+B <- 1000L
+n <- 12L
+medie_complete <- replicate(B, mean(siti$valore[sample(lista_completa, n)]))
+medie_limitate <- replicate(B, mean(siti$valore[sample(lista_limitata, n)]))
+stopifnot(length(medie_complete) == B, length(medie_limitate) == B)
+print(head(medie_complete))
+```
+
+**Lettura del risultato.** Le mille medie sono risultati simulati, non mille nuovi siti geologici. Il numero B controlla quanto stabilmente descriviamo il comportamento della procedura; n controlla invece la numerosità di ciascun campione.
+
+## 3. Confrontare centro e dispersione
+
+Riassumiamo gli scarti rispetto alla popolazione e la deviazione standard delle medie. Il boxplot consente di vedere se una distribuzione è concentrata vicino al riferimento corretto oppure è precisa attorno a un valore diverso.
+
+```{r passo_03}
+sintesi <- function(x) c(media_medie = mean(x),
+                         scarto_medio = mean(x) - media_pop,
+                         sd_medie = sd(x), errore_MC_media = sd(x) / sqrt(length(x)))
+risultati <- rbind(completa = sintesi(medie_complete),
+                   limitata = sintesi(medie_limitate))
+print(risultati)
+boxplot(list(completa = medie_complete, limitata = medie_limitate),
+        col = c("lightblue", "wheat"), ylab = "Media campionaria (u.c.)")
+abline(h = media_pop, col = "firebrick", lwd = 2)
+```
+
+**Lettura del risultato.** Lo scarto medio simulato approssima il bias rispetto alla popolazione scelta. L'errore Monte Carlo indica l'instabilità della media delle simulazioni; non è l'errore standard di un singolo campione e diminuisce aumentando B.
+
+## Variante svolta
+
+Cambiare il riferimento della procedura limitata alla sua effettiva lista di selezione.
+
+```{r variante}
+print(c(scarto_vs_popolazione = mean(medie_limitate) - media_pop,
+        scarto_vs_lista = mean(medie_limitate) - media_lista_limitata))
+errore_copertura <- media_lista_limitata - media_pop
+print(errore_copertura)
+```
+
+La procedura può essere adeguata per i primi trenta siti e inadeguata per tutti i centoventi. La distinzione nasce dalla definizione della popolazione obiettivo, non da una contraddizione nei calcoli.
+
+## Errore da riconoscere
+
+Aumentare il numero di simulazioni rende più stabile la descrizione del problema ma non cambia la lista campionata. Non confondere precisione Monte Carlo e qualità del disegno di raccolta.
+
+## Risposta alla domanda
+
+Le ripetizioni mostrano due proprietà separate: quanto oscillano le medie e attorno a quale valore si concentrano. Una copertura incompleta può lasciare uno scarto sistematico anche con un meccanismo casuale ben eseguito.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M01_N13` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M01/M01_N13.R).

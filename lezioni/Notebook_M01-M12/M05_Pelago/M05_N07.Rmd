@@ -1,0 +1,129 @@
+---
+title: "Copertura della procedura"
+subtitle: "M05_N07 \u00b7 Pelago"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Se ripetiamo il campionamento, quante volte l'intervallo di Student contiene la media vera?
+
+## Obiettivi
+
+- Misurare la copertura tramite simulazione.
+- Quantificare l'errore Monte Carlo della copertura stimata.
+
+**Prima di iniziare.** Vettori, indicizzazione, media, varianza e grafici di base in R.
+
+**Dati e unità.** Campioni normali costruiti con media 2,7 g/cm³ e deviazione standard 0,12 g/cm³; ogni campione comprende quindici unità indipendenti.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M05_N07/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M05_N07")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(5007)
+```
+
+## 1. Scrivere una procedura completa
+
+Il parametro è fissato prima della simulazione. Ogni nuova estrazione deve ricalcolare sia media sia deviazione standard: usare una deviazione standard comune stimata una volta sola cambierebbe la procedura che vogliamo valutare.
+
+```{r passo_01}
+set.seed(507)
+mu <- 2.7
+sigma <- 0.12
+n <- 15
+B <- 2000
+intervallo_t <- function(x, livello = 0.95) {
+  e <- qt((1 + livello) / 2, length(x) - 1) * sd(x) / sqrt(length(x))
+  mean(x) + c(-e, e)
+}
+intervalli <- replicate(B, intervallo_t(rnorm(n, mu, sigma)))
+```
+
+**Lettura del risultato.** Ogni colonna contiene un diverso intervallo ottenuto da un nuovo campione. Mu è invece identico per tutte le colonne: è il riferimento rispetto al quale valutare la copertura.
+
+## 2. Contare coperture e quantificare l'errore numerico
+
+Un intervallo copre quando il suo limite inferiore non supera mu e quello superiore non è inferiore a mu. Gli indicatori di copertura sono variabili binarie; la loro media stima la probabilità di copertura del metodo in questo modello.
+
+```{r passo_02}
+copre <- intervalli[1, ] <= mu & intervalli[2, ] >= mu
+copertura <- mean(copre)
+mcse <- sqrt(copertura * (1 - copertura) / B)
+print(c(repliche = B, copertura = copertura, errore_MC = mcse))
+print(c(inferiore_MC_approssimato = max(0, copertura - 1.96 * mcse),
+        superiore_MC_approssimato = min(1, copertura + 1.96 * mcse)))
+print(table(copre))
+```
+
+**Lettura del risultato.** Lo scarto da 0,95 non va interpretato senza considerare l'errore Monte Carlo. Questo errore misura l'incertezza della simulazione, non l'incertezza di una singola media campionaria.
+
+## 3. Disegnare intervalli che cambiano e parametro fisso
+
+Mostriamo soltanto cinquanta repliche per rendere leggibili i segmenti. La selezione è fatta per posizione, prima di sapere quali coprono; non mostriamo soltanto i casi favorevoli. Il colore distingue la copertura senza alterare il conteggio completo.
+
+```{r passo_03}
+mostra <- 1:50
+colori <- ifelse(copre[mostra], "#27647B", "#A33B31")
+plot(range(intervalli[, mostra]), range(mostra), type = "n",
+     xlab = "Media di densita (g/cm3)", ylab = "Replica")
+segments(intervalli[1, mostra], mostra, intervalli[2, mostra], mostra,
+         col = colori, lwd = 2)
+abline(v = mu, lty = 2)
+```
+
+**Lettura del risultato.** Gli intervalli si spostano e cambiano ampiezza. La linea verticale resta ferma e rende visibile il significato frequentista della copertura.
+
+## Variante svolta
+
+Stimare anche la copertura della procedura al 90% mantenendo lo stesso modello.
+
+```{r variante}
+set.seed(508)
+int90 <- replicate(B, intervallo_t(rnorm(n, mu, sigma), livello = 0.90))
+p90 <- mean(int90[1, ] <= mu & int90[2, ] >= mu)
+print(data.frame(livello = c(0.95, 0.90), copertura = c(copertura, p90),
+  MCSE = c(mcse, sqrt(p90 * (1 - p90) / B))))
+```
+
+Il livello nominale cambia la procedura. Con un numero finito di repliche la copertura stimata oscilla attorno al valore previsto; non deve coincidere con esso cifra per cifra.
+
+## Errore da riconoscere
+
+Non contare quante osservazioni cadono nell'intervallo della media: quello è un altro evento e non misura la copertura del parametro.
+
+## Risposta alla domanda
+
+La simulazione rende concreta una proprietà ripetuta del metodo. La verifica vale per il modello e il disegno simulati, non per qualsiasi insieme di dati.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M05_N07` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M05/M05_N07.R).

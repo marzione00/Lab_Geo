@@ -1,0 +1,138 @@
+---
+title: "Dipendenza: differenze a 30 e 300 metri"
+subtitle: "M12_N16 · Tessera"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Le differenze fra celle a 30 e 300 metri hanno la stessa distribuzione?
+
+## Obiettivi
+
+- Conservare le coppie orizzontali originali.
+- Contare le coppie e descrivere le differenze assolute.
+- Riconoscere trend, direzione e riuso delle celle.
+
+**Prima di iniziare.** Sono richiesti vettori, matrici, tabelle e funzioni R di base. Eseguire i blocchi in ordine; ogni notebook è autonomo rispetto agli altri. I calcoli usano R base e i pacchetti standard.
+
+**Dati e unità.** Il raster è interamente sintetico: 24 righe × 30 colonne, 720 celle quadrate di lato 30 m. Nel CSV riga e colonna partono da zero; x_m = 30 × colonna e y_m = 30 × riga indicano i centri nel piano locale. La riga 0 è a Sud; la riga 23 è a Nord. Le quote sono in metri sintetici. I dati non descrivono un rilievo reale.
+
+**Relazione usata.** $d_h=\operatorname{media}\bigl(|z(x+h,y)-z(x,y)|\bigr).$ È una sintesi descrittiva sulla direzione e sulle coppie disponibili.
+
+## Preparazione
+
+Aprire il progetto autonomo di Tessera o quello generale dei notebook. I file originali restano invariati. Gli output vanno in `Risultati/M12_N16/`. Nessun download o installazione avviene nei blocchi.
+
+```{r preparazione}
+# Trova il modulo dal progetto autonomo o da quello generale dei notebook.
+.gs_cerca <- normalizePath(getwd(),winslash="/",mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca,file.path(.gs_cerca,"M12_Tessera"),
+    file.path(.gs_cerca,"03_Notebook_svolti","M12_Tessera"),
+    file.path(.gs_cerca,"M12","03_Notebook_svolti","M12_Tessera"))
+  .gs_ok <- file.exists(file.path(.gs_candidati,"M12_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati,"R","funzioni_notebook.R"))
+  if(any(.gs_ok)) { .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]];break }
+  .gs_padre <- dirname(.gs_cerca)
+  if(.gs_padre==.gs_cerca) stop("Aprire il progetto M12_Tessera o quello generale dei notebook.")
+  .gs_cerca <- .gs_padre
+}
+source(file.path(.gs_modulo,"R","funzioni_notebook.R"),local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo,"M12_N16")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88,digits=6)
+if(requireNamespace("knitr",quietly=TRUE)) {
+  knitr::opts_chunk$set(echo=TRUE,error=FALSE,warning=TRUE,message=TRUE,
+    fig.width=8,fig.height=5,dpi=150,fig.align="center")
+}
+set.seed(20261104)
+```
+
+## 1. Due distanze, stessa direzione
+
+Costruiamo le differenze orizzontali: una colonna e dieci colonne di distanza.
+
+```{r passo_01}
+d <- carica_dati("raster_v3.csv")
+audit_raster(d)
+d <- d[order(d$riga,d$colonna),]
+Z <- matrice_quote(d)
+ breve <- as.vector(Z[,2:30]-Z[,1:29])
+ lunga <- as.vector(Z[,11:30]-Z[,1:20])
+ risultato <- data.frame(distanza_m=c(30,300),direzione="Est-Ovest",coppie=c(length(breve),length(lunga)),
+   media_abs=c(mean(abs(breve)),mean(abs(lunga))),mediana_abs=c(median(abs(breve)),median(abs(lunga))))
+ risultato
+ stopifnot(length(breve)==696L,length(lunga)==480L)
+```
+
+**Lettura del risultato.** Le due distanze usano numerosità e porzioni di griglia diverse. Molte coppie condividono una cella e non sono repliche indipendenti.
+
+## 2. Separare differenza firmata e dissimilarità
+
+La media firmata può riflettere un gradiente verso Est; la media assoluta riassume una dissimilarità.
+
+```{r passo_02}
+data.frame(distanza_m=c(30,300),media_firmata=c(mean(breve),mean(lunga)),
+  sd_differenze=c(sd(breve),sd(lunga)),media_quadratica=c(mean(breve^2),mean(lunga^2)))
+```
+
+**Lettura del risultato.** Differenze più grandi a distanza maggiore non dimostrano da sole una legge di covarianza: trend e orientamento possono contribuire.
+
+## 3. La figura mantiene conteggi e unità
+
+Le barre rappresentano metri di differenza assoluta media, senza barre di errore che fingano indipendenza delle coppie.
+
+```{r passo_03}
+stile_grafico()
+bp <- barplot(risultato$media_abs,names.arg=paste(risultato$distanza_m,"m"),col=palette_geo[1:2],
+  ylim=c(0,max(risultato$media_abs)*1.22),xlab="Separazione Est-Ovest",ylab="Differenza assoluta media (m)",
+  main="Distanza e differenze fra celle")
+text(bp,risultato$media_abs,labels=paste0("n=",risultato$coppie),pos=3,cex=.8)
+write.csv(risultato,percorso_risultati("differenze_spaziali.csv"),row.names=FALSE)
+```
+
+**Lettura del risultato.** La carta e le direzioni del rilievo completano il confronto; il conteggio delle coppie non misura il numero di informazioni indipendenti.
+
+## Variante svolta
+
+**Cambiare direzione mantenendo le distanze.** Ripetere il confronto lungo Nord-Sud.
+
+```{r variante}
+nord30 <- as.vector(Z[2:24,]-Z[1:23,])
+nord300 <- as.vector(Z[11:24,]-Z[1:14,])
+data.frame(distanza_m=c(30,300),direzione="Nord-Sud",coppie=c(length(nord30),length(nord300)),
+  media_abs=c(mean(abs(nord30)),mean(abs(nord300))))
+stopifnot(length(nord30)==690L,length(nord300)==420L)
+```
+
+Una differenza fra direzioni è descrittiva. Prima di attribuirla ad anisotropia della componente residua occorre discutere il trend e il dominio.
+
+## Errore da riconoscere
+
+Interpretare tutte le differenze come indipendenti oppure dedurre una covarianza stazionaria dal solo confronto di due distanze.
+
+## Risposta alla domanda
+
+La distanza entra nella dissimilarità, ma la sintesi dipende anche da direzione, dominio e trend. Le coppie sono costruite riusando le stesse celle e richiedono un’interpretazione coerente.
+
+## Raccordo con le slide
+
+[Slide 96 della lezione Tessera](../../02_PDF/M12_Tessera/Tessera_M12_raster_telerilevamento_morfometria.pdf#page=96). La [mappa dei notebook e delle slide](MAPPA_SLIDE.csv) conserva il raccordo puntuale con la lezione estesa.
+
+## Riferimenti e provenienza
+
+Questo svolgimento sviluppa `M12_N16` del [modulo M12 del corso](https://marzione00.github.io/Lab_Geo/#modulo-M12). Il [codice originale](https://github.com/marzione00/Lab_Geo/blob/649f7cc577b96bd1044d81e78a2f530813e4f96b/materiali/laboratori/M12/M12_N16.R) è conservato immutato in `R/Originali_corso/`. Dati e originali hanno SHA-256 e SHA-1 Git verificati; gli ampliamenti sono dichiarati nella [mappa degli originali](MAPPA_ORIGINALI.csv).
+
+Documentazione primaria delle operazioni: [R, matrix](https://stat.ethz.ch/R-manual/R-devel/library/base/html/matrix.html), [R, image](https://stat.ethz.ch/R-manual/R-devel/library/graphics/html/image.html), [R, quantile](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/quantile.html). Le ipotesi e le convenzioni specifiche sono esplicitate nello svolgimento.

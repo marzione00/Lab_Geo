@@ -1,0 +1,138 @@
+---
+title: "Bande sintetiche e indice normalizzato"
+subtitle: "M12_N13 · Tessera"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Che cosa misura un indice normalizzato costruito da due bande sintetiche?
+
+## Obiettivi
+
+- Riprodurre le due bande del laboratorio.
+- Controllare denominatore, intervallo e geometria.
+- Separare formula e interpretazione fisica.
+
+**Prima di iniziare.** Sono richiesti vettori, matrici, tabelle e funzioni R di base. Eseguire i blocchi in ordine; ogni notebook è autonomo rispetto agli altri. I calcoli usano R base e i pacchetti standard.
+
+**Dati e unità.** Il raster è interamente sintetico: 24 righe × 30 colonne, 720 celle quadrate di lato 30 m. Nel CSV riga e colonna partono da zero; x_m = 30 × colonna e y_m = 30 × riga indicano i centri nel piano locale. La riga 0 è a Sud; la riga 23 è a Nord. Le quote sono in metri sintetici. I dati non descrivono un rilievo reale.
+
+**Relazione usata.** $v=(N-R)/(N+R).$ Le bande qui sono non negative e hanno somma strettamente positiva.
+
+## Preparazione
+
+Aprire il progetto autonomo di Tessera o quello generale dei notebook. I file originali restano invariati. Gli output vanno in `Risultati/M12_N13/`. Nessun download o installazione avviene nei blocchi.
+
+```{r preparazione}
+# Trova il modulo dal progetto autonomo o da quello generale dei notebook.
+.gs_cerca <- normalizePath(getwd(),winslash="/",mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca,file.path(.gs_cerca,"M12_Tessera"),
+    file.path(.gs_cerca,"03_Notebook_svolti","M12_Tessera"),
+    file.path(.gs_cerca,"M12","03_Notebook_svolti","M12_Tessera"))
+  .gs_ok <- file.exists(file.path(.gs_candidati,"M12_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati,"R","funzioni_notebook.R"))
+  if(any(.gs_ok)) { .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]];break }
+  .gs_padre <- dirname(.gs_cerca)
+  if(.gs_padre==.gs_cerca) stop("Aprire il progetto M12_Tessera o quello generale dei notebook.")
+  .gs_cerca <- .gs_padre
+}
+source(file.path(.gs_modulo,"R","funzioni_notebook.R"),local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo,"M12_N13")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88,digits=6)
+if(requireNamespace("knitr",quietly=TRUE)) {
+  knitr::opts_chunk$set(echo=TRUE,error=FALSE,warning=TRUE,message=TRUE,
+    fig.width=8,fig.height=5,dpi=150,fig.align="center")
+}
+set.seed(20261104)
+```
+
+## 1. Le bande sono dichiarate e sintetiche
+
+Il rosso varia con y e il NIR con x, secondo le formule originali. Non sono bande acquisite da un sensore.
+
+```{r passo_01}
+d <- carica_dati("raster_v3.csv")
+audit_raster(d)
+d <- d[order(d$riga,d$colonna),]
+Z <- matrice_quote(d)
+ rosso <- .2+.05*cos(d$y_m/150)
+ nir <- .4+.1*sin(d$x_m/180)
+ indice <- (nir-rosso)/(nir+rosso)
+ risultato <- data.frame(riga=d$riga,colonna=d$colonna,rosso=rosso,NIR=nir,indice=indice)
+ head(risultato,6)
+ data.frame(minimo=min(indice),massimo=max(indice),denominatore_min=min(nir+rosso))
+ stopifnot(all(nir+rosso>0),all(abs(indice)<=1))
+```
+
+**Lettura del risultato.** Con bande non negative e somma positiva, la formula restituisce valori fra −1 e 1. Questa proprietà algebrica non identifica da sola vegetazione, litologia o qualità ambientale.
+
+## 2. Il rapporto normalizza una differenza
+
+Confrontiamo differenza, somma e indice su alcune celle esplicite.
+
+```{r passo_02}
+ii <- c(1,30,361,720)
+data.frame(riga=d$riga[ii],colonna=d$colonna[ii],differenza=nir[ii]-rosso[ii],
+  somma=nir[ii]+rosso[ii],indice=indice[ii])
+stopifnot(max(abs(indice*(nir+rosso)-(nir-rosso)))<1e-12)
+```
+
+**Lettura del risultato.** Un indice è una trasformazione deterministica delle bande. I suoi valori non sono osservazioni indipendenti aggiuntive.
+
+## 3. La mappa conserva la geometria delle bande
+
+Le due bande sono allineate per costruzione. L’indice mantiene le stesse celle e la stessa maschera.
+
+```{r passo_03}
+mappa_matrice(matrix(indice,24,byrow=TRUE),titolo="Indice da bande sintetiche allineate",
+  unita="Indice",limiti=c(-1,1),colori=colorRampPalette(c("#985052","#F3F0DF","#1D7890"))(40))
+write.csv(risultato,percorso_risultati("bande_e_indice.csv"),row.names=FALSE)
+```
+
+**Lettura del risultato.** La scala −1–1 esplicita l’intervallo algebrico. Il nome di una formula non basta per attribuire ai dati una calibrazione fisica.
+
+## Variante svolta
+
+**Un fattore comune si cancella, un offset comune no.** Moltiplicare entrambe le bande per 100 e poi aggiungere 0,1 a entrambe; confrontare gli indici.
+
+```{r variante}
+scalato <- (100*nir-100*rosso)/(100*nir+100*rosso)
+offset <- ((nir+.1)-(rosso+.1))/((nir+.1)+(rosso+.1))
+data.frame(errore_fattore_comune=max(abs(scalato-indice)),
+  variazione_offset=max(abs(offset-indice)))
+stopifnot(max(abs(scalato-indice))<1e-12,max(abs(offset-indice))>0)
+```
+
+L’invarianza a un fattore comune non rende irrilevante la calibrazione. Offset, scale differenti, maschere e disallineamento possono modificare il risultato.
+
+## Errore da riconoscere
+
+Interpretare l’indice sintetico come una diagnosi ambientale reale o combinare bande senza controllare allineamento e calibrazione.
+
+## Risposta alla domanda
+
+Il rapporto normalizzato sintetizza due bande definite sulle stesse celle. Le proprietà algebriche sono verificabili; il significato fisico richiede informazioni sul sensore, sulle bande, sulla calibrazione e sulla maschera.
+
+## Raccordo con le slide
+
+[Slide 78–81, 88 della lezione Tessera](../../02_PDF/M12_Tessera/Tessera_M12_raster_telerilevamento_morfometria.pdf#page=78). La [mappa dei notebook e delle slide](MAPPA_SLIDE.csv) conserva il raccordo puntuale con la lezione estesa.
+
+## Riferimenti e provenienza
+
+Questo svolgimento sviluppa `M12_N13` del [modulo M12 del corso](https://marzione00.github.io/Lab_Geo/#modulo-M12). Il [codice originale](https://github.com/marzione00/Lab_Geo/blob/649f7cc577b96bd1044d81e78a2f530813e4f96b/materiali/laboratori/M12/M12_N13.R) è conservato immutato in `R/Originali_corso/`. Dati e originali hanno SHA-256 e SHA-1 Git verificati; gli ampliamenti sono dichiarati nella [mappa degli originali](MAPPA_ORIGINALI.csv).
+
+Documentazione primaria delle operazioni: [R, matrix](https://stat.ethz.ch/R-manual/R-devel/library/base/html/matrix.html), [R, image](https://stat.ethz.ch/R-manual/R-devel/library/graphics/html/image.html), [R, quantile](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/quantile.html). Le ipotesi e le convenzioni specifiche sono esplicitate nello svolgimento.

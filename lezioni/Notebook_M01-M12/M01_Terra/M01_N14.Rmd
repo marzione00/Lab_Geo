@@ -1,0 +1,131 @@
+---
+title: "Ripetere una misura non equivale a cambiare provino"
+subtitle: "M01_N14 \u00b7 Terra"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Che cosa aumenta quando misuriamo cinque volte lo stesso provino: il numero di letture o il numero di unità geologiche?
+
+## Obiettivi
+
+- Separare letture replicate e provini distinti.
+- Confrontare dispersione entro provino e differenze fra provini.
+
+**Prima di iniziare.** Saper eseguire una cella R e riconoscere vettori, assegnamenti e nomi di colonne.
+
+**Dati e unità.** Costruiamo letture sintetiche attorno alle densità di tre provini del CSV. Il rumore normale con deviazione standard 0,005 g/cm³ rappresenta una ripetibilità ideale scelta per l'esercizio.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M01_N14/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M01_N14")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(1014)
+```
+
+## 1. Ripetere la misura di un singolo provino
+
+Usiamo la densità di C01 come riferimento convenzionale e generiamo cinque letture. Nella tabella ogni riga diventa una lettura, mentre l'identificativo del provino rimane costante: le due unità devono avere nomi distinti.
+
+```{r passo_01}
+# Ogni esecuzione riparte dal CSV condiviso, senza modificare il file.
+d <- carica_dati("campioni_modulo1.csv", stringsAsFactors = FALSE)
+stopifnot(nrow(d) == 24L, !anyDuplicated(d$id))
+
+stopifnot(all(is.finite(d$massa_g)), all(d$massa_g > 0),
+          all(is.finite(d$volume_cm3)), all(d$volume_cm3 > 0))
+d$densita_g_cm3 <- d$massa_g / d$volume_cm3
+
+set.seed(105)
+rho_C01 <- d$densita_g_cm3[d$id == "C01"]
+letture_uno <- data.frame(provino = rep("C01", 5), replica = 1:5,
+                         densita_g_cm3 = rho_C01 + rnorm(5, 0, 0.005))
+print(letture_uno)
+print(c(letture = nrow(letture_uno), provini = length(unique(letture_uno$provino))))
+```
+
+**Lettura del risultato.** Le cinque letture informano sulla variabilità del procedimento simulato attorno a quel provino. Non osservano cinque materiali diversi e non permettono, da sole, di descrivere la variabilità geologica dell'affioramento.
+
+## 2. Aggiungere provini distinti
+
+Costruiamo ora cinque letture per ciascuno di tre provini, conservando sia l'ID sia il numero di replica. Il riferimento cambia tra provini, mentre il meccanismo di rumore rimane uguale: possiamo separare i due livelli della variazione.
+
+```{r passo_02}
+id_scelti <- c("C01", "C05", "C09")
+rho_riferimento <- setNames(d$densita_g_cm3[match(id_scelti, d$id)], id_scelti)
+letture <- data.frame(provino = rep(id_scelti, each = 5), replica = rep(1:5, 3))
+letture$densita_g_cm3 <- unname(rho_riferimento[letture$provino]) + rnorm(15, 0, 0.005)
+print(table(letture$provino))
+stopifnot(nrow(letture) == 15L, length(unique(letture$provino)) == 3L)
+```
+
+**Lettura del risultato.** Il totale delle righe aumenta sia aggiungendo repliche sia aggiungendo provini. La struttura della tabella specifica quale operazione sia stata compiuta e impedisce di attribuire a tutte le righe lo stesso significato di replica indipendente.
+
+## 3. Riassumere al livello corretto
+
+Calcoliamo media e deviazione standard separatamente per provino. Il grafico delle letture rende visibili la dispersione interna e la distanza fra i centri. Le medie dei provini sono il punto di partenza per descrivere differenze fra unità geologiche.
+
+```{r passo_03}
+medie <- tapply(letture$densita_g_cm3, letture$provino, mean)
+sd_entro <- tapply(letture$densita_g_cm3, letture$provino, sd)
+print(data.frame(provino = names(medie), media = medie, sd_entro = sd_entro))
+print(c(sd_fra_medie = sd(medie), sd_tutte_letture = sd(letture$densita_g_cm3)))
+stripchart(densita_g_cm3 ~ provino, data = letture, method = "jitter",
+           vertical = TRUE, pch = 19, xlab = "Provino", ylab = "Densita (g/cm^3)")
+points(seq_along(medie), medie, pch = 18, col = "firebrick", cex = 1.5)
+```
+
+**Lettura del risultato.** La deviazione standard interna descrive la ripetibilità simulata per un provino; la dispersione delle medie contiene anche differenze fra provini. Con tre unità, la descrizione della variabilità geologica resta molto limitata.
+
+## Variante svolta
+
+Generare cinquanta letture di C01 e verificare quanti provini sono stati aggiunti.
+
+```{r variante}
+molte_letture <- data.frame(provino = rep("C01", 50),
+                            densita_g_cm3 = rho_C01 + rnorm(50, 0, 0.005))
+print(c(letture = nrow(molte_letture), provini = length(unique(molte_letture$provino)),
+        media = mean(molte_letture$densita_g_cm3)))
+```
+
+Le letture aggiuntive stabilizzano la media del medesimo provino sotto il modello scelto. La copertura geologica resta di un solo provino; un eventuale errore sistematico comune allo strumento non viene eliminato dalla ripetizione.
+
+## Errore da riconoscere
+
+Usare il numero di letture come numerosità geologica produce pseudoreplicazione. Conservare due identificativi, uno per provino e uno per replica, rende riconoscibile la dipendenza fra letture.
+
+## Risposta alla domanda
+
+Ripetere misure e campionare nuovi provini rispondono a esigenze diverse. Una tabella ben progettata consente di scegliere il livello della sintesi e di spiegare quale fonte di variabilità sia stata osservata.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M01_N14` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M01/M01_N14.R).

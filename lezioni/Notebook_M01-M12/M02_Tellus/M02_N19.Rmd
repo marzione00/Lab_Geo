@@ -1,0 +1,133 @@
+---
+title: "Sensibilit\u00e0 delle soglie e conservazione dei dati"
+subtitle: "M02_N19 \u00b7 Tellus"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Quanto cambia l'insieme delle analisi utilizzate se allarghiamo il criterio sul totale degli ossidi?
+
+## Obiettivi
+
+- Confrontare due regole di qualità annidate.
+- Conservare indicatori, conteggi e analisi che cambiano stato.
+
+**Prima di iniziare.** Saper eseguire una cella R e riconoscere vettori, assegnamenti e nomi di colonne.
+
+**Dati e unità.** Usiamo le 75 analisi sintetiche di microsonda. Confrontiamo totali inclusi fra 98 e 102 con totali inclusi fra 97 e 103 percento in massa, mantenendo intatte tutte le osservazioni.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M02_N19/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M02_N19")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(2019)
+```
+
+## 1. Calcolare una sola volta il totale
+
+Ricalcoliamo il totale dagli stessi sei ossidi e applichiamo due intervalli con estremi inclusi. La regola ampia contiene la stretta: nessuna analisi ammessa dalla prima soglia dichiarata deve essere respinta dalla seconda.
+
+```{r passo_01}
+m <- carica_dati("microsonda_simulata.csv", stringsAsFactors = FALSE)
+ossidi <- c("SiO2", "MgO", "FeO", "CaO", "Al2O3", "Cr2O3")
+stopifnot(all(is.finite(as.matrix(m[ossidi]))))
+m$totale_calcolato <- rowSums(m[ossidi])
+m$QC_98_102 <- m$totale_calcolato >= 98 & m$totale_calcolato <= 102
+m$QC_97_103 <- m$totale_calcolato >= 97 & m$totale_calcolato <= 103
+stopifnot(all(!m$QC_98_102 | m$QC_97_103))
+print(table(stretta = m$QC_98_102, ampia = m$QC_97_103))
+```
+
+**Lettura del risultato.** La tabella incrociata mostra quali stati cambiano. L'annidamento è una proprietà logica degli intervalli e viene verificato indipendentemente da quanti punti si trovino effettivamente nelle fasce aggiunte.
+
+## 2. Identificare le analisi che cambiano stato
+
+Un confronto di soli totali non dice quali osservazioni vengano aggiunte. Mostriamo ID, fase generatrice e totale delle nuove ammissioni, poi contiamo per fase: la scelta della soglia potrebbe cambiare la composizione della tabella analitica.
+
+```{r passo_02}
+cambia <- m$QC_97_103 & !m$QC_98_102
+print(m[cambia, c("id", "fase_generatrice", "totale_calcolato", "mg_num")])
+conteggi <- do.call(rbind, lapply(split(m, m$fase_generatrice), function(z) {
+  data.frame(fase = z$fase_generatrice[1], totale = nrow(z),
+             n_stretta = sum(z$QC_98_102), n_ampia = sum(z$QC_97_103))
+}))
+rownames(conteggi) <- NULL
+print(conteggi)
+stopifnot(sum(conteggi$n_ampia - conteggi$n_stretta) == sum(cambia))
+```
+
+**Lettura del risultato.** Le etichette di fase sono note dalla simulazione e servono a descrivere chi viene selezionato. Una variazione delle frequenze non dimostra un problema geologico: segnala che la sintesi successiva potrebbe usare pesi diversi fra gruppi.
+
+## 3. Confrontare le sintesi e salvare l'audit
+
+Affianchiamo numerosità e media di Mg# sotto le due regole. I valori individuali non cambiano: cambia l'insieme che contribuisce alla media. Salviamo entrambe le colonne di controllo nella tabella completa, insieme alla definizione delle soglie.
+
+```{r passo_03}
+sintesi_QC <- function(ok) c(n = sum(ok), media_Mg_num = if (any(ok)) mean(m$mg_num[ok]) else NA_real_)
+riassunto <- rbind(QC_98_102 = sintesi_QC(m$QC_98_102),
+                   QC_97_103 = sintesi_QC(m$QC_97_103))
+print(riassunto)
+soglie <- data.frame(regola = c("QC_98_102", "QC_97_103"),
+                     inferiore_incluso = c(98, 97), superiore_incluso = c(102, 103),
+                     unita = "percento in massa")
+write.csv(m, percorso_risultati("microsonda_sensibilita_completa.csv"), row.names = FALSE)
+write.csv(soglie, percorso_risultati("regole_qualita.csv"), row.names = FALSE)
+```
+
+**Lettura del risultato.** La differenza fra medie quantifica una sensibilità alla selezione, non una correzione delle misure. La scelta della soglia dovrebbe avere una motivazione analitica precedente al risultato cercato e non dipendere da quale media appaia più conveniente.
+
+## Variante svolta
+
+Confrontare la media di Mg# entro ciascuna fase sotto le due regole.
+
+```{r variante}
+per_fase <- do.call(rbind, lapply(split(m, m$fase_generatrice), function(z) {
+  media_sicura <- function(x) if (length(x)) mean(x) else NA_real_
+  data.frame(fase = z$fase_generatrice[1],
+             media_stretta = media_sicura(z$mg_num[z$QC_98_102]),
+             media_ampia = media_sicura(z$mg_num[z$QC_97_103]))
+}))
+print(per_fase)
+```
+
+Il confronto entro fase separa parte del cambiamento interno dai cambiamenti di composizione della media complessiva. Anche qui occorrono i conteggi: una media di fase basata su pochi record non ha la stessa base informativa delle altre.
+
+## Errore da riconoscere
+
+Sovrascrivere la tabella con il sottoinsieme filtrato rende difficile verificare soglie alternative. Si conservano dati completi e indicatori distinti, producendo viste analitiche riproducibili quando servono.
+
+## Risposta alla domanda
+
+La sensibilità è documentata attraverso stati, ID, conteggi e sintesi. I risultati mostrano le conseguenze delle regole scelte senza selezionare retroattivamente la soglia che produce il confronto desiderato.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M02_N19` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M02/M02_N19.R).

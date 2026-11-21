@@ -1,0 +1,129 @@
+---
+title: "Ridondanza esatta nelle misure derivate"
+subtitle: "M08_N08 \u00b7 Polychroma"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Come riconoscere che tre colonne contengono meno di tre dimensioni indipendenti di variazione?
+
+## Obiettivi
+
+- Verificare un’identità fra misure.
+- Interpretare una componente quasi nulla.
+- Quantificare il peso implicito di una duplicazione.
+
+**Prima di iniziare.** Lettura di un CSV, vettori, matrici, indicizzazione e funzioni di base in R.
+
+**Dati e unità.** Centosessanta fossili sintetici già usati in Annula. Diametro totale, diametro interno e spessore sono espressi in micrometri e legati dall’identità diametro totale = diametro interno + 2 × spessore, entro l’arrotondamento dei valori del CSV. La relazione è imposta dal simulatore; non viene stimata da dati paleontologici reali.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Polychroma oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M08_Polychroma` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M08_Polychroma/Risultati/M08_N08/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M08_Polychroma"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M08_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M08_Polychroma o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M08_N08")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(8008)
+```
+
+## 1. Il vincolo geometrico dei fossili
+
+Riprendiamo i fossili di Annula per studiare una dipendenza nota. Diametro totale, diametro interno e spessore sono legati dalla costruzione geometrica del simulatore.
+
+```{r passo_01}
+f <- carica_dati("fossili_simulati.csv")
+nomi <- c("diametro_tot_um","diametro_int_um","spessore_um")
+M <- as.matrix(f[nomi])
+# Tutte e tre le misure sono in micrometri.
+errore <- M[,1]-M[,2]-2*M[,3]
+c(n=nrow(M),massimo_errore_identita=max(abs(errore)))
+head(M,4)
+```
+
+**Lettura del risultato.** L’identità vale entro circa 10⁻⁸ µm, la precisione di arrotondamento del CSV. La terza colonna non aggiunge una terza direzione libera alla geometria del campione.
+
+## 2. Una componente quasi nulla
+
+La PCA applicata alle tre misure mostra due direzioni di variazione e una terza con dispersione numericamente trascurabile. Standardizzare le colonne non elimina la dipendenza lineare.
+
+```{r passo_02}
+pc_r <- prcomp(M,center=TRUE,scale.=TRUE)
+pc_r$sdev
+pc_r$sdev^2/sum(pc_r$sdev^2)
+barplot(pc_r$sdev^2,names.arg=1:3,col="#7363AA",
+ xlab="Componente",ylab="Varianza")
+```
+
+**Lettura del risultato.** La deviazione standard della terza componente è circa 5,36×10⁻⁹. Il valore piccolo è coerente con una relazione quasi esatta dopo l’arrotondamento, non con una nuova proprietà biologica.
+
+## 3. Duplicare modifica il peso
+
+Una copia identica di una colonna aggiunge un secondo termine uguale alla distanza quadratica: lo stesso scarto viene contato due volte.
+
+```{r passo_03}
+Z <- scale(M[,1:2])
+Zdup <- cbind(Z,copia_diametro_totale=Z[,1])
+d2 <- sum((Z[1,]-Z[2,])^2)
+d2_dup <- sum((Zdup[1,]-Zdup[2,])^2)
+c(distanza2=d2,distanza2_con_copia=d2_dup,
+  aumento_atteso=(Z[1,1]-Z[2,1])^2)
+```
+
+**Lettura del risultato.** L’aumento coincide con il contributo quadratico della colonna duplicata. La ridondanza può quindi cambiare il peso implicito delle proprietà anche senza aggiungere informazione.
+
+## Variante svolta
+
+Ricostruire i dati standardizzati dei fossili con due componenti.
+
+```{r variante}
+Mr <- scale(M)
+rec <- pc_r$x[,1:2,drop=FALSE] %*% t(pc_r$rotation[,1:2,drop=FALSE])
+max(abs(Mr-rec))
+```
+
+L’errore è molto piccolo perché due componenti descrivono quasi interamente il vincolo. La soglia va interpretata rispetto all’arrotondamento dei dati.
+
+## Errore da riconoscere
+
+Chiamare indipendenti colonne con nomi diversi: una misura derivata può essere una combinazione esatta di altre.
+
+## Risposta alla domanda
+
+La PCA rivela la dimensione effettiva del sistema di misure. La selezione delle colonne evita di assegnare pesi involontari a informazioni duplicate.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M08_N08` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M08/M08_N08.R).

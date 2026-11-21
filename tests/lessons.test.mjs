@@ -9,6 +9,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = p => fs.readFileSync(path.join(root, p), 'utf8');
 const config = JSON.parse(read('lezioni/lezioni.json'));
 const cat = JSON.parse(read('content/catalogue.json')).modules;
+const NB = JSON.parse(read('content/notebook.json'));
 await import('../src/core.js');
 const C = globalThis.GeoCore;
 
@@ -120,7 +121,8 @@ for (const [id, cfg] of Object.entries(config)) {
   });
 
   test(id + ': percorsi della lezione e degli esercizi', () => {
-    const index = { [id]: { pages: L.pages, cards: E ? E.cards.length : 0 } };
+    const nb = NB[id]?.notebooks.length || 0,
+      index = { [id]: { pages: L.pages, cards: E ? E.cards.length : 0, notebooks: nb } };
     assert.deepEqual(C.parseRoute('#lezione-' + id, cat, index), { type: 'lesson', id, page: null });
     assert.deepEqual(C.parseRoute('#lezione-' + id + '/16', cat, index), { type: 'lesson', id, page: 16 });
     assert.equal(C.parseRoute('#lezione-' + id + '/' + (L.pages + 1), cat, index).type, 'notfound');
@@ -129,11 +131,38 @@ for (const [id, cfg] of Object.entries(config)) {
     if (E) {
       assert.deepEqual(C.parseRoute('#esercizi-' + id, cat, index), { type: 'exercises', id, card: 1 });
       assert.equal(C.parseRoute('#esercizi-' + id + '/' + (E.cards.length + 1), cat, index).type, 'notfound');
+    } else if (nb) {
+      // Companion world with notebooks only: the page exists, a card number does not.
+      assert.deepEqual(C.parseRoute('#esercizi-' + id, cat, index), { type: 'exercises', id, card: 1 });
+      assert.equal(C.parseRoute('#esercizi-' + id + '/1', cat, index).type, 'notfound');
     } else assert.equal(C.parseRoute('#esercizi-' + id, cat, index).type, 'notfound');
     assert.equal(C.parseRoute('#lezione-M99', cat, index).type, 'notfound');
     assert.equal(C.parseRoute('#lezione-' + id, cat).type, 'notfound');
   });
 }
+
+test('Notebook svolti: venti per lezione M01-M12, pagine e tappe esistenti, archivio dei sorgenti', () => {
+  assert.deepEqual(
+    Object.keys(NB).sort(),
+    Object.keys(config)
+      .filter(id => /^M(0\d|1[0-2])$/.test(id))
+      .sort(),
+  );
+  for (const [id, nb] of Object.entries(NB)) {
+    const L = JSON.parse(read('content/lezioni/' + id + '.json'));
+    assert.equal(nb.notebooks.length, 20, id);
+    assert.ok(fs.existsSync(path.join(root, nb.download)), nb.download);
+    for (const n of nb.notebooks) {
+      assert.ok(fs.existsSync(path.join(root, 'lezioni/Notebook_M01-M12', n.html.replace(/^notebook\//, ''))), n.html);
+      assert.ok(
+        n.pages.every(p => p >= 1 && p <= L.pages),
+        n.id,
+      );
+      // Le presentazioni M10-M12 citano ogni notebook nel piè di pagina di almeno una slide.
+      if (['M10', 'M11', 'M12'].includes(id)) assert.ok(n.pages.length > 0, n.id);
+    }
+  }
+});
 
 test('Verifica numerica delle schede: virgola, tolleranza e testo non numerico', () => {
   const ctx = vm.createContext({
