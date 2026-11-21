@@ -1,0 +1,11 @@
+# Stato leggero delle slide: dati, pesi e modelli; non scrive output.
+source("setup.R",encoding="UTF-8")
+if(!requireNamespace("sf",quietly=TRUE))stop("Occorre il pacchetto sf, installato prima dell'analisi.")
+geo<-sf::st_as_sf(d,coords=c("lon","lat"),crs="OGC:CRS84",remove=FALSE)
+utm<-sf::st_transform(geo,32632)
+ritorno<-sf::st_transform(utm,"OGC:CRS84")
+trend<-lm(concentrazione~x_m+y_m,data=d);residui<-residuals(trend)
+coppie<-coppie_spaziali(xy,z);vg<-variogramma_bin(coppie)
+pred_idw<-idw_pred(xy[train_idx,],z[train_idx],xy[test_idx,],p=2)
+ok<-ok_esempio()
+invisible(TRUE)
