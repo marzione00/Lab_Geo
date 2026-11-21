@@ -693,6 +693,12 @@ def figures(tex, slides, cfg, src, pdf, outdir, lesson_id, workdir):
         svg = crop_svg((workdir / 'f.svg').read_text(encoding='utf-8'), *rect)
         (outdir / (it['fig'] + '.svg')).write_text(svg, encoding='utf-8')
         it.update(w=rect[2], h=rect[3], ext='svg')
+    # Le figure vivono nel pannello scuro delle tappe: stessi ruoli di colore, sfondo del pannello.
+    tone = load_tone()
+    for s, it in figs:
+        if it['ext'] == 'svg':
+            path = outdir / (it['fig'] + '.svg')
+            path.write_text(tone(path.read_text(encoding='utf-8')), encoding='utf-8')
     for s, it in figs:
         it['src'] = 'assets/lezioni/%s/figure/%s.%s' % (lesson_id, it['fig'], it.pop('ext'))
         box = it.pop('box') / 2.54 * 72
@@ -702,16 +708,13 @@ def figures(tex, slides, cfg, src, pdf, outdir, lesson_id, workdir):
     return len(figs)
 
 
-def cover(pdf, outdir):
-    """Copertina della lezione; le altre pagine sono ricomposte nel sito e rimandano al PDF."""
-    outdir.mkdir(parents=True, exist_ok=True)
-    for old in outdir.glob('[0-9][0-9][0-9].svg'):
-        old.unlink()
-    with tempfile.TemporaryDirectory() as t:
-        subprocess.run(['pdftocairo', '-png', '-r', '216', '-f', '1', '-l', '1', '-singlefile', str(pdf),
-                        str(Path(t) / 'cover')], check=True)
-        from PIL import Image
-        Image.open(Path(t) / 'cover.png').convert('RGB').save(outdir / '001.webp', quality=84, method=6)
+def load_tone():
+    """Funzione di figure_tone.py, caricata dal file accanto a questo script."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('figure_tone', Path(__file__).with_name('figure_tone.py'))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod.tone
 
 
 def project_zip(src, out, cfg):
@@ -1172,8 +1175,9 @@ def main():
         lesson['download'] = 'assets/lezioni/%s/%s' % (o.lesson, cfg['zip']['name'])
         project_zip(src, assets / cfg['zip']['name'], cfg)
         nfig = figures(tex, slides, cfg, src, pdf, assets / 'figure', o.lesson, work)
-        cover(assets / cfg['pdf'], assets)
-        slides[0]['image'] = 'assets/lezioni/%s/001.webp' % o.lesson
+        # La copertina è ricomposta come testo del pannello: nessuna immagine della pagina.
+        for old in assets.glob('[0-9][0-9][0-9].*'):
+            old.unlink()
         out_json.parent.mkdir(parents=True, exist_ok=True)
         out_json.write_text(json.dumps(lesson, ensure_ascii=False, indent=1) + '\n', encoding='utf-8')
         ncards = 0

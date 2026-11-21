@@ -125,8 +125,16 @@
   }
   function slidePanel(L, s) {
     const page = s.page;
-    if (s.lines)
-      return html`<section class="lesson-panel lesson-slide-panel" aria-label="Slide 1: ${s.title}"><figure class="lesson-figure lesson-cover"><img src="${s.image}" alt="Copertina della lezione: ${s.lines.join(', ')}" width="1134" height="709"></figure></section>`;
+    if (s.lines) {
+      // Cover recomposed as panel text: planet, module, title, subtitles, author, licence.
+      const [planet, module, title, ...rest] = s.lines,
+        licence = rest.pop(),
+        author = rest.pop(),
+        cc = /CC BY-NC-SA 4\.0/.test(licence)
+          ? html`${licence.replace(/CC BY-NC-SA 4\.0.*$/, '')}<a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a>`
+          : licence;
+      return html`<section class="lesson-panel lesson-slide-panel lesson-cover" aria-label="Slide 1: ${s.title}"><p class="lesson-cover-planet">${planet}</p><p class="lesson-cover-module">${module}</p><h3 class="lesson-cover-title">${title}</h3>${rest.map((t, i) => html`<p class="${i ? 'lesson-cover-line' : 'lesson-cover-subtitle'}">${t}</p>`)}<p class="lesson-cover-author">${author}</p><p class="lesson-cover-licence">${cc}</p></section>`;
+    }
     if (s.question)
       return html`<section class="lesson-panel lesson-slide-panel" aria-label="Slide 2: ${s.title}"><p class="lesson-slide-label">Domanda centrale</p><p class="lesson-question">${s.question}</p><div class="lesson-steps">${s.steps.map(
         t => {
@@ -179,6 +187,184 @@
       '\n'
     );
   }
+  // ---------------------------------------------------------------- figures on the dark panel
+  // Same mapping as scripts/lessons/figure_tone.py: deck palette to site tokens, text and strokes kept light,
+  // fills inverted monotonically in OKLab, continuous scales (over 40 colours) limited to background and greys.
+  const tone = (() => {
+    const lin = c => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4),
+      gam = c => (c <= 0.0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055),
+      clip = x => Math.min(1, Math.max(0, x)),
+      h2t = h => [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16) / 255),
+      t2h = t =>
+        '#' +
+        t
+          .map(x =>
+            Math.floor(x * 255 + 0.5)
+              .toString(16)
+              .toUpperCase()
+              .padStart(2, '0'),
+          )
+          .join('');
+    function oklab(c) {
+      const [r, g, b] = c.map(lin),
+        l = (0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b) ** (1 / 3),
+        m = (0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b) ** (1 / 3),
+        s = (0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b) ** (1 / 3);
+      return [
+        0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s,
+        1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s,
+        0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s,
+      ];
+    }
+    function srgb(L, a, b) {
+      const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3,
+        m = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3,
+        s = (L - 0.0894841775 * a - 1.291485548 * b) ** 3;
+      return [
+        4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+        -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+        -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s,
+      ].map(x => clip(gam(clip(x))));
+    }
+    const PANEL = oklab(h2t('0B192B')),
+      INK = oklab(h2t('E3EEF5')),
+      NEUTRAL = {
+        F8F6F1: '0B192B',
+        F5F6F3: '0B192B',
+        FFFFFF: '102739',
+        F0F4F3: '12293B',
+        D6DAD9: '35506A',
+        657180: 'A9C1D0',
+        253344: 'E3EEF5',
+        '15283E': 'F2F8FB',
+        112236: 'E3EEF5',
+        '000000': 'E3EEF5',
+      },
+      ACCENT = {
+        '087C74': '5CC9B8',
+        '72D8C8': '72D8C8',
+        '1D7890': '62B8D2',
+        C57E42: 'E5A46C',
+        '7363AA': 'AE9FE6',
+        '5146A5': 'A196EC',
+        ABB5FF: 'ABB5FF',
+      },
+      BACKGROUND = ['F8F6F1', 'F5F6F3'];
+    function neutral(L) {
+      const L2 = Math.min(INK[0], Math.max(PANEL[0], PANEL[0] + ((1 - L) * (INK[0] - PANEL[0])) / 0.72)),
+        u = (L2 - PANEL[0]) / (INK[0] - PANEL[0]);
+      return srgb(L2, PANEL[1] + u * (INK[1] - PANEL[1]), PANEL[2] + u * (INK[2] - PANEL[2]));
+    }
+    // Table headers and labels on a dark fill: dark surface of the same hue, light text.
+    function box(L, a, b, C) {
+      const L2 = 0.3 + 0.15 * L;
+      if (C > 0.02) return srgb(L2, a * Math.min(1, 0.09 / C), b * Math.min(1, 0.09 / C));
+      const u = (L2 - PANEL[0]) / (INK[0] - PANEL[0]);
+      return srgb(L2, PANEL[1] + u * (INK[1] - PANEL[1]), PANEL[2] + u * (INK[2] - PANEL[2]));
+    }
+    // Continuous scales and shading: background, grey text and axes, palette colours of text and strokes only.
+    function safeColour(rgb, key, role, L, C) {
+      if (BACKGROUND.includes(key)) return role === 'area' ? h2t(NEUTRAL[key]) : rgb;
+      if (key in NEUTRAL && key !== 'FFFFFF' && L < 0.75) return h2t(NEUTRAL[key]);
+      if (role !== 'area' && key in ACCENT) return h2t(ACCENT[key]);
+      return C <= 0.006 && L < 0.75 ? neutral(L) : rgb;
+    }
+    function colourOf(key, role, L, a, b, C) {
+      if (key in NEUTRAL) return h2t(NEUTRAL[key]);
+      if (role !== 'area' && key in ACCENT) return h2t(ACCENT[key]);
+      if (C <= (role === 'area' && L > 0.85 ? 0.004 : 0.02)) return neutral(L);
+      if (role !== 'area' && L <= 0.85) return srgb(0.7 + 0.25 * clip((L - 0.25) / 0.65), a * 1.08, b * 1.08);
+      // Fills, and light strokes acting as bands: monotone inversion, faint tints gain chroma.
+      const k = L > 0.85 ? Math.max(1, Math.min(4, 0.032 / C)) : 1;
+      return srgb(Math.min(0.9, Math.max(PANEL[0] + 0.02, 0.25 + (0.97 - L) * 0.932)), a * k, b * k);
+    }
+    function remap(rgb, role, safe) {
+      const key = t2h(rgb).slice(1),
+        [L, a, b] = oklab(rgb),
+        C = Math.hypot(a, b);
+      if (role === 'label' && key === 'FFFFFF') return h2t('F2F8FB');
+      if (role === 'box') return box(L, a, b, C);
+      return safe ? safeColour(rgb, key, role, L, C) : colourOf(key, role, L, a, b, C);
+    }
+    const COLOR = String.raw`rgb\(\s*([\d.]+)%\s*,\s*([\d.]+)%\s*,\s*([\d.]+)%\s*\)|#([0-9A-Fa-f]{6})(?![0-9A-Fa-f])`,
+      PROP = new RegExp(
+        String.raw`((?:fill|stroke|stop-color|flood-color)\s*(?:=\s*["']\s*|:\s*))(` + COLOR + ')',
+        'g',
+      ),
+      FILL = new RegExp(String.raw`((?<![\w-])fill\s*(?:=\s*["']\s*|:\s*))(` + COLOR + ')'),
+      parse = m => (m[4] === undefined ? [m[1], m[2], m[3]].map(v => parseFloat(v) / 100) : h2t(m[4]));
+    return svg => {
+      const safe = new Set((svg.match(new RegExp(COLOR, 'g')) || []).map(c => c.replace(/ /g, ''))).size > 40,
+        cache = new Map(),
+        colour = (spec, role) => {
+          const k = spec + role;
+          if (!cache.has(k)) cache.set(k, t2h(remap(parse(spec.match(new RegExp(COLOR))), role, safe)));
+          return cache.get(k);
+        },
+        tags = [...svg.matchAll(/<([a-zA-Z][\w:-]*)((?:[^>"']|"[^"]*"|'[^']*')*)>/g)],
+        kinds = tags.map(
+          (t, i) =>
+            t[1] === 'text' ||
+            t[1] === 'tspan' ||
+            (t[1] === 'g' && tags[i + 1]?.[1] === 'use' && tags[i + 1][2].includes('#glyph')),
+        ),
+        boxes = new Set(),
+        labels = new Set();
+      // White text: the fill drawn just before it is its background (see figure_tone.py).
+      let run = [],
+        afterText = false;
+      tags.forEach((t, i) => {
+        const m = t[2].match(FILL);
+        if (!m) return;
+        const rgb = parse(m[2].match(new RegExp(COLOR)));
+        if (kinds[i]) {
+          afterText = true;
+          if (t2h(rgb) === '#FFFFFF' && run.length && !safe) {
+            run.filter(([, c]) => oklab(c)[0] < 0.45).forEach(([j]) => boxes.add(j));
+            const under = run.at(-1)[1];
+            if (oklab(under)[0] < 0.45 || oklab(remap(under, 'area', false))[0] < 0.59) labels.add(i);
+          }
+        } else if (oklab(rgb)[0] <= 0.85) {
+          if (afterText) [run, afterText] = [[], false];
+          run.push([i, rgb]);
+        }
+      });
+      let out = '',
+        last = 0;
+      tags.forEach((t, i) => {
+        const name = t[1],
+          start = t.index + 1 + name.length,
+          // Implicit black (text without fill, as svglite writes it) becomes the text colour.
+          root = name === 'svg' && !out.includes('<svg') && !/(?<![\w-])fill\s*=/.test(t[2]) ? ' fill="#E3EEF5"' : '';
+        out +=
+          svg.slice(last, start) +
+          t[2].replace(PROP, (all, head, spec) => {
+            const p = head.split(/[=:]/)[0].trim(),
+              role =
+                p === 'stroke'
+                  ? 'line'
+                  : kinds[i] && p === 'fill'
+                    ? labels.has(i)
+                      ? 'label'
+                      : 'text'
+                    : boxes.has(i) && p === 'fill'
+                      ? 'box'
+                      : 'area';
+            return head + colour(spec, role);
+          }) +
+          root;
+        last = start + t[2].length;
+      });
+      out += svg.slice(last);
+      return out.replace(
+        /(<style\b[^>]*>)([\s\S]*?)(<\/style>)/g,
+        (all, open, body, close) =>
+          open +
+          body.replace(PROP, (m, head, spec) => head + colour(spec, head.startsWith('stroke') ? 'line' : 'area')) +
+          close,
+      );
+    };
+  })();
   function download(text, name) {
     const url = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' })),
       a = document.createElement('a');
@@ -245,9 +431,11 @@
             (r.status === 'ok' ? 'Uscita di R nel browser · ' : 'Uscita di R con errore · ') + r.R;
           $('[data-output]').textContent = r.output;
           $('[data-figures]').innerHTML = html`${r.figures.map((svg, i) => {
-            const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
-            urls.push(url);
-            return html`<figure><img src="${url}" alt="Grafico ${i + 1} prodotto dal codice ${file}"><figcaption>Grafico ${i + 1} · <a href="${url}" download="${file.replace(/\.R$/, '')}-${i + 1}.svg">Scarica SVG</a></figcaption></figure>`;
+            // The panel shows the plot in its colours; the download keeps the SVG written by R.
+            const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' })),
+              shown = URL.createObjectURL(new Blob([tone(svg)], { type: 'image/svg+xml' }));
+            urls.push(url, shown);
+            return html`<figure><img src="${shown}" alt="Grafico ${i + 1} prodotto dal codice ${file}"><figcaption>Grafico ${i + 1} · <a href="${url}" download="${file.replace(/\.R$/, '')}-${i + 1}.svg">Scarica SVG</a></figcaption></figure>`;
           })}`;
           announce(r.status === 'ok' ? 'Codice eseguito' : 'Il codice ha prodotto un errore');
         } catch (err) {
@@ -527,5 +715,5 @@
     });
     engineState(main);
   }
-  root.GeoLessons = Object.freeze({ configure, cleanup, forWorld, lesson, exercises, check, parse });
+  root.GeoLessons = Object.freeze({ configure, cleanup, forWorld, lesson, exercises, check, parse, tone });
 })(globalThis);

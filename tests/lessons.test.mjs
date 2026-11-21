@@ -24,9 +24,15 @@ for (const [id, cfg] of Object.entries(config)) {
     L.slides.forEach((s, i) => {
       assert.equal(s.page, i + 1);
       assert.ok(s.title && s.section);
-      assert.equal(Boolean(s.image), s.page === 1, 'immagine soltanto in copertina');
+      assert.ok(!s.image, 'nessuna pagina come immagine: slide ' + s.page);
     });
-    assert.ok(fs.existsSync(path.join(root, L.slides[0].image)), L.slides[0].image);
+    // Copertina ricomposta come testo: pianeta, modulo, titolo, sottotitoli, autore, licenza.
+    const cover = L.slides[0].lines;
+    assert.ok(
+      cover.length >= 6 && /^MODULO /.test(cover[1]) && /CC BY-NC-SA 4\.0/.test(cover.at(-1)),
+      cover.join(' | '),
+    );
+    assert.ok(!fs.readdirSync(path.join(root, 'assets/lezioni', id)).some(f => /^\d{3}\./.test(f)), 'pagina raster');
     assert.ok(fs.existsSync(path.join(root, L.pdf)), L.pdf);
     assert.equal(L.sections.at(-1).last, L.pages);
     L.sections.forEach((sec, i) => i && assert.equal(sec.first, L.sections[i - 1].last + 1));
@@ -38,10 +44,14 @@ for (const [id, cfg] of Object.entries(config)) {
       const cols = [...new Set(s.items.map(it => it.col))].sort().join('');
       // Full width alone, two columns, or (M10-M12) a full-width box above the right column.
       assert.ok(['W', 'LR', 'RW'].includes(cols), 'colonne della slide ' + s.page + ': ' + cols);
+      // Nessuna pagina ritagliata intera: i riquadri sono testo del pannello, le figure soltanto diagrammi.
+      assert.ok(!(s.items.length === 1 && s.items[0].t === 'figure'), 'slide ' + s.page + ' ritagliata dal PDF');
       for (const it of s.items.filter(x => x.t === 'figure')) {
         assert.ok(fs.existsSync(path.join(root, it.src)), it.src);
         assert.ok(it.ratio > 0.3 && it.ratio <= 1 && it.w > 0 && it.h > 0, it.src);
         assert.ok(!('tex' in it));
+        // Figure portate sul pannello scuro: nessuno sfondo chiaro della pagina.
+        assert.ok(it.src.endsWith('.svg') && read(it.src).slice(0, 2000).includes('data-tono="pannello"'), it.src);
       }
     }
   });

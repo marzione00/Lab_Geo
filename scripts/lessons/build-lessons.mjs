@@ -148,17 +148,29 @@ function checkLinks(root, id, lesson, nodes) {
   }
 }
 
+// Cover recomposed as text (planet, module, title, subtitles, author, licence) and figures on the dark panel.
+function checkPages(root, id, lesson) {
+  if (!Array.isArray(lesson.slides[0].lines) || lesson.slides[0].lines.length < 6)
+    throw Error('Copertina assente: ' + id);
+  if (lesson.slides.some(s => s.image)) throw Error('Pagina come immagine: ' + id);
+  for (const it of lesson.slides.flatMap(s => s.items).filter(x => x.t === 'figure')) {
+    const file = path.join(root, it.src);
+    if (!fs.existsSync(file)) throw Error('Figura assente: ' + it.src);
+    if (!fs.readFileSync(file, 'utf8').slice(0, 2000).includes('data-tono="pannello"'))
+      throw Error('Figura non portata sul pannello: ' + it.src);
+  }
+}
+
 // Files, code and links of a lesson.
 function checkLesson(root, id, lesson) {
   const exists = p => fs.existsSync(path.join(root, p));
-  if (!exists(lesson.slides[0].image)) throw Error('Copertina assente: ' + id);
+  checkPages(root, id, lesson);
   for (const s of lesson.slides) {
     checkLinks(root, id, lesson, s.recall || []);
     for (const it of [...s.items, ...(s.code || [])]) {
       const cells = [...(it.head || []), ...(it.rows || [])].flat().flatMap(cell => cell.c);
       checkLinks(root, id, lesson, [...(it.c || []), ...cells]);
       if (it.t === 'code' && !lesson.code[it.file]) throw Error('Codice assente: ' + it.file);
-      if (it.t === 'figure' && !exists(it.src)) throw Error('Figura assente: ' + it.src);
     }
   }
   for (const f of [lesson.pdf, lesson.workbook, lesson.download].filter(Boolean))
