@@ -6,7 +6,7 @@
     N = root.GeoNarrative;
   const activities = D.activities,
     byId = new Map(activities.map(a => [a.id, a]));
-  const escape = root.GeoHTML.escape;
+  const { html } = root.GeoHTML;
   const norm = s =>
     String(s)
       .normalize('NFD')
@@ -25,49 +25,20 @@
     dispose = () => {};
   }
   const planet = (id, cls = '') =>
-    '<div class="planet-viewport" aria-hidden="true"><div class="planet-slot ' +
-    (root.GeoPlanets.byId[id]?.rings ? 'ringed ' : '') +
-    cls +
-    '" data-planet="' +
-    id +
-    '" data-hero="0.35" aria-hidden="true"></div></div>';
-  const link = (href, label, cls = '') => '<a class="' + cls + '" href="' + escape(href) + '">' + label + '</a>';
+    html`<div class="planet-viewport" aria-hidden="true"><div class="planet-slot ${root.GeoPlanets.byId[id]?.rings ? 'ringed ' : ''}${cls}" data-planet="${id}" data-hero="0.35" aria-hidden="true"></div></div>`;
+  const link = (href, label, cls = '') => html`<a class="${cls}" href="${href}">${label}</a>`;
   const button = (id, label, secondary = false) =>
-    '<button type="button" id="' +
-    id +
-    '" class="button' +
-    (secondary ? ' secondary' : '') +
-    '">' +
-    label +
-    '</button>';
+    html`<button type="button" id="${id}" class="button${secondary ? ' secondary' : ''}">${label}</button>`;
   function card(a, index) {
-    return (
-      '<a class="experiment-card" href="' +
-      path(a) +
-      '"><span class="experiment-module">' +
-      a.module +
-      ' / ' +
-      escape(root.GeoPlanets.byId[a.module].name) +
-      '</span>' +
-      (index !== undefined ? '<span class="activity-order">' + String(index + 1).padStart(2, '0') + '</span>' : '') +
-      '<h3>' +
-      escape(a.title) +
-      '</h3><p>' +
-      escape(a.goal) +
-      '</p><span class="card-arrow">Apri l’esperimento →</span></a>'
-    );
+    return html`<a class="experiment-card" href="${path(a)}"><span class="experiment-module">${a.module} / ${root.GeoPlanets.byId[a.module].name}</span>${index !== undefined ? html`<span class="activity-order">${String(index + 1).padStart(2, '0')}</span>` : ''}<h3>${a.title}</h3><p>${a.goal}</p><span class="card-arrow">Apri l’esperimento →</span></a>`;
   }
   function index(main) {
     cleanup();
-    main.innerHTML =
-      '<div class="wrap"><section class="lab-index-intro"><p class="eyebrow">LABORATORI / STATISTICA E CODING R</p><h1>Un fenomeno da osservare.<br>Un modello da interrogare.</h1><p class="lead">' +
-      activities.length +
-      ' esperimenti collegano dati, rappresentazioni e formalismo matematico. Ogni configurazione può essere calcolata in R, confrontata con un’altra e riprodotta mediante il proprio codice.</p></section><div class="lab-index-tools"><label class="sr-only" for="search-experiments">Cerca un argomento o un esperimento</label><input id="search-experiments" type="search" placeholder="Cerca: bootstrap, PCA, chiavi, pendenza…"><label class="sr-only" for="filter-experiments">Filtra per modulo</label><select id="filter-experiments"><option value="all">Tutti i moduli</option>' +
-      root.GEO_CATALOG.modules
-        .filter(m => m.category !== 'progetti')
-        .map(m => '<option value="' + m.id + '">' + m.id + ' · ' + escape(m.title) + '</option>')
-        .join('') +
-      '</select><div class="view-switch" role="group" aria-label="Presentazione"><button type="button" data-view="cards" aria-pressed="true">Schede</button><button type="button" data-view="list" aria-pressed="false">Elenco</button></div></div><p class="lab-count" id="experiment-count" role="status"></p><h2 class="sr-only">Elenco degli esperimenti</h2><div class="experiment-groups" id="experiment-grid"></div></div>';
+    main.innerHTML = html`<div class="wrap"><section class="lab-index-intro"><p class="eyebrow">LABORATORI / STATISTICA E CODING R</p><h1>Un fenomeno da osservare.<br>Un modello da interrogare.</h1><p class="lead">${activities.length} esperimenti collegano dati, rappresentazioni e formalismo matematico. Ogni configurazione può essere calcolata in R, confrontata con un’altra e riprodotta mediante il proprio codice.</p></section><div class="lab-index-tools"><label class="sr-only" for="search-experiments">Cerca un argomento o un esperimento</label><input id="search-experiments" type="search" placeholder="Cerca: bootstrap, PCA, chiavi, pendenza…"><label class="sr-only" for="filter-experiments">Filtra per modulo</label><select id="filter-experiments"><option value="all">Tutti i moduli</option>${root.GEO_CATALOG.modules
+      .filter(m => m.category !== 'progetti')
+      .map(
+        m => html`<option value="${m.id}">${m.id} · ${m.title}</option>`,
+      )}</select><div class="view-switch" role="group" aria-label="Presentazione"><button type="button" data-view="cards" aria-pressed="true">Schede</button><button type="button" data-view="list" aria-pressed="false">Elenco</button></div></div><p class="lab-count" id="experiment-count" role="status"></p><h2 class="sr-only">Elenco degli esperimenti</h2><div class="experiment-groups" id="experiment-grid"></div></div>`;
     const fill = () => {
       const terms = norm(main.querySelector('#search-experiments').value).split(/\s+/).filter(Boolean),
         module = main.querySelector('#filter-experiments').value;
@@ -81,26 +52,14 @@
       const groups = root.GEO_CATALOG.modules
         .map(m => [m, found.filter(a => a.module === m.id)])
         .filter(([, items]) => items.length);
-      main.querySelector('#experiment-grid').innerHTML =
-        groups
-          .map(
-            ([m, items]) =>
-              '<details class="experiment-group"' +
-              (narrowed ? ' open' : '') +
-              '><summary><span class="hud-label">' +
-              m.id +
-              ' · ' +
-              escape(root.GeoPlanets.byId[m.id].name) +
-              '</span><strong>' +
-              escape(m.title) +
-              '</strong><span class="experiment-group-count">' +
-              items.length +
-              (items.length === 1 ? ' esperimento' : ' esperimenti') +
-              '</span></summary><div class="experiment-grid">' +
-              items.map(a => card(a)).join('') +
-              '</div></details>',
-          )
-          .join('') || '<p>Nessun esperimento corrisponde alla ricerca.</p>';
+      main.querySelector('#experiment-grid').innerHTML = html`${
+        groups.length
+          ? groups.map(
+              ([m, items]) =>
+                html`<details class="experiment-group"${narrowed ? ' open' : ''}><summary><span class="hud-label">${m.id} · ${root.GeoPlanets.byId[m.id].name}</span><strong>${m.title}</strong><span class="experiment-group-count">${items.length}${items.length === 1 ? ' esperimento' : ' esperimenti'}</span></summary><div class="experiment-grid">${items.map(a => card(a))}</div></details>`,
+            )
+          : html`<p>Nessun esperimento corrisponde alla ricerca.</p>`
+      }`;
       main.querySelector('#experiment-count').textContent = found.length + ' esperimenti disponibili';
     };
     const groupsBox = main.querySelector('#experiment-grid');
@@ -128,13 +87,7 @@
     fill();
   }
   function materials(m) {
-    return (
-      '<details class="lab-module-materials"><summary>Materiali di consultazione e riferimenti</summary><p>Presentazione originale, sorgenti e laboratori del corso accompagnano gli esperimenti. Le fonti del corso permettono di approfondire il ragionamento e ricostruire i calcoli.</p><div class="actions">' +
-      link(m.pdf, 'Presentazione PDF ↗', 'button secondary') +
-      link('#modulo-' + m.id + '/codici', 'Codici del corso ↗', 'button secondary') +
-      link('#modulo-' + m.id + '/slide/3', 'Lettura del fascicolo ↗', 'button secondary') +
-      '</div></details>'
-    );
+    return html`<details class="lab-module-materials"><summary>Materiali di consultazione e riferimenti</summary><p>Presentazione originale, sorgenti e laboratori del corso accompagnano gli esperimenti. Le fonti del corso permettono di approfondire il ragionamento e ricostruire i calcoli.</p><div class="actions">${link(m.pdf, 'Presentazione PDF ↗', 'button secondary')}${link('#modulo-' + m.id + '/codici', 'Codici del corso ↗', 'button secondary')}${link('#modulo-' + m.id + '/slide/3', 'Lettura del fascicolo ↗', 'button secondary')}</div></details>`;
   }
   function module(main, m) {
     cleanup();
@@ -142,59 +95,18 @@
       p = root.GeoPlanets.byId[m.id];
     const coursePath =
       m.id === 'M05' && N
-        ? N.data.sampling.stages
-            .map(
-              stage =>
-                '<section class="narrative-stage"><h3>' +
-                escape(stage.title) +
-                '</h3><p>' +
-                escape(stage.text) +
-                '</p><div class="experiment-grid">' +
-                stage.ids
-                  .map(id =>
-                    card(
-                      byId.get(id),
-                      items.findIndex(a => a.id === id),
-                    ),
-                  )
-                  .join('') +
-                '</div></section>',
-            )
-            .join('')
-        : '<div class="experiment-grid">' + items.map(card).join('') + '</div>';
-    main.innerHTML =
-      '<div class="wrap"><div class="breadcrumb">' +
-      link('#mappa', 'Atlante') +
-      '<span>/</span>' +
-      escape(m.id) +
-      '</div><header class="lab-module-header">' +
-      planet(m.id, 'module-planet') +
-      (root.GeoPaths?.badge({ track: 'course', label: 'Modulo ' + m.id + ' · Corso' }) || '') +
-      '<p class="planet-designation"><strong>' +
-      escape(p.name.toUpperCase()) +
-      '</strong><span>' +
-      escape(p.description) +
-      '</span></p><p class="eyebrow">' +
-      m.id +
-      ' / ' +
-      items.length +
-      ' ESPERIMENTI</p><h1>' +
-      escape(m.title) +
-      '</h1><p class="lead">' +
-      escape(m.subtitle) +
-      '.</p>' +
-      (N?.moduleIntro(m.id) || '') +
-      '<div class="actions">' +
-      link(path(items[0]), 'Inizia il laboratorio →', 'button') +
-      link('#esperimenti', 'Cerca un altro argomento', 'button secondary') +
-      '</div></header><section class="lab-module-activities"><h2>Il percorso sperimentale</h2><p class="lead">Ogni attività dichiara il problema, le ipotesi e le grandezze che puoi modificare.</p>' +
-      coursePath +
-      '</section>' +
-      materials(m) +
-      '<div class="cross-nav">' +
-      (m.previous ? link(modulePath(m.previous), '← ' + m.previous) : '<span></span>') +
-      (m.next ? link(modulePath(m.next), m.next + ' →') : '') +
-      '</div></div>';
+        ? html`${N.data.sampling.stages.map(
+            stage =>
+              html`<section class="narrative-stage"><h3>${stage.title}</h3><p>${stage.text}</p><div class="experiment-grid">${stage.ids.map(
+                id =>
+                  card(
+                    byId.get(id),
+                    items.findIndex(a => a.id === id),
+                  ),
+              )}</div></section>`,
+          )}`
+        : html`<div class="experiment-grid">${items.map(card)}</div>`;
+    main.innerHTML = html`<div class="wrap"><div class="breadcrumb">${link('#mappa', 'Atlante')}<span>/</span>${m.id}</div><header class="lab-module-header">${planet(m.id, 'module-planet')}${root.GeoPaths?.badge({ track: 'course', label: 'Modulo ' + m.id + ' · Corso' }) || ''}<p class="planet-designation"><strong>${p.name.toUpperCase()}</strong><span>${p.description}</span></p><p class="eyebrow">${m.id} / ${items.length} ESPERIMENTI</p><h1>${m.title}</h1><p class="lead">${m.subtitle}.</p>${N?.moduleIntro(m.id) || ''}<div class="actions">${link(path(items[0]), 'Inizia il laboratorio →', 'button')}${link('#esperimenti', 'Cerca un altro argomento', 'button secondary')}</div></header><section class="lab-module-activities"><h2>Il percorso sperimentale</h2><p class="lead">Ogni attività dichiara il problema, le ipotesi e le grandezze che puoi modificare.</p>${coursePath}</section>${materials(m)}<div class="cross-nav">${m.previous ? link(modulePath(m.previous), '← ' + m.previous) : html`<span></span>`}${m.next ? link(modulePath(m.next), m.next + ' →') : ''}</div></div>`;
   }
   const missions = {
     P01: {
@@ -305,38 +217,13 @@
   function mission(main, m) {
     cleanup();
     const mission = missions[m.id];
-    main.innerHTML =
-      '<div class="wrap"><div class="breadcrumb">' +
-      link('#progetti', 'Spedizioni') +
-      '<span>/</span>' +
-      m.id +
-      '</div><header class="lab-module-header">' +
-      planet(m.id, 'module-planet') +
-      '<p class="eyebrow">SPEDIZIONE ' +
-      m.id +
-      '</p><h1>' +
-      escape(m.title) +
-      '</h1><p class="lead">' +
-      escape(mission.intro) +
-      '</p><p class="lab-footer-note">Gli esperimenti preparatori impiegano dati sintetici dichiarati. I dati e la consegna del caso applicativo sono disponibili nei materiali originali.</p></header><h2 class="sr-only">Fasi della spedizione</h2><div class="mission-stages">' +
-      mission.steps
-        .map(
-          ([title, ...ids]) =>
-            '<section class="mission-stage"><div><h3>' +
-            escape(title) +
-            '</h3>' +
-            ids
-              .map(id => {
-                const a = byId.get(id);
-                return '<p>' + escape(a.goal) + '</p>' + link(path(a), escape(a.title) + ' →');
-              })
-              .join('') +
-            '</div></section>',
-        )
-        .join('') +
-      '</div><section class="lab-reading"><h2>Relazione della spedizione</h2><p>Documenta il bersaglio dell’analisi, le unità indipendenti, le assunzioni e almeno un confronto di sensibilità. Esporta le configurazioni degli esperimenti utilizzati e collega la discussione ai dati del caso applicativo.</p></section><div class="course-solution"></div>' +
-      materials(m) +
-      '</div>';
+    main.innerHTML = html`<div class="wrap"><div class="breadcrumb">${link('#progetti', 'Spedizioni')}<span>/</span>${m.id}</div><header class="lab-module-header">${planet(m.id, 'module-planet')}<p class="eyebrow">SPEDIZIONE ${m.id}</p><h1>${m.title}</h1><p class="lead">${mission.intro}</p><p class="lab-footer-note">Gli esperimenti preparatori impiegano dati sintetici dichiarati. I dati e la consegna del caso applicativo sono disponibili nei materiali originali.</p></header><h2 class="sr-only">Fasi della spedizione</h2><div class="mission-stages">${mission.steps.map(
+      ([title, ...ids]) =>
+        html`<section class="mission-stage"><div><h3>${title}</h3>${ids.map(id => {
+          const a = byId.get(id);
+          return html`<p>${a.goal}</p>${link(path(a), html`${a.title} →`)}`;
+        })}</div></section>`,
+    )}</div><section class="lab-reading"><h2>Relazione della spedizione</h2><p>Documenta il bersaglio dell’analisi, le unità indipendenti, le assunzioni e almeno un confronto di sensibilità. Esporta le configurazioni degli esperimenti utilizzati e collega la discussione ai dati del caso applicativo.</p></section><div class="course-solution"></div>${materials(m)}</div>`;
     const solution = root.GeoSolutions.mountCourse(main.querySelector('.course-solution'), m.id);
     dispose = () => solution.destroy();
   }
@@ -352,98 +239,32 @@
     return { type: 'experiment', id: a.module, activity: a.id, query: m[2] || '' };
   }
   function controls(a, p) {
-    return a.controls
-      .map(
-        c =>
-          '<label class="lab-control" for="param-' +
-          c.key +
-          '"><span>' +
-          escape(c.label) +
-          '</span>' +
-          (c.type === 'select'
-            ? '<select id="param-' +
-              c.key +
-              '" data-param="' +
-              c.key +
-              '">' +
-              c.options
-                .map(
-                  o =>
-                    '<option value="' +
-                    escape(o.value) +
-                    '"' +
-                    (o.value === p[c.key] ? ' selected' : '') +
-                    '>' +
-                    escape(o.label) +
-                    '</option>',
-                )
-                .join('') +
-              '</select>'
-            : '<input id="param-' +
-              c.key +
-              '" data-param="' +
-              c.key +
-              '" type="number" min="' +
-              c.min +
-              '" max="' +
-              c.max +
-              '" step="' +
-              c.step +
-              '" value="' +
-              p[c.key] +
-              '">' +
-              (c.key !== 'seed'
-                ? '<input type="range" data-range="' +
-                  c.key +
-                  '" aria-label="' +
-                  escape(c.label) +
-                  ' · cursore" min="' +
-                  c.min +
-                  '" max="' +
-                  c.max +
-                  '" step="' +
-                  c.step +
-                  '" value="' +
-                  p[c.key] +
-                  '">'
-                : '')) +
-          (c.help ? '<small>' + escape(c.help) + '</small>' : '') +
-          '</label>',
-      )
-      .join('');
+    return html`${a.controls.map(
+      c =>
+        html`<label class="lab-control" for="param-${c.key}"><span>${c.label}</span>${
+          c.type === 'select'
+            ? html`<select id="param-${c.key}" data-param="${c.key}">${c.options.map(
+                o => html`<option value="${o.value}"${o.value === p[c.key] ? ' selected' : ''}>${o.label}</option>`,
+              )}</select>`
+            : html`<input id="param-${c.key}" data-param="${c.key}" type="number" min="${c.min}" max="${c.max}" step="${c.step}" value="${p[c.key]}">${
+                c.key !== 'seed'
+                  ? html`<input type="range" data-range="${c.key}" aria-label="${c.label} · cursore" min="${c.min}" max="${c.max}" step="${c.step}" value="${p[c.key]}">`
+                  : ''
+              }`
+        }${c.help ? html`<small>${c.help}</small>` : ''}</label>`,
+    )}`;
   }
   function metricMarkup(result) {
-    return (
-      '<div class="lab-metrics">' +
-      (result.metrics || [])
-        .map(
-          m =>
-            '<div class="lab-metric"><span>' +
-            escape(m.grandezza) +
-            '</span><strong>' +
-            escape(m.valore) +
-            '</strong></div>',
-        )
-        .join('') +
-      '</div>'
-    );
+    return html`<div class="lab-metrics">${(result.metrics || []).map(
+      m => html`<div class="lab-metric"><span>${m.grandezza}</span><strong>${m.valore}</strong></div>`,
+    )}</div>`;
   }
   function tableMarkup(result) {
     const rows = result.data || [],
       keys = Object.keys(rows[0] || {});
-    return (
-      '<details class="lab-data"><summary>Tabella dei risultati · ' +
-      escape(result.rows ?? rows.length) +
-      ' righe</summary><p class="lab-footer-note">Anteprima delle prime ' +
-      rows.length +
-      ' righe. L’esportazione CSV dopo il calcolo contiene l’intera tabella dell’esperimento.</p><div class="lab-table-scroll"><table><thead><tr>' +
-      keys.map(k => '<th scope="col">' + escape(k) + '</th>').join('') +
-      '</tr></thead><tbody>' +
-      rows
-        .map(r => '<tr>' + keys.map(k => '<td>' + escape(r[k] === null ? 'NA' : r[k]) + '</td>').join('') + '</tr>')
-        .join('') +
-      '</tbody></table></div></details>'
-    );
+    return html`<details class="lab-data"><summary>Tabella dei risultati · ${result.rows ?? rows.length} righe</summary><p class="lab-footer-note">Anteprima delle prime ${rows.length} righe. L’esportazione CSV dopo il calcolo contiene l’intera tabella dell’esperimento.</p><div class="lab-table-scroll"><table><thead><tr>${keys.map(k => html`<th scope="col">${k}</th>`)}</tr></thead><tbody>${rows.map(
+      r => html`<tr>${keys.map(k => html`<td>${r[k] === null ? 'NA' : r[k]}</td>`)}</tr>`,
+    )}</tbody></table></div></details>`;
   }
   function download(name, text, type = 'text/plain;charset=utf-8') {
     const blob = text instanceof Blob ? text : new Blob([text], { type });
@@ -467,86 +288,27 @@
     api.typeset?.(el);
   }
   function labMarkup(a, params, items, pos, m, narrated) {
-    return (
-      '<div class="wrap lab-shell"><div class="breadcrumb">' +
-      link('#esperimenti', 'Esperimenti') +
-      '<span>/</span>' +
-      link(modulePath(a.module), escape(a.module + ' · ' + m.title)) +
-      '</div><header class="lab-activity-head">' +
-      planet(a.module) +
-      (root.GeoPaths?.badge({ track: 'course', label: 'Modulo ' + a.module + ' · Corso' }) || '') +
-      '<p class="lab-location">' +
-      escape(root.GeoPlanets.byId[a.module].name.toUpperCase()) +
-      ' / ' +
-      String(pos + 1).padStart(2, '0') +
-      ' DI ' +
-      items.length +
-      '</p><h1>' +
-      escape(a.title) +
-      '</h1><p class="lead">' +
-      escape(a.goal) +
-      '</p></header>' +
-      (N?.scene(a) || '') +
-      '<div class="lab-mode-bar" role="group" aria-label="Modalità di studio"><button data-mode="guided" aria-pressed="true">Percorso guidato</button><button data-mode="explore" aria-pressed="false">Esplorazione libera</button><button data-mode="formal" aria-pressed="false">Formalismo e codice</button></div><div class="lab-layout"><aside class="lab-control-panel" aria-label="Preparazione dell’esperimento"><h2>Prepara l’esperimento</h2><div class="lab-controls">' +
-      controls(a, params) +
-      '</div><label class="lab-auto"><input id="lab-auto" type="checkbox" checked>Ricalcola quando modifico i parametri</label>' +
-      button('lab-run', 'Esegui in R →') +
-      button('lab-stop', 'Interrompi il calcolo', true) +
-      '<div class="lab-control-footer"><button id="lab-reset" class="lab-text-button">Ripristina</button><button id="lab-new-seed" class="lab-text-button">Nuovo campione</button></div><p class="lab-footer-note">Il seme rimane fisso quando cambi gli altri parametri. R esegue il calcolo su questo dispositivo.</p></aside><div class="lab-results"><div class="lab-engine-state" id="lab-engine-state" role="status" aria-live="polite"></div><div id="lab-error" class="lab-error" role="alert" hidden></div><section class="lab-reading lab-guided" id="lab-guided"><span class="lab-step-no">1</span><div><h2 class="lab-step-title">Previsione e confronto</h2><p>' +
-      escape(narrated ? N.prediction(a) : a.action) +
-      '</p>' +
-      (narrated ? '<p>' + escape(a.action) + '</p>' : '') +
-      '<details class="lab-note-disclosure"><summary>Annota una previsione e le tue osservazioni</summary><label class="lab-note-label" for="lab-notes">Previsione, osservazioni e interpretazione</label><textarea class="lab-notes" id="lab-notes" maxlength="20000" placeholder="Registra una previsione prima di eseguire il confronto…">' +
-      escape(savedNotes(a.id)) +
-      '</textarea><p class="lab-footer-note">Appunti conservati soltanto in questo browser.</p></details></div></section><p class="lab-pending" id="lab-pending" hidden>La configurazione è cambiata. I risultati visibili si riferiscono al calcolo precedente.</p><div id="lab-result-body" class="lab-result-body"><p class="lab-result-meta" id="lab-result-meta">Apertura della configurazione iniziale verificata in R…</p><div id="lab-metrics"></div><div id="lab-plots"></div><div id="lab-data"></div></div><div class="lab-actions">' +
-      button('lab-compare', 'Conserva scenario A', true) +
-      button('lab-export-csv', 'Scarica dati CSV', true) +
-      button('lab-export-config', 'Esporta configurazione', true) +
-      button('lab-import-config', 'Importa configurazione', true) +
-      button('lab-share', 'Copia collegamento', true) +
-      '<input id="lab-import-file" type="file" accept="application/json,.json" hidden></div><section id="lab-compare-panel" class="lab-reading" hidden><h2>Confronto fra scenari</h2><p id="narrative-comparison" hidden></p><div id="lab-comparison" class="lab-comparison"></div><button id="lab-clear-compare" class="lab-text-button">Svuota il confronto</button></section><section id="lab-interpretation" class="lab-reading lab-guided"><span class="lab-step-no">2</span><div><h3>Interpretare il risultato</h3>' +
-      (narrated
-        ? '<div class="narrative-result" id="narrative-result" hidden><p class="eyebrow">LETTURA DELLA CONFIGURAZIONE</p><p id="narrative-result-text"></p></div>'
-        : '') +
-      '<p>' +
-      escape(a.conclusion) +
-      '</p><p>' +
-      escape(a.limits) +
-      '</p>' +
-      (narrated
-        ? '<div class="narrative-journal-actions"><button type="button" id="save-fieldbook" class="button secondary" disabled>Conserva nel taccuino</button><a href="#taccuino">Rileggi il taccuino →</a><p id="fieldbook-status" role="status">Esegui il modello originale in R per documentare la configurazione.</p></div>'
-        : '') +
-      '</div></section><section class="lab-reading" id="lab-theory"><h2>Modello e formalismo</h2><div class="math">\\[' +
-      escape(a.formula) +
-      '\\]</div><p class="lab-math-definitions">' +
-      escape(a.symbols) +
-      '</p>' +
-      a.prose.map(p => '<p>' + escape(p) + '</p>').join('') +
-      '<p>' +
-      link('#modulo-' + a.module + '/slide/' + a.page, 'Approfondimento nel materiale del corso ↗') +
-      '</p></section><section class="lab-code-panel" id="lab-code-panel" hidden><h2>Ricostruire il calcolo in R</h2><p>Il codice seguente è quello eseguito dall’esperimento. <code>p</code> contiene i parametri del pannello; le funzioni grafiche comuni sono incluse nello script autonomo scaricabile. Puoi modificare il corpo del calcolo e rieseguirlo. Esegui soltanto codice di cui conosci la provenienza: il browser non costituisce un ambiente adatto ad analizzare programmi ostili.</p><pre class="lab-code-output" id="lab-params-code"></pre><label class="sr-only" for="lab-code-editor">Codice R dell’esperimento</label><textarea class="lab-editor" id="lab-code-editor" maxlength="100000" spellcheck="false">' +
-      escape(a.code) +
-      '</textarea><div class="lab-actions">' +
-      button('lab-run-code', 'Esegui codice modificato') +
-      button('lab-download-r', 'Scarica script R completo', true) +
-      button('lab-reset-code', 'Ripristina codice', true) +
-      '</div><p class="lab-footer-note">Il codice deve produrre <code>data</code> (tabella), <code>metrics</code> (riepilogo) e <code>plots</code> (lista di grafici ggplot). Un calcolo lungo può essere interrotto riavviando il motore.</p></section><div class="lab-actions" id="lab-quick-r">' +
-      button('lab-download-r-quick', 'Scarica lo script R della configurazione', true) +
-      '</div><p class="lab-footer-note">Dati sintetici · formule e ipotesi dichiarate · figure prodotte con ggplot2. ' +
-      (narrated
+    return html`<div class="wrap lab-shell"><div class="breadcrumb">${link('#esperimenti', 'Esperimenti')}<span>/</span>${link(modulePath(a.module), html`${a.module + ' · ' + m.title}`)}</div><header class="lab-activity-head">${planet(a.module)}${root.GeoPaths?.badge({ track: 'course', label: 'Modulo ' + a.module + ' · Corso' }) || ''}<p class="lab-location">${root.GeoPlanets.byId[a.module].name.toUpperCase()} / ${String(pos + 1).padStart(2, '0')} DI ${items.length}</p><h1>${a.title}</h1><p class="lead">${a.goal}</p></header>${N?.scene(a) || ''}<div class="lab-mode-bar" role="group" aria-label="Modalità di studio"><button data-mode="guided" aria-pressed="true">Percorso guidato</button><button data-mode="explore" aria-pressed="false">Esplorazione libera</button><button data-mode="formal" aria-pressed="false">Formalismo e codice</button></div><div class="lab-layout"><aside class="lab-control-panel" aria-label="Preparazione dell’esperimento"><h2>Prepara l’esperimento</h2><div class="lab-controls">${controls(a, params)}</div><label class="lab-auto"><input id="lab-auto" type="checkbox" checked>Ricalcola quando modifico i parametri</label>${button('lab-run', 'Esegui in R →')}${button('lab-stop', 'Interrompi il calcolo', true)}<div class="lab-control-footer"><button id="lab-reset" class="lab-text-button">Ripristina</button><button id="lab-new-seed" class="lab-text-button">Nuovo campione</button></div><p class="lab-footer-note">Il seme rimane fisso quando cambi gli altri parametri. R esegue il calcolo su questo dispositivo.</p></aside><div class="lab-results"><div class="lab-engine-state" id="lab-engine-state" role="status" aria-live="polite"></div><div id="lab-error" class="lab-error" role="alert" hidden></div><section class="lab-reading lab-guided" id="lab-guided"><span class="lab-step-no">1</span><div><h2 class="lab-step-title">Previsione e confronto</h2><p>${narrated ? N.prediction(a) : a.action}</p>${narrated ? html`<p>${a.action}</p>` : ''}<details class="lab-note-disclosure"><summary>Annota una previsione e le tue osservazioni</summary><label class="lab-note-label" for="lab-notes">Previsione, osservazioni e interpretazione</label><textarea class="lab-notes" id="lab-notes" maxlength="20000" placeholder="Registra una previsione prima di eseguire il confronto…">${savedNotes(a.id)}</textarea><p class="lab-footer-note">Appunti conservati soltanto in questo browser.</p></details></div></section><p class="lab-pending" id="lab-pending" hidden>La configurazione è cambiata. I risultati visibili si riferiscono al calcolo precedente.</p><div id="lab-result-body" class="lab-result-body"><p class="lab-result-meta" id="lab-result-meta">Apertura della configurazione iniziale verificata in R…</p><div id="lab-metrics"></div><div id="lab-plots"></div><div id="lab-data"></div></div><div class="lab-actions">${button('lab-compare', 'Conserva scenario A', true)}${button('lab-export-csv', 'Scarica dati CSV', true)}${button('lab-export-config', 'Esporta configurazione', true)}${button('lab-import-config', 'Importa configurazione', true)}${button('lab-share', 'Copia collegamento', true)}<input id="lab-import-file" type="file" accept="application/json,.json" hidden></div><section id="lab-compare-panel" class="lab-reading" hidden><h2>Confronto fra scenari</h2><p id="narrative-comparison" hidden></p><div id="lab-comparison" class="lab-comparison"></div><button id="lab-clear-compare" class="lab-text-button">Svuota il confronto</button></section><section id="lab-interpretation" class="lab-reading lab-guided"><span class="lab-step-no">2</span><div><h3>Interpretare il risultato</h3>${
+      narrated
+        ? html`<div class="narrative-result" id="narrative-result" hidden><p class="eyebrow">LETTURA DELLA CONFIGURAZIONE</p><p id="narrative-result-text"></p></div>`
+        : ''
+    }<p>${a.conclusion}</p><p>${a.limits}</p>${
+      narrated
+        ? html`<div class="narrative-journal-actions"><button type="button" id="save-fieldbook" class="button secondary" disabled>Conserva nel taccuino</button><a href="#taccuino">Rileggi il taccuino →</a><p id="fieldbook-status" role="status">Esegui il modello originale in R per documentare la configurazione.</p></div>`
+        : ''
+    }</div></section><section class="lab-reading" id="lab-theory"><h2>Modello e formalismo</h2><div class="math">\\[${a.formula}\\]</div><p class="lab-math-definitions">${a.symbols}</p>${a.prose.map(p => html`<p>${p}</p>`)}<p>${link('#modulo-' + a.module + '/slide/' + a.page, 'Approfondimento nel materiale del corso ↗')}</p></section><section class="lab-code-panel" id="lab-code-panel" hidden><h2>Ricostruire il calcolo in R</h2><p>Il codice seguente è quello eseguito dall’esperimento. <code>p</code> contiene i parametri del pannello; le funzioni grafiche comuni sono incluse nello script autonomo scaricabile. Puoi modificare il corpo del calcolo e rieseguirlo. Esegui soltanto codice di cui conosci la provenienza: il browser non costituisce un ambiente adatto ad analizzare programmi ostili.</p><pre class="lab-code-output" id="lab-params-code"></pre><label class="sr-only" for="lab-code-editor">Codice R dell’esperimento</label><textarea class="lab-editor" id="lab-code-editor" maxlength="100000" spellcheck="false">${a.code}</textarea><div class="lab-actions">${button('lab-run-code', 'Esegui codice modificato')}${button('lab-download-r', 'Scarica script R completo', true)}${button('lab-reset-code', 'Ripristina codice', true)}</div><p class="lab-footer-note">Il codice deve produrre <code>data</code> (tabella), <code>metrics</code> (riepilogo) e <code>plots</code> (lista di grafici ggplot). Un calcolo lungo può essere interrotto riavviando il motore.</p></section><div class="lab-actions" id="lab-quick-r">${button('lab-download-r-quick', 'Scarica lo script R della configurazione', true)}</div><p class="lab-footer-note">Dati sintetici · formule e ipotesi dichiarate · figure prodotte con ggplot2. ${
+      narrated
         ? 'Le figure vengono prodotte dopo l’esecuzione del calcolo in R.'
-        : 'La figura iniziale proviene dal collaudo R; ogni modifica viene ricalcolata dall’interprete.') +
-      '</p></div></div>' +
-      (N?.bridge(a) || '') +
-      '<nav class="lab-bottom-nav" aria-label="Attività successive">' +
-      (pos > 0
-        ? link(path(items[pos - 1]), '← ' + escape(items[pos - 1].title))
-        : link(modulePath(a.module), '← Indice del pianeta')) +
-      (pos < items.length - 1
-        ? link(path(items[pos + 1]), escape(items[pos + 1].title) + ' →')
-        : link('#mappa', 'Torna all’atlante →')) +
-      '</nav></div>'
-    );
+        : 'La figura iniziale proviene dal collaudo R; ogni modifica viene ricalcolata dall’interprete.'
+    }</p></div></div>${N?.bridge(a) || ''}<nav class="lab-bottom-nav" aria-label="Attività successive">${
+      pos > 0
+        ? link(path(items[pos - 1]), html`← ${items[pos - 1].title}`)
+        : link(modulePath(a.module), '← Indice del pianeta')
+    }${
+      pos < items.length - 1
+        ? link(path(items[pos + 1]), html`${items[pos + 1].title} →`)
+        : link('#mappa', 'Torna all’atlante →')
+    }</nav></div>`;
   }
   function initialParams(a, query) {
     const defaults = () => Object.fromEntries(a.controls.map(c => [c.key, c.value]));
@@ -580,7 +342,7 @@
       pos = items.findIndex(x => x.id === a.id),
       m = root.GEO_CATALOG.modules.find(m => m.id === a.module),
       narrated = !!N?.has(a.id);
-    main.innerHTML = labMarkup(a, params, items, pos, m, narrated);
+    main.innerHTML = html`${labMarkup(a, params, items, pos, m, narrated)}`;
     const $ = s => main.querySelector(s);
     let terminal = null;
     if (root.GeoCodeGuide) {
@@ -664,34 +426,14 @@
       resultParams = { ...p };
       resultBody = body;
       computed = live;
-      $('#lab-metrics').innerHTML = metricMarkup(r);
+      $('#lab-metrics').innerHTML = html`${metricMarkup(r)}`;
       const figures = r.figures || r.previewFigures || [];
-      $('#lab-plots').innerHTML = figures
-        .map((svg, i) => {
-          const url = live ? URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' })) : svg;
-          if (live) urls.push(url);
-          return (
-            '<figure class="lab-chart"><img src="' +
-            escape(url) +
-            '" alt="' +
-            escape(a.title) +
-            ' · figura ' +
-            (i + 1) +
-            '" loading="eager"><figcaption>Figura ' +
-            (i + 1) +
-            ' · ' +
-            escape(live ? 'Ricalcolata con ggplot2 ' + r.ggplot2 : 'Configurazione iniziale verificata in R') +
-            ' · <a href="' +
-            escape(url) +
-            '" download="' +
-            a.id +
-            '-' +
-            (i + 1) +
-            '.svg">Scarica SVG</a></figcaption></figure>'
-          );
-        })
-        .join('');
-      $('#lab-data').innerHTML = tableMarkup(r);
+      $('#lab-plots').innerHTML = html`${figures.map((svg, i) => {
+        const url = live ? URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' })) : svg;
+        if (live) urls.push(url);
+        return html`<figure class="lab-chart"><img src="${url}" alt="${a.title} · figura ${i + 1}" loading="eager"><figcaption>Figura ${i + 1} · ${live ? 'Ricalcolata con ggplot2 ' + r.ggplot2 : 'Configurazione iniziale verificata in R'} · <a href="${url}" download="${a.id}-${i + 1}.svg">Scarica SVG</a></figcaption></figure>`;
+      })}`;
+      $('#lab-data').innerHTML = html`${tableMarkup(r)}`;
       $('#lab-result-meta').textContent =
         (live ? 'CALCOLO R COMPLETATO' : 'CONFIGURAZIONE INIZIALE') +
         ' · seme ' +
@@ -926,33 +668,18 @@
       compareUrls = [];
       const panel = $('#lab-compare-panel');
       panel.hidden = !compare.length;
-      $('#lab-comparison').innerHTML = compare
-        .map(
-          (v, i) =>
-            '<article><h3>Scenario ' +
-            String.fromCharCode(65 + i) +
-            '</h3>' +
-            metricMarkup(v.result) +
-            (v.result.figures || v.result.previewFigures || [])
-              .map((svg, j) => {
-                const url = v.result.figures ? URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' })) : svg;
-                if (v.result.figures) compareUrls.push(url);
-                return (
-                  '<figure class="lab-chart"><img src="' +
-                  escape(url) +
-                  '" alt="Scenario ' +
-                  String.fromCharCode(65 + i) +
-                  ' · figura ' +
-                  (j + 1) +
-                  '"></figure>'
-                );
-              })
-              .join('') +
-            '<pre>' +
-            escape(E.paramsCode(v.params)) +
-            '</pre></article>',
-        )
-        .join('');
+      $('#lab-comparison').innerHTML = html`${compare.map(
+        (v, i) =>
+          html`<article><h3>Scenario ${String.fromCharCode(65 + i)}</h3>${metricMarkup(v.result)}${(
+            v.result.figures ||
+            v.result.previewFigures ||
+            []
+          ).map((svg, j) => {
+            const url = v.result.figures ? URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' })) : svg;
+            if (v.result.figures) compareUrls.push(url);
+            return html`<figure class="lab-chart"><img src="${url}" alt="Scenario ${String.fromCharCode(65 + i)} · figura ${j + 1}"></figure>`;
+          })}<pre>${E.paramsCode(v.params)}</pre></article>`,
+      )}`;
       $('#lab-compare').textContent = compare.length ? 'Conserva scenario B' : 'Conserva scenario A';
     }
     $('#lab-compare').addEventListener('click', () => {

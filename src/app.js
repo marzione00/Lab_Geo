@@ -5,7 +5,7 @@
     config = window.GEO_CONFIG;
   const main = document.getElementById('contenuto'),
     announcer = document.getElementById('annuncio');
-  const h = window.GeoHTML.escape;
+  const { html } = window.GeoHTML;
   const route = (id, p) => '#modulo-' + id + (p ? '/slide/' + p : '');
   let storage;
   try {
@@ -170,67 +170,33 @@
     });
     return pending[id];
   }
-  const link = (url, label, cls = '') => '<a class="' + cls + '" href="' + h(url) + '">' + label + '</a>';
+  const link = (url, label, cls = '') => html`<a class="${cls}" href="${url}">${label}</a>`;
   function breadcrumbs(m, extra = '') {
-    return (
-      '<div class="breadcrumb">' +
-      link('#indice', 'Il corso') +
-      '<span>/</span>' +
-      link(route(m.id), h(m.id) + ' · ' + h(m.title)) +
-      (extra ? '<span>/</span><span>' + h(extra) + '</span>' : '') +
-      '</div>'
-    );
+    return html`<div class="breadcrumb">${link('#indice', 'Il corso')}<span>/</span>${link(route(m.id), html`${m.id} · ${m.title}`)}${extra ? html`<span>/</span><span>${extra}</span>` : ''}</div>`;
   }
   function moduleCard(m) {
-    return (
-      '<article class="module-card ' +
-      (m.category === 'progetti' ? 'project' : '') +
-      '" data-module="' +
-      m.id +
-      '"><div class="card-top"><span class="code-tag">' +
-      m.id +
-      '</span><span class="card-kind">' +
-      (m.category === 'progetti' ? 'Macroprogetto' : 'Modulo') +
-      '</span></div><h3>' +
-      link(route(m.id), h(m.title)) +
-      '</h3><p>' +
-      h(m.subtitle) +
-      '</p>' +
-      (m.category === 'progetti'
-        ? '<div class="project-parents" aria-label="Moduli preparatori"><span>Moduli preparatori</span>' +
-          window.GeoLabs.modulesForMission(m.id)
-            .map(id => link(route(id), id))
-            .join('') +
-          '</div>'
-        : '') +
-      '<div class="card-foot"><span>' +
-      (m.category === 'progetti' ? 'Spedizione integrata' : window.GeoLabs.count(m.id) + ' esperimenti interattivi') +
-      '</span>' +
-      link(route(m.id), 'Apri ↗') +
-      '</div></article>'
-    );
+    return html`<article class="module-card ${m.category === 'progetti' ? 'project' : ''}" data-module="${m.id}"><div class="card-top"><span class="code-tag">${m.id}</span><span class="card-kind">${m.category === 'progetti' ? 'Macroprogetto' : 'Modulo'}</span></div><h3>${link(route(m.id), html`${m.title}`)}</h3><p>${m.subtitle}</p>${
+      m.category === 'progetti'
+        ? html`<div class="project-parents" aria-label="Moduli preparatori"><span>Moduli preparatori</span>${window.GeoLabs.modulesForMission(
+            m.id,
+          ).map(id => link(route(id), id))}</div>`
+        : ''
+    }<div class="card-foot"><span>${m.category === 'progetti' ? 'Spedizione integrata' : window.GeoLabs.count(m.id) + ' esperimenti interattivi'}</span>${link(route(m.id), 'Apri ↗')}</div></article>`;
   }
   function catalogueSection(category) {
-    return (
-      '<section class="catalogue" id="catalogo"><div class="section-head"><h2>Il percorso del corso</h2><p>Dai fondamenti del calcolo alle analisi geologiche complete. Ogni modulo raccoglie esperimenti, formalismo e codice R eseguibile.</p></div><div class="filter-bar"><div class="filters" aria-label="Tipo di percorso">' +
-      [
-        ['tutti', 'Tutto il corso'],
-        ['moduli', 'Moduli'],
-        ['progetti', 'Macroprogetti'],
-      ]
-        .map(
-          ([id, title]) =>
-            '<button data-filter="' + id + '" aria-pressed="' + (category === id) + '">' + title + '</button>',
-        )
-        .join('') +
-      '</div><label class="search"><span aria-hidden="true">⌕</span><input id="cerca-moduli" type="search" aria-label="Cerca modulo o argomento" placeholder="Cerca un modulo o un argomento"></label></div><p id="result-count" class="result-count" role="status"></p><div id="module-cards" class="cards"></div></section>'
-    );
+    return html`<section class="catalogue" id="catalogo"><div class="section-head"><h2>Il percorso del corso</h2><p>Dai fondamenti del calcolo alle analisi geologiche complete. Ogni modulo raccoglie esperimenti, formalismo e codice R eseguibile.</p></div><div class="filter-bar"><div class="filters" aria-label="Tipo di percorso">${[
+      ['tutti', 'Tutto il corso'],
+      ['moduli', 'Moduli'],
+      ['progetti', 'Macroprogetti'],
+    ].map(
+      ([id, title]) => html`<button data-filter="${id}" aria-pressed="${category === id}">${title}</button>`,
+    )}</div><label class="search"><span aria-hidden="true">⌕</span><input id="cerca-moduli" type="search" aria-label="Cerca modulo o argomento" placeholder="Cerca un modulo o un argomento"></label></div><p id="result-count" class="result-count" role="status"></p><div id="module-cards" class="cards"></div></section>`;
   }
   function fillCards(category, query) {
     const list = C.filterModules(catalog, query, category);
-    document.getElementById('module-cards').innerHTML = list.length
-      ? list.map(moduleCard).join('')
-      : '<p class="empty">Nessun modulo corrisponde alla ricerca.</p>';
+    document.getElementById('module-cards').innerHTML = html`${
+      list.length ? html`${list.map(moduleCard)}` : html`<p class="empty">Nessun modulo corrisponde alla ricerca.</p>`
+    }`;
     document.getElementById('result-count').textContent = list.length + ' unità didattiche';
     main
       .querySelectorAll('[data-filter]')
@@ -239,18 +205,7 @@
   }
   function catalogueHome(type) {
     const category = type === 'progetti' ? 'progetti' : 'tutti';
-    main.innerHTML =
-      '<div class="wrap">' +
-      (category === 'progetti' ? '' : '<h1 class="sr-only">Indice dei moduli</h1>') +
-      '<div class="breadcrumb">' +
-      link('#indice', 'Il corso') +
-      '<span>/</span><span>' +
-      (category === 'progetti' ? 'Macroprogetti' : 'Indice dei moduli') +
-      '</span></div>' +
-      catalogueSection(category) +
-      '<section class="resource-band"><div><p class="eyebrow" style="color:var(--mint)">Materiali riproducibili</p><h2>Dalla pagina al calcolo.</h2><p>Le figure del corso sono accompagnate dai sorgenti R, i diagrammi dai file TikZ. Dati, convenzioni e verifiche rimangono disponibili insieme alle presentazioni.</p></div><div class="resource-links">' +
-      link('#materiali', 'Dati, codici e istruzioni <span aria-hidden="true">↗</span>') +
-      '</div></section></div>';
+    main.innerHTML = html`<div class="wrap">${category === 'progetti' ? '' : html`<h1 class="sr-only">Indice dei moduli</h1>`}<div class="breadcrumb">${link('#indice', 'Il corso')}<span>/</span><span>${category === 'progetti' ? 'Macroprogetti' : 'Indice dei moduli'}</span></div>${catalogueSection(category)}<section class="resource-band"><div><p class="eyebrow" style="color:var(--mint)">Materiali riproducibili</p><h2>Dalla pagina al calcolo.</h2><p>Le figure del corso sono accompagnate dai sorgenti R, i diagrammi dai file TikZ. Dati, convenzioni e verifiche rimangono disponibili insieme alle presentazioni.</p></div><div class="resource-links">${link('#materiali', html`Dati, codici e istruzioni <span aria-hidden="true">↗</span>`)}</div></section></div>`;
     let active = category;
     fillCards(active, '');
     main.querySelectorAll('[data-filter]').forEach(b =>
@@ -264,16 +219,7 @@
   const worlds = window.GeoPlanets;
   function planetSlot(id, cls = '', hero = 0) {
     const p = worlds.byId[id];
-    return (
-      '<div class="planet-slot ' +
-      (p.rings ? 'ringed ' : '') +
-      cls +
-      '" data-planet="' +
-      id +
-      '" data-hero="' +
-      hero +
-      '" aria-hidden="true"></div>'
-    );
+    return html`<div class="planet-slot ${p.rings ? 'ringed ' : ''}${cls}" data-planet="${id}" data-hero="${hero}" aria-hidden="true"></div>`;
   }
   function home(type) {
     if (type !== 'indice') {
@@ -281,8 +227,7 @@
       if (type === 'progetti') {
         const intro = document.createElement('section');
         intro.className = 'project-intro';
-        intro.innerHTML =
-          '<p class="eyebrow">SPEDIZIONI APPLICATIVE</p><h1>Porta i metodi sul campo.</h1><p class="lead">Undici indagini collegano i moduli del corso a problemi geologici, ambientali e territoriali. Ogni spedizione riunisce dati, analisi e materiali riproducibili.</p>';
+        intro.innerHTML = html`<p class="eyebrow">SPEDIZIONI APPLICATIVE</p><h1>Porta i metodi sul campo.</h1><p class="lead">Undici indagini collegano i moduli del corso a problemi geologici, ambientali e territoriali. Ogni spedizione riunisce dati, analisi e materiali riproducibili.</p>`;
         main.querySelector('.catalogue').before(intro);
       }
       return;
@@ -291,111 +236,55 @@
   }
   function toc(m, page) {
     let section = '';
-    return (
-      '<aside class="reader-sidebar" aria-label="Indice delle slide"><h2>' +
-      m.id +
-      ' · Indice</h2><input type="search" id="cerca-slide" aria-label="Cerca nell’indice del modulo" placeholder="Cerca una slide">' +
-      m.slides
-        .map(s => {
-          const title = s.section !== section ? '<p class="toc-section">' + h(s.section) + '</p>' : '';
-          section = s.section;
-          return (
-            title +
-            '<a class="toc-link" href="' +
-            route(m.id, s.page) +
-            '" data-search="' +
-            h(C.clean(s.title + ' ' + s.section)) +
-            '"' +
-            (s.page === page ? ' aria-current="page"' : '') +
-            '><span>' +
-            String(s.page).padStart(2, '0') +
-            '</span><span>' +
-            h(s.title) +
-            '</span></a>'
-          );
-        })
-        .join('') +
-      '</aside>'
-    );
+    return html`<aside class="reader-sidebar" aria-label="Indice delle slide"><h2>${m.id} · Indice</h2><input type="search" id="cerca-slide" aria-label="Cerca nell’indice del modulo" placeholder="Cerca una slide">${m.slides.map(
+      s => {
+        const title = s.section !== section ? html`<p class="toc-section">${s.section}</p>` : '';
+        section = s.section;
+        return html`${title}<a class="toc-link" href="${route(m.id, s.page)}" data-search="${C.clean(s.title + ' ' + s.section)}"${s.page === page ? html` aria-current="page"` : ''}><span>${String(s.page).padStart(2, '0')}</span><span>${s.title}</span></a>`;
+      },
+    )}</aside>`;
   }
   function formula(s) {
-    return s ? '<div class="math">\\[\\begin{gathered}' + h(s) + '\\end{gathered}\\]</div>' : '';
+    return s ? html`<div class="math">\\[\\begin{gathered}${s}\\end{gathered}\\]</div>` : '';
   }
   function reading(m, s) {
-    return (
-      '<article class="reading"><p>' +
-      h(s.body) +
-      '</p>' +
-      formula(s.formula) +
-      (s.aside ? '<div class="aside-text"><p>' + h(s.aside) + '</p></div>' : '') +
-      formula(s.formulaAside) +
-      (s.figure || s.diagram
-        ? '<figure>' +
-          (s.figure
-            ? '<img src="assets/visuals/' +
-              m.id +
-              '/' +
-              String(s.page).padStart(3, '0') +
-              '.svg" alt="Rappresentazione della slide: ' +
-              h(s.title) +
-              '">'
-            : '<svg class="reading-diagram" xmlns="http://www.w3.org/2000/svg" viewBox="328.819 77.953 211.181 212.598" role="img" aria-label="Diagramma: ' +
-              h(s.title) +
-              '"><image href="' +
-              h(s.image) +
-              '" width="566.93" height="354.33"/></svg>') +
-          (s.caption
-            ? '<figcaption' + (s.diagram ? ' class="sr-only"' : '') + '>' + h(s.caption) + '</figcaption>'
-            : '') +
-          '</figure>'
+    return html`<article class="reading"><p>${s.body}</p>${formula(s.formula)}${s.aside ? html`<div class="aside-text"><p>${s.aside}</p></div>` : ''}${formula(s.formulaAside)}${
+      s.figure || s.diagram
+        ? html`<figure>${
+            s.figure
+              ? html`<img src="assets/visuals/${m.id}/${String(s.page).padStart(3, '0')}.svg" alt="Rappresentazione della slide: ${s.title}">`
+              : html`<svg class="reading-diagram" xmlns="http://www.w3.org/2000/svg" viewBox="328.819 77.953 211.181 212.598" role="img" aria-label="Diagramma: ${s.title}"><image href="${s.image}" width="566.93" height="354.33"/></svg>`
+          }${
+            s.caption ? html`<figcaption${s.diagram ? html` class="sr-only"` : ''}>${s.caption}</figcaption>` : ''
+          }</figure>`
         : s.caption
-          ? '<p>' + h(s.caption) + '</p>'
-          : '') +
-      (s.recall ? '<div class="recall"><strong>Richiamo.</strong> ' + h(s.recall) + '</div>' : '') +
-      (s.kind === 'indice'
-        ? '<ol>' + m.sections.map(x => '<li>' + link(route(m.id, x.page), h(x.title)) + '</li>').join('') + '</ol>'
-        : '') +
-      '</article>'
-    );
+          ? html`<p>${s.caption}</p>`
+          : ''
+    }${s.recall ? html`<div class="recall"><strong>Richiamo.</strong> ${s.recall}</div>` : ''}${
+      s.kind === 'indice'
+        ? html`<ol>${m.sections.map(x => html`<li>${link(route(m.id, x.page), html`${x.title}`)}</li>`)}</ol>`
+        : ''
+    }</article>`;
   }
   function snippet(m, s) {
     const text = s.code || m.figureCode,
       path = s.codePath || m.script;
-    return (
-      '<section class="code-panel"><p class="code-note">' +
-      (s.code
+    return html`<section class="code-panel"><p class="code-note">${
+      s.code
         ? 'Frammento riportato nella slide.'
-        : 'Questa slide non contiene un frammento di codice; è disponibile lo script completo delle figure del modulo.') +
-      '</p><div class="code-top"><strong>' +
-      h(path) +
-      '</strong><div class="code-actions"><button class="button small secondary" data-copy="current-code">Copia codice</button><a class="button small" href="' +
-      h(path) +
-      '" download>Scarica .R</a></div></div><pre><code id="current-code">' +
-      h(text) +
-      '</code></pre><p class="code-note">Esegui il codice in R dalla cartella <code>materiali/</code>, dopo aver installato le dipendenze indicate nella guida.</p></section>'
-    );
+        : 'Questa slide non contiene un frammento di codice; è disponibile lo script completo delle figure del modulo.'
+    }</p><div class="code-top"><strong>${path}</strong><div class="code-actions"><button class="button small secondary" data-copy="current-code">Copia codice</button><a class="button small" href="${path}" download>Scarica .R</a></div></div><pre><code id="current-code">${text}</code></pre><p class="code-note">Esegui il codice in R dalla cartella <code>materiali/</code>, dopo aver installato le dipendenze indicate nella guida.</p></section>`;
   }
   function slidePanel(m, s) {
     const panel = document.getElementById('slide-panel');
     if (window.MathJax?.typesetClear) window.MathJax.typesetClear([panel]);
     if (view === 'testo') {
-      panel.innerHTML = reading(m, s);
+      panel.innerHTML = html`${reading(m, s)}`;
       typeset(panel);
     } else if (view === 'codice') {
-      panel.innerHTML = snippet(m, s);
+      panel.innerHTML = html`${snippet(m, s)}`;
     } else {
-      panel.innerHTML =
-        '<div class="slide-frame"><img src="' +
-        s.image +
-        '" alt="' +
-        h(m.id + ' · pagina ' + s.page + ' · ' + s.title) +
-        '. Testo accessibile nella scheda Testo e formule."></div><div class="slide-caption"><span>Template originale · immagine vettoriale</span><a href="' +
-        s.image +
-        '" target="_blank" rel="noopener">Ingrandisci ↗</a><a href="' +
-        m.pdf +
-        '#page=' +
-        s.page +
-        '" target="_blank" rel="noopener">Apri nel PDF ↗</a></div>';
+      panel.innerHTML = html`<div class="slide-frame"><img src="${s.image}" alt="${m.id + ' · pagina ' + s.page + ' · ' + s.title}. Testo accessibile nella scheda Testo e formule."></div><div class="slide-caption"><span>Template originale · immagine vettoriale</span><a href="${s.image}" target="_blank" rel="noopener">Ingrandisci ↗</a><a href="${m.pdf}#page=${s.page}" target="_blank" rel="noopener">Apri nel PDF ↗</a></div>`;
     }
     main.querySelectorAll('[data-view]').forEach(b => {
       b.setAttribute('aria-selected', String(b.dataset.view === view));
@@ -409,50 +298,14 @@
       done = progress.done.includes(key);
     progress.last = route(m.id, page);
     persist();
-    main.innerHTML =
-      planetSlot(m.id, 'reading-planet', 0.15) +
-      '<div class="viewer">' +
-      breadcrumbs(m, 'Slide ' + page) +
-      '<div class="reader-layout">' +
-      toc(m, page) +
-      '<div class="reader-main"><div class="reader-title"><h1>' +
-      h(s.title) +
-      '</h1><span class="page-counter">' +
-      String(page).padStart(2, '0') +
-      ' / ' +
-      m.pages +
-      '</span></div><div class="reader-tools"><div class="tabs" role="tablist" aria-label="Modalità di lettura">' +
-      [
-        ['slide', 'Slide'],
-        ['testo', 'Testo e formule'],
-        ['codice', 'Codice R'],
-      ]
-        .map(
-          ([id, label]) =>
-            '<button role="tab" data-view="' +
-            id +
-            '" id="tab-' +
-            id +
-            '" aria-controls="slide-panel" aria-selected="' +
-            (view === id) +
-            '">' +
-            label +
-            '</button>',
-        )
-        .join('') +
-      '</div><div class="pager"><button data-step="-1" aria-label="Slide precedente"' +
-      (page === 1 ? ' disabled' : '') +
-      '>←</button><button data-step="1" aria-label="Slide successiva"' +
-      (page === m.pages ? ' disabled' : '') +
-      '>→</button></div></div><div id="slide-panel" role="tabpanel" aria-labelledby="tab-' +
-      view +
-      '"></div><div class="study-actions"><button id="mark-done" class="button small secondary ' +
-      (done ? 'done' : '') +
-      '" aria-pressed="' +
-      done +
-      '">' +
-      (done ? '✓ Segnata come studiata' : 'Segna come studiata') +
-      '</button><p>Il progresso resta soltanto in questo browser.</p></div></div></div></div>';
+    main.innerHTML = html`${planetSlot(m.id, 'reading-planet', 0.15)}<div class="viewer">${breadcrumbs(m, 'Slide ' + page)}<div class="reader-layout">${toc(m, page)}<div class="reader-main"><div class="reader-title"><h1>${s.title}</h1><span class="page-counter">${String(page).padStart(2, '0')} / ${m.pages}</span></div><div class="reader-tools"><div class="tabs" role="tablist" aria-label="Modalità di lettura">${[
+      ['slide', 'Slide'],
+      ['testo', 'Testo e formule'],
+      ['codice', 'Codice R'],
+    ].map(
+      ([id, label]) =>
+        html`<button role="tab" data-view="${id}" id="tab-${id}" aria-controls="slide-panel" aria-selected="${view === id}">${label}</button>`,
+    )}</div><div class="pager"><button data-step="-1" aria-label="Slide precedente"${page === 1 ? ' disabled' : ''}>←</button><button data-step="1" aria-label="Slide successiva"${page === m.pages ? ' disabled' : ''}>→</button></div></div><div id="slide-panel" role="tabpanel" aria-labelledby="tab-${view}"></div><div class="study-actions"><button id="mark-done" class="button small secondary ${done ? 'done' : ''}" aria-pressed="${done}">${done ? '✓ Segnata come studiata' : 'Segna come studiata'}</button><p>Il progresso resta soltanto in questo browser.</p></div></div></div></div>`;
     main.querySelectorAll('[data-view]').forEach(b =>
       b.addEventListener('click', () => {
         view = b.dataset.view;
@@ -501,30 +354,10 @@
       ...m.laboratories,
     ];
     if (!choices.some(x => x.id === selectedCode)) selectedCode = 'figure';
-    main.innerHTML =
-      planetSlot(m.id, 'reading-planet', 0.15) +
-      '<div class="wrap">' +
-      breadcrumbs(m, 'Codici e laboratori') +
-      '<section class="module-head"><p class="eyebrow">' +
-      m.id +
-      ' · Laboratorio</p><h1>Codici e materiali di lavoro</h1><p class="lead">' +
-      h(m.title) +
-      '</p></section><div class="code-panel"><h2 class="sr-only">Script del modulo</h2><div class="code-top"><label class="sr-only" for="select-code">Scegli lo script</label><select id="select-code">' +
-      choices
-        .map(
-          x =>
-            '<option value="' +
-            x.id +
-            '"' +
-            (x.id === selectedCode ? ' selected' : '') +
-            '>' +
-            h(x.id === 'figure' ? x.title : x.id + ' · ' + x.title) +
-            '</option>',
-        )
-        .join('') +
-      '</select><div class="code-actions"><button class="button small secondary" data-copy="current-code">Copia codice</button><a id="download-code" class="button small" download>Scarica script</a></div></div><p id="code-path" class="code-note"></p><pre tabindex="0" role="region" aria-label="Codice dello script selezionato"><code id="current-code"></code></pre><div class="notice"><h3>Riprodurre il calcolo</h3><p>Scarica <a href="assets/downloads/GeoStatLab_codice_dati_R6.zip" download>l’archivio con codice e dati</a> e apri <code>materiali/Corso_Geologia.Rproj</code>. I percorsi degli script sono riferiti alla cartella <code>materiali/</code>. Il codice viene eseguito nell’ambiente R o Python indicato, con i dati e le dipendenze del corso.</p>' +
-      link('materiali/Guida_corso_R6.pdf', 'Istruzioni e ambiente di esecuzione ↗') +
-      '</div></div></div>';
+    main.innerHTML = html`${planetSlot(m.id, 'reading-planet', 0.15)}<div class="wrap">${breadcrumbs(m, 'Codici e laboratori')}<section class="module-head"><p class="eyebrow">${m.id} · Laboratorio</p><h1>Codici e materiali di lavoro</h1><p class="lead">${m.title}</p></section><div class="code-panel"><h2 class="sr-only">Script del modulo</h2><div class="code-top"><label class="sr-only" for="select-code">Scegli lo script</label><select id="select-code">${choices.map(
+      x =>
+        html`<option value="${x.id}"${x.id === selectedCode ? ' selected' : ''}>${x.id === 'figure' ? x.title : x.id + ' · ' + x.title}</option>`,
+    )}</select><div class="code-actions"><button class="button small secondary" data-copy="current-code">Copia codice</button><a id="download-code" class="button small" download>Scarica script</a></div></div><p id="code-path" class="code-note"></p><pre tabindex="0" role="region" aria-label="Codice dello script selezionato"><code id="current-code"></code></pre><div class="notice"><h3>Riprodurre il calcolo</h3><p>Scarica <a href="assets/downloads/GeoStatLab_codice_dati_R6.zip" download>l’archivio con codice e dati</a> e apri <code>materiali/Corso_Geologia.Rproj</code>. I percorsi degli script sono riferiti alla cartella <code>materiali/</code>. Il codice viene eseguito nell’ambiente R o Python indicato, con i dati e le dipendenze del corso.</p>${link('materiali/Guida_corso_R6.pdf', 'Istruzioni e ambiente di esecuzione ↗')}</div></div></div>`;
     function select() {
       selectedCode = document.getElementById('select-code').value;
       const x = choices.find(x => x.id === selectedCode);
@@ -538,42 +371,9 @@
   }
   function materials() {
     const external = config.repositoryUrl
-      ? '<p>' + link(config.repositoryUrl, 'Apri il repository GitHub ↗') + '</p>'
+      ? html`<p>${link(config.repositoryUrl, 'Apri il repository GitHub ↗')}</p>`
       : '';
-    main.innerHTML =
-      '<div class="wrap resources-page"><p class="eyebrow">Consultazione e riproducibilità</p><h1>I materiali del corso</h1><p class="lead">Le presentazioni e i laboratori originali appartengono all’edizione R6 del corso. Gli esperimenti interattivi e i mini-progetti includono i programmi e i dati necessari a riprodurre le analisi.</p>' +
-      external +
-      '<div class="actions"><a class="button" href="assets/downloads/GeoStatLab_codice_dati_R6.zip" download>Scarica codice e dati · ZIP ↓</a></div><div class="resources-grid"><section class="resource-card"><h2>Esperimenti interattivi</h2><p>' +
-      window.GEO_LABS.activities.length +
-      ' programmi R autonomi, con parametri, funzioni grafiche e generatori dei dati. La mappa documenta il raccordo con le sezioni del corso.</p><ul><li><a href="assets/downloads/GeoStatLab_esperimenti_R.zip" download>Scarica i ' +
-      window.GEO_LABS.activities.length +
-      ' esperimenti R · ZIP</a></li><li><a href="assets/downloads/GeoStatLab_mappa_esperimenti.csv" download>Mappa sezioni–esperimenti · CSV</a></li><li><a href="vendor/r-packages-lock.json">Versioni e impronte dei pacchetti R</a></li></ul></section><section class="resource-card"><h2>Presentazioni e percorso</h2><ul><li>' +
-      link('#catalogo', 'Indice dei 28 fascicoli') +
-      '</li><li>' +
-      link('materiali/Guida_corso_R6.pdf', 'Guida al corso e alla ricostruzione') +
-      '</li><li>' +
-      link('materiali/Guida_laboratori_M05.pdf', 'Laboratori M05: consegne e soluzioni') +
-      '</li><li>' +
-      link('materiali/documentazione/catalogo_laboratori.csv', 'Catalogo dei laboratori · CSV') +
-      '</li></ul></section><section class="resource-card"><h2>Ambiente di lavoro</h2><p>Le figure sono generate in R; il modulo introduttivo conserva anche i laboratori Python. Gli script si eseguono dalla cartella materiali.</p><ul><li>' +
-      link('materiali/R/00_installazione.R', 'Installazione esplicita dei pacchetti R') +
-      '</li><li>' +
-      link('materiali/R/controlla_ambiente.R', 'Controllo dell’ambiente R') +
-      '</li><li>' +
-      link('materiali/verifiche/versioni_R.csv', 'Versioni dei pacchetti collaudati') +
-      '</li><li>' +
-      link('materiali/strumenti/requirements.txt', 'Dipendenze del percorso Python') +
-      '</li></ul></section><section class="resource-card"><h2>Provenienza e sorgenti</h2><p>Ogni modulo rimanda ai propri sorgenti R e LaTeX. Dati, figure e diagrammi mantengono gli identificativi del corso.</p><ul><li>' +
-      link('materiali/documentazione/fonti_online_R6.json', 'Riferimenti bibliografici e documentazione') +
-      '</li><li>' +
-      link('materiali/documentazione/raccordo_slide.csv', 'Raccordo con le slide originali') +
-      '</li><li>' +
-      link('materiali/MANIFEST_SHA256.txt', 'Impronte dei materiali distribuiti') +
-      '</li><li>' +
-      link('LICENSE.md', 'Licenza dei contenuti e del codice (CC BY-NC-SA 4.0)') +
-      '</li><li>' +
-      link('THIRD_PARTY_NOTICES.md', 'Componenti e licenze') +
-      '</li></ul></section></div></div>';
+    main.innerHTML = html`<div class="wrap resources-page"><p class="eyebrow">Consultazione e riproducibilità</p><h1>I materiali del corso</h1><p class="lead">Le presentazioni e i laboratori originali appartengono all’edizione R6 del corso. Gli esperimenti interattivi e i mini-progetti includono i programmi e i dati necessari a riprodurre le analisi.</p>${external}<div class="actions"><a class="button" href="assets/downloads/GeoStatLab_codice_dati_R6.zip" download>Scarica codice e dati · ZIP ↓</a></div><div class="resources-grid"><section class="resource-card"><h2>Esperimenti interattivi</h2><p>${window.GEO_LABS.activities.length} programmi R autonomi, con parametri, funzioni grafiche e generatori dei dati. La mappa documenta il raccordo con le sezioni del corso.</p><ul><li><a href="assets/downloads/GeoStatLab_esperimenti_R.zip" download>Scarica i ${window.GEO_LABS.activities.length} esperimenti R · ZIP</a></li><li><a href="assets/downloads/GeoStatLab_mappa_esperimenti.csv" download>Mappa sezioni–esperimenti · CSV</a></li><li><a href="vendor/r-packages-lock.json">Versioni e impronte dei pacchetti R</a></li></ul></section><section class="resource-card"><h2>Presentazioni e percorso</h2><ul><li>${link('#catalogo', 'Indice dei 28 fascicoli')}</li><li>${link('materiali/Guida_corso_R6.pdf', 'Guida al corso e alla ricostruzione')}</li><li>${link('materiali/Guida_laboratori_M05.pdf', 'Laboratori M05: consegne e soluzioni')}</li><li>${link('materiali/documentazione/catalogo_laboratori.csv', 'Catalogo dei laboratori · CSV')}</li></ul></section><section class="resource-card"><h2>Ambiente di lavoro</h2><p>Le figure sono generate in R; il modulo introduttivo conserva anche i laboratori Python. Gli script si eseguono dalla cartella materiali.</p><ul><li>${link('materiali/R/00_installazione.R', 'Installazione esplicita dei pacchetti R')}</li><li>${link('materiali/R/controlla_ambiente.R', 'Controllo dell’ambiente R')}</li><li>${link('materiali/verifiche/versioni_R.csv', 'Versioni dei pacchetti collaudati')}</li><li>${link('materiali/strumenti/requirements.txt', 'Dipendenze del percorso Python')}</li></ul></section><section class="resource-card"><h2>Provenienza e sorgenti</h2><p>Ogni modulo rimanda ai propri sorgenti R e LaTeX. Dati, figure e diagrammi mantengono gli identificativi del corso.</p><ul><li>${link('materiali/documentazione/fonti_online_R6.json', 'Riferimenti bibliografici e documentazione')}</li><li>${link('materiali/documentazione/raccordo_slide.csv', 'Raccordo con le slide originali')}</li><li>${link('materiali/MANIFEST_SHA256.txt', 'Impronte dei materiali distribuiti')}</li><li>${link('LICENSE.md', 'Licenza dei contenuti e del codice (CC BY-NC-SA 4.0)')}</li><li>${link('THIRD_PARTY_NOTICES.md', 'Componenti e licenze')}</li></ul></section></div></div>`;
   }
   async function copyCode(button) {
     const text = document.getElementById(button.dataset.copy).textContent;
@@ -673,22 +473,19 @@
     progetti: r => home(r.type),
     materiali: () => materials(),
     notfound: () => {
-      main.innerHTML =
-        '<section class="error"><h1>Pagina non trovata</h1><p>Il collegamento non corrisponde a un modulo o a una slide del corso.</p>' +
-        link('#indice', 'Torna all’indice', 'button') +
-        '</section>';
+      main.innerHTML = html`<section class="error"><h1>Pagina non trovata</h1><p>Il collegamento non corrisponde a un modulo o a una slide del corso.</p>${link('#indice', 'Torna all’indice', 'button')}</section>`;
     },
   };
   // Lab details and worked solutions arrive before the views that read them; false if the route changed meanwhile.
   async function routeData(r, token) {
     if (r.type !== 'experiment' && r.type !== 'exploration') return true;
     if (!window.GEO_LABS?.detailed && r.type === 'experiment')
-      main.innerHTML = '<p class="loading">Apertura del laboratorio…</p>';
+      main.innerHTML = html`<p class="loading">Apertura del laboratorio…</p>`;
     await Promise.all([labDetails(), r.type === 'exploration' ? solutions() : null]);
     return token === renderId;
   }
   async function moduleView(r, token) {
-    main.innerHTML = '<p class="loading">Apertura del modulo ' + r.id + '…</p>';
+    main.innerHTML = html`<p class="loading">Apertura del modulo ${r.id}…</p>`;
     const m = await loadModule(r.id);
     if (token !== renderId) return false;
     if (r.type === 'module' && m.category === 'progetti') {
@@ -712,12 +509,7 @@
     });
   }
   function renderError(err) {
-    main.innerHTML =
-      '<section class="error"><h1>Il modulo non è disponibile</h1><p>' +
-      h(err.message) +
-      '</p><p>Verifica che l’intera cartella del sito sia stata copiata.</p>' +
-      link('#indice', 'Torna all’indice', 'button') +
-      '</section>';
+    main.innerHTML = html`<section class="error"><h1>Il modulo non è disponibile</h1><p>${err.message}</p><p>Verifica che l’intera cartella del sito sia stata copiata.</p>${link('#indice', 'Torna all’indice', 'button')}</section>`;
   }
   function cleanupViews() {
     for (const view of [window.GeoResearch, window.GeoLabs, window.GeoGalaxy, window.GeoBriefing]) view?.cleanup();

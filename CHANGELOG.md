@@ -1,5 +1,11 @@
 # Registro delle modifiche
 
+## Modifiche successive alla 4.2.0
+
+- Licenza CC BY-NC-SA 4.0 per contenuti e codice originali, con le esclusioni delle componenti di terzi in `LICENSE.md`; avviso nel piè di pagina, nelle pagine testuali e in `package.json`.
+- Codice R degli esperimenti senza interruzioni di riga dentro le parentesi quadre: `scripts/labs/format-code.R` ricongiunge e riavvolge le righe e verifica che il programma analizzato resti identico; 15 esperimenti riformattati.
+- Escaping automatico del markup: tutte le viste usano `html```, che restituisce markup sicuro, mantiene il markup annidato e sfugge ogni interpolazione. ESLint vieta di assegnare `innerHTML` con valori diversi da `html```; Prettier non riformatta più il contenuto dei template.
+
 ## 4.2.0 – ambiente cosmico tridimensionale (15 novembre 2026)
 
 - Galassia WebGL da 1.200.000 stelle, con worker, buffer trasferibili e cache fra le visite.

@@ -3,40 +3,40 @@
   'use strict';
   const D = root.GEO_NARRATIVE,
     key = 'geostat-fieldbook-v1';
-  const esc = root.GeoHTML.escape;
+  const { html } = root.GeoHTML;
   const fmt = (x, d = 3) => Number(x).toLocaleString('it-IT', { maximumFractionDigits: d });
-  const paragraphs = xs => xs.map(p => '<p>' + esc(p) + '</p>').join('');
+  const paragraphs = xs => html`${xs.map(p => html`<p>${p}</p>`)}`;
   const activity = id => root.GEO_LABS.activities.find(a => a.id === id);
   const has = id => Object.hasOwn(D.activities, id);
   function home() {
-    return `<div class="narrative-opening"><div class="narrative-prose">${paragraphs(D.home.paragraphs)}</div><aside class="narrative-departure"><p class="eyebrow">INDAGINE GUIDATA / PELAGO</p><h2>Quanto racconta un campione?</h2><p>Segui nove indagini sulla conoscenza di un ambiente osservato soltanto in parte.</p><a class="button" href="#sistema-M05">Raggiungi Pelago ↗</a><a href="#sistema-T00">Comincia dai fondamenti →</a><a href="#taccuino">Apri il taccuino scientifico →</a></aside></div>`;
+    return html`<div class="narrative-opening"><div class="narrative-prose">${paragraphs(D.home.paragraphs)}</div><aside class="narrative-departure"><p class="eyebrow">INDAGINE GUIDATA / PELAGO</p><h2>Quanto racconta un campione?</h2><p>Segui nove indagini sulla conoscenza di un ambiente osservato soltanto in parte.</p><a class="button" href="#sistema-M05">Raggiungi Pelago ↗</a><a href="#sistema-T00">Comincia dai fondamenti →</a><a href="#taccuino">Apri il taccuino scientifico →</a></aside></div>`;
   }
   function chapter(id) {
     return D.chapters[id] || null;
   }
   function system(s) {
     const c = chapter(s.id);
-    return `<div class="narrative-system"><p class="eyebrow">${esc(c.title)}</p><p>${esc(s.id === 'M05' ? D.sampling.arrival : c.text)}</p><p class="narrative-question">${esc(c.question)}</p></div>`;
+    return html`<div class="narrative-system"><p class="eyebrow">${c.title}</p><p>${s.id === 'M05' ? D.sampling.arrival : c.text}</p><p class="narrative-question">${c.question}</p></div>`;
   }
   function destination(id) {
     const c = chapter(id);
-    return `<div class="narrative-destination"><small>LA DOMANDA DELLA SPEDIZIONE</small><p>${esc(c.question)}</p></div>`;
+    return html`<div class="narrative-destination"><small>LA DOMANDA DELLA SPEDIZIONE</small><p>${c.question}</p></div>`;
   }
   function planet(s, p) {
     if (!p.isTarget) return '';
     const c = chapter(s.id);
-    return `<div class="narrative-planet"><h3>${esc(c.title)}</h3><p>${esc(s.id === 'M05' ? D.sampling.planet : c.text)}</p></div>`;
+    return html`<div class="narrative-planet"><h3>${c.title}</h3><p>${s.id === 'M05' ? D.sampling.planet : c.text}</p></div>`;
   }
   function moduleIntro(id) {
     const c = chapter(id);
     return c
-      ? `<div class="narrative-module"><p class="eyebrow">${esc(c.title)}</p><p>${esc(c.text)}</p>${id === 'M05' ? '<p class="narrative-prerequisites">' + esc(D.sampling.prerequisites) + '</p>' : ''}<a href="#sistema-${id}">Rivedi il sistema stellare →</a> · <a href="#taccuino">Taccuino scientifico →</a></div>`
+      ? html`<div class="narrative-module"><p class="eyebrow">${c.title}</p><p>${c.text}</p>${id === 'M05' ? html`<p class="narrative-prerequisites">${D.sampling.prerequisites}</p>` : ''}<a href="#sistema-${id}">Rivedi il sistema stellare →</a> · <a href="#taccuino">Taccuino scientifico →</a></div>`
       : '';
   }
   function scene(a) {
     const x = D.activities[a.id];
     return x
-      ? `<section id="narrative-scene" class="narrative-scene"><div><p class="eyebrow">RICOGNIZIONE DI PELAGO / ${esc(x.title)}</p><p>${esc(x.scene)}</p></div><div class="narrative-enquiry"><span>Domanda d’indagine</span><p>${esc(x.question)}</p><small>Scenario didattico · dati simulati</small></div></section>`
+      ? html`<section id="narrative-scene" class="narrative-scene"><div><p class="eyebrow">RICOGNIZIONE DI PELAGO / ${x.title}</p><p>${x.scene}</p></div><div class="narrative-enquiry"><span>Domanda d’indagine</span><p>${x.question}</p><small>Scenario didattico · dati simulati</small></div></section>`
       : '';
   }
   function prediction(a) {
@@ -45,7 +45,7 @@
   function bridge(a) {
     const x = D.activities[a.id];
     return x
-      ? `<section class="narrative-bridge"><p class="eyebrow">LA TAPPA SUCCESSIVA</p><p>${esc(x.bridge)}</p>${a.id === 'm05-precisione' ? '<a class="button secondary" href="#sistema-M06">Prosegui verso Gemina →</a>' : ''}</section>`
+      ? html`<section class="narrative-bridge"><p class="eyebrow">LA TAPPA SUCCESSIVA</p><p>${x.bridge}</p>${a.id === 'm05-precisione' ? html`<a class="button secondary" href="#sistema-M06">Prosegui verso Gemina →</a>` : ''}</section>`
       : '';
   }
   function metricMap(r) {
@@ -195,16 +195,14 @@
   }
   function journal(main) {
     const entries = records().sort((a, b) => activity(a.id).page - activity(b.id).page);
-    main.innerHTML = `<div class="wrap narrative-journal">${root.GeoPaths?.tabs('course') || ''}<p class="eyebrow">CORSO / PELAGO / TACCUINO SCIENTIFICO</p><h1>Le tracce dell’indagine.</h1><p class="lead">Ritrova le configurazioni che hai scelto di conservare dopo il calcolo in R, insieme alle osservazioni annotate e agli eventuali scenari di confronto. Una registrazione documenta il lavoro svolto; la sua interpretazione rimane da argomentare.</p><p class="narrative-prerequisites">Conservato in questo browser. L’esportazione permette di custodirne una copia; la visita di una pagina non aggiunge registrazioni.</p><div class="actions"><a class="button" href="#modulo-M05">Riprendi l’indagine su Pelago →</a><button class="button secondary" id="journal-export" ${entries.length ? '' : 'disabled'}>Esporta il taccuino</button></div><p role="status">${entries.length} ${entries.length === 1 ? 'attività documentata' : 'attività documentate'} su 9.</p><div class="journal-entries">${
+    main.innerHTML = html`<div class="wrap narrative-journal">${root.GeoPaths?.tabs('course') || ''}<p class="eyebrow">CORSO / PELAGO / TACCUINO SCIENTIFICO</p><h1>Le tracce dell’indagine.</h1><p class="lead">Ritrova le configurazioni che hai scelto di conservare dopo il calcolo in R, insieme alle osservazioni annotate e agli eventuali scenari di confronto. Una registrazione documenta il lavoro svolto; la sua interpretazione rimane da argomentare.</p><p class="narrative-prerequisites">Conservato in questo browser. L’esportazione permette di custodirne una copia; la visita di una pagina non aggiunge registrazioni.</p><div class="actions"><a class="button" href="#modulo-M05">Riprendi l’indagine su Pelago →</a><button class="button secondary" id="journal-export" ${entries.length ? '' : 'disabled'}>Esporta il taccuino</button></div><p role="status">${entries.length} ${entries.length === 1 ? 'attività documentata' : 'attività documentate'} su 9.</p><div class="journal-entries">${
       entries.length
-        ? entries
-            .map(e => {
-              const a = activity(e.id),
-                query = encodeURIComponent(JSON.stringify(e.params));
-              return `<article class="journal-entry"><p class="eyebrow">${esc(a.sectionTitle)} · ${esc(new Date(e.date).toLocaleDateString('it-IT'))}</p><h2>${esc(a.title)}</h2><p>${esc(reading(e.id, e.params, { metrics: e.metrics }))}</p><dl class="journal-params">${a.controls.map(c => `<div><dt>${esc(c.label)}</dt><dd>${esc(e.params[c.key])}</dd></div>`).join('')}</dl>${e.scenarios.length ? '<details><summary>' + e.scenarios.length + ' scenari conservati</summary>' + e.scenarios.map((s, i) => '<div class="journal-scenario"><h3>Scenario ' + String.fromCharCode(65 + i) + '</h3><p>' + esc(reading(e.id, s.params, { metrics: s.metrics })) + '</p><p>' + esc(a.controls.map(c => c.label + ': ' + s.params[c.key]).join(' · ')) + '</p></div>').join('') + '</details>' : ''}${e.notes ? '<h3>Le tue osservazioni</h3><p class="journal-notes">' + esc(e.notes) + '</p>' : '<p class="lab-footer-note">Nessuna osservazione personale registrata.</p>'}<a href="#laboratorio/${e.id}?c=${esc(query)}">Ricalcola questa configurazione →</a></article>`;
-            })
-            .join('')
-        : '<div class="journal-empty"><h2>Il taccuino attende la prima osservazione.</h2><p>Apri un esperimento di Pelago, esegui il calcolo e annota ciò che osservi. Il pulsante «Conserva nel taccuino» registra la configurazione corrente e gli scenari che hai confrontato.</p></div>'
+        ? html`${entries.map(e => {
+            const a = activity(e.id),
+              query = encodeURIComponent(JSON.stringify(e.params));
+            return html`<article class="journal-entry"><p class="eyebrow">${a.sectionTitle} · ${new Date(e.date).toLocaleDateString('it-IT')}</p><h2>${a.title}</h2><p>${reading(e.id, e.params, { metrics: e.metrics })}</p><dl class="journal-params">${a.controls.map(c => html`<div><dt>${c.label}</dt><dd>${e.params[c.key]}</dd></div>`)}</dl>${e.scenarios.length ? html`<details><summary>${e.scenarios.length} scenari conservati</summary>${e.scenarios.map((s, i) => html`<div class="journal-scenario"><h3>Scenario ${String.fromCharCode(65 + i)}</h3><p>${reading(e.id, s.params, { metrics: s.metrics })}</p><p>${a.controls.map(c => c.label + ': ' + s.params[c.key]).join(' · ')}</p></div>`)}</details>` : ''}${e.notes ? html`<h3>Le tue osservazioni</h3><p class="journal-notes">${e.notes}</p>` : html`<p class="lab-footer-note">Nessuna osservazione personale registrata.</p>`}<a href="#laboratorio/${e.id}?c=${query}">Ricalcola questa configurazione →</a></article>`;
+          })}`
+        : html`<div class="journal-empty"><h2>Il taccuino attende la prima osservazione.</h2><p>Apri un esperimento di Pelago, esegui il calcolo e annota ciò che osservi. Il pulsante «Conserva nel taccuino» registra la configurazione corrente e gli scenari che hai confrontato.</p></div>`
     }</div></div>`;
     main.querySelector('#journal-export').addEventListener('click', () => {
       const blob = new Blob([JSON.stringify({ application: 'GeoStatLab', version: 1, entries }, null, 2)], {
