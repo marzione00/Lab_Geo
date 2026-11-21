@@ -166,3 +166,21 @@ v("57 IC Welch indipendenti", t.test(p$diametro_tot_um, p$diametro_int_um)$conf.
 x58 <- c(4.1,4.7,5,5.2,5.4,5.6,5.8,6); z58 <- x58; z58[8] <- 12
 v("58 mediane", c(median(x58), median(z58))); v("58 ampiezze", c(diff(t.test(x58)$conf.int), diff(t.test(z58)$conf.int)))
 v("53 rapporto e copertura approssimata", {r <- sqrt(1+30*.2/.8); c(r, 2*pnorm(qt(.975,29)/r)-1, sqrt(.2+.8/30), sqrt(.8/30))})
+
+# ---- tappe 60-71
+F <- ecdf(c(4,5,7,8)); v("60 F a 3.9 4 4.5 5 6.9 7", F(c(3.9,4,4.5,5,6.9,7)))
+x <- c(4,5,7,8); set.seed(17); j <- sample.int(4,4,replace=TRUE); v("62 replica seme 17 valori media", c(x[j], mean(x[j])))
+v("62 prob osservazione esclusa n=4, n grande", c((3/4)^4, exp(-1))); v("62 prob tutti distinti n=4", factorial(4)/4^4)
+J <- as.matrix(expand.grid(rep(list(1:4),4))); m <- apply(J,1,function(j) mean(x[j]))
+tb <- table(m); v("64 valori medie", as.numeric(names(tb))); v("64 frequenze", as.integer(tb)); v("64 prob media 6", mean(m==6)); v("64 min max", range(m))
+v("64 conteggi distinti multinomiali", choose(4+4-1,4))
+v("65 s2, s2/n, (n-1)s2/n2", c(var(x), var(x)/4, 3*var(x)/16)); v("65 se s/sqrt(n)", sqrt(var(x)/4))
+set.seed(17); b <- replicate(2000, mean(x[sample.int(4,4,TRUE)])); v("66-67 sd b, err MC", c(sd(b), sd(b)/sqrt(2000), sqrt(.625)))
+v("67 err MC di sd", sqrt(.625)/sqrt(2*2000)); v("68 bias b", mean(b)-6)
+v("69 h j g", {h <- 1+19*.975; c(h, floor(h), h-floor(h))}); v("69 type 6", quantile(seq(1,2.9,by=.1), .975, type=6))
+set.seed(17); x70 <- rlnorm(30,0,.6); set.seed(17); m70 <- replicate(2000, median(sample(x70, replace=TRUE)))
+v("70 mediana media teoriche", c(1, exp(.18))); v("70 valori distinti m70", length(unique(m70))); v("70 x70 ordinati 15 16", sort(x70)[15:16])
+v("70 freq valore piu comune", max(table(m70))/2000); v("70 media x70", mean(x70))
+for (B in c(200,1000)) { r <- lab_bootstrap(n=30,B=B,seed=17); v(paste("71 B",B), r$indicatori) }
+v("71 s/sqrt(n), sqrt((n-1)/n)*s/sqrt(n)", c(sd(x70)/sqrt(30), sqrt(29/30)*sd(x70)/sqrt(30)))
+v("71 t interval", t.test(x70)$conf.int); v("71 media teorica lognormale", exp(.18))
