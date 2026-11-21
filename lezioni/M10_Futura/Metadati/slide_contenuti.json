@@ -1,0 +1,1682 @@
+[
+  {
+    "page": 2,
+    "title": "Un percorso dalla domanda alla previsione",
+    "section": "I · IL COMPITO PREVISIONALE",
+    "left": "\\PLabel{Nove passaggi collegati}\n{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{8.3cm}p{0.7cm}@{}}\\toprule\n\\textbf{Sezione} & \\textbf{p.}\\\\\\midrule\n\\hyperlink{slide3}{Definire il compito e l’informazione} & 3\\\\\n\\hyperlink{slide11}{Costruire riferimenti confrontabili} & 11\\\\\n\\hyperlink{slide23}{Capire memoria e innovazioni} & 23\\\\\n\\hyperlink{slide40}{Specificare ARIMA e stagionalità} & 40\\\\\n\\hyperlink{slide58}{Diagnosticare le innovazioni stimate} & 58\\\\\n\\hyperlink{slide70}{Validare rispettando il tempo} & 70\\\\\n\\hyperlink{slide83}{Leggere errori e intervalli} & 83\\\\\n\\hyperlink{slide94}{Estendere a due variabili} & 94\\\\\n\\hyperlink{slide102}{Consegnare un progetto riproducibile} & 102\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{Borealis ha introdotto calendario, dipendenza e trasformazioni. Futura usa queste conoscenze per formulare e valutare una previsione.}\n\\vspace{2.5mm}\n\\PInfo{Tre archivi locali: CO$_2$ storica, fossili simulati e processi temporali simulati. Ogni risultato conserva unità, periodo e origine.}\n\\PBody{Le 20 attività mantengono gli identificativi M10\\_N01--M10\\_N20 del sito. I notebook aggiungono risultati eseguiti, spiegazioni e verifiche.}\n\\vspace{2.5mm}\n",
+    "recall": "Una buona previsione nasce da una domanda verificabile e da un protocollo dichiarato.",
+    "snippet": null,
+    "notebook": null,
+    "source": []
+  },
+  {
+    "page": 3,
+    "title": "Dal descrivere una serie al prevederne il seguito",
+    "section": "I · IL COMPITO PREVISIONALE",
+    "left": "\\begin{tikzpicture}[x=1cm,y=1cm]\n\\path[use as bounding box](-.1,-.15) rectangle(9.7,4.8);\n\\node[pFlow,text width=3.9cm,fill=GeoA!7] (a) at(2.2,3.5){M09: descrivere\\\\tendenza e dipendenza};\n\\node[pFlow,text width=3.9cm,fill=GeoB!7] (b) at(7.4,3.5){M10: prevedere\\\\a un’origine dichiarata};\n\\node[pFlow,text width=3.9cm,fill=GeoA!7] (c) at(2.2,1.1){Trasformazioni\\\\e ipotesi sulla serie};\n\\node[pFlow,text width=3.9cm,fill=GeoB!7] (d) at(7.4,1.1){Errori futuri\\\\e limiti del modello};\n\\draw[pEdge] (a) -- (b);\n\\draw[pEdge] (a) -- (c);\n\\draw[pEdge] (b) -- (d);\n\\draw[pEdge] (c) -- (d);\n\\end{tikzpicture}\n\\[\\{y_1,\\ldots,y_T\\}\\quad\\longrightarrow\\quad\\widehat y_{T+h\\mid T}\\]\n",
+    "right": "\\PBody{La descrizione riguarda ciò che osserviamo. La previsione aggiunge un criterio: il modello deve funzionare su valori che non ha usato per stimarsi.}\n\\vspace{2.5mm}\n\\PInfo{Riconoscere una stagione non garantisce che la previsione migliori un semplice ciclo ripetuto.}\n\\PBody{Il caso guida è una verifica storica: ci collochiamo a dicembre 1998 e valutiamo i mesi successivi.}\n\\vspace{2.5mm}\n",
+    "recall": "L’adeguatezza descrittiva e l’utilità previsionale rispondono a domande diverse.",
+    "snippet": null,
+    "notebook": null,
+    "source": []
+  },
+  {
+    "page": 4,
+    "title": "Origine, orizzonte e variabile da prevedere",
+    "section": "I · IL COMPITO PREVISIONALE",
+    "left": "\\begin{tikzpicture}[x=1cm,y=1cm]\n\\path[use as bounding box](-.1,-.15) rectangle(9.7,4.2);\n\\draw[pAxis](.4,1.7)--(9.5,1.7);\n\\fill[GeoA!12](.5,1.7)rectangle(5.8,2.7);\n\\node[pLabel]at(3.1,2.2){Informazione $\\mathcal F_T$};\n\\draw[GeoB,line width=1.2pt](5.8,1.4)--(5.8,3.1);\n\\node[pLabel]at(5.8,3.55){$T$};\n\\fill[GeoB](8.45,1.7)circle(3pt);\n\\node[pLabel]at(8.45,2.55){$Y_{T+h}$};\n\\node[pNote]at(8.45,1.1){da prevedere};\n\\draw[decorate,decoration={brace,amplitude=4pt},Classical](5.8,3.0)--(8.45,3.0);\n\\node[pNote]at(7.1,3.5){orizzonte $h$};\n\\end{tikzpicture}\n\\[\\widehat y_{T+h\\mid T}=g_h(\\mathcal F_T)\\]\n",
+    "right": "\\PBody{L’origine $T$ è l’ultimo istante con dati disponibili. L’orizzonte $h$ misura la distanza fino al valore futuro. La variabile deve avere unità e risoluzione esplicite.}\n\\vspace{2.5mm}\n\\PInfo{Qui: concentrazione media mensile derivata di CO$_2$, in ppm. Origine dicembre 1998; orizzonti da 1 a 36 mesi.}\n",
+    "recall": "Ogni previsione deve indicare che cosa prevede, quando viene emessa e quanto lontano guarda.",
+    "snippet": {
+      "text": "T0 <- end(train)\nh <- length(test)\nc(anno=T0[1], mese=T0[2], h=h)\nstopifnot(h == 36L)\n",
+      "title": "R · fissare origine e orizzonte"
+    },
+    "notebook": 1,
+    "source": [
+      3
+    ],
+    "code_file": "004_esempio.R"
+  },
+  {
+    "page": 5,
+    "title": "Quali informazioni esistono davvero all’origine?",
+    "section": "I · IL COMPITO PREVISIONALE",
+    "left": "\\begin{tikzpicture}[x=1cm,y=1cm]\n\\path[use as bounding box](-.1,-.15) rectangle(9.7,4.8);\n\\node[pFlow,text width=3.2cm,fill=GeoA!7] (a) at(2.0,3.65){Misure osservate\\\\fino a $T$};\n\\node[pFlow,text width=3.2cm,fill=GeoC!7] (b) at(2.0,1.2){Calendario futuro\\\\già noto a $T$};\n\\node[pFlow,text width=3.8cm,fill=GeoB!7] (c) at(7.2,2.4){Previsione\\\\$\\widehat y_{T+h\\mid T}$};\n\\draw[pEdge] (a) -- (c);\n\\draw[pEdge] (b) -- (c);\n\\end{tikzpicture}\n\\PSmall{La misura futura entra soltanto quando si valuta l’errore.}\n",
+    "right": "\\PBody{Il mese dell’anno è noto in anticipo. Una temperatura futura misurata sul campo non lo è. Un regressore utilizzabile in stima può quindi non essere disponibile in previsione.}\n\\vspace{2.5mm}\n\\PInfo{Per covariate future ignote occorre prevederle, definire scenari o rinunciare al loro impiego. La scelta va dichiarata nel compito.}\n\\PBody{Anche correzioni, medie mobili e normalizzazioni devono usare soltanto l’informazione accessibile all’origine.}\n\\vspace{2.5mm}\n",
+    "recall": "La disponibilità dell’informazione è una proprietà del compito, non della colonna nel file.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      3
+    ]
+  },
+  {
+    "page": 6,
+    "title": "Un protocollo storico con date precise",
+    "section": "I · IL COMPITO PREVISIONALE",
+    "left": "\\begin{tikzpicture}[x=1cm,y=1cm]\n\\path[use as bounding box](-.1,-.15) rectangle(9.7,4.8);\n\\fill[GeoA!17](.4,1.7)rectangle(7.2,3.25);\n\\fill[GeoB!18](7.2,1.7)rectangle(9.4,3.25);\n\\node[pLabel]at(3.8,2.65){Addestramento: 168 mesi};\n\\node[pNote]at(3.8,2.05){gennaio 1985 -- dicembre 1998};\n\\node[pLabel]at(8.3,2.65){Test: 36};\n\\node[pNote]at(8.3,2.05){1999--2001};\n\\draw[Classical,line width=1pt](7.2,1.35)--(7.2,3.7);\n\\node[pLabel,anchor=east]at(7.0,3.7){Origine $T$};\n\\draw[pAxis](.4,1.2)--(9.5,1.2);\n\\node[pNote]at(.8,.65){passato};\\node[pNote]at(8.5,.65){futuro storico};\n\\draw[decorate,decoration={brace,amplitude=4pt},GeoB](7.2,4.05)--(9.4,4.05);\n\\node[pNote]at(8.3,4.45){$h=1,\\ldots,36$};\n\\end{tikzpicture}\n{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{3cm}p{6.1cm}@{}}\\toprule\n\\textbf{Parte} & \\textbf{Uso}\\\\\\midrule\n1985--1998 & Stima, diagnostica, validazione interna\\\\\n1999--2001 & Verifica finale del protocollo fissato\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{La separazione viene fissata prima di confrontare i risultati sul test. I 168 mesi iniziali contengono tutte le informazioni usate per stimare il modello.}\n\\vspace{2.5mm}\n\\PInfo{Le tre origini interne sono dicembre 1994, 1995 e 1996; ciascuna prevede i 12 mesi successivi, sempre dentro il periodo di addestramento.}\n",
+    "recall": "Il test finale valuta una procedura già definita; non serve a scegliere la variante più favorevole.",
+    "snippet": {
+      "text": "train <- window(y, end=c(1998,12))\ntest <- window(y, start=c(1999,1))\nstopifnot(length(train)==168,\n          length(test)==36)\n",
+      "title": "R · separare per calendario"
+    },
+    "notebook": 1,
+    "source": [
+      4
+    ],
+    "code_file": "006_esempio.R"
+  },
+  {
+    "page": 7,
+    "title": "La CO2 è un archivio storico documentato",
+    "section": "I · IL COMPITO PREVISIONALE",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/01_CO2_finestra.pdf}\n\\vspace{1.5mm}\n\\PSmall{204 medie mensili derivate; separazione a dicembre 1998. I dati terminano nel 2001.}\n",
+    "right": "\\PBody{Il file locale riprende la serie di M09. Le medie mensili derivano dall’aggregazione dei valori settimanali del vecchio archivio distribuito con statsmodels.}\n\\vspace{2.5mm}\n\\PInfo{La data associata al mese e il numero di settimane disponibili restano nel CSV. Questa aggregazione non coincide necessariamente con una serie mensile ufficiale.}\n\\PSmall{La provenienza e l’impronta SHA-256 sono conservate con i dati. Il notebook non scarica nuovi valori durante l’esecuzione.}\n",
+    "recall": "Una serie storica chiusa permette un esperimento riproducibile; la sua provenienza resta parte del risultato.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      4,
+      33
+    ]
+  },
+  {
+    "page": 8,
+    "title": "Prevedere una distribuzione futura",
+    "section": "I · IL COMPITO PREVISIONALE",
+    "left": "\\begin{tikzpicture}[x=1cm,y=1cm]\n\\path[use as bounding box](-.1,-.15) rectangle(9.7,4.8);\n\\draw[pAxis](.5,.8)--(9.3,.8);\\fill[GeoA!10](2.408,.8)--(2.4576,1.2749) -- (2.5357,1.3359) -- (2.6138,1.4023) -- (2.6918,1.4741) -- (2.7699,1.5514) -- (2.8480,1.6341) -- (2.9261,1.7222) -- (3.0042,1.8153) -- (3.0822,1.9134) -- (3.1603,2.0159) -- (3.2384,2.1224) -- (3.3165,2.2323) -- (3.3946,2.3451) -- (3.4726,2.4599) -- (3.5507,2.5759) -- (3.6288,2.6923) -- (3.7069,2.8081) -- (3.7850,2.9223) -- (3.8630,3.0338) -- (3.9411,3.1415) -- (4.0192,3.2444) -- (4.0973,3.3414) -- (4.1754,3.4315) -- (4.2534,3.5136) -- (4.3315,3.5868) -- (4.4096,3.6503) -- (4.4877,3.7033) -- (4.5658,3.7452) -- (4.6438,3.7755) -- (4.7219,3.7939) -- (4.8000,3.8000) -- (4.8781,3.7939) -- (4.9562,3.7755) -- (5.0342,3.7452) -- (5.1123,3.7033) -- (5.1904,3.6503) -- (5.2685,3.5868) -- (5.3466,3.5136) -- (5.4246,3.4315) -- (5.5027,3.3414) -- (5.5808,3.2444) -- (5.6589,3.1415) -- (5.7370,3.0338) -- (5.8150,2.9223) -- (5.8931,2.8081) -- (5.9712,2.6923) -- (6.0493,2.5759) -- (6.1274,2.4599) -- (6.2054,2.3451) -- (6.2835,2.2323) -- (6.3616,2.1224) -- (6.4397,2.0159) -- (6.5178,1.9134) -- (6.5958,1.8153) -- (6.6739,1.7222) -- (6.7520,1.6341) -- (6.8301,1.5514) -- (6.9082,1.4741) -- (6.9862,1.4023) -- (7.0643,1.3359) -- (7.1424,1.2749)--(7.192,.8)--cycle;\\draw[GeoA,line width=1.2pt]plot coordinates{(0.8960,0.8179) (0.9741,0.8220) (1.0522,0.8268) (1.1302,0.8325) (1.2083,0.8394) (1.2864,0.8474) (1.3645,0.8569) (1.4426,0.8680) (1.5206,0.8809) (1.5987,0.8959) (1.6768,0.9132) (1.7549,0.9331) (1.8330,0.9559) (1.9110,0.9818) (1.9891,1.0111) (2.0672,1.0441) (2.1453,1.0811) (2.2234,1.1225) (2.3014,1.1684) (2.3795,1.2192) (2.4576,1.2749) (2.5357,1.3359) (2.6138,1.4023) (2.6918,1.4741) (2.7699,1.5514) (2.8480,1.6341) (2.9261,1.7222) (3.0042,1.8153) (3.0822,1.9134) (3.1603,2.0159) (3.2384,2.1224) (3.3165,2.2323) (3.3946,2.3451) (3.4726,2.4599) (3.5507,2.5759) (3.6288,2.6923) (3.7069,2.8081) (3.7850,2.9223) (3.8630,3.0338) (3.9411,3.1415) (4.0192,3.2444) (4.0973,3.3414) (4.1754,3.4315) (4.2534,3.5136) (4.3315,3.5868) (4.4096,3.6503) (4.4877,3.7033) (4.5658,3.7452) (4.6438,3.7755) (4.7219,3.7939) (4.8000,3.8000) (4.8781,3.7939) (4.9562,3.7755) (5.0342,3.7452) (5.1123,3.7033) (5.1904,3.6503) (5.2685,3.5868) (5.3466,3.5136) (5.4246,3.4315) (5.5027,3.3414) (5.5808,3.2444) (5.6589,3.1415) (5.7370,3.0338) (5.8150,2.9223) (5.8931,2.8081) (5.9712,2.6923) (6.0493,2.5759) (6.1274,2.4599) (6.2054,2.3451) (6.2835,2.2323) (6.3616,2.1224) (6.4397,2.0159) (6.5178,1.9134) (6.5958,1.8153) (6.6739,1.7222) (6.7520,1.6341) (6.8301,1.5514) (6.9082,1.4741) (6.9862,1.4023) (7.0643,1.3359) (7.1424,1.2749) (7.2205,1.2192) (7.2986,1.1684) (7.3766,1.1225) (7.4547,1.0811) (7.5328,1.0441) (7.6109,1.0111) (7.6890,0.9818) (7.7670,0.9559) (7.8451,0.9331) (7.9232,0.9132) (8.0013,0.8959) (8.0794,0.8809) (8.1574,0.8680) (8.2355,0.8569) (8.3136,0.8474) (8.3917,0.8394) (8.4698,0.8325) (8.5478,0.8268) (8.6259,0.8220) (8.7040,0.8179)};\\draw[GeoB,dashed](4.8,.8)--(4.8,4.0);\\node[pLabel]at(4.8,4.4){distribuzione futura};\\node[pNote]at(4.8,.3){centro e dispersione sono informazioni diverse};\n\\end{tikzpicture}\n\\[Y_{T+h}\\mid\\mathcal F_T\\ \\sim\\ F_{T,h}\\]\n",
+    "right": "\\PBody{La previsione puntuale riassume la distribuzione futura. L’intervallo descrive parte della sua dispersione, condizionatamente alle ipotesi adottate.}\n\\vspace{2.5mm}\n\\PInfo{Due modelli possono avere lo stesso centro e attribuire probabilità molto diverse ai valori estremi.}\n\\PBody{Un intervallo predittivo riguarda una nuova osservazione. Un intervallo per la media descrive l’incertezza di una quantità media e risponde a un’altra domanda.}\n\\vspace{2.5mm}\n",
+    "recall": "Centro, dispersione e probabilità degli eventi devono essere interpretati separatamente.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      5,
+      22
+    ]
+  },
+  {
+    "page": 9,
+    "title": "La perdita stabilisce quale centro è ottimale",
+    "section": "I · IL COMPITO PREVISIONALE",
+    "left": "\\begin{tikzpicture}[x=1cm,y=1cm]\n\\path[use as bounding box](-.1,-.15) rectangle(9.7,4.8);\n\\draw[pAxis](.5,.7)--(9.2,.7);\\draw[pAxis](4.8,.5)--(4.8,4.5);\n\\draw[GeoA,line width=1.2pt]plot coordinates{(0.800,2.300) (0.900,2.260) (1.000,2.220) (1.100,2.180) (1.200,2.140) (1.300,2.100) (1.400,2.060) (1.500,2.020) (1.600,1.980) (1.700,1.940) (1.800,1.900) (1.900,1.860) (2.000,1.820) (2.100,1.780) (2.200,1.740) (2.300,1.700) (2.400,1.660) (2.500,1.620) (2.600,1.580) (2.700,1.540) (2.800,1.500) (2.900,1.460) (3.000,1.420) (3.100,1.380) (3.200,1.340) (3.300,1.300) (3.400,1.260) (3.500,1.220) (3.600,1.180) (3.700,1.140) (3.800,1.100) (3.900,1.060) (4.000,1.020) (4.100,0.980) (4.200,0.940) (4.300,0.900) (4.400,0.860) (4.500,0.820) (4.600,0.780) (4.700,0.740) (4.800,0.700) (4.900,0.740) (5.000,0.780) (5.100,0.820) (5.200,0.860) (5.300,0.900) (5.400,0.940) (5.500,0.980) (5.600,1.020) (5.700,1.060) (5.800,1.100) (5.900,1.140) (6.000,1.180) (6.100,1.220) (6.200,1.260) (6.300,1.300) (6.400,1.340) (6.500,1.380) (6.600,1.420) (6.700,1.460) (6.800,1.500) (6.900,1.540) (7.000,1.580) (7.100,1.620) (7.200,1.660) (7.300,1.700) (7.400,1.740) (7.500,1.780) (7.600,1.820) (7.700,1.860) (7.800,1.900) (7.900,1.940) (8.000,1.980) (8.100,2.020) (8.200,2.060) (8.300,2.100) (8.400,2.140) (8.500,2.180) (8.600,2.220) (8.700,2.260) (8.800,2.300)};\n\\draw[GeoB,line width=1.2pt]plot coordinates{(0.800,3.900) (0.900,3.742) (1.000,3.588) (1.100,3.438) (1.200,3.292) (1.300,3.150) (1.400,3.012) (1.500,2.878) (1.600,2.748) (1.700,2.622) (1.800,2.500) (1.900,2.382) (2.000,2.268) (2.100,2.158) (2.200,2.052) (2.300,1.950) (2.400,1.852) (2.500,1.758) (2.600,1.668) (2.700,1.582) (2.800,1.500) (2.900,1.422) (3.000,1.348) (3.100,1.278) (3.200,1.212) (3.300,1.150) (3.400,1.092) (3.500,1.038) (3.600,0.988) (3.700,0.942) (3.800,0.900) (3.900,0.862) (4.000,0.828) (4.100,0.798) (4.200,0.772) (4.300,0.750) (4.400,0.732) (4.500,0.718) (4.600,0.708) (4.700,0.702) (4.800,0.700) (4.900,0.702) (5.000,0.708) (5.100,0.718) (5.200,0.732) (5.300,0.750) (5.400,0.772) (5.500,0.798) (5.600,0.828) (5.700,0.862) (5.800,0.900) (5.900,0.942) (6.000,0.988) (6.100,1.038) (6.200,1.092) (6.300,1.150) (6.400,1.212) (6.500,1.278) (6.600,1.348) (6.700,1.422) (6.800,1.500) (6.900,1.582) (7.000,1.668) (7.100,1.758) (7.200,1.852) (7.300,1.950) (7.400,2.052) (7.500,2.158) (7.600,2.268) (7.700,2.382) (7.800,2.500) (7.900,2.622) (8.000,2.748) (8.100,2.878) (8.200,3.012) (8.300,3.150) (8.400,3.292) (8.500,3.438) (8.600,3.588) (8.700,3.742) (8.800,3.900)};\n\\node[pNote,text=GeoA]at(8,2.0){$|e|$};\\node[pNote,text=GeoB]at(8.4,4.1){$e^2$};\n\\node[pNote]at(4.8,.15){errore $e$};\n\\end{tikzpicture}\n\\[\\arg\\min_a\\,\\mathbb E[(Y-a)^2\\mid\\mathcal F_T]=\\mathbb E[Y\\mid\\mathcal F_T]\\]\n",
+    "right": "\\PBody{La perdita quadratica penalizza fortemente gli errori grandi e porta alla media condizionata. Con perdita assoluta, una mediana condizionata minimizza il rischio.}\n\\vspace{2.5mm}\n\\PInfo{Perdite asimmetriche possono favorire un quantile: sottostimare e sovrastimare non hanno sempre lo stesso costo.}\n\\PSmall{Nel modulo useremo MAE e RMSE, dichiarando anche il segno dell’errore. Un’unica graduatoria non rappresenta ogni possibile decisione.}\n",
+    "recall": "La previsione “migliore” dipende anche dalla perdita con cui la si valuta.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      5,
+      24
+    ]
+  },
+  {
+    "page": 10,
+    "title": "Il quaderno del compito previsionale",
+    "section": "I · IL COMPITO PREVISIONALE",
+    "left": "{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{2.6cm}p{6.5cm}@{}}\\toprule\n\\textbf{Voce} & \\textbf{Scelta del laboratorio}\\\\\\midrule\nObiettivo & CO$_2$ media mensile derivata, ppm\\\\\nOrigine & Dicembre 1998\\\\\nOrizzonte & 36 mesi, gennaio 1999--dicembre 2001\\\\\nRiferimenti & Ultimo valore, stagione, deriva\\\\\nModello & SARIMA $(0,1,1)(0,1,1)_{12}$\\\\\nValutazione & MAE, RMSE, bias e copertura descrittiva\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{Prima del modello si scrive una scheda del compito. Dati, esclusioni e convenzioni diventano controlli automatici quando è possibile.}\n\\vspace{2.5mm}\n\\PInfo{La specifica centrale riprende quella del sito. Gli approfondimenti aggiunti nelle slide sono riconoscibili e non modificano il test finale.}\n\\PSmall{Il notebook M10\\_N01 verifica calendario e lunghezze; M10\\_N18 prepara la consegna.}\n",
+    "recall": "Una scelta registrata può essere verificata; una scelta implicita può cambiare durante l’analisi.",
+    "snippet": null,
+    "notebook": 1,
+    "source": [
+      3,
+      4,
+      31
+    ]
+  },
+  {
+    "page": 11,
+    "title": "Il riferimento fissa il confronto",
+    "section": "II · RIFERIMENTI",
+    "left": "{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{3.0cm}p{6.0cm}@{}}\\toprule\n\\textbf{Metodo} & \\textbf{Che cosa conserva}\\\\\\midrule\nMedia & Livello medio dell’addestramento\\\\\nUltimo valore & Livello più recente\\\\\nStagionale & Ultimo ciclo annuale osservato\\\\\nDeriva & Variazione media fra inizio e fine\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{Un modello articolato acquista interesse quando migliora un riferimento adeguato al compito. Tutti i metodi devono usare la stessa origine, le stesse date e la stessa scala.}\n\\vspace{2.5mm}\n\\PInfo{La media del passato è utile come contrasto didattico. Su una serie con crescita persistente può essere un riferimento troppo debole.}\n\\PBody{I riferimenti del laboratorio non richiedono la stima di una struttura ARMA.}\n\\vspace{2.5mm}\n",
+    "recall": "La complessità del modello non è una misura del suo vantaggio previsionale.",
+    "snippet": null,
+    "notebook": 2,
+    "source": [
+      6
+    ]
+  },
+  {
+    "page": 12,
+    "title": "La media del passato presume un livello stabile",
+    "section": "II · RIFERIMENTI",
+    "left": "\\[\\bar y_T=\\frac{1}{T}\\sum_{t=1}^T y_t\\]\n\\[\\widehat y_{T+h\\mid T}^{\\,\\mathrm{media}}=\\bar y_T\\]\n\\PInfo{La stessa previsione viene ripetuta per tutti gli orizzonti. Se la serie cresce, la media storica può restare lontana dall’ultimo livello.}\n",
+    "right": "\\PBody{Questo riferimento usa tutte le osservazioni con lo stesso peso. Non conserva il mese dell’anno e non prolunga una tendenza.}\n\\vspace{2.5mm}\n\\PBody{Può essere sensato per una serie che oscilla attorno a un livello costante; la scelta deve dipendere dalla struttura del problema.}\n\\vspace{2.5mm}\n",
+    "recall": "Una media storica è un modello implicito di stabilità del livello.",
+    "snippet": {
+      "text": "p_media <- rep(mean(train), 36)\nhead(p_media)\nstopifnot(length(unique(p_media))==1)\n",
+      "title": "R · riferimento al livello medio"
+    },
+    "notebook": null,
+    "source": [
+      6
+    ],
+    "code_file": "012_esempio.R"
+  },
+  {
+    "page": 13,
+    "title": "L’ultimo valore prolunga il livello più recente",
+    "section": "II · RIFERIMENTI",
+    "left": "\\[\\widehat y_{T+h\\mid T}^{\\,\\mathrm{ultimo}}=y_T\\]\n\\begin{tikzpicture}[x=1cm,y=1cm]\n\\path[use as bounding box](-.1,-.15) rectangle(9.7,4.1);\n\\node[pFlow,text width=3cm,fill=GeoA!7] (a) at(2.0,2.6){Ultima misura\\\\$y_T$};\n\\node[pFlow,text width=4cm,fill=GeoB!7] (b) at(7.2,2.6){36 copie\\\\$y_T,\\ldots,y_T$};\n\\draw[pEdge] (a) -- (b);\n\\end{tikzpicture}\n",
+    "right": "\\PBody{La previsione resta orizzontale. È il centro naturale di un random walk senza deriva, con innovazioni future a media nulla.}\n\\vspace{2.5mm}\n\\PInfo{La previsione puntuale costante non implica incertezza costante: in un random walk la varianza dell’errore cresce con l’orizzonte.}\n",
+    "recall": "Il riferimento all’ultimo valore conserva il livello, ma non aggiunge una stagione o una deriva.",
+    "snippet": {
+      "text": "p_ultimo <- rep(tail(train,1), 36)\nhead(p_ultimo)\nstopifnot(length(p_ultimo)==36)\n",
+      "title": "R · ultimo valore"
+    },
+    "notebook": 2,
+    "source": [
+      6
+    ],
+    "code_file": "013_esempio.R"
+  },
+  {
+    "page": 14,
+    "title": "Il riferimento stagionale ripete un ciclo già noto",
+    "section": "II · RIFERIMENTI",
+    "left": "\\begin{tikzpicture}[x=1cm,y=1cm]\n\\path[use as bounding box](-.1,-.15) rectangle(9.7,4.65);\n\\node[pLabel,anchor=east]at(1.1,4.0){1998};\n\\filldraw[fill=GeoA!18,draw=Rule](1.55,3.77)rectangle(2.05,4.23);\n\\filldraw[fill=GeoA!23,draw=Rule](2.17,3.77)rectangle(2.67,4.23);\n\\filldraw[fill=GeoA!28,draw=Rule](2.79,3.77)rectangle(3.29,4.23);\n\\filldraw[fill=GeoA!30,draw=Rule](3.41,3.77)rectangle(3.91,4.23);\n\\filldraw[fill=GeoA!28,draw=Rule](4.03,3.77)rectangle(4.53,4.23);\n\\filldraw[fill=GeoA!23,draw=Rule](4.65,3.77)rectangle(5.15,4.23);\n\\filldraw[fill=GeoA!18,draw=Rule](5.27,3.77)rectangle(5.77,4.23);\n\\filldraw[fill=GeoA!12,draw=Rule](5.89,3.77)rectangle(6.39,4.23);\n\\filldraw[fill=GeoA!8,draw=Rule](6.51,3.77)rectangle(7.01,4.23);\n\\filldraw[fill=GeoA!6,draw=Rule](7.13,3.77)rectangle(7.63,4.23);\n\\filldraw[fill=GeoA!8,draw=Rule](7.75,3.77)rectangle(8.25,4.23);\n\\filldraw[fill=GeoA!12,draw=Rule](8.370000000000001,3.77)rectangle(8.870000000000001,4.23);\n\\node[pNote,anchor=west]at(9.0,4.0){noto};\n\\node[pLabel,anchor=east]at(1.1,3.0){1999};\n\\filldraw[fill=GeoB!18,draw=Rule](1.55,2.77)rectangle(2.05,3.23);\n\\filldraw[fill=GeoB!23,draw=Rule](2.17,2.77)rectangle(2.67,3.23);\n\\filldraw[fill=GeoB!28,draw=Rule](2.79,2.77)rectangle(3.29,3.23);\n\\filldraw[fill=GeoB!30,draw=Rule](3.41,2.77)rectangle(3.91,3.23);\n\\filldraw[fill=GeoB!28,draw=Rule](4.03,2.77)rectangle(4.53,3.23);\n\\filldraw[fill=GeoB!23,draw=Rule](4.65,2.77)rectangle(5.15,3.23);\n\\filldraw[fill=GeoB!18,draw=Rule](5.27,2.77)rectangle(5.77,3.23);\n\\filldraw[fill=GeoB!12,draw=Rule](5.89,2.77)rectangle(6.39,3.23);\n\\filldraw[fill=GeoB!8,draw=Rule](6.51,2.77)rectangle(7.01,3.23);\n\\filldraw[fill=GeoB!6,draw=Rule](7.13,2.77)rectangle(7.63,3.23);\n\\filldraw[fill=GeoB!8,draw=Rule](7.75,2.77)rectangle(8.25,3.23);\n\\filldraw[fill=GeoB!12,draw=Rule](8.370000000000001,2.77)rectangle(8.870000000000001,3.23);\n\\node[pNote,anchor=west]at(9.0,3.0){copia};\n\\node[pLabel,anchor=east]at(1.1,2.0){2000};\n\\filldraw[fill=GeoB!18,draw=Rule](1.55,1.77)rectangle(2.05,2.23);\n\\filldraw[fill=GeoB!23,draw=Rule](2.17,1.77)rectangle(2.67,2.23);\n\\filldraw[fill=GeoB!28,draw=Rule](2.79,1.77)rectangle(3.29,2.23);\n\\filldraw[fill=GeoB!30,draw=Rule](3.41,1.77)rectangle(3.91,2.23);\n\\filldraw[fill=GeoB!28,draw=Rule](4.03,1.77)rectangle(4.53,2.23);\n\\filldraw[fill=GeoB!23,draw=Rule](4.65,1.77)rectangle(5.15,2.23);\n\\filldraw[fill=GeoB!18,draw=Rule](5.27,1.77)rectangle(5.77,2.23);\n\\filldraw[fill=GeoB!12,draw=Rule](5.89,1.77)rectangle(6.39,2.23);\n\\filldraw[fill=GeoB!8,draw=Rule](6.51,1.77)rectangle(7.01,2.23);\n\\filldraw[fill=GeoB!6,draw=Rule](7.13,1.77)rectangle(7.63,2.23);\n\\filldraw[fill=GeoB!8,draw=Rule](7.75,1.77)rectangle(8.25,2.23);\n\\filldraw[fill=GeoB!12,draw=Rule](8.370000000000001,1.77)rectangle(8.870000000000001,2.23);\n\\node[pNote,anchor=west]at(9.0,2.0){copia};\n\\node[pLabel,anchor=east]at(1.1,1.0){2001};\n\\filldraw[fill=GeoB!18,draw=Rule](1.55,0.77)rectangle(2.05,1.23);\n\\filldraw[fill=GeoB!23,draw=Rule](2.17,0.77)rectangle(2.67,1.23);\n\\filldraw[fill=GeoB!28,draw=Rule](2.79,0.77)rectangle(3.29,1.23);\n\\filldraw[fill=GeoB!30,draw=Rule](3.41,0.77)rectangle(3.91,1.23);\n\\filldraw[fill=GeoB!28,draw=Rule](4.03,0.77)rectangle(4.53,1.23);\n\\filldraw[fill=GeoB!23,draw=Rule](4.65,0.77)rectangle(5.15,1.23);\n\\filldraw[fill=GeoB!18,draw=Rule](5.27,0.77)rectangle(5.77,1.23);\n\\filldraw[fill=GeoB!12,draw=Rule](5.89,0.77)rectangle(6.39,1.23);\n\\filldraw[fill=GeoB!8,draw=Rule](6.51,0.77)rectangle(7.01,1.23);\n\\filldraw[fill=GeoB!6,draw=Rule](7.13,0.77)rectangle(7.63,1.23);\n\\filldraw[fill=GeoB!8,draw=Rule](7.75,0.77)rectangle(8.25,1.23);\n\\filldraw[fill=GeoB!12,draw=Rule](8.370000000000001,0.77)rectangle(8.870000000000001,1.23);\n\\node[pNote,anchor=west]at(9.0,1.0){copia};\n\\draw[pEdge](8.72,3.65)--(8.72,1.2);\n\\end{tikzpicture}\n\\[\\widehat y_{T+h\\mid T}=y_{T+h-12\\lceil h/12\\rceil}\\]\n",
+    "right": "\\PBody{Per i primi 12 mesi si riusa l’ultimo anno osservato. A origine fissa, lo stesso ciclo si ripete anche nel secondo e nel terzo anno di previsione.}\n\\vspace{2.5mm}\n\\PInfo{Gennaio 2000 usa gennaio 1998, perché gennaio 1999 non era disponibile a dicembre 1998.}\n",
+    "recall": "A origine fissa il riferimento stagionale non può incorporare osservazioni future.",
+    "snippet": {
+      "text": "p_stag <- rep(tail(train,12),\n              length.out=36)\nstopifnot(identical(\n  as.numeric(p_stag[1:12]),\n  as.numeric(p_stag[13:24])))\n",
+      "title": "R · ripetere l’ultima stagione"
+    },
+    "notebook": 20,
+    "source": [
+      7
+    ],
+    "code_file": "014_esempio.R"
+  },
+  {
+    "page": 15,
+    "title": "L’indice stagionale va verificato sui mesi",
+    "section": "II · RIFERIMENTI",
+    "left": "{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{4.1cm}p{5.0cm}@{}}\\toprule\n\\textbf{Previsione} & \\textbf{Valore storico utilizzato}\\\\\\midrule\nGennaio 1999 & Gennaio 1998\\\\\nDicembre 1999 & Dicembre 1998\\\\\nGennaio 2000 & Gennaio 1998\\\\\nDicembre 2001 & Dicembre 1998\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{Una sequenza lunga il numero corretto di righe può avere una fase sbagliata. Il calendario permette di riconoscere una rotazione accidentale del ciclo.}\n\\vspace{2.5mm}\n\\PInfo{I test del notebook confrontano la corrispondenza tra mese previsto e mese riutilizzato, oltre alla lunghezza del vettore.}\n",
+    "recall": "L’allineamento temporale è parte della correttezza della previsione.",
+    "snippet": {
+      "text": "mese_futuro <- rep(1:12,3)\nmese_fonte <- rep(cycle(tail(\n  train,12)),3)\nstopifnot(all(mese_futuro==\n              mese_fonte))\n",
+      "title": "R · controllare la fase"
+    },
+    "notebook": 20,
+    "source": [
+      7
+    ],
+    "code_file": "015_esempio.R"
+  },
+  {
+    "page": 16,
+    "title": "La deriva prolunga una variazione media",
+    "section": "II · RIFERIMENTI",
+    "left": "\\[\\widehat\\delta=\\frac{y_T-y_1}{T-1}\\]\n\\[\\widehat y_{T+h\\mid T}^{\\,\\mathrm{deriva}}=y_T+h\\widehat\\delta\\]\n\\PInfo{La pendenza è una variazione per mese. Non è la pendenza di una regressione stimata su tutti i punti.}\n",
+    "right": "\\PBody{Il metodo unisce il primo e l’ultimo livello e prolunga quella pendenza. Gli estremi possono influenzarlo molto, specialmente in presenza di stagione o anomalie.}\n\\vspace{2.5mm}\n\\PBody{La deriva è un riferimento esplicito per la crescita: evita che il modello stagionale venga confrontato soltanto con metodi privi di tendenza.}\n\\vspace{2.5mm}\n",
+    "recall": "Una deriva semplice può essere competitiva, ma la sua pendenza dipende dagli estremi osservati.",
+    "snippet": {
+      "text": "yy <- as.numeric(train)\ndelta <- (tail(yy,1)-yy[1])/\n         (length(yy)-1)\np_deriva <- tail(yy,1)+(1:36)*delta\n",
+      "title": "R · stimare la deriva"
+    },
+    "notebook": 2,
+    "source": [
+      6
+    ],
+    "code_file": "016_esempio.R"
+  },
+  {
+    "page": 17,
+    "title": "Ogni riferimento porta ipotesi riconoscibili",
+    "section": "II · RIFERIMENTI",
+    "left": "{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{2.9cm}p{6.1cm}@{}}\\toprule\n\\textbf{Metodo} & \\textbf{Rischio da discutere}\\\\\\midrule\nMedia & Livello storico lontano da quello attuale\\\\\nUltimo & Mancata crescita e mancata stagione\\\\\nStagionale & Ciclo stabile senza crescita fra anni\\\\\nDeriva & Pendenza costante e stagione assente\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{I riferimenti rappresentano ipotesi diverse. Osservare come sbagliano aiuta a capire quale informazione aggiunge il modello.}\n\\vspace{2.5mm}\n\\PInfo{Una previsione stagionale che ripete il 1998 può riconoscere i mesi alti e bassi e sottostimare il livello degli anni successivi.}\n\\PBody{Le ipotesi si discutono prima della graduatoria. La prestazione si misura poi sugli stessi valori futuri.}\n\\vspace{2.5mm}\n",
+    "recall": "Un riferimento va giudicato per la struttura che conserva e per quella che trascura.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      6,
+      7
+    ]
+  },
+  {
+    "page": 18,
+    "title": "Le traiettorie rendono visibili le differenze",
+    "section": "II · RIFERIMENTI",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/02_baseline_CO2.pdf}\n\\vspace{1.5mm}\n\\PSmall{Previsioni emesse alla stessa origine. Il grafico mostra le ipotesi dei riferimenti prima delle metriche.}\n",
+    "right": "\\PBody{L’ultimo valore produce una linea orizzontale. La deriva cresce in modo lineare. Il riferimento stagionale ripete la stessa forma annuale.}\n\\vspace{2.5mm}\n\\PInfo{La differenza tra metodi riguarda l’informazione mantenuta dal passato. Il test finale quantificherà quanto queste scelte siano utili.}\n\\PSmall{Per confronti numerici usare le tabelle eseguite, non misure ricavate a occhio dal grafico.}\n",
+    "recall": "Disegnare le previsioni permette di controllare subito livello, stagione e orientamento della tendenza.",
+    "snippet": null,
+    "notebook": 2,
+    "source": [
+      6
+    ]
+  },
+  {
+    "page": 19,
+    "title": "Un buon adattamento non basta a prevedere bene",
+    "section": "II · RIFERIMENTI",
+    "left": "\\begin{tikzpicture}[x=1cm,y=1cm]\n\\path[use as bounding box](-.1,-.15) rectangle(9.7,4.8);\n\\node[pFlow,text width=3.5cm,fill=GeoA!7] (a) at(2.1,3.5){Dati usati\\\\per la stima};\n\\node[pFlow,text width=3.5cm,fill=GeoA!7] (b) at(7.3,3.5){Adattamento\\\\entro il campione};\n\\node[pFlow,text width=3.5cm,fill=GeoB!7] (c) at(2.1,1.1){Dati tenuti\\\\fuori dalla stima};\n\\node[pFlow,text width=3.5cm,fill=GeoB!7] (d) at(7.3,1.1){Errore\\\\di previsione};\n\\draw[pEdge] (a) -- (b);\n\\draw[pEdge] (c) -- (d);\n\\end{tikzpicture}\n",
+    "right": "\\PBody{Aggiungere parametri può ridurre l’errore sul campione usato per stimarli. Questa riduzione non garantisce un miglioramento sui valori successivi.}\n\\vspace{2.5mm}\n\\PInfo{Il residuo del modello e l’errore di previsione fuori campione hanno ruoli distinti. La diagnostica dei residui non sostituisce la validazione.}\n\\PBody{La verifica deve ricostruire il momento in cui la previsione sarebbe stata emessa.}\n\\vspace{2.5mm}\n",
+    "recall": "La capacità di spiegare il passato deve essere accompagnata da una prova sul futuro disponibile in seguito.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      8,
+      9
+    ]
+  },
+  {
+    "page": 20,
+    "title": "Due origini diverse definiscono due esperimenti",
+    "section": "II · RIFERIMENTI",
+    "left": "{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{4.5cm}p{4.5cm}@{}}\\toprule\n\\textbf{Origine fissa} & \\textbf{Origini aggiornate}\\\\\\midrule\nUna stima a dicembre 1998 & Nuove stime quando arrivano dati\\\\\n36 orizzonti dalla stessa origine & Più previsioni emesse nel tempo\\\\\nIl ciclo 1998 viene ripetuto & Il ciclo può incorporare nuovi mesi\\\\\nUna traiettoria storica riservata & Più coppie origine--orizzonte\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{Aggiornare il modello ogni mese è possibile, ma cambia il compito. Non si può attribuire alla previsione emessa nel 1998 l’informazione arrivata nel 1999.}\n\\vspace{2.5mm}\n\\PInfo{Il laboratorio centrale conserva un’origine fissa per il test finale. La validazione interna usa origini successive, tutte precedenti al test.}\n",
+    "recall": "L’origine della previsione deve restare associata a ogni errore misurato.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      7,
+      8
+    ]
+  },
+  {
+    "page": 21,
+    "title": "Le origini interne fanno una prova prima del test",
+    "section": "II · RIFERIMENTI",
+    "left": "\\begin{tikzpicture}[x=1cm,y=1cm]\n\\path[use as bounding box](-.1,-.15) rectangle(9.7,4.9);\n\\fill[GeoA!20](.5,3.96)rectangle(5.500,4.44);\n\\fill[GeoB!40](5.500,3.96)rectangle(6.000,4.44);\n\\node[pNote,anchor=west]at(6.160,4.2){120};\n\\fill[GeoA!20](.5,3.04)rectangle(6.000,3.5200000000000005);\n\\fill[GeoB!40](6.000,3.04)rectangle(6.500,3.5200000000000005);\n\\node[pNote,anchor=west]at(6.660,3.2800000000000002){132};\n\\fill[GeoA!20](.5,2.12)rectangle(6.500,2.6000000000000005);\n\\fill[GeoB!40](6.500,2.12)rectangle(7.000,2.6000000000000005);\n\\node[pNote,anchor=west]at(7.160,2.3600000000000003){144};\n\\draw[Muted,dashed](7.500,.6)--(7.500,4.65);\n\\node[pNote]at(4,.25){train in verde · verifica interna in rame};\n\\node[pNote]at(8.8,4.4){test\\\\finale};\n\\end{tikzpicture}\n\\[T_o\\in\\{120,132,144\\},\\qquad h=1,\\ldots,12\\]\n",
+    "right": "\\PBody{A ciascuna origine si ricostruisce il passato disponibile e si stima di nuovo. I 12 mesi successivi diventano la verifica di quella previsione.}\n\\vspace{2.5mm}\n\\PInfo{Le tre finestre di verifica coprono 1995, 1996 e 1997. Il 1998 rimane disponibile per la stima finale sui 168 mesi.}\n\\PSmall{Approfondiremo finestre, metriche e dipendenza fra errori nella sezione sulla validazione.}\n",
+    "recall": "La validazione temporale ripete il compito previsionale senza aprire il test finale.",
+    "snippet": null,
+    "notebook": 5,
+    "source": [
+      8,
+      9
+    ]
+  },
+  {
+    "page": 22,
+    "title": "Laboratorio: quattro riferimenti confrontabili",
+    "section": "II · RIFERIMENTI",
+    "left": "\\PLabel{Controlli richiesti}\n{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{2.6cm}p{6.4cm}@{}}\\toprule\n\\textbf{Controllo} & \\textbf{Criterio}\\\\\\midrule\nOrigine & Identica per ogni metodo\\\\\nDate & 36 mesi nello stesso ordine\\\\\nScala & ppm per osservazioni e previsioni\\\\\nStagione & Ultimi 12 mesi ripetuti\\\\\nFuturo & Nessuna lettura del test nella stima\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{M10\\_N02 costruisce i riferimenti; M10\\_N20 verifica la stagione. La funzione comune restituisce vettori confrontabili.}\n\\vspace{2.5mm}\n\\PInfo{Verificare la forma delle previsioni prima di calcolare gli errori. Un errore di allineamento può sembrare una cattiva prestazione del metodo.}\n",
+    "recall": "La comparabilità è una condizione del confronto, non un dettaglio da controllare dopo.",
+    "snippet": {
+      "text": "b <- baseline(train, h=36)\nstopifnot(all(lengths(b)==36))\nstopifnot(all(is.finite(\n  unlist(b))))\nnames(b)\n",
+      "title": "R · contratto dei riferimenti"
+    },
+    "notebook": 2,
+    "source": [
+      6,
+      7
+    ],
+    "code_file": "022_esempio.R"
+  },
+  {
+    "page": 23,
+    "title": "Un AR(1) separa memoria e innovazione",
+    "section": "III · MEMORIA E INNOVAZIONI",
+    "left": "\\begin{tikzpicture}[x=1cm,y=1cm]\n\\path[use as bounding box](-.1,-.15) rectangle(9.7,4.5);\n\\node[pFlow,text width=2.1cm,fill=GeoA!7] (a) at(1.4,3.5){$X_{t-2}$};\n\\node[pFlow,text width=2.1cm,fill=GeoA!7] (b) at(4.8,3.5){$X_{t-1}$};\n\\node[pFlow,text width=2.1cm,fill=GeoB!7] (c) at(8.2,3.5){$X_t$};\n\\node[pFlow,text width=2.1cm,fill=GeoC!7] (u) at(8.2,1.15){$\\varepsilon_t$};\n\\draw[pEdge] (a) -- node[pNote,fill=Paper,inner sep=1pt]{$\\phi$} (b);\n\\draw[pEdge] (b) -- node[pNote,fill=Paper,inner sep=1pt]{$\\phi$} (c);\n\\draw[pEdge] (u) -- (c);\n\\end{tikzpicture}\n\\[X_t=\\phi X_{t-1}+\\varepsilon_t\\]\n",
+    "right": "\\PBody{Nel processo centrato, una parte del valore corrente dipende dal passato. L’innovazione aggiunge ciò che il modello non poteva prevedere al passo precedente.}\n\\vspace{2.5mm}\n\\PInfo{Assumiamo innovazioni a media nulla, varianza $\\sigma^2$ e indipendenti dal passato. La normalità è un’ipotesi ulteriore, utile per intervalli gaussiani.}\n\\PSmall{Se $X_t$ è centrato rispetto a $\\mu$, la serie originale è $Y_t=\\mu+X_t$.}\n",
+    "recall": "La memoria trasmette informazione passata; l’innovazione rappresenta la parte nuova.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      10
+    ]
+  },
+  {
+    "page": 24,
+    "title": "Media e intercetta non sono lo stesso parametro",
+    "section": "III · MEMORIA E INNOVAZIONI",
+    "left": "\\[Y_t=c+\\phi Y_{t-1}+\\varepsilon_t\\]\n\\[\\mu=c+\\phi\\mu\\quad\\Longrightarrow\\quad\\mu=\\frac{c}{1-\\phi}\\]\n\\[Y_t-\\mu=\\phi(Y_{t-1}-\\mu)+\\varepsilon_t\\]\n",
+    "right": "\\PBody{La relazione vale per un AR(1) stazionario con $|\\phi|<1$. Scrivere il modello attorno alla media rende trasparente la previsione di lungo periodo.}\n\\vspace{2.5mm}\n\\PInfo{Nella convenzione di stats::arima, per un ARMA non differenziato il termine chiamato intercept rappresenta la media del processo, non il $c$ della ricorrenza.}\n",
+    "recall": "Prima di interpretare un coefficiente bisogna conoscere la parametrizzazione usata dal software.",
+    "snippet": {
+      "text": "mu <- 10\nphi <- 0.65\nc0 <- mu*(1-phi)\nstopifnot(all.equal(\n  c0/(1-phi), mu))\n",
+      "title": "R · dalla media alla ricorrenza"
+    },
+    "notebook": null,
+    "source": [
+      10,
+      33
+    ],
+    "code_file": "024_esempio.R"
+  },
+  {
+    "page": 25,
+    "title": "La previsione a un passo elimina lo shock futuro",
+    "section": "III · MEMORIA E INNOVAZIONI",
+    "left": "\\[\\mathbb E[\\varepsilon_{T+1}\\mid\\mathcal F_T]=0\\]\n\\[\\widehat Y_{T+1\\mid T}=\\mu+\\phi(Y_T-\\mu)\\]\n\\PInfo{Con $\\mu=0$, $\\phi=0{,}65$ e $Y_T=2$, il centro previsto è $1{,}30$.}\n",
+    "right": "\\PBody{Il valore osservato all’origine è noto. L’innovazione futura non lo è: nella media condizionata il suo contributo scompare.}\n\\vspace{2.5mm}\n\\PBody{Questo non afferma che l’innovazione reale sarà zero. Il valore futuro può trovarsi sopra o sotto il centro previsto.}\n\\vspace{2.5mm}\n",
+    "recall": "La media condizionata annulla il contributo medio dell’innovazione, non la sua variabilità.",
+    "snippet": {
+      "text": "phi <- 0.65; xT <- 2\np1 <- phi*xT\nc(previsione=p1, varianza=1)\n",
+      "title": "R · previsione AR(1) a un passo"
+    },
+    "notebook": null,
+    "source": [
+      10,
+      11
+    ],
+    "code_file": "025_esempio.R"
+  },
+  {
+    "page": 26,
+    "title": "La ricorsione porta la previsione verso la media",
+    "section": "III · MEMORIA E INNOVAZIONI",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/16_AR1_previsione.pdf}\n\\vspace{1.5mm}\n\\PSmall{Esempio teorico: $\\phi=0{,}65$, $\\mu=0$, $X_T=2$, $\\sigma=1$. Parametri noti.}\n\\[\\widehat Y_{T+h\\mid T}=\\mu+\\phi^h(Y_T-\\mu)\\]\n",
+    "right": "\\PBody{Ogni nuovo passo moltiplica per $\\phi$ lo scostamento residuo dalla media. Quando $|\\phi|<1$, il contributo dell’ultima osservazione si attenua.}\n\\vspace{2.5mm}\n\\PInfo{Se $\\phi<0$, il centro previsto alterna il segno dello scostamento. Se $\\phi$ è vicino a 1, il ritorno è più lento.}\n",
+    "recall": "La previsione AR(1) stazionaria ricorda sempre meno il valore iniziale al crescere di $h$.",
+    "snippet": {
+      "text": "h_ar <- 1:30\np_ar <- 0.65^h_ar*2\nhead(p_ar)\n",
+      "title": "R · ricorsione in forma chiusa"
+    },
+    "notebook": null,
+    "source": [
+      10
+    ],
+    "code_file": "026_esempio.R"
+  },
+  {
+    "page": 27,
+    "title": "L’errore raccoglie gli shock non ancora osservati",
+    "section": "III · MEMORIA E INNOVAZIONI",
+    "left": "\\[e_{T+h\\mid T}=\\sum_{j=0}^{h-1}\\phi^j\\varepsilon_{T+h-j}\\]\n{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{2cm}p{7.1cm}@{}}\\toprule\n\\textbf{Orizzonte} & \\textbf{Innovazioni che entrano}\\\\\\midrule\n1 & $\\varepsilon_{T+1}$\\\\\n2 & $\\varepsilon_{T+2}+\\phi\\varepsilon_{T+1}$\\\\\n3 & $\\varepsilon_{T+3}+\\phi\\varepsilon_{T+2}+\\phi^2\\varepsilon_{T+1}$\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{Allungare l’orizzonte aggiunge nuove innovazioni. Gli shock più vicini all’origine vengono trasmessi attraverso potenze di $\\phi$.}\n\\vspace{2.5mm}\n\\PInfo{La somma riguarda soltanto innovazioni successive a $T$. Con parametri noti, la storia osservata è già incorporata nel centro previsto.}\n\\PSmall{Il segno dell’errore adottato qui è sempre osservato meno previsto.}\n",
+    "recall": "L’orizzonte aumenta il numero di innovazioni che la previsione non può conoscere.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      11
+    ]
+  },
+  {
+    "page": 28,
+    "title": "La varianza AR(1) cresce verso un limite",
+    "section": "III · MEMORIA E INNOVAZIONI",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/17_AR1_varianza.pdf}\n\\vspace{1.5mm}\n\\PSmall{Parametri noti. Il limite coincide con la varianza stazionaria del processo.}\n\\[\\operatorname{Var}(e_{T+h\\mid T})=\\sigma^2\\frac{1-\\phi^{2h}}{1-\\phi^2}\\]\n",
+    "right": "\\PBody{Con innovazioni incorrelate, la varianza della somma è la somma delle varianze pesate. Per $|\\phi|<1$, la serie geometrica converge.}\n\\vspace{2.5mm}\n\\PInfo{A un passo la varianza è $\\sigma^2$. Per orizzonti lunghi tende a $\\sigma^2/(1-\\phi^2)$: non cresce senza limite come nel random walk.}\n",
+    "recall": "In un AR(1) stazionario, l’incertezza condizionata tende alla variabilità marginale del processo.",
+    "snippet": {
+      "text": "v_ar <- (1-0.65^(2*h_ar))/\n        (1-0.65^2)\nc(primo=v_ar[1],\n  limite=1/(1-0.65^2))\n",
+      "title": "R · varianza previsionale"
+    },
+    "notebook": null,
+    "source": [
+      11
+    ],
+    "code_file": "028_esempio.R"
+  },
+  {
+    "page": 29,
+    "title": "Il coefficiente cambia persistenza e oscillazione",
+    "section": "III · MEMORIA E INNOVAZIONI",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/14_AR1_traiettorie.pdf}\n\\vspace{1.5mm}\n\\PSmall{Quattro simulazioni con innovazioni di varianza unitaria; i percorsi servono a confrontare forme di dipendenza.}\n",
+    "right": "\\PBody{Un coefficiente positivo alto tende a produrre sequenze persistenti. Un coefficiente negativo favorisce alternanza fra scostamenti di segno opposto.}\n\\vspace{2.5mm}\n\\PInfo{Non basta osservare una lunga sequenza sopra la media per diagnosticare una tendenza: anche un processo stazionario molto persistente può produrla.}\n\\PSmall{Le simulazioni usano semi registrati. Le traiettorie non rappresentano misure ambientali.}\n",
+    "recall": "Persistenza elevata e non stazionarietà possono apparire simili in campioni brevi.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      10,
+      12
+    ],
+    "layout": "panorama",
+    "figure": "14_AR1_traiettorie",
+    "caption": "Simulazioni con innovazioni di varianza unitaria. Un coefficiente positivo alto produce persistenza; un coefficiente negativo produce alternanza. I percorsi sono simulati, con semi registrati."
+  },
+  {
+    "page": 30,
+    "title": "L’autocorrelazione teorica segue le potenze di phi",
+    "section": "III · MEMORIA E INNOVAZIONI",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/15_AR1_ACF_teorica.pdf}\n\\vspace{1.5mm}\n\\PSmall{ACF esatte dei processi illustrati; non sono stime ottenute da un singolo campione.}\n\\[\\rho(k)=\\phi^{|k|}\\]\n",
+    "right": "\\PBody{Per $\\phi>0$ la correlazione decresce mantenendo il segno. Per $\\phi<0$ il segno alterna. Il modulo determina la velocità di attenuazione.}\n\\vspace{2.5mm}\n\\PInfo{L’ACF campionaria oscilla attorno alla forma teorica. Un grafico campionario non deve coincidere punto per punto con questa curva.}\n",
+    "recall": "La struttura teorica orienta l’interpretazione; l’incertezza campionaria resta visibile.",
+    "snippet": {
+      "text": "lag_ar <- 0:20\nrho <- 0.65^lag_ar\ncbind(lag=lag_ar, rho=rho)[1:6,]\n",
+      "title": "R · ACF teorica"
+    },
+    "notebook": null,
+    "source": [
+      10,
+      12
+    ],
+    "code_file": "030_esempio.R"
+  },
+  {
+    "page": 31,
+    "title": "Un AR(p) usa più ritardi della stessa serie",
+    "section": "III · MEMORIA E INNOVAZIONI",
+    "left": "\\[X_t=\\phi_1X_{t-1}+\\cdots+\\phi_pX_{t-p}+\\varepsilon_t\\]\n\\[\\phi(B)X_t=\\varepsilon_t,\\qquad\\phi(z)=1-\\sum_{j=1}^p\\phi_jz^j\\]\n\\PInfo{L’operatore di ritardo soddisfa $BX_t=X_{t-1}$. Le radici del polinomio descrivono la stabilità della ricorrenza.}\n",
+    "right": "\\PBody{I coefficienti pesano ritardi diversi. La somma dei coefficienti, da sola, non è un controllo generale della stazionarietà per ogni ordine.}\n\\vspace{2.5mm}\n\\PBody{Per un AR causale stazionario tutte le radici di $\\phi(z)=0$ devono stare fuori dal cerchio unitario.}\n\\vspace{2.5mm}\n",
+    "recall": "Negli AR di ordine superiore la condizione corretta riguarda tutte le radici del polinomio.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      12
+    ]
+  },
+  {
+    "page": 32,
+    "title": "Le radici AR devono stare fuori dal cerchio unitario",
+    "section": "III · MEMORIA E INNOVAZIONI",
+    "left": "\\begin{tikzpicture}[x=1cm,y=1cm]\n\\path[use as bounding box](-.1,-.15) rectangle(9.7,5.1);\n\\draw[pAxis](1,2.5)--(8.5,2.5)node[right,pNote]{Re};\n\\draw[pAxis](4.7,.35)--(4.7,4.7)node[above,pNote]{Im};\n\\draw[Classical,line width=1pt](4.7,2.5)circle(1.55);\n\\node[pNote]at(5.6,3.85){$|z|=1$};\\fill[GeoB](7.283,2.5)circle(3.2pt);\\node[pLabel]at(7.283,1.85){$z=1/0{,}6$};\n\\end{tikzpicture}\n\\[1-0{,}6z=0\\quad\\Longrightarrow\\quad z=1/0{,}6\\]\n",
+    "right": "\\PBody{Il disegno mostra un AR(1) con $\\phi=0{,}6$. La radice è circa $1{,}67$ e ha modulo maggiore di uno.}\n\\vspace{2.5mm}\n\\PInfo{Per un AR(2), polyroot riceve i coefficienti in ordine di potenza crescente: costante, termine in $z$, termine in $z^2$.}\n",
+    "recall": "Radici AR fuori dal cerchio unitario corrispondono a una dinamica causale stazionaria.",
+    "snippet": {
+      "text": "phi2 <- c(0.6,-0.2)\nradici <- polyroot(c(1,-phi2))\nMod(radici)\nstopifnot(all(Mod(radici)>1))\n",
+      "title": "R · controllo per un AR(2)"
+    },
+    "notebook": null,
+    "source": [
+      12
+    ],
+    "code_file": "032_esempio.R"
+  },
+  {
+    "page": 33,
+    "title": "Un MA(1) combina innovazioni, non osservazioni",
+    "section": "III · MEMORIA E INNOVAZIONI",
+    "left": "\\begin{tikzpicture}[x=1cm,y=1cm]\n\\path[use as bounding box](-.1,-.15) rectangle(9.7,4.5);\n\\node[pFlow,text width=2.1cm,fill=GeoC!7] (a) at(1.4,3.5){$\\varepsilon_{t-1}$};\n\\node[pFlow,text width=2.1cm,fill=GeoC!7] (b) at(5.0,3.5){$\\varepsilon_t$};\n\\node[pFlow,text width=2.1cm,fill=GeoB!7] (c) at(8.2,1.1){$X_t$};\n\\draw[pEdge] (a) -- node[pNote,fill=Paper,inner sep=1pt]{$\\theta$} (c);\n\\draw[pEdge] (b) -- node[pNote,fill=Paper,inner sep=1pt]{1} (c);\n\\end{tikzpicture}\n\\[X_t=\\varepsilon_t+\\theta\\varepsilon_{t-1}\\]\n",
+    "right": "\\PBody{Il termine moving average indica una combinazione di innovazioni presenti e passate. Non è una media mobile usata per lisciare i dati.}\n\\vspace{2.5mm}\n\\PInfo{Adottiamo il segno positivo della convenzione R. Le innovazioni hanno media nulla, varianza $\\sigma^2$ e sono incorrelate nel tempo.}\n",
+    "recall": "Nel modello MA si mediano shock latenti; una media mobile descrittiva combina dati osservati.",
+    "snippet": {
+      "text": "set.seed(101033)\nx_ma <- arima.sim(list(ma=0.6),\n                  n=240)\nhead(x_ma)\n",
+      "title": "R · simulare un MA(1)"
+    },
+    "notebook": null,
+    "source": [
+      13
+    ],
+    "code_file": "033_esempio.R"
+  },
+  {
+    "page": 34,
+    "title": "L’ACF di un MA(1) si annulla oltre il primo ritardo",
+    "section": "III · MEMORIA E INNOVAZIONI",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/18_MA1_ACF.pdf}\n\\vspace{1.5mm}\n\\PSmall{ACF teorica per $\\theta=0{,}6$.}\n\\[\\rho(1)=\\frac{\\theta}{1+\\theta^2},\\qquad\\rho(k)=0\\ \\ (|k|>1)\\]\n",
+    "right": "\\PBody{Due valori consecutivi condividono un’innovazione. Valori separati da più di un passo non condividono innovazioni in questo modello.}\n\\vspace{2.5mm}\n\\PInfo{La proprietà di taglio vale per l’ACF teorica. Le correlazioni campionarie ai ritardi successivi non sono esattamente zero.}\n",
+    "recall": "Il taglio teorico dell’ACF non elimina le fluttuazioni della sua stima campionaria.",
+    "snippet": {
+      "text": "theta <- 0.6\nc(rho1=theta/(1+theta^2),\n  rho2=0)\nARMAacf(ma=theta, lag.max=5)\n",
+      "title": "R · ACF MA(1)"
+    },
+    "notebook": null,
+    "source": [
+      13
+    ],
+    "code_file": "034_esempio.R"
+  },
+  {
+    "page": 35,
+    "title": "Invertire un MA permette di ricostruire gli shock",
+    "section": "III · MEMORIA E INNOVAZIONI",
+    "left": "\\begin{tikzpicture}[x=1cm,y=1cm]\n\\path[use as bounding box](-.1,-.15) rectangle(9.7,5.1);\n\\draw[pAxis](1,2.5)--(8.5,2.5)node[right,pNote]{Re};\n\\draw[pAxis](4.7,.35)--(4.7,4.7)node[above,pNote]{Im};\n\\draw[Classical,line width=1pt](4.7,2.5)circle(1.55);\n\\node[pNote]at(5.6,3.85){$|z|=1$};\\fill[GeoB](2.117,2.5)circle(3.2pt);\\node[pLabel]at(2.117,1.85){$z=-1/0{,}6$};\n\\end{tikzpicture}\n\\[\\theta(z)=1+\\theta z,\\qquad |z_{\\mathrm{radice}}|>1\\]\n",
+    "right": "\\PBody{L’invertibilità consente di esprimere le innovazioni mediante una combinazione stabile della storia osservata. Per MA(1) richiede $|\\theta|<1$.}\n\\vspace{2.5mm}\n\\PInfo{Stazionarietà e invertibilità sono proprietà diverse: un MA finito è stazionario sotto le ipotesi sulle innovazioni, anche quando non è invertibile.}\n",
+    "recall": "La condizione sulle radici MA sceglie una rappresentazione degli shock recuperabile dal passato.",
+    "snippet": {
+      "text": "theta <- 0.6\nradice_ma <- polyroot(c(1,theta))\nMod(radice_ma)\nstopifnot(Mod(radice_ma)>1)\n",
+      "title": "R · invertibilità MA(1)"
+    },
+    "notebook": null,
+    "source": [
+      14
+    ],
+    "code_file": "035_esempio.R"
+  },
+  {
+    "page": 36,
+    "title": "Nel MA(1) la memoria predittiva diretta è breve",
+    "section": "III · MEMORIA E INNOVAZIONI",
+    "left": "\\[\\widehat X_{T+1\\mid T}=\\theta\\varepsilon_T\\]\n\\[\\widehat X_{T+h\\mid T}=0\\quad (h\\geq2)\\]\n\\PInfo{Queste formule assumono innovazioni ricostruite dalla storia e parametri noti. Con un campione finito, l’inizializzazione introduce una differenza pratica.}\n",
+    "right": "\\PBody{A un passo rimane lo shock noto all’origine. A due o più passi entrano soltanto innovazioni future, la cui media condizionata è zero.}\n\\vspace{2.5mm}\n\\PBody{L’incertezza rimane: la varianza passa da $\\sigma^2$ a $\\sigma^2(1+\\theta^2)$. Una previsione media nulla non significa processo costante.}\n\\vspace{2.5mm}\n",
+    "recall": "Una memoria predittiva finita può convivere con una variabilità futura non nulla.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      13,
+      14
+    ]
+  },
+  {
+    "page": 37,
+    "title": "ARMA combina propagazione e shock ritardati",
+    "section": "III · MEMORIA E INNOVAZIONI",
+    "left": "\\[\\phi(B)X_t=\\theta(B)\\varepsilon_t\\]\n\\[X_t=\\phi X_{t-1}+\\varepsilon_t+\\theta\\varepsilon_{t-1}\\]\n{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{2.5cm}p{6.6cm}@{}}\\toprule\n\\textbf{Componente} & \\textbf{Informazione rappresentata}\\\\\\midrule\nAR & Valori passati e propagazione\\\\\nMA & Innovazioni passate e correzioni\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{Un ARMA(1,1) unisce le due strutture. Le condizioni per una rappresentazione causale e invertibile si applicano ai rispettivi polinomi.}\n\\vspace{2.5mm}\n\\PInfo{AR e MA possono produrre ACF simili su campioni brevi. L’identificazione richiede confronto, parsimonia e verifica.}\n",
+    "recall": "La struttura ARMA descrive la dipendenza dopo che il livello e la stagione sono stati trattati.",
+    "snippet": {
+      "text": "set.seed(101037)\nx_arma <- arima.sim(\n  list(ar=0.65,ma=0.4), n=240)\nacf(x_arma, plot=FALSE)$acf[1:6]\n",
+      "title": "R · processo ARMA(1,1)"
+    },
+    "notebook": null,
+    "source": [
+      14,
+      15
+    ],
+    "code_file": "037_esempio.R"
+  },
+  {
+    "page": 38,
+    "title": "La risposta a un impulso rende visibile la memoria",
+    "section": "III · MEMORIA E INNOVAZIONI",
+    "left": "\\includegraphics[width=9.85cm,height=4.75cm,keepaspectratio]{Risultati/Figure/19_risposta_impulso.pdf}\n\\vspace{1.5mm}\n\\PSmall{Risposte teoriche a un’innovazione unitaria: AR(1), MA(1) e ARMA(1,1).}\n\\[X_t=\\sum_{j=0}^{\\infty}\\psi_j\\varepsilon_{t-j}\\]\n",
+    "right": "\\PBody{I coefficienti $\\psi_j$ descrivono quanto resta di uno shock dopo $j$ passi. Nel MA finito la risposta termina; nell’AR causale si attenua nel tempo.}\n\\vspace{2.5mm}\n\\PInfo{La rappresentazione è lineare e riferita al modello. Non attribuisce automaticamente allo shock un significato fisico causale.}\n",
+    "recall": "La durata dell’effetto di un’innovazione spiega la forma della memoria previsionale.",
+    "snippet": {
+      "text": "psi <- c(1,ARMAtoMA(\n  ar=0.65, ma=0.4, lag.max=20))\nhead(psi)\n",
+      "title": "R · pesi della risposta"
+    },
+    "notebook": null,
+    "source": [
+      10,
+      13,
+      14
+    ],
+    "code_file": "038_esempio.R"
+  },
+  {
+    "page": 39,
+    "title": "ACF e PACF suggeriscono ipotesi da verificare",
+    "section": "III · MEMORIA E INNOVAZIONI",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/20_ARMA_ACF_PACF.pdf}\n\\vspace{1.5mm}\n\\PSmall{Esempio simulato ARMA(1,1): entrambe le funzioni possono attenuarsi gradualmente.}\n",
+    "right": "\\PBody{Per un AR puro la PACF teorica si interrompe dopo l’ordine; per un MA puro si interrompe l’ACF. In una combinazione ARMA entrambe possono avere una coda.}\n\\vspace{2.5mm}\n\\PInfo{Su dati reali, tendenza, stagione, campione breve e rumore alterano la leggibilità di questi indizi.}\n\\PBody{I grafici orientano una piccola famiglia di candidati. Non sono un algoritmo infallibile per scegliere un modello.}\n\\vspace{2.5mm}\n",
+    "recall": "L’identificazione propone una struttura; diagnostica e validazione ne valutano l’utilità.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      12,
+      13,
+      14
+    ]
+  },
+  {
+    "page": 40,
+    "title": "ARIMA modella la dipendenza dopo le differenze",
+    "section": "IV · ARIMA E STAGIONE",
+    "left": "\\begin{tikzpicture}[x=1cm,y=1cm]\n\\path[use as bounding box](-.1,-.15) rectangle(9.7,4.8);\n\\node[pFlow,text width=3.4cm,fill=GeoA!7] (a) at(2.1,3.7){Serie in livelli\\\\$Y_t$};\n\\node[pFlow,text width=3.7cm,fill=GeoB!7] (b) at(7.3,3.7){Differenze\\\\$W_t=(1-B)^dY_t$};\n\\node[pFlow,text width=3.7cm,fill=GeoC!7] (c) at(7.3,1.1){Modello ARMA\\\\per $W_t$};\n\\draw[pEdge] (a) -- (b);\n\\draw[pEdge] (b) -- (c);\n\\end{tikzpicture}\n\\[\\phi(B)(1-B)^dY_t=\\theta(B)\\varepsilon_t\\]\n",
+    "right": "\\PBody{La sigla ARIMA$(p,d,q)$ distingue ordine autoregressivo, numero di differenze e ordine della parte MA.}\n\\vspace{2.5mm}\n\\PInfo{Differenziare cambia la variabile modellata. Il software deve poi ricostruire la previsione nella scala dei livelli.}\n\\PBody{Le differenze si scelgono per affrontare una struttura persistente; non si aggiungono soltanto per ridurre un indice numerico.}\n\\vspace{2.5mm}\n",
+    "recall": "ARIMA applica una struttura ARMA alla serie trasformata dalle differenze.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      15
+    ]
+  },
+  {
+    "page": 41,
+    "title": "La prima differenza misura un cambiamento",
+    "section": "IV · ARIMA E STAGIONE",
+    "left": "\\[\\Delta Y_t=Y_t-Y_{t-1}=(1-B)Y_t\\]\n{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{3cm}p{6.0cm}@{}}\\toprule\n\\textbf{Serie} & \\textbf{Interpretazione}\\\\\\midrule\n$Y_t$ & Concentrazione nel mese $t$, ppm\\\\\n$\\Delta Y_t$ & Variazione fra due mesi, ppm\\\\\n$\\Delta^2Y_t$ & Variazione della variazione, ppm\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{La differenza conserva l’unità fisica ma cambia la domanda. Un valore vicino a zero indica un cambiamento piccolo, non una concentrazione piccola.}\n\\vspace{2.5mm}\n\\PInfo{Per una griglia mensile, un incremento è riferito a un passo di calendario. Non è automaticamente un tasso istantaneo per giorno.}\n",
+    "recall": "Trasformare la serie richiede di riscrivere il significato della quantità analizzata.",
+    "snippet": {
+      "text": "d1 <- diff(train)\nc(livelli=length(train),\n  differenze=length(d1))\nhead(d1)\n",
+      "title": "R · differenza ordinaria"
+    },
+    "notebook": null,
+    "source": [
+      15
+    ],
+    "code_file": "041_esempio.R"
+  },
+  {
+    "page": 42,
+    "title": "La differenza stagionale confronta lo stesso mese",
+    "section": "IV · ARIMA E STAGIONE",
+    "left": "\\[\\Delta_{12}Y_t=Y_t-Y_{t-12}=(1-B^{12})Y_t\\]\n\\begin{tikzpicture}[x=1cm,y=1cm]\n\\path[use as bounding box](-.1,-.15) rectangle(9.7,4.65);\n\\node[pLabel,anchor=east]at(1.1,4.0){1998};\n\\filldraw[fill=GeoA!18,draw=Rule](1.55,3.77)rectangle(2.05,4.23);\n\\filldraw[fill=GeoA!23,draw=Rule](2.17,3.77)rectangle(2.67,4.23);\n\\filldraw[fill=GeoA!28,draw=Rule](2.79,3.77)rectangle(3.29,4.23);\n\\filldraw[fill=GeoA!30,draw=Rule](3.41,3.77)rectangle(3.91,4.23);\n\\filldraw[fill=GeoA!28,draw=Rule](4.03,3.77)rectangle(4.53,4.23);\n\\filldraw[fill=GeoA!23,draw=Rule](4.65,3.77)rectangle(5.15,4.23);\n\\filldraw[fill=GeoA!18,draw=Rule](5.27,3.77)rectangle(5.77,4.23);\n\\filldraw[fill=GeoA!12,draw=Rule](5.89,3.77)rectangle(6.39,4.23);\n\\filldraw[fill=GeoA!8,draw=Rule](6.51,3.77)rectangle(7.01,4.23);\n\\filldraw[fill=GeoA!6,draw=Rule](7.13,3.77)rectangle(7.63,4.23);\n\\filldraw[fill=GeoA!8,draw=Rule](7.75,3.77)rectangle(8.25,4.23);\n\\filldraw[fill=GeoA!12,draw=Rule](8.370000000000001,3.77)rectangle(8.870000000000001,4.23);\n\\node[pNote,anchor=west]at(9.0,4.0){noto};\n\\node[pLabel,anchor=east]at(1.1,3.0){1999};\n\\filldraw[fill=GeoB!18,draw=Rule](1.55,2.77)rectangle(2.05,3.23);\n\\filldraw[fill=GeoB!23,draw=Rule](2.17,2.77)rectangle(2.67,3.23);\n\\filldraw[fill=GeoB!28,draw=Rule](2.79,2.77)rectangle(3.29,3.23);\n\\filldraw[fill=GeoB!30,draw=Rule](3.41,2.77)rectangle(3.91,3.23);\n\\filldraw[fill=GeoB!28,draw=Rule](4.03,2.77)rectangle(4.53,3.23);\n\\filldraw[fill=GeoB!23,draw=Rule](4.65,2.77)rectangle(5.15,3.23);\n\\filldraw[fill=GeoB!18,draw=Rule](5.27,2.77)rectangle(5.77,3.23);\n\\filldraw[fill=GeoB!12,draw=Rule](5.89,2.77)rectangle(6.39,3.23);\n\\filldraw[fill=GeoB!8,draw=Rule](6.51,2.77)rectangle(7.01,3.23);\n\\filldraw[fill=GeoB!6,draw=Rule](7.13,2.77)rectangle(7.63,3.23);\n\\filldraw[fill=GeoB!8,draw=Rule](7.75,2.77)rectangle(8.25,3.23);\n\\filldraw[fill=GeoB!12,draw=Rule](8.370000000000001,2.77)rectangle(8.870000000000001,3.23);\n\\node[pNote,anchor=west]at(9.0,3.0){copia};\n\\node[pLabel,anchor=east]at(1.1,2.0){2000};\n\\filldraw[fill=GeoB!18,draw=Rule](1.55,1.77)rectangle(2.05,2.23);\n\\filldraw[fill=GeoB!23,draw=Rule](2.17,1.77)rectangle(2.67,2.23);\n\\filldraw[fill=GeoB!28,draw=Rule](2.79,1.77)rectangle(3.29,2.23);\n\\filldraw[fill=GeoB!30,draw=Rule](3.41,1.77)rectangle(3.91,2.23);\n\\filldraw[fill=GeoB!28,draw=Rule](4.03,1.77)rectangle(4.53,2.23);\n\\filldraw[fill=GeoB!23,draw=Rule](4.65,1.77)rectangle(5.15,2.23);\n\\filldraw[fill=GeoB!18,draw=Rule](5.27,1.77)rectangle(5.77,2.23);\n\\filldraw[fill=GeoB!12,draw=Rule](5.89,1.77)rectangle(6.39,2.23);\n\\filldraw[fill=GeoB!8,draw=Rule](6.51,1.77)rectangle(7.01,2.23);\n\\filldraw[fill=GeoB!6,draw=Rule](7.13,1.77)rectangle(7.63,2.23);\n\\filldraw[fill=GeoB!8,draw=Rule](7.75,1.77)rectangle(8.25,2.23);\n\\filldraw[fill=GeoB!12,draw=Rule](8.370000000000001,1.77)rectangle(8.870000000000001,2.23);\n\\node[pNote,anchor=west]at(9.0,2.0){copia};\n\\node[pLabel,anchor=east]at(1.1,1.0){2001};\n\\filldraw[fill=GeoB!18,draw=Rule](1.55,0.77)rectangle(2.05,1.23);\n\\filldraw[fill=GeoB!23,draw=Rule](2.17,0.77)rectangle(2.67,1.23);\n\\filldraw[fill=GeoB!28,draw=Rule](2.79,0.77)rectangle(3.29,1.23);\n\\filldraw[fill=GeoB!30,draw=Rule](3.41,0.77)rectangle(3.91,1.23);\n\\filldraw[fill=GeoB!28,draw=Rule](4.03,0.77)rectangle(4.53,1.23);\n\\filldraw[fill=GeoB!23,draw=Rule](4.65,0.77)rectangle(5.15,1.23);\n\\filldraw[fill=GeoB!18,draw=Rule](5.27,0.77)rectangle(5.77,1.23);\n\\filldraw[fill=GeoB!12,draw=Rule](5.89,0.77)rectangle(6.39,1.23);\n\\filldraw[fill=GeoB!8,draw=Rule](6.51,0.77)rectangle(7.01,1.23);\n\\filldraw[fill=GeoB!6,draw=Rule](7.13,0.77)rectangle(7.63,1.23);\n\\filldraw[fill=GeoB!8,draw=Rule](7.75,0.77)rectangle(8.25,1.23);\n\\filldraw[fill=GeoB!12,draw=Rule](8.370000000000001,0.77)rectangle(8.870000000000001,1.23);\n\\node[pNote,anchor=west]at(9.0,1.0){copia};\n\\draw[pEdge](8.72,3.65)--(8.72,1.2);\n\\end{tikzpicture}\n\\PSmall{La differenza confronta mesi omologhi; il riferimento stagionale usa lo stesso collegamento per prevedere.}\n",
+    "right": "\\PBody{La differenza a 12 mesi rimuove una componente che si ripete identica ogni anno. Se il livello cresce, la differenza stagionale può conservare una media positiva.}\n\\vspace{2.5mm}\n\\PInfo{Una stagione deterministica stabile e una radice unitaria stagionale sono ipotesi diverse. La scelta delle differenze deve essere motivata.}\n",
+    "recall": "La frequenza della serie dà significato al ritardo stagionale.",
+    "snippet": {
+      "text": "d12 <- diff(train, lag=12)\nstopifnot(length(d12)==156)\nfrequency(train)\n",
+      "title": "R · differenza a dodici mesi"
+    },
+    "notebook": null,
+    "source": [
+      16
+    ],
+    "code_file": "042_esempio.R"
+  },
+  {
+    "page": 43,
+    "title": "Le due differenze combinano quattro osservazioni",
+    "section": "IV · ARIMA E STAGIONE",
+    "left": "\\[(1-B)(1-B^{12})Y_t\\]\n\\[=Y_t-Y_{t-1}-Y_{t-12}+Y_{t-13}\\]\n{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{6.0cm}p{3.0cm}@{}}\\toprule\n\\textbf{Termine} & \\textbf{Peso}\\\\\\midrule\n$Y_t$ & $+1$\\\\\n$Y_{t-1}$ & $-1$\\\\\n$Y_{t-12}$ & $-1$\\\\\n$Y_{t-13}$ & $+1$\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{Le differenze ordinaria e stagionale commutano. Nel campione mensile iniziale si perdono 13 valori per calcolare direttamente la trasformazione combinata.}\n\\vspace{2.5mm}\n\\PInfo{Il modello in spazio di stato può trattare l’inizializzazione internamente. Questo non autorizza a interpretare senza cautela i primi residui.}\n",
+    "recall": "Espandere gli operatori permette di controllare segni, ritardi e perdita di osservazioni.",
+    "snippet": {
+      "text": "w <- diff(diff(train, lag=12))\nw2 <- diff(diff(train), lag=12)\nstopifnot(isTRUE(all.equal(w,w2)))\nlength(w)\n",
+      "title": "R · combinare le differenze"
+    },
+    "notebook": null,
+    "source": [
+      16,
+      18
+    ],
+    "code_file": "043_esempio.R"
+  },
+  {
+    "page": 44,
+    "title": "Il confronto delle trasformazioni resta nel train",
+    "section": "IV · ARIMA E STAGIONE",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/21_differenze_CO2.pdf}\n\\vspace{1.5mm}\n\\PSmall{Tre trasformazioni calcolate sui soli 168 mesi di addestramento.}\n",
+    "right": "\\PBody{Confrontiamo andamento, dispersione e dipendenza dopo ogni trasformazione. L’obiettivo è una struttura sufficientemente stabile per il modello scelto.}\n\\vspace{2.5mm}\n\\PInfo{Il grafico suggerisce ipotesi, ma non dimostra da solo stazionarietà o correttezza della specifica.}\n\\PSmall{Differenziare troppo può introdurre dipendenza artificiale e aumentare la varianza. Le scelte vanno valutate insieme alla diagnostica e alla prestazione.}\n",
+    "recall": "Ogni trasformazione si giustifica attraverso il problema e si valuta senza usare il test finale.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      15,
+      16
+    ],
+    "layout": "panorama",
+    "figure": "21_differenze_CO2",
+    "caption": "Tre differenze sui soli 168 mesi di train. Il confronto motiva la trasformazione e non dimostra da solo stazionarietà. Ogni differenza cambia la variabile analizzata."
+  },
+  {
+    "page": 45,
+    "title": "La sigla stagionale mantiene distinti sei ordini",
+    "section": "IV · ARIMA E STAGIONE",
+    "left": "\\[\\operatorname{SARIMA}(p,d,q)(P,D,Q)_{12}\\]\n{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{2.4cm}p{6.7cm}@{}}\\toprule\n\\textbf{Parte} & \\textbf{Significato}\\\\\\midrule\n$p,d,q$ & AR, differenze, MA ai ritardi ordinari\\\\\n$P,D,Q$ & AR, differenze, MA ai ritardi stagionali\\\\\n12 & Numero di osservazioni in un ciclo annuale\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{Gli ordini maiuscoli descrivono la struttura stagionale. Il periodo 12 riguarda dati mensili con ciclo annuale; non è un numero universale.}\n\\vspace{2.5mm}\n\\PInfo{Per dati trimestrali il ciclo annuale ha periodo 4. Una frequenza dichiarata male cambia l’interpretazione dei ritardi.}\n",
+    "recall": "Ordini ordinari, ordini stagionali e periodo del ciclo devono restare leggibili nella specifica.",
+    "snippet": {
+      "text": "specifica <- list(\n  order=c(0,1,1),\n  seasonal=list(order=c(0,1,1),\n                period=12))\nspecifica\n",
+      "title": "R · descrivere il modello"
+    },
+    "notebook": null,
+    "source": [
+      16,
+      17
+    ],
+    "code_file": "045_esempio.R"
+  },
+  {
+    "page": 46,
+    "title": "Il modello del laboratorio è prefissato",
+    "section": "IV · ARIMA E STAGIONE",
+    "left": "\\[\\operatorname{SARIMA}(0,1,1)(0,1,1)_{12}\\]\n\\[(1-B)(1-B^{12})Y_t\\]\n\\[=(1+\\theta B)(1+\\Theta B^{12})\\varepsilon_t\\]\n\\PInfo{Una differenza ordinaria, una differenza stagionale, una componente MA ordinaria e una MA stagionale; nessuna deriva esplicita.}\n",
+    "right": "\\PBody{La specifica riprende il laboratorio del sito. Viene stimata sui livelli del train, lasciando a stats::arima il compito di applicare le differenze.}\n\\vspace{2.5mm}\n\\PBody{La crescita futura può emergere dall’integrazione e dallo stato stimato. “Senza deriva esplicita” non significa previsione piatta.}\n\\vspace{2.5mm}\n",
+    "recall": "La specifica del modello deve precedere la lettura del suo errore finale.",
+    "snippet": null,
+    "notebook": 3,
+    "source": [
+      16,
+      17
+    ]
+  },
+  {
+    "page": 47,
+    "title": "Il prodotto stagionale introduce anche il ritardo 13",
+    "section": "IV · ARIMA E STAGIONE",
+    "left": "\\[(1+\\theta B)(1+\\Theta B^{12})\\]\n\\[=1+\\theta B+\\Theta B^{12}+\\theta\\Theta B^{13}\\]\n{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{6cm}p{3cm}@{}}\\toprule\n\\textbf{Ritardo dell’innovazione} & \\textbf{Coefficiente}\\\\\\midrule\n0 & $1$\\\\\n1 & $\\theta$\\\\\n12 & $\\Theta$\\\\\n13 & $\\theta\\Theta$\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{La struttura moltiplicativa non stima quattro coefficienti liberi. Il termine al ritardo 13 è il prodotto delle due componenti MA.}\n\\vspace{2.5mm}\n\\PInfo{Espandere la formula evita di confondere il SARIMA con un MA non stagionale di ordine 13 avente tutti i coefficienti liberi.}\n",
+    "recall": "Una struttura stagionale moltiplicativa vincola i coefficienti e conserva parsimonia.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      16
+    ]
+  },
+  {
+    "page": 48,
+    "title": "Passare i livelli evita di differenziare due volte",
+    "section": "IV · ARIMA E STAGIONE",
+    "left": "{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{4.6cm}p{4.5cm}@{}}\\toprule\n\\textbf{Ingresso alla stima} & \\textbf{Ordini coerenti}\\\\\\midrule\nLivelli $Y_t$ & $d=1$, $D=1$ nel SARIMA\\\\\nDifferenze già calcolate & ARMA della trasformata, senza ripetere $d,D$\\\\\nLivelli e trasformata insieme & Scegliere una sola procedura esplicita\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{Nel percorso principale si passa train in livelli. Applicare prima diff e poi mantenere d=1 e D=1 nella chiamata produrrebbe ulteriori differenze.}\n\\vspace{2.5mm}\n\\PInfo{La trasformata serve qui all’esplorazione. L’oggetto fit conserva il modello stimato sui livelli per restituire previsioni in ppm.}\n",
+    "recall": "I passaggi di trasformazione devono apparire una volta sola nel procedimento.",
+    "snippet": {
+      "text": "fit <- arima(train,\n  order=c(0,1,1),\n  seasonal=list(order=c(0,1,1),\n                period=12),\n  include.mean=FALSE, method=\"ML\")\n",
+      "title": "R · specifica completa sui livelli"
+    },
+    "notebook": 3,
+    "source": [
+      17
+    ],
+    "code_file": "048_esempio.R"
+  },
+  {
+    "page": 49,
+    "title": "La verosimiglianza valuta i parametri del modello",
+    "section": "IV · ARIMA E STAGIONE",
+    "left": "\\[\\widehat\\vartheta=\\arg\\max_{\\vartheta}\\ell(\\vartheta;y_{1:T})\\]\n\\begin{tikzpicture}[x=1cm,y=1cm]\n\\path[use as bounding box](-.1,-.15) rectangle(9.7,4.4);\n\\node[pFlow,text width=3.3cm,fill=GeoA!7] (a) at(2,3.0){Specifica\\\\e parametri candidati};\n\\node[pFlow,text width=3.7cm,fill=GeoB!7] (b) at(7.3,3.0){Verosimiglianza\\\\dei dati osservati};\n\\node[pFlow,text width=4.2cm,fill=GeoC!7] (c) at(4.7,0.9){Ottimizzazione numerica};\n\\draw[pEdge] (a) -- (b);\n\\draw[pEdge] (b) -- (c);\n\\draw[pEdge] (c) -- (a);\n\\end{tikzpicture}\n",
+    "right": "\\PBody{La stima ML usa la struttura probabilistica del modello. Per una serie integrata, stats::arima tratta lo stato iniziale attraverso la rappresentazione in spazio di stato.}\n\\vspace{2.5mm}\n\\PInfo{Un risultato numerico non basta: si controllano codice di convergenza, coefficienti e matrice di covarianza stimata.}\n",
+    "recall": "Specificazione statistica e ottimizzazione numerica sono due passaggi da verificare entrambi.",
+    "snippet": {
+      "text": "fit$code\ncoef(fit)\nsqrt(diag(fit$var.coef))\nstopifnot(fit$code==0)\n",
+      "title": "R · leggere la stima"
+    },
+    "notebook": null,
+    "source": [
+      17,
+      33
+    ],
+    "code_file": "049_esempio.R"
+  },
+  {
+    "page": 50,
+    "title": "I coefficienti stimati restano associati al train",
+    "section": "IV · ARIMA E STAGIONE",
+    "left": "\\PLabel{Stima ML sul periodo 1985--1998}\n{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{2.9186666666666667cm}p{2.9186666666666667cm}p{2.9186666666666667cm}@{}}\\toprule\n\\textbf{Termine} & \\textbf{Stima} & \\textbf{Errore standard}\\\\\\midrule\nma1 & -0,329 & 0,078\\\\\nsma1 & -0,890 & 0,115\\\\\n\\bottomrule\\end{tabular}}\n\\[\\widehat\\sigma^2=0,090\\ \\mathrm{ppm}^2\\]\n",
+    "right": "\\PBody{Le due componenti MA descrivono dipendenza nella serie differenziata. I coefficienti non misurano direttamente un tasso di crescita annuale della concentrazione.}\n\\vspace{2.5mm}\n\\PInfo{Gli errori standard dei coefficienti riassumono l’incertezza di stima sotto il modello. Non sono gli errori standard delle previsioni future.}\n\\PSmall{Tabelle e formule numeriche sono generate dai risultati R, con arrotondamento soltanto nella presentazione.}\n",
+    "recall": "Interpretare un coefficiente richiede di ricordare quale trasformata e quale convenzione lo definiscono.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      17
+    ]
+  },
+  {
+    "page": 51,
+    "title": "Media, intercetta e deriva richiedono attenzione",
+    "section": "IV · ARIMA E STAGIONE",
+    "left": "{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{4.2cm}p{4.9cm}@{}}\\toprule\n\\textbf{Caso} & \\textbf{Convenzione utilizzata}\\\\\\midrule\nARMA non differenziato & include.mean può stimare una media\\\\\nARIMA con differenze & include.mean non aggiunge una deriva\\\\\nDeriva esplicita & Richiede una parametrizzazione coerente\\\\\nModello del laboratorio & Nessun regressore di deriva esplicita\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{In stats::arima, include.mean viene ignorato quando sono presenti differenze. Non basta impostarlo a TRUE per ottenere una deriva nel livello.}\n\\vspace{2.5mm}\n\\PInfo{Con più ordini di integrazione, aggiungere termini deterministici può implicare andamenti polinomiali. Serve esplicitare quale crescita si sta imponendo.}\n",
+    "recall": "Il nome di un argomento non sostituisce la lettura della parametrizzazione del modello.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      16,
+      17,
+      33
+    ]
+  },
+  {
+    "page": 52,
+    "title": "Una famiglia piccola di candidati",
+    "section": "IV · ARIMA E STAGIONE",
+    "left": "{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{6.6cm}p{2.5cm}@{}}\\toprule\n\\textbf{Candidato} & \\textbf{Parte ordinaria}\\\\\\midrule\nSARIMA $(0,1,1)(0,1,1)_{12}$ & MA(1)\\\\\nSARIMA $(1,1,0)(0,1,1)_{12}$ & AR(1)\\\\\nSARIMA $(1,1,1)(0,1,1)_{12}$ & ARMA(1,1)\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{L’approfondimento confronta tre strutture mantenendo la stessa finestra, le stesse differenze e lo stesso metodo di stima.}\n\\vspace{2.5mm}\n\\PInfo{La specifica centrale resta quella prefissata dal sito. Il confronto illustra come documentare una scelta sul train, senza riscrivere il risultato finale dopo aver visto il test.}\n\\PSmall{Un insieme piccolo e motivato è più leggibile di una ricerca indiscriminata su molte combinazioni.}\n",
+    "recall": "La famiglia dei candidati deve essere motivata prima di consultare la verifica finale.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      15,
+      17
+    ]
+  },
+  {
+    "page": 53,
+    "title": "AIC e BIC bilanciano adattamento e parametri",
+    "section": "IV · ARIMA E STAGIONE",
+    "left": "\\[\\operatorname{AIC}=-2\\widehat\\ell+2k\\]\n\\[\\operatorname{BIC}=-2\\widehat\\ell+k\\log n\\]\n\\PInfo{Qui $k$ include la varianza. Il campione efficace della verosimiglianza ha $n=155$, dopo le 13 posizioni iniziali associate alle differenze.}\n",
+    "right": "\\PBody{Questi criteri confrontano modelli con verosimiglianze comparabili. Valori più bassi indicano il compromesso preferito dal criterio, non un errore futuro già misurato.}\n\\vspace{2.5mm}\n\\PInfo{Nel confronto usiamo lo stesso train e gli stessi $d,D$. Cambiare differenze o risposta può rendere non confrontabili i valori riportati.}\n",
+    "recall": "Un criterio informativo orienta la scelta sul campione disponibile; non sostituisce la validazione temporale.",
+    "snippet": {
+      "text": "c(AIC=AIC(fit), BIC=BIC(fit))\nlogLik(fit)\nnobs(fit)\n",
+      "title": "R · criteri sul train"
+    },
+    "notebook": null,
+    "source": [
+      17,
+      33
+    ],
+    "code_file": "053_esempio.R"
+  },
+  {
+    "page": 54,
+    "title": "Leggere il confronto entro le sue condizioni",
+    "section": "IV · ARIMA E STAGIONE",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/22_AIC_train.pdf}\n\\vspace{1.5mm}\n\\PSmall{Tre specifiche sullo stesso train e con le stesse differenze. Altezze: $\\Delta$AIC; numeri: AIC assoluto.}\n",
+    "right": "\\PBody{La graduatoria riguarda soltanto i candidati considerati. Un valore vicino fra modelli suggerisce prudenza nel trattare la scelta come definitiva.}\n\\vspace{2.5mm}\n\\PInfo{Convergenza, diagnostica, semplicità e prestazione interna restano elementi distinti da riportare.}\n\\PBody{Il modello centrale conserva la specifica del laboratorio, così i risultati sono confrontabili con il sito.}\n\\vspace{2.5mm}\n",
+    "recall": "Un minimo in una piccola tabella non dimostra che il modello sia universalmente migliore.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      17
+    ]
+  },
+  {
+    "page": 55,
+    "title": "La previsione torna nella scala dei livelli",
+    "section": "IV · ARIMA E STAGIONE",
+    "left": "\\begin{tikzpicture}[x=1cm,y=1cm]\n\\path[use as bounding box](-.1,-.15) rectangle(9.7,4.8);\n\\node[pFlow,text width=3.3cm,fill=GeoA!7] (a) at(2.0,3.4){Modello stimato\\\\sui livelli del train};\n\\node[pFlow,text width=3.7cm,fill=GeoB!7] (b) at(7.2,3.4){Previsione\\\\e varianza a ogni $h$};\n\\node[pFlow,text width=5.4cm,fill=GeoC!7] (c) at(4.6,1.0){Date future e unità in ppm};\n\\draw[pEdge] (a) -- (b);\n\\draw[pEdge] (b) -- (c);\n\\end{tikzpicture}\n\\[\\widehat y_{T+h\\mid T},\\qquad s_h=\\sqrt{\\widehat{\\operatorname{Var}}(e_h)}\\]\n",
+    "right": "\\PBody{predict applicato all’oggetto arima restituisce il centro e l’errore standard dei valori futuri. Non occorre sommare manualmente le differenze quando il modello è stato stimato sui livelli.}\n\\vspace{2.5mm}\n\\PInfo{Le date vanno assegnate e controllate esplicitamente prima di confrontare previsione e osservazione.}\n",
+    "recall": "La scala della previsione deve coincidere con quella del valore futuro valutato.",
+    "snippet": {
+      "text": "pred <- predict(fit,n.ahead=36)\np_hat <- as.numeric(pred$pred)\ns_hat <- as.numeric(pred$se)\nstopifnot(length(p_hat)==36,\n          all(s_hat>0))\n",
+      "title": "R · previsione e errore standard"
+    },
+    "notebook": 6,
+    "source": [
+      22,
+      23
+    ],
+    "code_file": "055_esempio.R"
+  },
+  {
+    "page": 56,
+    "title": "Un random walk accumula incertezza senza limite",
+    "section": "IV · ARIMA E STAGIONE",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/25_random_walk_varianza.pdf}\n\\vspace{1.5mm}\n\\PSmall{Confronto teorico con parametri noti e innovazioni di varianza unitaria.}\n\\[Y_t=Y_{t-1}+\\varepsilon_t,\\qquad\\operatorname{Var}(e_h)=h\\sigma^2\\]\n",
+    "right": "\\PBody{Nel random walk ogni innovazione futura entra con peso uno. La varianza dell’errore cresce linearmente con l’orizzonte.}\n\\vspace{2.5mm}\n\\PInfo{Il confronto con AR(1) mostra perché la presenza di una radice unitaria cambia il comportamento della previsione di lungo periodo.}\n\\PSmall{Un SARIMA integrato può avere una crescita dell’incertezza più articolata, legata anche alla stagione.}\n",
+    "recall": "Le radici unitarie cambiano la propagazione degli shock e l’incertezza a orizzonti lunghi.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      11,
+      15,
+      22
+    ]
+  },
+  {
+    "page": 57,
+    "title": "Laboratorio: modello e specifica insieme",
+    "section": "IV · ARIMA E STAGIONE",
+    "left": "{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{4.0cm}p{5.1cm}@{}}\\toprule\n\\textbf{Oggetto conservato} & \\textbf{Perché serve}\\\\\\midrule\nDati e separazione & Ripetere esattamente la stima\\\\\nOrdini e metodo & Ricostruire la specifica\\\\\nCoefficienti e convergenza & Valutare la soluzione numerica\\\\\nModello RDS & Riprendere la previsione\\\\\nVersione di R & Interpretare differenze numeriche\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{M10\\_N03 costruisce il modello; M10\\_N09 esporta le previsioni. La consegna conserva sia i numeri leggibili sia gli oggetti necessari alla riproduzione.}\n\\vspace{2.5mm}\n\\PInfo{Un oggetto RDS è utile per riprendere il lavoro. Dati e script restano necessari per spiegare da dove proviene.}\n",
+    "recall": "La riproducibilità richiede la procedura completa, oltre all’oggetto finale salvato.",
+    "snippet": {
+      "text": "class(fit)\nfit$call\ngetRversion()\n",
+      "title": "R · identificare l’oggetto stimato"
+    },
+    "notebook": 9,
+    "source": [
+      17,
+      31,
+      32
+    ],
+    "code_file": "057_esempio.R"
+  },
+  {
+    "page": 58,
+    "title": "La diagnostica esamina ciò che il modello lascia",
+    "section": "V · DIAGNOSTICA",
+    "left": "\\begin{tikzpicture}[x=1cm,y=1cm]\n\\path[use as bounding box](-.1,-.15) rectangle(9.7,4.8);\n\\node[pFlow,text width=3.2cm,fill=GeoA!7] (a) at(2.0,3.5){Serie osservata};\n\\node[pFlow,text width=3.5cm,fill=GeoB!7] (b) at(7.1,3.5){Modello stimato};\n\\node[pFlow,text width=3.2cm,fill=GeoC!7] (c) at(2.0,1.1){Innovazioni stimate};\n\\node[pFlow,text width=3.5cm,fill=GeoB!7] (d) at(7.1,1.1){Strutture residue?};\n\\draw[pEdge] (a) -- (b);\n\\draw[pEdge] (b) -- (c);\n\\draw[pEdge] (c) -- (d);\n\\end{tikzpicture}\n",
+    "right": "\\PBody{Le innovazioni stimate dovrebbero essere compatibili con la struttura assunta. Sequenze, dipendenze e cambiamenti di dispersione indicano aspetti da approfondire.}\n\\vspace{2.5mm}\n\\PInfo{Un residuo non è un’innovazione teorica osservata direttamente. Deriva dalla stima e dall’inizializzazione del modello.}\n\\PBody{La diagnostica usa il train. Il test finale rimane disponibile per misurare la prestazione della procedura fissata.}\n\\vspace{2.5mm}\n",
+    "recall": "La diagnostica cerca informazione rimasta nei residui, senza trasformarsi in una prova di perfezione.",
+    "snippet": null,
+    "notebook": 4,
+    "source": [
+      18
+    ]
+  },
+  {
+    "page": 59,
+    "title": "I primi residui risentono dell’inizializzazione",
+    "section": "V · DIAGNOSTICA",
+    "left": "\\[r_t=\\widehat\\varepsilon_t,\\qquad t=14,\\ldots,168\\]\n{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{5.0cm}p{4.0cm}@{}}\\toprule\n\\textbf{Quantità} & \\textbf{Valore nel laboratorio}\\\\\\midrule\nResidui disponibili nel fit & 168 posizioni\\\\\nIntervallo diagnostico & Dalla posizione 14\\\\\nResidui esaminati & 155 valori finiti\\\\\nMotivazione & Convenzione coerente con l’inizializzazione\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{Il percorso online esclude i primi 13 valori dalla diagnostica. Manteniamo questa convenzione e la rendiamo esplicita.}\n\\vspace{2.5mm}\n\\PInfo{Non è una regola universale per qualsiasi ARIMA. La quantità da escludere dipende dal modello, dal metodo e dalla valutazione dell’inizializzazione.}\n",
+    "recall": "Una scelta sui residui iniziali deve essere documentata e applicata prima dei test.",
+    "snippet": {
+      "text": "res <- as.numeric(residuals(fit))\nres <- res[14:length(res)]\nstopifnot(length(res)==155,\n          all(is.finite(res)))\n",
+      "title": "R · residui per la diagnostica"
+    },
+    "notebook": 4,
+    "source": [
+      18
+    ],
+    "code_file": "059_esempio.R"
+  },
+  {
+    "page": 60,
+    "title": "La sequenza residua mantiene il calendario",
+    "section": "V · DIAGNOSTICA",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/08_residui_SARIMA.pdf}\n\\vspace{1.5mm}\n\\PSmall{Innovazioni stimate dalla posizione 14; unità in ppm. La linea zero è il riferimento.}\n",
+    "right": "\\PBody{Cerchiamo sequenze lunghe dello stesso segno, cambiamenti di dispersione, valori isolati e gruppi di anomalie.}\n\\vspace{2.5mm}\n\\PInfo{Un grafico temporale conserva l’ordine. Un istogramma degli stessi residui perderebbe queste informazioni.}\n\\PBody{La prima lettura è descrittiva: un’anomalia visiva diventa una domanda da verificare, non una spiegazione automatica.}\n\\vspace{2.5mm}\n",
+    "recall": "Un residuo anomalo va localizzato nel tempo prima di attribuirgli un significato.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      18
+    ]
+  },
+  {
+    "page": 61,
+    "title": "Residui centrati possono essere dipendenti",
+    "section": "V · DIAGNOSTICA",
+    "left": "\\[\\bar r=\\frac{1}{n_r}\\sum_{t=1}^{n_r}r_t\\]\n{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{3.2cm}p{5.9cm}@{}}\\toprule\n\\textbf{Controllo} & \\textbf{Domanda}\\\\\\midrule\nCentro & Resta uno scostamento sistematico?\\\\\nDispersione & La variabilità è plausibilmente stabile?\\\\\nOrdine & Restano sequenze o cicli?\\\\\nEstremi & Ci sono osservazioni da esaminare?\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{Residui mediamente vicini a zero possono essere fortemente correlati. Viceversa, una sequenza senza correlazione evidente può avere una distribuzione problematica per le bande gaussiane.}\n\\vspace{2.5mm}\n\\PInfo{Centro, dipendenza e distribuzione vengono controllati con strumenti diversi.}\n",
+    "recall": "La diagnostica richiede più di un singolo numero riassuntivo.",
+    "snippet": {
+      "text": "c(media=mean(res),\n  sd=sd(res), min=min(res),\n  max=max(res))\n",
+      "title": "R · riassunti dei residui"
+    },
+    "notebook": null,
+    "source": [
+      18,
+      21
+    ],
+    "code_file": "061_esempio.R"
+  },
+  {
+    "page": 62,
+    "title": "L’ACF residua cerca dipendenza lineare rimasta",
+    "section": "V · DIAGNOSTICA",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/09_ACF_residui.pdf}\n\\vspace{1.5mm}\n\\PSmall{ACF delle 155 innovazioni stimate. Le bande servono come riferimento approssimato.}\n",
+    "right": "\\PBody{Una correlazione residua ai ritardi 12 o 24 suggerirebbe una struttura annuale non completamente rappresentata. Anche i ritardi brevi meritano attenzione.}\n\\vspace{2.5mm}\n\\PInfo{Più ritardi si guardano, più è probabile osservare qualche superamento isolato delle bande. Conta la struttura complessiva.}\n",
+    "recall": "L’ACF residua è una verifica della dipendenza rimasta ai ritardi esaminati.",
+    "snippet": {
+      "text": "acf_res <- acf(res,lag.max=36,\n               plot=FALSE)\nacf_res$acf[c(2,13,25)]\n",
+      "title": "R · ritardi 1, 12 e 24"
+    },
+    "notebook": 4,
+    "source": [
+      19
+    ],
+    "code_file": "062_esempio.R"
+  },
+  {
+    "page": 63,
+    "title": "Le bande dell’ACF non sono un test simultaneo",
+    "section": "V · DIAGNOSTICA",
+    "left": "\\[\\widehat\\rho_k\\ \\approx\\ 0\\ \\pm\\ \\frac{1{,}96}{\\sqrt{n_r}}\\]\n\\PInfo{La formula è un riferimento puntuale approssimato in condizioni di rumore bianco. La stima di parametri e la lettura di molti ritardi complicano l’interpretazione.}\n",
+    "right": "\\PBody{Un singolo superamento non basta a dichiarare il modello errato. Una successione coerente di correlazioni può essere più informativa di un picco isolato.}\n\\vspace{2.5mm}\n\\PBody{La scelta dei ritardi va collegata alla domanda: breve memoria, ciclo annuale, o dipendenza più lunga.}\n\\vspace{2.5mm}\n\\PSmall{Per aggregare più autocorrelazioni useremo Ljung--Box, dichiarando lag e gradi di libertà.}\n",
+    "recall": "Una banda grafica puntuale non protegge contemporaneamente tutti i ritardi ispezionati.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      19,
+      20
+    ]
+  },
+  {
+    "page": 64,
+    "title": "Ljung–Box aggrega più correlazioni residue",
+    "section": "V · DIAGNOSTICA",
+    "left": "\\[Q=n_r(n_r+2)\\sum_{k=1}^{m}\\frac{\\widehat\\rho_k^2}{n_r-k}\\]\n\\[Q\\ \\dot\\sim\\ \\chi^2_{m-r},\\qquad m=24,\\quad r=2\\]\n\\PInfo{Nel protocollo si sottraggono i due coefficienti MA stimati. Restano 22 gradi di libertà per il riferimento asintotico.}\n",
+    "right": "\\PBody{L’ipotesi nulla riguarda l’assenza di autocorrelazioni ai ritardi considerati. Il test riassume correlazioni al quadrato e non attribuisce un significato fisico ai loro segni.}\n\\vspace{2.5mm}\n\\PBody{Il riferimento è approssimato: dimensione campionaria, stima e modello incidono sulla sua calibrazione.}\n\\vspace{2.5mm}\n",
+    "recall": "Il risultato di Ljung–Box va riportato insieme a numero di residui, ritardo massimo e correzione.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      20,
+      33
+    ]
+  },
+  {
+    "page": 65,
+    "title": "Il risultato diagnostico non certifica il modello",
+    "section": "V · DIAGNOSTICA",
+    "left": "\\PLabel{Ljung–Box sul protocollo dichiarato}\n{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{5.2cm}p{3.8cm}@{}}\\toprule\n\\textbf{Quantità} & \\textbf{Risultato}\\\\\\midrule\nResidui & 155\\\\\nRitardo massimo & 24\\\\\nGradi di libertà & 22\\\\\nStatistica $Q$ & 14,242\\\\\nValore $p$ & 0,893\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{Il valore $p$ quantifica quanto la statistica sia compatibile con il riferimento del test. Non è la probabilità che il modello sia vero.}\n\\vspace{2.5mm}\n\\PInfo{Un risultato non significativo non prova indipendenza, normalità o buona previsione. Riguarda questa verifica di autocorrelazione.}\n",
+    "recall": "La mancata evidenza contro un’ipotesi non è una dimostrazione della sua correttezza.",
+    "snippet": {
+      "text": "lb <- Box.test(res, lag=24,\n  type=\"Ljung-Box\", fitdf=2)\nc(Q=unname(lb$statistic),\n  df=unname(lb$parameter),\n  p=lb$p.value)\n",
+      "title": "R · Ljung–Box"
+    },
+    "notebook": 4,
+    "source": [
+      20
+    ],
+    "code_file": "065_esempio.R"
+  },
+  {
+    "page": 66,
+    "title": "Il QQ plot esamina forma e code della distribuzione",
+    "section": "V · DIAGNOSTICA",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/10_QQ_residui.pdf}\n\\vspace{1.5mm}\n\\PSmall{Quantili campionari delle innovazioni stimate contro quantili gaussiani; linea di riferimento.}\n",
+    "right": "\\PBody{Scostamenti nelle code possono rendere meno attendibili intervalli costruiti con una distribuzione normale, anche quando l’ACF residua è modesta.}\n\\vspace{2.5mm}\n\\PInfo{Il grafico non dimostra normalità. Permette di localizzare quali parti della distribuzione si allontanano dal riferimento.}\n\\PSmall{Per prevedere la media non è sempre necessaria la normalità. La probabilità attribuita agli estremi richiede ipotesi più specifiche.}\n",
+    "recall": "La distribuzione dei residui conta soprattutto quando si interpretano probabilità e intervalli.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      21
+    ]
+  },
+  {
+    "page": 67,
+    "title": "Autocorrelazione e dispersione sono distinte",
+    "section": "V · DIAGNOSTICA",
+    "left": "\\[\\operatorname{Cov}(\\varepsilon_t,\\varepsilon_{t-k})=0\\]\n\\[\\nRightarrow\\quad\\operatorname{Var}(\\varepsilon_t\\mid\\mathcal F_{t-1})=\\sigma^2\\]\n\\PInfo{Assenza di correlazione lineare e varianza condizionata costante sono proprietà differenti.}\n",
+    "right": "\\PBody{Periodi con residui piccoli seguiti da periodi molto dispersi possono segnalare eteroschedasticità. L’ACF dei residui al quadrato è un approfondimento descrittivo.}\n\\vspace{2.5mm}\n\\PInfo{In questo modulo non stimiamo una famiglia di modelli di volatilità. Registriamo il limite se la dispersione appare variabile.}\n",
+    "recall": "Un controllo della media e dell’ACF non esaurisce la verifica della variabilità.",
+    "snippet": {
+      "text": "acf_quadrati <- acf(res^2,\n  lag.max=24, plot=FALSE)\nhead(as.numeric(acf_quadrati$acf))\n",
+      "title": "R · dipendenza dei quadrati"
+    },
+    "notebook": null,
+    "source": [
+      18,
+      21
+    ],
+    "code_file": "067_esempio.R"
+  },
+  {
+    "page": 68,
+    "title": "Documentare l’origine delle anomalie",
+    "section": "V · DIAGNOSTICA",
+    "left": "{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{3.4cm}p{5.7cm}@{}}\\toprule\n\\textbf{Possibile origine} & \\textbf{Azione motivata}\\\\\\midrule\nErrore di registrazione & Controllare la fonte e conservare la correzione\\\\\nEvento reale & Mantenerlo e discuterne il significato\\\\\nCambio di procedura & Documentare la discontinuità\\\\\nModello inadeguato & Rivedere l’ipotesi usando il train\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{Eliminare un valore perché peggiora una metrica modifica il problema dopo aver visto il risultato. Le regole di esclusione devono dipendere da una ragione verificabile.}\n\\vspace{2.5mm}\n\\PInfo{Se una modifica viene suggerita dal test finale, quel periodo ha partecipato allo sviluppo. Occorre dichiararlo e trovare una nuova verifica indipendente.}\n",
+    "recall": "La pulizia dei dati è una scelta scientifica da motivare, non un modo per migliorare retroattivamente il risultato.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      18,
+      31
+    ]
+  },
+  {
+    "page": 69,
+    "title": "Laboratorio: scrivere una conclusione diagnostica",
+    "section": "V · DIAGNOSTICA",
+    "left": "\\PLabel{Una conclusione in quattro parti}\n{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{3.1cm}p{6.0cm}@{}}\\toprule\n\\textbf{Evidenza} & \\textbf{Che cosa riportare}\\\\\\midrule\nSequenza & Andamento e anomalie osservate\\\\\nDipendenza & ACF e lag esaminati\\\\\nTest aggregato & $Q$, gradi di libertà e valore $p$\\\\\nDistribuzione & QQ plot e limiti delle bande\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{La conclusione unisce strumenti complementari. Per esempio: “Ai ritardi esaminati non emerge una forte struttura lineare residua; le bande restano condizionate al modello e alle sue ipotesi”.}\n\\vspace{2.5mm}\n\\PInfo{M10\\_N04 include l’esecuzione e l’interpretazione. La formulazione finale deve seguire i risultati realmente osservati, senza promuovere un test a certificazione generale.}\n",
+    "recall": "Una buona conclusione diagnostica nomina sia l’evidenza sia ciò che il controllo non stabilisce.",
+    "snippet": null,
+    "notebook": 4,
+    "source": [
+      18,
+      19,
+      20,
+      21
+    ]
+  },
+  {
+    "page": 70,
+    "title": "La validazione rispetta il tempo della decisione",
+    "section": "VI · VALIDAZIONE TEMPORALE",
+    "left": "\\begin{tikzpicture}[x=1cm,y=1cm]\n\\path[use as bounding box](-.1,-.15) rectangle(9.7,4.9);\n\\fill[GeoA!20](.5,3.96)rectangle(5.500,4.44);\n\\fill[GeoB!40](5.500,3.96)rectangle(6.000,4.44);\n\\node[pNote,anchor=west]at(6.160,4.2){120};\n\\fill[GeoA!20](.5,3.04)rectangle(6.000,3.5200000000000005);\n\\fill[GeoB!40](6.000,3.04)rectangle(6.500,3.5200000000000005);\n\\node[pNote,anchor=west]at(6.660,3.2800000000000002){132};\n\\fill[GeoA!20](.5,2.12)rectangle(6.500,2.6000000000000005);\n\\fill[GeoB!40](6.500,2.12)rectangle(7.000,2.6000000000000005);\n\\node[pNote,anchor=west]at(7.160,2.3600000000000003){144};\n\\draw[Muted,dashed](7.500,.6)--(7.500,4.65);\n\\node[pNote]at(4,.25){train in verde · verifica interna in rame};\n\\node[pNote]at(8.8,4.4){test\\\\finale};\n\\end{tikzpicture}\n\\[\\widehat y_{o+h\\mid o}=g_h(y_1,\\ldots,y_o)\\]\n",
+    "right": "\\PBody{Ogni previsione interna viene costruita usando soltanto osservazioni antecedenti o contemporanee alla propria origine. Il valore futuro serve dopo, per calcolare l’errore.}\n\\vspace{2.5mm}\n\\PInfo{Separare righe a caso può distribuire passato e futuro in entrambe le parti e alterare il compito di previsione temporale.}\n",
+    "recall": "Il disegno di validazione deve imitare l’uso previsto del modello.",
+    "snippet": null,
+    "notebook": 5,
+    "source": [
+      8,
+      9
+    ]
+  },
+  {
+    "page": 71,
+    "title": "Una finestra crescente conserva tutto il passato",
+    "section": "VI · VALIDAZIONE TEMPORALE",
+    "left": "\\begin{tikzpicture}[x=1cm,y=1cm]\n\\path[use as bounding box](-.1,-.15) rectangle(9.7,4.9);\n\\fill[GeoA!20](.5,3.96)rectangle(5.500,4.44);\n\\fill[GeoB!40](5.500,3.96)rectangle(6.000,4.44);\n\\node[pNote,anchor=west]at(6.160,4.2){120};\n\\fill[GeoA!20](.5,3.04)rectangle(6.000,3.5200000000000005);\n\\fill[GeoB!40](6.000,3.04)rectangle(6.500,3.5200000000000005);\n\\node[pNote,anchor=west]at(6.660,3.2800000000000002){132};\n\\fill[GeoA!20](.5,2.12)rectangle(6.500,2.6000000000000005);\n\\fill[GeoB!40](6.500,2.12)rectangle(7.000,2.6000000000000005);\n\\node[pNote,anchor=west]at(7.160,2.3600000000000003){144};\n\\draw[Muted,dashed](7.500,.6)--(7.500,4.65);\n\\node[pNote]at(4,.25){train in verde · verifica interna in rame};\n\\node[pNote]at(8.8,4.4){test\\\\finale};\n\\end{tikzpicture}\n\\PSmall{Origine 120: train 1--120, verifica 121--132.\\\\Origine 132: train 1--132, verifica 133--144.\\\\Origine 144: train 1--144, verifica 145--156.}\n",
+    "right": "\\PBody{Nel protocollo principale il primo mese rimane fisso e il train si allunga. Ogni origine produce 12 previsioni.}\n\\vspace{2.5mm}\n\\PInfo{La stima viene ripetuta: non si usa il modello finale sui 168 mesi per fingere una previsione emessa anni prima.}\n",
+    "recall": "La previsione storica di ogni origine richiede una stima che usi soltanto il suo passato.",
+    "snippet": {
+      "text": "origini <- c(120,132,144)\nstopifnot(all(origini+12<=\n              length(train)))\ncv <- valida_origini(train,origini)\n",
+      "title": "R · origini del protocollo"
+    },
+    "notebook": 5,
+    "source": [
+      8,
+      9
+    ],
+    "code_file": "071_esempio.R"
+  },
+  {
+    "page": 72,
+    "title": "Una finestra mobile dimentica il passato più remoto",
+    "section": "VI · VALIDAZIONE TEMPORALE",
+    "left": "{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{4.6cm}p{4.5cm}@{}}\\toprule\n\\textbf{Finestra crescente} & \\textbf{Finestra di ampiezza fissa}\\\\\\midrule\n$1,\\ldots,o$ & $o-w+1,\\ldots,o$\\\\\nPiù dati a ogni origine & Stesso numero di dati\\\\\nAdatta a struttura stabile & Può seguire cambiamenti locali\\\\\nConserva vecchi regimi & Aumenta sensibilità al campione recente\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{La scelta dipende da quanto si ritiene stabile il processo. Una finestra corta può adattarsi più rapidamente e stimare i parametri con maggiore incertezza.}\n\\vspace{2.5mm}\n\\PInfo{Nel laboratorio usiamo la finestra crescente. Una finestra mobile è una variante da progettare e valutare all’interno del train.}\n",
+    "recall": "Dimenticare dati è una scelta di modello sul compromesso fra stabilità e adattamento.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      8
+    ]
+  },
+  {
+    "page": 73,
+    "title": "Tre origini e trentasei coppie di verifica",
+    "section": "VI · VALIDAZIONE TEMPORALE",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/06_cv_origini.pdf}\n\\vspace{1.5mm}\n\\PSmall{Calendario delle origini interne e delle rispettive verifiche a 12 mesi.}\n",
+    "right": "\\PBody{Il confronto conserva una riga per coppia origine--orizzonte, con osservazione, previsione del SARIMA e riferimenti.}\n\\vspace{2.5mm}\n\\PInfo{Le tre finestre future sono distinte, ma i train sono sovrapposti. Le stime e i loro errori non diventano automaticamente repliche indipendenti.}\n",
+    "recall": "Il numero di righe non coincide necessariamente con il numero di repliche statisticamente indipendenti.",
+    "snippet": {
+      "text": "dim(cv)\ntable(cv$origine)\nrange(cv$h)\nstopifnot(nrow(cv)==36)\n",
+      "title": "R · struttura della validazione"
+    },
+    "notebook": 5,
+    "source": [
+      8,
+      9
+    ],
+    "code_file": "073_esempio.R"
+  },
+  {
+    "page": 74,
+    "title": "Tutta la procedura va ripetuta dentro ogni origine",
+    "section": "VI · VALIDAZIONE TEMPORALE",
+    "left": "\\begin{tikzpicture}[x=1cm,y=1cm]\n\\path[use as bounding box](-.1,-.15) rectangle(9.7,4.8);\n\\node[pFlow,text width=3.6cm,fill=GeoA!7] (a) at(2.1,3.65){Passato disponibile\\\\alla singola origine};\n\\node[pFlow,text width=3.6cm,fill=GeoC!7] (b) at(7.4,3.65){Trasformazioni\\\\e stima};\n\\node[pFlow,text width=3.6cm,fill=GeoB!7] (c) at(2.1,1.15){Errore sui mesi\\\\successivi};\n\\node[pFlow,text width=3.6cm,fill=GeoB!7] (d) at(7.4,1.15){Previsione\\\\per quei mesi};\n\\draw[pEdge] (a) -- (b);\n\\draw[pEdge] (b) -- (d);\n\\draw[pEdge] (d) -- (c);\n\\end{tikzpicture}\n",
+    "right": "\\PBody{Se una trasformazione stima media, scala, parametri di imputazione o componenti, deve essere appresa dal train della singola origine.}\n\\vspace{2.5mm}\n\\PInfo{Una normalizzazione stimata sull’intera serie trasferirebbe informazioni del futuro nella procedura interna.}\n\\PBody{Il protocollo conserva la specifica SARIMA, ma ricalcola i coefficienti per ogni passato disponibile.}\n\\vspace{2.5mm}\n",
+    "recall": "La validazione riguarda una procedura intera, non soltanto l’ultima chiamata di previsione.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      8,
+      9
+    ]
+  },
+  {
+    "page": 75,
+    "title": "La dispersione fra origini è parte del risultato",
+    "section": "VI · VALIDAZIONE TEMPORALE",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/07_cv_RMSE.pdf}\n\\vspace{1.5mm}\n\\PSmall{RMSE sui 12 mesi successivi a ciascuna origine; confronti sulla stessa scala in ppm.}\n",
+    "right": "\\PBody{Una media complessiva può nascondere origini facili e difficili. Il grafico mostra se un vantaggio è stabile oppure concentrato in una sola finestra.}\n\\vspace{2.5mm}\n\\PInfo{Tre origini sono poche per descrivere la variabilità delle prestazioni. Il risultato sostiene una valutazione locale del protocollo.}\n\\PSmall{Si riportano i valori per origine e i riferimenti, evitando di presentare un solo numero come proprietà generale del modello.}\n",
+    "recall": "La prestazione deve essere accompagnata dal periodo e dalla variabilità fra situazioni valutate.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      8,
+      9
+    ]
+  },
+  {
+    "page": 76,
+    "title": "La tabella interna tiene separati i metodi",
+    "section": "VI · VALIDAZIONE TEMPORALE",
+    "left": "{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{2.0835cm}p{2.0835cm}p{2.0835cm}p{2.0835cm}@{}}\\toprule\n\\textbf{Origine} & \\textbf{SARIMA} & \\textbf{Stagionale} & \\textbf{Deriva}\\\\\\midrule\n120 & 0,239 & 1,985 & 2,349\\\\\n132 & 0,289 & 1,794 & 2,456\\\\\n144 & 0,498 & 1,188 & 2,231\\\\\n\\bottomrule\\end{tabular}}\n\\PSmall{RMSE in ppm. Origini 120, 132 e 144: dicembre 1994, dicembre 1995 e dicembre 1996.}\n",
+    "right": "\\PBody{I metodi sono valutati sugli stessi mesi futuri di ogni origine. Nessuna cella usa il test 1999--2001.}\n\\vspace{2.5mm}\n\\PInfo{La graduatoria interna è un’evidenza sul compito a 12 mesi. Non dimostra da sola il comportamento a 36 mesi.}\n\\PBody{Se si modifica una scelta in base a questa tabella, la modifica resta parte dello sviluppo sul train.}\n\\vspace{2.5mm}\n",
+    "recall": "Il confronto è equo quando origine, orizzonte, osservazioni e metrica sono gli stessi.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      8,
+      9
+    ]
+  },
+  {
+    "page": 77,
+    "title": "Un approfondimento usa trentasette origini mensili",
+    "section": "VI · VALIDAZIONE TEMPORALE",
+    "left": "\\begin{tikzpicture}[x=1cm,y=1cm]\n\\path[use as bounding box](-.1,-.15) rectangle(9.7,4.9);\n\\fill[GeoA!20](.5,3.96)rectangle(5.500,4.44);\n\\fill[GeoB!40](5.500,3.96)rectangle(6.000,4.44);\n\\node[pNote,anchor=west]at(6.160,4.2){120};\n\\fill[GeoA!20](.5,3.04)rectangle(6.000,3.5200000000000005);\n\\fill[GeoB!40](6.000,3.04)rectangle(6.500,3.5200000000000005);\n\\node[pNote,anchor=west]at(6.660,3.2800000000000002){132};\n\\fill[GeoA!20](.5,2.12)rectangle(6.500,2.6000000000000005);\n\\fill[GeoB!40](6.500,2.12)rectangle(7.000,2.6000000000000005);\n\\node[pNote,anchor=west]at(7.160,2.3600000000000003){144};\n\\fill[GeoA!20](.5,1.2)rectangle(7.000,1.68);\n\\fill[GeoB!40](7.000,1.2)rectangle(7.500,1.68);\n\\node[pNote,anchor=west]at(7.660,1.44){156};\n\\draw[Muted,dashed](7.500,.6)--(7.500,4.65);\n\\node[pNote]at(4,.25){train in verde · verifica interna in rame};\n\\node[pNote]at(8.8,4.4){test\\\\finale};\n\\end{tikzpicture}\n\\[o=120,121,\\ldots,156,\\qquad h=1,\\ldots,12\\]\n",
+    "right": "\\PBody{L’approfondimento aggiunge 37 origini e 444 coppie origine--orizzonte, tutte interne ai primi 168 mesi. Serve a osservare il comportamento per orizzonte.}\n\\vspace{2.5mm}\n\\PInfo{Le verifiche si sovrappongono. La stessa osservazione può comparire come futuro a orizzonti diversi: non si tratta di 444 casi indipendenti.}\n\\PSmall{Questo ampliamento è distinto dalle tre origini del protocollo ripreso dal sito.}\n",
+    "recall": "Più origini offrono una descrizione più ricca, ma la sovrapposizione va dichiarata.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      8
+    ]
+  },
+  {
+    "page": 78,
+    "title": "L’errore può cambiare con l’orizzonte",
+    "section": "VI · VALIDAZIONE TEMPORALE",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/35_rolling_orizzonte.pdf}\n\\vspace{1.5mm}\n\\PSmall{Approfondimento: 37 origini mensili, sempre nel train. Ogni orizzonte riassume 37 previsioni.}\n",
+    "right": "\\PBody{Un modello può essere competitivo a un mese e perdere vantaggio a un anno. Per questo una metrica aggregata su più orizzonti non basta a descrivere ogni uso.}\n\\vspace{2.5mm}\n\\PInfo{Le curve sono descrittive e riguardano questo archivio. La dipendenza fra origini impedisce di leggere le differenze come se fossero medie di repliche indipendenti.}\n",
+    "recall": "L’orizzonte è parte del risultato, non una semplice etichetta della previsione.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      8,
+      24
+    ]
+  },
+  {
+    "page": 79,
+    "title": "La mappa degli errori distingue periodo e orizzonte",
+    "section": "VI · VALIDAZIONE TEMPORALE",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/36_rolling_errori.pdf}\n\\vspace{1.5mm}\n\\PSmall{Errore osservato meno previsto; scala cromatica simmetrica. Origini e orizzonti sono distinti.}\n",
+    "right": "\\PBody{Bande verticali o orizzontali possono indicare periodi difficili o orizzonti problematici. Il segno aiuta a riconoscere sottostima e sovrastima.}\n\\vspace{2.5mm}\n\\PInfo{Una struttura visiva suggerisce una domanda. Non identifica automaticamente un cambiamento fisico o una causa.}\n\\PSmall{Il grafico conserva le 444 coppie, mentre una singola RMSE ne ridurrebbe tutta l’informazione a uno scalare.}\n",
+    "recall": "Una vista con origine e orizzonte permette di localizzare le difficoltà del modello.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      8,
+      25
+    ]
+  },
+  {
+    "page": 80,
+    "title": "Il test finale si apre dopo aver fissato la procedura",
+    "section": "VI · VALIDAZIONE TEMPORALE",
+    "left": "\\begin{tikzpicture}[x=1cm,y=1cm]\n\\path[use as bounding box](-.1,-.15) rectangle(9.7,4.8);\n\\fill[GeoA!17](.4,1.7)rectangle(7.2,3.25);\n\\fill[GeoB!18](7.2,1.7)rectangle(9.4,3.25);\n\\node[pLabel]at(3.8,2.65){Addestramento: 168 mesi};\n\\node[pNote]at(3.8,2.05){gennaio 1985 -- dicembre 1998};\n\\node[pLabel]at(8.3,2.65){Test: 36};\n\\node[pNote]at(8.3,2.05){1999--2001};\n\\draw[Classical,line width=1pt](7.2,1.35)--(7.2,3.7);\n\\node[pLabel,anchor=east]at(7.0,3.7){Origine $T$};\n\\draw[pAxis](.4,1.2)--(9.5,1.2);\n\\node[pNote]at(.8,.65){passato};\\node[pNote]at(8.5,.65){futuro storico};\n\\draw[decorate,decoration={brace,amplitude=4pt},GeoB](7.2,4.05)--(9.4,4.05);\n\\node[pNote]at(8.3,4.45){$h=1,\\ldots,36$};\n\\end{tikzpicture}\n\\PInfo{La specifica, i riferimenti e le metriche sono registrati prima di leggere i risultati 1999--2001.}\n",
+    "right": "\\PBody{Il test finale valuta l’intera procedura sviluppata sul train. Usarlo ripetutamente per scegliere varianti lo trasforma in un ulteriore campione di sviluppo.}\n\\vspace{2.5mm}\n\\PInfo{Una revisione suggerita dal test può essere scientificamente utile. Va dichiarata come nuova ipotesi e verificata su altro materiale.}\n\\PBody{La stima finale torna a usare tutti i 168 mesi, con le scelte ormai fissate.}\n\\vspace{2.5mm}\n",
+    "recall": "La separazione tra sviluppo e verifica protegge l’interpretazione della prestazione.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      9
+    ]
+  },
+  {
+    "page": 81,
+    "title": "Verificare la separazione dal test",
+    "section": "VI · VALIDAZIONE TEMPORALE",
+    "left": "\\begin{tikzpicture}[x=1cm,y=1cm]\n\\path[use as bounding box](-.1,-.15) rectangle(9.7,4.8);\n\\node[pFlow,text width=3.6cm,fill=GeoB!7] (a) at(2.1,3.5){Copia dei dati\\\\con test alterato};\n\\node[pFlow,text width=3.6cm,fill=GeoA!7] (b) at(7.4,3.5){Train estratto\\\\per calendario};\n\\node[pFlow,text width=3.6cm,fill=GeoA!7] (c) at(2.1,1.1){Train originale};\n\\node[pFlow,text width=3.6cm,fill=GeoC!7] (d) at(7.4,1.1){Previsioni\\\\identiche};\n\\draw[pEdge] (a) -- (b);\n\\draw[pEdge] (b) -- (d);\n\\draw[pEdge] (c) -- (d);\n\\end{tikzpicture}\n",
+    "right": "\\PBody{La verifica automatica altera tutti i 36 valori futuri e ripete l’estrazione del train. Train, riferimenti e previsione SARIMA devono rimanere identici.}\n\\vspace{2.5mm}\n\\PInfo{Il controllo rileva una dipendenza accidentale dai valori del test nel procedimento implementato. Non sostituisce la revisione delle scelte fatte dall’analista.}\n",
+    "recall": "Un controllo utile prova un rischio concreto e osserva un effetto che deve restare invariato.",
+    "snippet": {
+      "text": "stopifnot(max(time(train)) <\n          min(time(test)))\nstopifnot(length(intersect(\n  time(train),time(test)))==0)\n",
+      "title": "R · separazione del calendario"
+    },
+    "notebook": null,
+    "source": [
+      9,
+      32
+    ],
+    "code_file": "081_esempio.R"
+  },
+  {
+    "page": 82,
+    "title": "Laboratorio: il disegno prima del punteggio",
+    "section": "VI · VALIDAZIONE TEMPORALE",
+    "left": "{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{3.5cm}p{5.5cm}@{}}\\toprule\n\\textbf{Da dichiarare} & \\textbf{Protocollo principale}\\\\\\midrule\nOrigini & 120, 132, 144\\\\\nFinestra & Crescente, da gennaio 1985\\\\\nOrizzonte interno & 12 mesi\\\\\nAggiornamento & Nuova stima per origine\\\\\nTest finale & 36 mesi a origine fissa\\\\\nLimite & Poche origini e errori dipendenti\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{M10\\_N05 produce la tabella per origine. Il rapporto deve spiegare come sono stati ottenuti i numeri, oltre a indicare il modello con l’errore minore.}\n\\vspace{2.5mm}\n\\PInfo{L’approfondimento con 37 origini non cambia il protocollo centrale. Serve a esplorare il rapporto fra orizzonte e prestazione.}\n",
+    "recall": "Una metrica senza il disegno di validazione non è un risultato interpretabile.",
+    "snippet": null,
+    "notebook": 5,
+    "source": [
+      8,
+      9
+    ]
+  },
+  {
+    "page": 83,
+    "title": "Prima delle metriche si controllano date e segno",
+    "section": "VII · ERRORI E INTERVALLI",
+    "left": "\\[e_h=y_{T+h}-\\widehat y_{T+h\\mid T}\\]\n{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{2.8cm}p{6.3cm}@{}}\\toprule\n\\textbf{Segno} & \\textbf{Interpretazione}\\\\\\midrule\n$e_h>0$ & Il modello ha sottostimato\\\\\n$e_h<0$ & Il modello ha sovrastimato\\\\\n$e_h=0$ & Previsione e osservazione coincidono\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{La convenzione osservato meno previsto viene mantenuta in tutte le tabelle. Il confronto richiede la stessa data, la stessa unità e vettori della stessa lunghezza.}\n\\vspace{2.5mm}\n\\PInfo{R può riciclare vettori di lunghezze differenti. Un controllo esplicito evita che un errore di struttura produca una metrica apparentemente valida.}\n",
+    "recall": "Una metrica corretta richiede coppie temporali corrette.",
+    "snippet": {
+      "text": "obs <- as.numeric(test)\np_hat <- as.numeric(fc$previsto)\nstopifnot(length(obs)==length(p_hat))\ne <- obs-p_hat\nstopifnot(all(is.finite(e)))\n",
+      "title": "R · errore osservato meno previsto"
+    },
+    "notebook": 7,
+    "source": [
+      23
+    ],
+    "code_file": "083_esempio.R"
+  },
+  {
+    "page": 84,
+    "title": "MAE, RMSE e bias rispondono a domande diverse",
+    "section": "VII · ERRORI E INTERVALLI",
+    "left": "\\[\\operatorname{MAE}=\\frac{1}{H}\\sum_{h=1}^H|e_h|\\]\n\\[\\operatorname{RMSE}=\\sqrt{\\frac{1}{H}\\sum_{h=1}^He_h^2}\\]\n\\[\\operatorname{bias}=\\frac{1}{H}\\sum_{h=1}^He_h\\]\n",
+    "right": "\\PBody{MAE misura la dimensione media dell’errore assoluto. RMSE attribuisce più peso agli errori grandi. Il bias conserva il segno e rileva uno scostamento sistematico medio.}\n\\vspace{2.5mm}\n\\PInfo{Tutte e tre sono in ppm. Un bias piccolo può nascondere errori grandi di segno opposto; non sostituisce MAE o RMSE.}\n",
+    "recall": "Dimensione dell’errore e direzione dello scostamento richiedono riassunti distinti.",
+    "snippet": {
+      "text": "metriche(obs, p_hat)\nc(MAE=mean(abs(e)),\n  RMSE=sqrt(mean(e^2)),\n  bias=mean(e))\n",
+      "title": "R · tre metriche complementari"
+    },
+    "notebook": 7,
+    "source": [
+      24,
+      25
+    ],
+    "code_file": "084_esempio.R"
+  },
+  {
+    "page": 85,
+    "title": "Il test storico misura il vantaggio sui riferimenti",
+    "section": "VII · ERRORI E INTERVALLI",
+    "left": "\\PLabel{Stessa origine, stessi 36 mesi, unità ppm}\n{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{2.0835cm}p{2.0835cm}p{2.0835cm}p{2.0835cm}@{}}\\toprule\n\\textbf{Metodo} & \\textbf{MAE} & \\textbf{RMSE} & \\textbf{Bias}\\\\\\midrule\nMedia & 13,640 & 13,808 & 13,640\\\\\nUltimo & 2,839 & 3,336 & 2,555\\\\\nStagionale & 2,866 & 3,109 & 2,866\\\\\nDeriva & 1,884 & 2,148 & 0,118\\\\\nSARIMA & 0,974 & 1,062 & -0,968\\\\\n\\bottomrule\\end{tabular}}\n\\PSmall{Bias = osservato meno previsto. Nessuna scelta del modello è aggiornata usando questa graduatoria.}\n",
+    "right": "\\PBody{Il SARIMA migliora i riferimenti nel test dichiarato. La deriva è un confronto più esigente del ciclo stagionale ripetuto perché rappresenta una crescita del livello.}\n\\vspace{2.5mm}\n\\PInfo{Il vantaggio riguarda l’archivio, l’origine e gli orizzonti indicati. Non equivale a una garanzia per un’altra serie o per un’altra epoca.}\n\\PSmall{La tabella è letta direttamente dai risultati eseguiti in R.}\n",
+    "recall": "La prestazione è una proprietà del modello insieme al compito e al campione di verifica.",
+    "snippet": null,
+    "notebook": 7,
+    "source": [
+      24
+    ]
+  },
+  {
+    "page": 86,
+    "title": "Una sovrastima persistente nel test",
+    "section": "VII · ERRORI E INTERVALLI",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/04_errori_CO2.pdf}\n\\vspace{1.5mm}\n\\PSmall{Sequenza degli errori nel test; valori negativi indicano sovrastima del livello osservato.}\n",
+    "right": "\\PBody{Il bias del SARIMA è -0,968 ppm. La buona RMSE rispetto ai riferimenti convive quindi con uno scostamento prevalentemente negativo.}\n\\vspace{2.5mm}\n\\PInfo{Un’unica metrica senza segno nasconderebbe questa informazione. La sequenza temporale aiuta a distinguere errori isolati e deviazioni persistenti.}\n\\PSmall{Una struttura nel test può suggerire nuove ipotesi, da valutare poi con un nuovo protocollo.}\n",
+    "recall": "Migliorare un riferimento non significa aver eliminato ogni errore sistematico.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      25
+    ]
+  },
+  {
+    "page": 87,
+    "title": "La traiettoria prevista va letta con il suo intervallo",
+    "section": "VII · ERRORI E INTERVALLI",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/03_previsione_CO2.pdf}\n\\vspace{1.5mm}\n\\PSmall{Previsione emessa a dicembre 1998; banda puntuale al 95\\% condizionata al modello stimato.}\n",
+    "right": "\\PBody{Il centro conserva la stagione e prolunga la dinamica del livello. L’intervallo cresce perché aumenta l’incertezza sugli shock futuri.}\n\\vspace{2.5mm}\n\\PInfo{I valori osservati sono aggiunti soltanto per valutare la previsione storica. Non entrano nel modello che ha prodotto questa traiettoria.}\n\\PBody{L’ampiezza della banda va letta insieme all’errore del centro: contengono informazioni complementari.}\n\\vspace{2.5mm}\n",
+    "recall": "Un grafico previsionale deve rendere visibili origine, unità, osservazioni e natura della banda.",
+    "snippet": null,
+    "notebook": 6,
+    "source": [
+      22,
+      23
+    ]
+  },
+  {
+    "page": 88,
+    "title": "L’intervallo gaussiano usa l’errore standard futuro",
+    "section": "VII · ERRORI E INTERVALLI",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/11_errore_standard_previsione.pdf}\n\\vspace{1.5mm}\n\\PSmall{Errore standard previsto a ogni orizzonte; il modello tratta i parametri stimati come fissati.}\n\\[I_h=\\left[\\widehat y_h-z_{0{,}975}s_h,\\ \\widehat y_h+z_{0{,}975}s_h\\right]\\]\n",
+    "right": "\\PBody{La banda al 95\\% usa un quantile normale e l’errore standard della previsione. Si interpreta separatamente per ciascun orizzonte.}\n\\vspace{2.5mm}\n\\PInfo{L’errore standard non è lo stesso numero della RMSE misurata sui 36 mesi. Il primo deriva dal modello; la seconda dagli errori realizzati.}\n",
+    "recall": "Un intervallo predittivo combina una previsione centrale, una varianza e un’ipotesi distributiva.",
+    "snippet": {
+      "text": "z <- qnorm(0.975)\nlo <- fc$previsto-z*fc$se\nhi <- fc$previsto+z*fc$se\nstopifnot(all(lo<=hi))\n",
+      "title": "R · intervallo al 95%"
+    },
+    "notebook": 6,
+    "source": [
+      22
+    ],
+    "code_file": "088_esempio.R"
+  },
+  {
+    "page": 89,
+    "title": "La banda è condizionata a ipotesi precise",
+    "section": "VII · ERRORI E INTERVALLI",
+    "left": "{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{4.5cm}p{4.6cm}@{}}\\toprule\n\\textbf{Incluso nel calcolo} & \\textbf{Non propagato automaticamente}\\\\\\midrule\nShock futuri del modello & Incertezza dei coefficienti stimati\\\\\nStato e dinamica stimati & Incertezza nella scelta della famiglia\\\\\nOrizzonte e stagionalità & Cambiamenti strutturali futuri\\\\\nDistribuzione gaussiana assunta & Errori di misura o covariate ignote non modellati\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{La documentazione di predict.Arima specifica che gli errori standard escludono l’incertezza dei parametri ARMA e di regressione.}\n\\vspace{2.5mm}\n\\PInfo{La banda riguarda il modello stimato e le sue assunzioni. Una copertura nominale non è una promessa incondizionata sul mondo reale.}\n",
+    "recall": "Un intervallo va accompagnato da ciò che la sua procedura include e da ciò che lascia fuori.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      22,
+      33
+    ]
+  },
+  {
+    "page": 90,
+    "title": "Valutare copertura e ampiezza insieme",
+    "section": "VII · ERRORI E INTERVALLI",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/13_ampiezza_intervalli.pdf}\n\\vspace{1.5mm}\n\\PSmall{Ampiezza degli intervalli puntuali al 95\\% per i 36 orizzonti.}\n\\[A_h=U_h-L_h\\]\n",
+    "right": "\\PBody{Intervalli molto ampi possono includere molte osservazioni e offrire poca precisione. Una copertura elevata, da sola, non stabilisce l’utilità della previsione.}\n\\vspace{2.5mm}\n\\PInfo{Il confronto tra bande richiede lo stesso livello nominale e lo stesso compito. L’ampiezza si interpreta nella scala fisica della variabile.}\n",
+    "recall": "Una previsione probabilistica utile deve essere valutata per affidabilità e precisione.",
+    "snippet": {
+      "text": "ampiezza <- fc$superiore-\n            fc$inferiore\nc(min=min(ampiezza),\n  media=mean(ampiezza),\n  max=max(ampiezza))\n",
+      "title": "R · ampiezza delle bande"
+    },
+    "notebook": 8,
+    "source": [
+      26
+    ],
+    "code_file": "090_esempio.R"
+  },
+  {
+    "page": 91,
+    "title": "Copertura su più traiettorie simulate",
+    "section": "VII · ERRORI E INTERVALLI",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/23_AR1_copertura_MC.pdf}\n\\vspace{1.5mm}\n\\PSmall{2.000 traiettorie AR(1) indipendenti, con parametri noti e identica origine. Copertura per orizzonte.}\n",
+    "right": "\\PBody{Nella simulazione conosciamo il processo che genera i dati. Ripetiamo lo stesso esperimento molte volte e contiamo quante osservazioni entrano nell’intervallo a ciascun orizzonte.}\n\\vspace{2.5mm}\n\\PInfo{Le repliche indipendenti sono le 2.000 traiettorie. Gli orizzonti della stessa traiettoria rimangono dipendenti.}\n\\PSmall{Le oscillazioni attorno a 0,95 sono variabilità Monte Carlo: non una correzione applicata alla CO$_2$.}\n",
+    "recall": "La copertura nominale si riferisce a ripetizioni del procedimento nelle condizioni del modello.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      11,
+      22,
+      26
+    ]
+  },
+  {
+    "page": 92,
+    "title": "Copertura osservata e calibrazione",
+    "section": "VII · ERRORI E INTERVALLI",
+    "left": "\\includegraphics[width=9.85cm,height=4.75cm,keepaspectratio]{Risultati/Figure/12_copertura_blocchi.pdf}\n\\vspace{1.5mm}\n\\PSmall{Test storico diviso nei tre blocchi di 12 mesi; tutti i 36 valori risultano inclusi nelle bande.}\n\\[\\widehat C=\\frac{1}{36}\\sum_{h=1}^{36}\\mathbf1\\{y_{T+h}\\in I_h\\}=1\\]\n",
+    "right": "\\PBody{Il risultato descrittivo è 36 su 36. I punti appartengono a una sola traiettoria con origine comune e non sono 36 prove Bernoulli indipendenti.}\n\\vspace{2.5mm}\n\\PInfo{Non ricaviamo da questo conteggio una prova di calibrazione al 95\\%, né la probabilità che l’intera traiettoria futura resti nella banda.}\n\\PSmall{Una banda puntuale al 95\\% non è una banda simultanea al 95\\% per tutti gli orizzonti.}\n",
+    "recall": "La copertura empirica di una singola traiettoria va descritta senza attribuirle una certezza che non possiede.",
+    "snippet": null,
+    "notebook": 8,
+    "source": [
+      26
+    ]
+  },
+  {
+    "page": 93,
+    "title": "La verifica teorica aiuta a controllare i calcoli",
+    "section": "VII · ERRORI E INTERVALLI",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/24_AR1_varianza_MC.pdf}\n\\vspace{1.5mm}\n\\PSmall{Varianza empirica su 2.000 repliche confrontata con la formula AR(1) a parametri noti.}\n",
+    "right": "\\PBody{Nel caso simulato la formula della varianza è nota. La concordanza con il calcolo Monte Carlo controlla la ricorsione, i pesi e l’orientamento degli indici.}\n\\vspace{2.5mm}\n\\PInfo{Questo controllo valida un’implementazione in un caso noto. Non dimostra che il SARIMA descriva perfettamente la serie storica di CO$_2$.}\n\\PBody{La verifica numerica e la validità scientifica hanno entrambe un ruolo, ma rispondono a domande distinte.}\n\\vspace{2.5mm}\n",
+    "recall": "Un caso teorico noto è un controllo utile dei calcoli e ha un ambito di validità esplicito.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      11,
+      26
+    ]
+  },
+  {
+    "page": 94,
+    "title": "Un VAR collega i passati di due variabili",
+    "section": "VIII · SISTEMI MULTIVARIATI",
+    "left": "\\begin{tikzpicture}[x=1cm,y=1cm]\n\\path[use as bounding box](-.1,-.15) rectangle(9.7,4.6);\n\\node[pFlow,text width=2.8cm,fill=GeoA!8](xp)at(2,3.6){$X_{t-1}$};\n\\node[pFlow,text width=2.8cm,fill=GeoB!8](yp)at(2,1.1){$Y_{t-1}$};\n\\node[pFlow,text width=2.8cm,fill=GeoA!8](x)at(7.6,3.6){$X_t$};\n\\node[pFlow,text width=2.8cm,fill=GeoB!8](y)at(7.6,1.1){$Y_t$};\n\\draw[pEdge](xp)--node[above,pNote]{$a_{11}$}(x);\n\\draw[pEdge](yp)--node[below,pNote]{$a_{22}$}(y);\n\\draw[pEdge,GeoC](xp)--node[pos=.25,below,pNote]{$a_{21}$}(y);\n\\draw[pEdge,GeoC](yp)--node[pos=.25,above,pNote]{$a_{12}$}(x);\n\\end{tikzpicture}\n\\[\\mathbf Z_t=\\mathbf c+A\\mathbf Z_{t-1}+\\boldsymbol\\varepsilon_t\\]\n",
+    "right": "\\PBody{Ogni equazione usa il valore passato della variabile stessa e quello dell’altra. I coefficienti incrociati descrivono un contributo predittivo condizionato al modello.}\n\\vspace{2.5mm}\n\\PInfo{Il laboratorio usa x\\_VAR e y\\_VAR di un archivio simulato. I primi 250 tempi servono alla stima, i successivi 10 alla verifica.}\n",
+    "recall": "Un modello multivariato valuta se il passato congiunto aggiunge informazione previsionale.",
+    "snippet": {
+      "text": "v <- processi[1:250,\n  c(\"x_VAR\",\"y_VAR\")]\nvarfit <- stima_VAR1(v)\nvarfit$A\n",
+      "title": "R · due equazioni collegate"
+    },
+    "notebook": 14,
+    "source": [
+      27
+    ],
+    "code_file": "094_esempio.R"
+  },
+  {
+    "page": 95,
+    "title": "Le due regressioni condividono le stesse righe",
+    "section": "VIII · SISTEMI MULTIVARIATI",
+    "left": "\\[X_t=c_x+a_{11}X_{t-1}+a_{12}Y_{t-1}+\\varepsilon_{x,t}\\]\n\\[Y_t=c_y+a_{21}X_{t-1}+a_{22}Y_{t-1}+\\varepsilon_{y,t}\\]\n{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{4.5cm}p{4.6cm}@{}}\\toprule\n\\textbf{Risposte} & \\textbf{Regressori}\\\\\\midrule\nTempi 2--250 & Tempi 1--249\\\\\n249 coppie complete & Stessa matrice per entrambe le equazioni\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{Il ritardo si costruisce mantenendo l’allineamento. Eliminare valori mancanti separatamente nelle due serie potrebbe produrre coppie temporali scorrette.}\n\\vspace{2.5mm}\n\\PInfo{Nel dataset del laboratorio le righe usate sono complete. Con lo stesso insieme di regressori, si possono stimare le due equazioni separatamente con lm.}\n",
+    "recall": "Una regressione con ritardi deve conservare il significato temporale di ogni coppia.",
+    "snippet": {
+      "text": "dv <- varfit$dati_ritardati\nstopifnot(nrow(dv)==249)\ncoef(varfit$x)\ncoef(varfit$y)\n",
+      "title": "R · equazioni sulle stesse coppie"
+    },
+    "notebook": 14,
+    "source": [
+      27,
+      30
+    ],
+    "code_file": "095_esempio.R"
+  },
+  {
+    "page": 96,
+    "title": "La stabilità VAR riguarda gli autovalori della matrice",
+    "section": "VIII · SISTEMI MULTIVARIATI",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/31_VAR_autovalori.pdf}\n\\vspace{1.5mm}\n\\PSmall{Autovalori della matrice VAR(1) stimata rispetto al cerchio unitario.}\n\\[\\rho(A)=\\max_j|\\lambda_j|=0,514<1\\]\n",
+    "right": "\\PBody{Per un VAR(1) stabile, le potenze di A si attenuano. Gli autovalori della matrice dinamica devono stare dentro il cerchio unitario.}\n\\vspace{2.5mm}\n\\PInfo{Per l’AR avevamo chiesto radici del polinomio fuori dal cerchio. Non è una contraddizione: le due convenzioni sono reciproche.}\n",
+    "recall": "La stabilità VAR si controlla sugli autovalori della matrice, distinguendoli dalle radici del polinomio AR.",
+    "snippet": {
+      "text": "lambda <- eigen(varfit$A,\n                only.values=TRUE)$values\nMod(lambda)\nstopifnot(all(Mod(lambda)<1))\n",
+      "title": "R · raggio spettrale"
+    },
+    "notebook": 15,
+    "source": [
+      27,
+      28
+    ],
+    "code_file": "096_esempio.R"
+  },
+  {
+    "page": 97,
+    "title": "Le equazioni multivariate richiedono diagnostica",
+    "section": "VIII · SISTEMI MULTIVARIATI",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/33_VAR_ACF_residui.pdf}\n\\vspace{1.5mm}\n\\PSmall{ACF dei residui delle due equazioni, stimati sui primi 250 tempi.}\n",
+    "right": "\\PBody{Per ogni equazione si esaminano sequenza, dispersione e autocorrelazione residua. In un sistema multivariato possono restare anche dipendenze incrociate.}\n\\vspace{2.5mm}\n\\PInfo{Le due ACF marginali sono un primo controllo. Non costituiscono da sole una diagnostica multivariata completa né un test di indipendenza congiunta.}\n\\PSmall{L’esempio resta una base didattica: rende verificabili allineamento, stabilità e contributo del ritardo dell’altra variabile.}\n",
+    "recall": "Passare a due variabili amplia anche le strutture residue che devono essere controllate.",
+    "snippet": null,
+    "notebook": 15,
+    "source": [
+      27
+    ]
+  },
+  {
+    "page": 98,
+    "title": "Granger confronta due modelli annidati",
+    "section": "VIII · SISTEMI MULTIVARIATI",
+    "left": "\\PLabel{Il passato di X aggiunge informazione per Y?}\n\\[M_R:\\ Y_t=c+aY_{t-1}+u_t\\]\n\\[M_F:\\ Y_t=c+aY_{t-1}+bX_{t-1}+u_t\\]\n\\[H_0:b=0\\]\n",
+    "right": "\\PBody{Il modello ridotto usa il solo passato di Y. Quello completo aggiunge il passato di X. Il confronto richiede la stessa risposta e le stesse osservazioni.}\n\\vspace{2.5mm}\n\\PInfo{Una significatività indica contributo predittivo nella specifica considerata. Non dimostra causalità fisica né esclude variabili comuni omesse.}\n",
+    "recall": "Il risultato di Granger è condizionato a variabili, ritardi, periodo e ipotesi del modello.",
+    "snippet": {
+      "text": "ridotto_y <- lm(y~y_lag,data=dv)\ncompleto_y <- varfit$y\nanova(ridotto_y, completo_y)\n",
+      "title": "R · confronto X verso Y"
+    },
+    "notebook": 16,
+    "source": [
+      29,
+      30
+    ],
+    "code_file": "098_esempio.R"
+  },
+  {
+    "page": 99,
+    "title": "Le due direzioni richiedono una lettura congiunta",
+    "section": "VIII · SISTEMI MULTIVARIATI",
+    "left": "\\PLabel{Confronti sui medesimi 249 tempi}\n{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{2.0835cm}p{2.0835cm}p{2.0835cm}p{2.0835cm}@{}}\\toprule\n\\textbf{Direzione} & \\textbf{F} & \\textbf{p} & \\textbf{p Holm}\\\\\\midrule\nX verso Y & 85,197 & 1,3e-17 & 2,6e-17\\\\\nY verso X & 0,057 & 0,811 & 0,811\\\\\n\\bottomrule\\end{tabular}}\n\\PInfo{La correzione di Holm riguarda la famiglia delle due direzioni esaminate. Le ipotesi dei test F restano necessarie.}\n",
+    "right": "\\PBody{Nell’archivio simulato emerge un contributo del passato di X alla previsione di Y, mentre la direzione opposta non presenta evidenza analoga.}\n\\vspace{2.5mm}\n\\PInfo{La conclusione riguarda il sistema simulato e il VAR(1). Non attribuisce un effetto causale a una misura ambientale reale.}\n",
+    "recall": "L’interpretazione scientifica deve restare più specifica dell’etichetta “causalità di Granger”.",
+    "snippet": {
+      "text": "g1 <- anova(ridotto_y,varfit$y)\ng2 <- anova(lm(x~x_lag,data=dv),\n            varfit$x)\np_g <- c(g1$`Pr(>F)`[2],\n         g2$`Pr(>F)`[2])\np.adjust(p_g,method=\"holm\")\n",
+      "title": "R · due direzioni, correzione Holm"
+    },
+    "notebook": 16,
+    "source": [
+      29,
+      30
+    ],
+    "code_file": "099_esempio.R"
+  },
+  {
+    "page": 100,
+    "title": "La previsione VAR usa i propri valori futuri",
+    "section": "VIII · SISTEMI MULTIVARIATI",
+    "left": "\\[\\widehat{\\mathbf Z}_{T+1\\mid T}=\\widehat{\\mathbf c}+\\widehat A\\mathbf Z_T\\]\n\\[\\widehat{\\mathbf Z}_{T+h\\mid T}=\\widehat{\\mathbf c}+\\widehat A\\widehat{\\mathbf Z}_{T+h-1\\mid T}\\]\n\\PInfo{Dopo il primo passo si riusano le previsioni, non le osservazioni future del file.}\n",
+    "right": "\\PBody{Una previsione ricorsiva a 10 passi parte dal tempo 250. Usare il vero valore del tempo 251 per prevedere 252 cambierebbe il compito in una sequenza di previsioni aggiornate.}\n\\vspace{2.5mm}\n\\PInfo{La risposta a uno shock fissato si propaga come $A^h\\mathbf u$. Attribuire agli shock un significato strutturale richiederebbe ulteriori ipotesi.}\n",
+    "recall": "La ricorsione multistep deve rispettare l’informazione disponibile all’unica origine dichiarata.",
+    "snippet": {
+      "text": "varpred <- previsione_VAR1(\n  varfit,ultimo=v[250,],h=10)\nstopifnot(all(dim(varpred)==c(10,2)))\nhead(varpred)\n",
+      "title": "R · dieci passi ricorsivi"
+    },
+    "notebook": 17,
+    "source": [
+      27,
+      28
+    ],
+    "code_file": "100_esempio.R"
+  },
+  {
+    "page": 101,
+    "title": "Il test VAR conserva due errori e un riferimento",
+    "section": "VIII · SISTEMI MULTIVARIATI",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/32_VAR_previsioni.pdf}\n\\vspace{1.5mm}\n\\PSmall{Verifica ricorsiva ai tempi 251--260: osservazioni e previsioni per X e Y.}\n",
+    "right": "\\PBody{RMSE per X: 1,057 con VAR, 1,668 con ultimo valore. Per Y: 1,193 e 2,561.}\n\\vspace{2.5mm}\n\\PInfo{Dieci tempi costituiscono una verifica breve. Il vantaggio in questo esempio non dimostra superiorità generale del VAR.}\n\\PSmall{Il notebook conserva la tabella completa e il confronto nelle unità originali del generatore.}\n",
+    "recall": "Un’estensione multivariata deve mostrare il beneficio osservato per ciascuna variabile.",
+    "snippet": null,
+    "notebook": 17,
+    "source": [
+      27,
+      30
+    ],
+    "layout": "panorama",
+    "figure": "32_VAR_previsioni",
+    "caption": "Verifica ricorsiva ai tempi 251--260. RMSE X: 1,057 (VAR) e 1,668 (ultimo valore); RMSE Y: 1,193 e 2,561. Dieci tempi descrivono un test breve, non una superiorità generale."
+  },
+  {
+    "page": 102,
+    "title": "Il progetto parte da una domanda",
+    "section": "IX · PROGETTO STATISTICO",
+    "left": "{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{3.7cm}p{5.4cm}@{}}\\toprule\n\\textbf{Percorso} & \\textbf{Domanda verificabile}\\\\\\midrule\nPrevisione ambientale & Migliora un riferimento a un orizzonte fissato?\\\\\nMorfometria & Una misura disponibile predice un’altra?\\\\\nStruttura dei campioni & Quali raggruppamenti sono stabili e interpretabili?\\\\\n\\bottomrule\\end{tabular}}\n\\PInfo{La CO$_2$ guida la lezione. Il progetto di base dei notebook riguarda la morfometria; l’estensione VAR resta facoltativa.}\n",
+    "right": "\\PBody{Il progetto integra domanda, dati, metodo, verifica e conclusione. La scelta del metodo segue la quantità da studiare e il modo in cui saranno disponibili i dati.}\n\\vspace{2.5mm}\n\\PInfo{Nel clustering manca una risposta futura da prevedere: stabilità e interpretazione dei gruppi richiedono criteri diversi da MAE o RMSE.}\n\\PSmall{M10\\_N10 aiuta a delimitare il progetto; il rapporto evita di includere analisi che non contribuiscono alla domanda.}\n",
+    "recall": "Un progetto convincente mantiene allineati domanda, informazione, metodo e criterio di valutazione.",
+    "snippet": null,
+    "notebook": 10,
+    "source": [
+      31
+    ]
+  },
+  {
+    "page": 103,
+    "title": "I fossili offrono un secondo compito predittivo",
+    "section": "IX · PROGETTO STATISTICO",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/26_fossili_train_test.pdf}\n\\vspace{1.5mm}\n\\PSmall{Archivio simulato di 160 fossili: 128 per la stima e 32 per il test, una riga su cinque riservata.}\n",
+    "right": "\\PBody{Prevediamo il diametro interno dalla misura del diametro totale. Il confronto è fra una retta stimata sul train e la media dei diametri interni del train.}\n\\vspace{2.5mm}\n\\PInfo{La separazione deterministica riprende il sito ed è riproducibile. Non equivale a un campionamento indipendente da popolazioni o laboratori nuovi.}\n",
+    "recall": "Un secondo caso aiuta a distinguere le regole comuni di previsione dalle caratteristiche del tempo.",
+    "snippet": {
+      "text": "fossilifit <- lm(\n  diametro_int_um~diametro_tot_um,\n  data=fossilitrain)\np_fos <- predict(fossilifit,\n                 newdata=fossilitest)\n",
+      "title": "R · retta sui fossili simulati"
+    },
+    "notebook": 11,
+    "source": [
+      31
+    ],
+    "code_file": "103_esempio.R"
+  },
+  {
+    "page": 104,
+    "title": "La geometria aiuta a prevedere i fossili",
+    "section": "IX · PROGETTO STATISTICO",
+    "left": "\\includegraphics[width=9.85cm,height=4.7cm,keepaspectratio]{Risultati/Figure/29_fossili_RMSE.pdf}\n\\vspace{1.5mm}\n\\PSmall{RMSE sul test di 32 fossili, in micrometri; confronto con la media del train.}\n\\[d_{\\mathrm{interno}}=d_{\\mathrm{totale}}-2s\\]\n",
+    "right": "\\PBody{La retta ottiene RMSE 0,228 µm; la media del train 1,003 µm. L’archivio rispetta un’identità geometrica fra diametri e spessore.}\n\\vspace{2.5mm}\n\\PInfo{Il risultato è quindi coerente con il generatore. Non costituisce una scoperta biologica su fossili reali.}\n\\PSmall{Rapporto interno/totale o spessore possono rivelare direttamente la risposta: la loro disponibilità va definita prima del modello.}\n",
+    "recall": "Un risultato accurato deve essere interpretato alla luce di come i dati sono stati costruiti.",
+    "snippet": null,
+    "notebook": 11,
+    "source": [
+      31
+    ]
+  },
+  {
+    "page": 105,
+    "title": "Residui e diagonale completano la metrica",
+    "section": "IX · PROGETTO STATISTICO",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/28_fossili_residui.pdf}\n\\vspace{1.5mm}\n\\PSmall{Residui del modello sul train: controllare andamento e dispersione rispetto ai valori adattati.}\n",
+    "right": "\\includegraphics[width=7.4cm,height=3.45cm,keepaspectratio]{Risultati/Figure/27_fossili_osservato_previsto.pdf}\n\\PBody{Nel test, la diagonale indica previsione perfetta. Scostamenti sistematici possono essere poco visibili in una sola RMSE.}\n\\vspace{2.5mm}\n\\PInfo{Il modello usa soltanto il diametro totale. Le proprietà del generatore delimitano l’interpretazione scientifica.}\n",
+    "recall": "Un numero di prestazione va accompagnato da grafici che rendano visibili direzione e struttura dell’errore.",
+    "snippet": null,
+    "notebook": 12,
+    "source": [
+      31
+    ]
+  },
+  {
+    "page": 106,
+    "title": "Una relazione sostenuta dai risultati",
+    "section": "IX · PROGETTO STATISTICO",
+    "left": "{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{2.6cm}p{6.4cm}@{}}\\toprule\n\\textbf{Parte} & \\textbf{Contenuto richiesto}\\\\\\midrule\nDomanda & Variabile, popolazione o periodo, uso previsto\\\\\nDati & Fonte, unità, esclusioni e disponibilità\\\\\nMetodo & Ipotesi, riferimenti e scelte\\\\\nVerifica & Disegno, metriche e diagnostica\\\\\nConclusione & Risposta alla domanda e limiti osservati\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{Una conclusione sul caso guida può affermare che il SARIMA migliora i riferimenti nei 36 mesi riservati, con un bias di -0,968 ppm in convenzione osservato meno previsto.}\n\\vspace{2.5mm}\n\\PInfo{Va aggiunto che 36 valori coperti non dimostrano calibrazione e che il test riguarda una sola origine storica.}\n\\PSmall{M10\\_N13 costruisce il testo usando i risultati realmente calcolati.}\n",
+    "recall": "Una conclusione forte è precisa sul risultato e precisa sui suoi limiti.",
+    "snippet": null,
+    "notebook": 13,
+    "source": [
+      31
+    ]
+  },
+  {
+    "page": 107,
+    "title": "Esportare numeri, date e provenienza",
+    "section": "IX · PROGETTO STATISTICO",
+    "left": "{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{2.4cm}p{6.7cm}@{}}\\toprule\n\\textbf{File} & \\textbf{Contenuto}\\\\\\midrule\nCSV & Date, osservato, previsto, errore e bande\\\\\nRDS & Oggetti stimati per riprendere il lavoro\\\\\nR / Rmd & Procedura leggibile ed eseguibile\\\\\nHTML / PDF & Risultato consultabile senza esecuzione\\\\\nMetadati & Versioni, fonti e impronte dei file\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{I file hanno nomi stabili e percorsi relativi al progetto. Una tabella esportata non deve perdere l’origine della previsione o l’orientamento dell’errore.}\n\\vspace{2.5mm}\n\\PInfo{M10\\_N19 controlla duplicati e integrità delle chiavi; M10\\_N09 prepara l’esportazione dei risultati.}\n",
+    "recall": "Un file riutilizzabile deve conservare il significato delle colonne insieme ai valori.",
+    "snippet": {
+      "text": "tab <- data.frame(\n  data=co2$data[169:204],\n  osservato=as.numeric(test), fc)\nstopifnot(!anyDuplicated(tab$data))\nnames(tab)\n",
+      "title": "R · tabella pronta per l’esportazione"
+    },
+    "notebook": 19,
+    "source": [
+      23,
+      32
+    ],
+    "code_file": "107_esempio.R"
+  },
+  {
+    "page": 108,
+    "title": "La consegna deve funzionare da una cartella pulita",
+    "section": "IX · PROGETTO STATISTICO",
+    "left": "\\PLabel{Quattro prove di riproducibilità}\n{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{3.4cm}p{5.7cm}@{}}\\toprule\n\\textbf{Prova} & \\textbf{Evidenza da conservare}\\\\\\midrule\nRiesecuzione & Log e versione di R\\\\\nDati locali & Nessun download implicito\\\\\nCoerenza numerica & Tabelle e figure dagli stessi calcoli\\\\\nIntegrità & Manifest SHA-256 e file richiesti\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{Il progetto contiene dati, codice, risultati e istruzioni. Il notebook HTML permette la lettura offline; il Rmd conserva il percorso per ripetere il lavoro.}\n\\vspace{2.5mm}\n\\PInfo{Una verifica dei file non sostituisce la valutazione scientifica. Completa il controllo di formule, unità, date e conclusioni.}\n\\PSmall{M10\\_N18 accompagna la consegna. Il pacchetto include gli esiti delle esecuzioni svolte per questa edizione.}\n",
+    "recall": "Un risultato riproducibile può essere ricostruito e interpretato senza dipendere dalla memoria dell’autore.",
+    "snippet": null,
+    "notebook": 18,
+    "source": [
+      32
+    ]
+  },
+  {
+    "page": 109,
+    "title": "Riferimenti per teoria, software e dati",
+    "section": "IX · PROGETTO STATISTICO",
+    "left": "\\PLabel{Fonti primarie e documentazione}\n\\PBody{Hyndman e Athanasopoulos, \\emph{Forecasting: Principles and Practice}, 3ª edizione: riferimenti, errori, validazione temporale, ARIMA e intervalli.}\n\\vspace{2.5mm}\n\\PSmall{\\href{https://otexts.com/fpp3/}{otexts.com/fpp3/}}\n\\PBody{R Core Team, documentazione di stats: arima, predict.Arima, Box.test, ARMAacf, ARMAtoMA, lm e anova.}\n\\vspace{2.5mm}\n\\PSmall{\\href{https://stat.ethz.ch/R-manual/R-devel/library/stats/html/arima.html}{Manuale R: arima} · \\href{https://stat.ethz.ch/R-manual/R-devel/library/stats/html/predict.arima.html}{predict.Arima} · \\href{https://stat.ethz.ch/R-manual/R-devel/library/stats/html/box.test.html}{Box.test}}\n",
+    "right": "\\PBody{GeoStat Lab, modulo M10 e laboratori M10\\_N01--M10\\_N20: programma, convenzioni e specifica centrale.}\n\\vspace{2.5mm}\n\\PSmall{\\href{https://marzione00.github.io/Lab_Geo/percorso/M10.html}{Modulo M10 sul sito}}\n\\PInfo{Dati locali: CO$_2$ storica da M09, fossili simulati da M07, processi simulati da M09. Fonti, hash e dettagli sono in FONTI\\_E\\_NOTE.md e Dati/PROVENIENZA.json.}\n\\PSmall{Snapshot del sito: 20 novembre 2026. Revisione identificata nei metadati del pacchetto.}\n",
+    "recall": "Le fonti rendono verificabili sia le scelte teoriche sia le convenzioni del calcolo.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      33
+    ]
+  },
+  {
+    "page": 110,
+    "title": "Prevedere, discutere, ricostruire",
+    "section": "IX · PROGETTO STATISTICO",
+    "left": "\\PLabel{Criteri per valutare il progetto}\n{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{3.6cm}p{5.5cm}@{}}\\toprule\n\\textbf{Criterio} & \\textbf{Evidenza osservabile}\\\\\\midrule\nDomanda chiara & Quantità e uso della previsione espliciti\\\\\nMetodo coerente & Ipotesi e riferimenti motivati\\\\\nVerifica corretta & Separazione dei dati e metriche adeguate\\\\\nInterpretazione & Risultati collegati alla domanda\\\\\nRiproducibilità & Dati, codice, fonti e istruzioni completi\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{Il progetto conclude il percorso unendo descrizione, modello e verifica. La complessità aggiunta deve produrre informazione utile e comprensibile.}\n\\vspace{2.5mm}\n\\PInfo{Prima della consegna: un’altra persona può capire la domanda, ripetere i calcoli e individuare quali conclusioni sono sostenute dai dati?}\n\\PSmall{\\href{https://marzione00.github.io/Lab_Geo/\\#indice}{Indice del corso} · \\hyperlink{slide2}{Indice di Futura}}\n",
+    "recall": "Prevedere significa rendere esplicito ciò che sappiamo, misurare gli errori e motivare ciò che concludiamo.",
+    "snippet": null,
+    "notebook": 18,
+    "source": [
+      31,
+      32
+    ]
+  }
+]
