@@ -276,7 +276,7 @@ function staticPage(file, title, summary, body) {
       body +
       '</main><footer><p>' +
       text(config.author) +
-      ' · <a href="../index.html">Atlante interattivo</a> · <a href="index.html">Indice testuale</a></p></footer></body></html>\n',
+      ' · <a href="../index.html">Atlante interattivo</a> · <a href="index.html">Indice testuale</a> · <a href="../LICENSE.md" rel="license">Licenza CC BY-NC-SA 4.0</a></p></footer></body></html>\n',
   );
 }
 for (const m of catalogue.modules) {

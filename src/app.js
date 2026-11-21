@@ -570,6 +570,8 @@
       '</li><li>' +
       link('materiali/MANIFEST_SHA256.txt', 'Impronte dei materiali distribuiti') +
       '</li><li>' +
+      link('LICENSE.md', 'Licenza dei contenuti e del codice (CC BY-NC-SA 4.0)') +
+      '</li><li>' +
       link('THIRD_PARTY_NOTICES.md', 'Componenti e licenze') +
       '</li></ul></section></div></div>';
   }
