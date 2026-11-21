@@ -1,0 +1,10 @@
+d <- read.csv('dati/ml_v3.csv')
+f <- c('SiO2','CaO','MgO','FeO','densita')
+X <- as.matrix(d[f]); tr <- d$split=='train'
+mu <- colMeans(X[tr,])
+s <- apply(X[tr,],2,sd)
+stopifnot(all(s>0))
+A <- scale(X[tr,],mu,s)
+B <- scale(X[!tr,],mu,s)
+stopifnot(max(abs(colMeans(A)))<1e-12)
+colMeans(B)
