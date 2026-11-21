@@ -1,0 +1,86 @@
+{
+ "R": "R version 4.6.0 (2026-04-24)",
+ "fragments": {
+  "capitolo-01.R": {
+   "status": "ok",
+   "output": "> id <- c(\"C01\",\"C02\",\"C03\")\n> m <- c(107.2,121.95,132.5)\n> v <- c(40,45,50)\n> data.frame(id,rho=round(m/v,2))\n   id  rho\n1 C01 2.68\n2 C02 2.71\n3 C03 2.65",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "cf933e4c6fe6a2ae27c1",
+   "seconds": 17.1
+  },
+  "capitolo-02.R": {
+   "status": "ok",
+   "output": "> a <- \"2.50\"; b <- \"2.5\"\n> c(testo=identical(a,b),\n+   valore=identical(as.numeric(a),as.numeric(b)))\n testo valore \n FALSE   TRUE ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "c0b92a3e85e182767458",
+   "seconds": 0.0
+  },
+  "capitolo-03.R": {
+   "status": "ok",
+   "output": "> rho <- function(m,v) {\n+  stopifnot(all(is.finite(v)),all(v>0))\n+  m/v\n+ }\n> c(valida=rho(100,40),\n+   rifiuta_zero=inherits(try(rho(100,0),silent=TRUE),\"try-error\"))\n      valida rifiuta_zero \n         2.5          1.0 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "ec9fc544171c29ef1551",
+   "seconds": 0.0
+  },
+  "capitolo-04.R": {
+   "status": "ok",
+   "output": "> rho <- c(2.68,2.71,2.65)\n> indici <- c(2,2,1)\n> c(rho[indici],media=mean(rho[indici]))\n                  media \n 2.71  2.71  2.68  2.70 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "3c6f90ff0149f3df88d6",
+   "seconds": 0.0
+  },
+  "capitolo-05.R": {
+   "status": "ok",
+   "output": "> v <- c(C01=40,C02=45,C03=50)\n> c(prima=length(v),dopo=sum(v>=45))\nprima  dopo \n    3     2 \n> names(v[v<45])\n[1] \"C01\"",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "34699bc8dd1d14e7d833",
+   "seconds": 0.0
+  },
+  "lettura-06.R": {
+   "status": "ok",
+   "output": "> f <- file.path('dati','campioni_modulo1.csv')\n> stopifnot(file.exists(f))\n> d <- read.csv(f,stringsAsFactors=FALSE)\n> stopifnot(nrow(d)==24,\n+  !anyDuplicated(d$id),\n+  all(c('massa_g','volume_cm3') %in% names(d)))\n> head(d)\n   id affioramento stazione massa_g volume_cm3 alterazione\n1 C01            A       A1  107.20         40       bassa\n2 C02            A       A1  121.95         45       bassa\n3 C03            A       A1  132.50         50       media\n4 C04            A       A1  113.40         42       bassa\n5 C05            A       A2   99.56         38       media\n6 C06            A       A2  117.04         44       bassa",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "77174dcc711d21e1c13b",
+   "seconds": 0.0
+  },
+  "lettura-09.R": {
+   "status": "ok",
+   "output": "> d <- read.csv('dati/campioni_modulo1.csv')\n> d$densita <- d$massa_g/d$volume_cm3\n> f <- tempfile(fileext='.csv')\n> write.csv(d,f,row.names=FALSE,na='NA')\n> q <- read.csv(f,na.strings='NA')\n> stopifnot(identical(q$id,d$id))\n> e <- abs(q$densita-d$densita)\n> stopifnot(all(e <= 1e-12+\n+  1e-10*abs(d$densita)))\n> unlink(f)",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "d67e7d0ec01aa7ca29a7",
+   "seconds": 0.0
+  },
+  "lettura-12.R": {
+   "status": "ok",
+   "output": "> densita <- function(m,v) {\n+  stopifnot(is.numeric(m),is.numeric(v),\n+   length(m)==length(v),length(m)>0,\n+   all(is.finite(m)),all(is.finite(v)),\n+   all(m>0),all(v>0))\n+  m/v\n+ }\n> stopifnot(densita(10,4)==2.5)\n> errore <- tryCatch({densita(10,0);FALSE},\n+  error=function(e)TRUE)\n> stopifnot(errore)",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "53304a1cd9126eaf9ce9",
+   "seconds": 0.0
+  },
+  "lettura-18.R": {
+   "status": "ok",
+   "output": "> d <- read.csv('dati/campioni_modulo1.csv')\n> u <- read.csv('dati/casuali_comuni_v3.csv')$u\n> ix <- matrix(floor(24*u[1:240])+1,\n+  nrow=10,byrow=TRUE)\n> rho <- d$massa_g/d$volume_cm3\n> b <- apply(ix,1,function(i)mean(rho[i]))\n> stopifnot(all(ix>=1 & ix<=24))\n> data.frame(replica=1:10,media=b)\n   replica    media\n1        1 2.601250\n2        2 2.607917\n3        3 2.592083\n4        4 2.590000\n5        5 2.613333\n6        6 2.612917\n7        7 2.602083\n8        8 2.612500\n9        9 2.600000\n10      10 2.585417",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "af735729b9b7c70ab9fe",
+   "seconds": 0.1
+  }
+ }
+}
