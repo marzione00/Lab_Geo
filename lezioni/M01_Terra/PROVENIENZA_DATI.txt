@@ -1,0 +1,173 @@
+DATI DELLA PRESENTAZIONE
+Revisione completa, 18 novembre 2026
+
+1. TERRA 01
+
+Dati/terra01_anteprima.csv contiene i 40 valori simulati archiviati dal sito
+Lab_Geo per Terra 01, modulo M01, esperimento m01-estimando.
+Origine:
+https://marzione00.github.io/Lab_Geo/#laboratorio/m01-estimando
+https://github.com/marzione00/Lab_Geo/blob/main/assets/experiments/m01-estimando.json
+Codice del modello:
+https://github.com/marzione00/Lab_Geo/blob/main/R/experiments/m01-estimando.R
+
+Stazioni A/B/C: 20/10/10 misure; concentrazione simulata in mg/L.
+Media delle misure: 5.748234477155 mg/L.
+Media delle tre medie di stazione: 6.605156418313334 mg/L.
+Questi sono risultati campionari. Le corrispondenti attese del modello
+sono 5.75 e 20/3 mg/L. Con lo stesso seed, modificare n_A cambia anche
+il punto della sequenza pseudocasuale da cui iniziano B e C.
+
+2. SERIE METEOROLOGICA DIDATTICA
+
+Dati/meteo_simulati.csv contiene 1096 giorni simulati, dal 1 gennaio 2022
+al 31 dicembre 2024. Non rappresenta una stazione meteorologica reale.
+Le colonne sono data (ISO 8601), tmin e tmax (gradi Celsius), pioggia
+(mm/giorno), sole (minuti/giorno), nubi (percentuale da 0 a 100).
+La serie e' completa, ordinata per data e include il 29 febbraio 2024.
+
+Il file Genera_dati_demo.py documenta la generazione con numpy 2.3.5, PCG64,
+seed 17012026. SHA-256 del CSV:
+9ab49abe736e1a40e24b4ff664d415d28ed643935af84b3ced8a5c2199847d03
+Il modello inserisce stagionalita', una piccola tendenza,
+variabilita' autocorrelata, giorni senza pioggia e legami fra nuvolosita',
+sole e temperature. I suoi parametri hanno finalita' didattiche.
+Gli esempi R leggono il CSV congelato: non richiedono Python e non tentano
+di riprodurre in R la sequenza casuale generata da Python.
+
+3. CORRELAZIONI METEOSTAT: SLIDE 58
+
+Sono stati ricostruiti i due scatter della slide 58 dalla serie pubblica:
+https://data.meteostat.net/daily/2024/16239.csv.gz
+Stazione 16239, Roma/Ciampino; download del 18 novembre 2026.
+Il file decompresso completo, inclusi i campi _source, e' archiviato come
+Dati/meteostat_16239_2024_originale.csv. Il CSV semplificato
+Dati/meteostat_ciampino_2024.csv cambia i nomi delle colonne, costruisce
+la data ISO, conserva NA e indica esplicitamente nubi_ottavi.
+
+Le unita' dei dati Meteostat sono:
+tmin/tmax: gradi Celsius; prcp: mm/giorno; tsun: minuti/giorno;
+cldc: ottavi (okta). La precedente etichetta della nuvolosita' in percentuale
+era errata ed e' stata corretta nei due nuovi grafici.
+Riferimento: https://dev.meteostat.net/parameters
+
+Il dataset annuale contiene 366 date, ma il sole e' disponibile per soli
+62 giorni: 31 ottobre-31 dicembre 2024. Entrambi gli scatter usano queste
+62 coppie complete, senza imputazione. Risultati:
+r(sole,tmax) = 0.3662383380086286
+r(sole,nubi_ottavi) = -0.8605922237257095
+Le rette sono regressioni descrittive, senza banda inferenziale.
+Queste associazioni non rappresentano l'intero ciclo annuale e non
+dimostrano una relazione causale.
+
+Meteostat redistribuisce dati di piu' fornitori e puo' sostituire osservazioni
+mancanti con dati di modello. In queste 62 righe tsun_source=dwd_mosmix;
+cldc_source comprende dwd_mosmix e isd_lite. Le temperature derivano da
+combinazioni ghcnd, isd_lite, metar e dwd_mosmix, come indica il CSV.
+I grafici sono quindi basati su una serie integrata comprendente stime
+di modello, non esclusivamente su osservazioni strumentali.
+Documentazione: https://dev.meteostat.net/data/timeseries/daily
+
+Attribuzione: Meteostat e i suoi fornitori di dati, fra cui Deutscher
+Wetterdienst e NOAA. Licenza CC BY 4.0:
+https://dev.meteostat.net/license
+https://creativecommons.org/licenses/by/4.0/
+Modifiche: selezione delle coppie complete, ricalcolo di r e delle rette,
+nuova impaginazione, correzione dell'unita' cldc, nomi italiani nel CSV ridotto.
+
+4. FIGURE METEOROLOGICHE RICOSTRUITE, 2019--2024
+
+Le undici altre figure meteorologiche sono state ricostruite con caratteri
+leggibili nelle slide, partendo dai dati Meteostat archiviati durante questa
+revisione. Gli script recuperati da 1.zip hanno fornito stazione, variabili
+e metodi; lo ZIP originale non conteneva i CSV meteorologici usati allora.
+Il periodo e' ora fissato esplicitamente al 1 gennaio 2019--31 dicembre 2024.
+I dati sono stati scaricati il 18 novembre 2026 da sei URL annuali:
+https://data.meteostat.net/daily/2019/16239.csv.gz
+https://data.meteostat.net/daily/2020/16239.csv.gz
+https://data.meteostat.net/daily/2021/16239.csv.gz
+https://data.meteostat.net/daily/2022/16239.csv.gz
+https://data.meteostat.net/daily/2023/16239.csv.gz
+https://data.meteostat.net/daily/2024/16239.csv.gz
+
+Dati/meteostat_16239_2019_2024_originale.csv unisce i sei CSV decompresi,
+mantiene i campi _source e aggiunge la data ISO; i valori non sono imputati.
+Dati/meteostat_ciampino_2019_2024.csv contiene i campi con i nomi italiani.
+I valori mancanti sono scritti NA. Stesse attribuzioni e licenza del punto 3.
+
+La griglia contiene 2192 giorni; Tmax e' disponibile per tutte le date.
+La pioggia e' disponibile per 1588 giorni, con coperture molto diverse:
+anno | giorni validi / attesi | somma disponibile [mm]
+2019 | 0 / 365               | NA
+2020 | 254 / 366             | 296.5
+2021 | 276 / 365             | 597.4
+2022 | 332 / 365             | 500.2
+2023 | 365 / 365             | 668.4
+2024 | 361 / 366             | 677.2
+La figura annuale dichiara queste coperture. Una somma su giorni disponibili
+non viene presentata come totale annuo completo; nel 2019 non compare una
+barra di precipitazione nulla. I dati sono in Dati/meteostat_copertura_pioggia.csv.
+
+Metodi e differenze rispetto alle figure originali:
+- Pioggia 2024: 361 valori, di cui 240 zeri; istogrammi con 40 intervalli uguali
+  sulle rispettive scale e log(1+p/p0), con p0 = 1 mm.
+- Boxplot: funzione boxplot() di R, cerniere di Tukey; il segmento interno
+  e' la mediana. I rombi della figura 2024 sono le medie mensili. Le cerniere
+  possono differire leggermente dai quartili interpolati di ggplot2.
+- Regressione 2024: 366 coppie Tmin/Tmax; intercetta 9.4814444377,
+  coefficiente 1.0432694329, R^2=0.8505201545. La fascia e' l'intervallo al 95%
+  per la risposta media del modello, non un intervallo di previsione.
+- Tmax e z-score 2024: si usano tutte le 366 temperature disponibili; media
+  22.893442623 e deviazione standard campionaria 7.551653046 gradi Celsius.
+  Lo script originale filtrava anche sui valori mancanti della pioggia,
+  escludendo 5 giorni termici senza necessita' per questa analisi. Il nuovo
+  calcolo usa lo stesso insieme completo di 366 temperature per entrambi i grafici.
+- Media mobile: stats::filter con 30 pesi uguali e sides=2. La finestra e'
+  t-14,...,t+15; 14 valori iniziali e 15 finali sono NA. Non si interpolano i bordi.
+- LOESS: span=0.2, degree=2, family='gaussian', tempo in giorni su 2019--2024.
+- Scarti termici: temperatura giornaliera meno media del corrispondente
+  mese calcolata sul campione 2019--2024. Non sono normali climatiche trentennali.
+- Discontinuita': +1.5 gradi Celsius dal 20 aprile 2022, scelta dalla riga
+  round(0.55*2192). Il salto e' artificiale; si aggiunge alla serie Meteostat.
+  La mediana mobile usa 31 osservazioni ed endrule='median', come nello script
+  originale. I bordi usano quindi la regola di estensione prevista da runmed.
+
+Genera_meteo_leggibile.R contiene tutti i calcoli ed e' stato eseguito in R.
+Il dataset demo impiegato nei frammenti didattici rimane interamente simulato
+e distinto da questi dati Meteostat. Le figure originali, quando conservate
+nel pacchetto, restano soltanto materiale di archivio.
+
+5. FIGURE DELLA LEGGE DEI GRANDI NUMERI E DEL LIMITE CENTRALE
+
+Genera_teoremi_leggibili.R produce due nuove simulazioni dichiarate.
+LLN: 1000 valori indipendenti Exp(rate=1), set.seed(17); media cumulativa,
+media teorica 1 e guide 1+/-2/sqrt(n). Le guide non sono bande simultanee esatte.
+CLT: 3000 medie di campioni indipendenti Exp(rate=1), n=1,5,30;
+set.seed(17) viene reimpostato in ciascun pannello. Il pannello n=30
+corrisponde al frammento R della slide 47. Si rappresenta Z=sqrt(n)(media-1),
+con curva della densita' normale standard. L'asse comune [-4,8] include tutti
+i valori simulati, senza tagliare la coda del pannello n=1.
+
+6. ESECUZIONE R
+
+setup.R carica i CSV locali e non richiede rete o pacchetti aggiuntivi.
+Le verifiche sono state effettuate con R 4.6.0, tramite WebR 0.6.1 in Node.js.
+Lo script Verifica_dati.R riproduce le verifiche numeriche; il relativo
+resoconto e' nel file Verifica_dati_output.txt. Correlazioni_Meteostat.R
+riproduce i coefficienti della slide 58 senza scaricare nuovi dati.
+Il runtime WebR e i suoi moduli non fanno parte del materiale per studenti.
+Gli studenti possono usare una normale installazione di R.
+
+7. RIGENERAZIONE DELLE FIGURE
+
+Dalla cartella principale del progetto, in R:
+source("Genera_meteo_leggibile.R", encoding="UTF-8")
+source("Genera_teoremi_leggibili.R", encoding="UTF-8")
+
+I due script usano solo funzioni distribuite con R. Se esiste la cartella
+Risorse, aggiornano i PDF in Risorse/Figure; in una cartella autonoma senza
+Risorse scrivono invece in Figure. Non scaricano dati durante l'esecuzione.
+
+Rigenera_correlazioni.py riproduce i due scatter della slide 58 in Python,
+usando pandas, numpy e matplotlib; adotta la stessa regola per l'output.
+Correlazioni_Meteostat.R ricalcola i coefficienti e mostra grafici base R.
