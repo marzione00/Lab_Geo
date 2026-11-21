@@ -1,0 +1,82 @@
+# Gemina M06: coordinate numeriche delle slide 47-77.
+# Dati del corso simulati; ogni generatore mantiene ordine e seme del sito.
+options(warn = 2)
+dir.create("coordinate", showWarnings = FALSE)
+salva <- function(x, nome) {
+  write.csv(x, paste0("coordinate/", nome, ".csv"), row.names = FALSE)
+}
+metriche <- numeric()
+registra <- function(nome, x) {
+  metriche[nome] <<- unname(x)
+}
+app <- read.csv("Dati/misure_appaiate_simulate.csv")
+stopifnot(nrow(app) == 24, !anyDuplicated(app$id))
+app$differenza <- app$dopo - app$prima
+salva(app, "coppie")
+tp <- t.test(app$differenza)
+registra("coppie_media", mean(app$differenza))
+registra("coppie_sd", sd(app$differenza))
+registra("coppie_se", sd(app$differenza)/sqrt(nrow(app)))
+registra("coppie_t", tp$statistic)
+registra("coppie_p", tp$p.value)
+registra("coppie_lo", tp$conf.int[1])
+registra("coppie_hi", tp$conf.int[2])
+registra("coppie_cor", cor(app$prima, app$dopo))
+registra("coppie_se_ind", sqrt(var(app$prima)/24+var(app$dopo)/24))
+tau <- seq(.25,6,.25)
+se <- t(sapply(tau, function(z) {
+  set.seed(17)
+  u <- rnorm(30, 0, z)
+  a <- 10 + u + rnorm(30)
+  b <- 10 + u + .6 + rnorm(30)
+  c(appaiato = sd(b-a)/sqrt(30), indipendente = sqrt(var(a)/30+var(b)/30))
+}))
+salva(data.frame(tau, se), "tau_se")
+xx <- seq(-6,6,length.out=241)
+salva(data.frame(x=xx, stretta=dnorm(xx), larga=dnorm(xx,0,2)), "densita_scale")
+f <- read.csv("Dati/fossili_simulati.csv")
+b <- f$diametro_tot_um[f$morfotipo=="Spiky"]
+a <- f$diametro_tot_um[f$morfotipo=="Rounded"]
+theta <- mean(outer(b,a,">") + .5*outer(b,a,"=="))
+registra("fossili_theta", theta)
+registra("fossili_rank_p", wilcox.test(b,a,exact=FALSE,correct=TRUE)$p.value)
+tab <- matrix(c(18,12,9,21), nrow=2, byrow=TRUE)
+chi <- chisq.test(tab, correct=FALSE)
+registra("chi_stat", chi$statistic)
+registra("chi_p", chi$p.value)
+registra("fisher_p", fisher.test(tab)$p.value)
+aa <- 0:27
+pp <- dhyper(aa,27,33,30)
+pobs <- dhyper(18,27,33,30)
+salva(data.frame(a=aa, p=pp, estremo=pp<=pobs*(1+1e-7)), "fisher")
+set.seed(17)
+n <- 30
+gruppo <- factor(rep(LETTERS[1:4],each=n))
+mu <- rep((0:3)*.5,each=n)
+sigma <- rep(seq(1,2,length.out=4),each=n)
+y <- rnorm(4*n,mu,sigma)
+salva(data.frame(gruppo,y), "anova_dati")
+classic <- anova(lm(y~gruppo))
+w <- oneway.test(y~gruppo,var.equal=FALSE)
+registra("anova_F", classic[[4]][1])
+registra("anova_p", classic[[5]][1])
+registra("anova_W", w$statistic)
+registra("anova_Wp", w$p.value)
+salva(data.frame(gruppo=levels(gruppo),media=as.vector(tapply(y,gruppo,mean)),
+  sd=as.vector(tapply(y,gruppo,sd))),"anova_medie")
+m <- 1:50
+salva(data.frame(m,FWER=1-.95^m),"fwer")
+set.seed(17)
+u <- runif(20)
+salva(data.frame(i=1:20,p=u,holm=p.adjust(u,"holm")),"famiglia")
+set.seed(17)
+rifiuti <- replicate(2000, {
+  u <- runif(20)
+  c(grezzi=any(u<.05),holm=any(p.adjust(u,"holm")<.05))
+})
+registra("fwer_mc_grezzi", mean(rifiuti[1,]))
+registra("fwer_mc_holm", mean(rifiuti[2,]))
+registra("fwer_teorica", 1-.95^20)
+registra("fwer_mcse_grezzi", sqrt(mean(rifiuti[1,])*(1-mean(rifiuti[1,]))/2000))
+salva(data.frame(indicatore=names(metriche),valore=as.vector(metriche)), "metriche")
+cat("Figure metodi: coordinate e",length(metriche),"metriche verificate.\n")
