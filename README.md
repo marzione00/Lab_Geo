@@ -11,6 +11,12 @@ Il progetto è un sito statico: l’interprete R opera nel browser mediante webR
 
 [Avvio rapido](#avvio-rapido) · [Pubblicazione su GitHub](#pubblicazione-su-github) · [Moduli](#moduli-e-spedizioni) · [Sicurezza](#sicurezza-e-modello-di-fiducia) · [Documentazione](#documentazione)
 
+## Lezioni a tappe: pianeta principale e pianeta degli esercizi
+
+La nuova edizione delle lezioni organizza ogni sistema planetario attorno a un pianeta principale. Su Pelago (M05) ogni slide della lezione è una tappa del sito (`#lezione-M05/N`), e il piè di pagina della slide proiettata in aula riporta il codice «Sul sito: Pelago · N» con il collegamento alla tappa. La tappa mostra la slide, il «Da ricordare», il testo della slide, il codice R modificabile ed eseguibile nel browser con l’uscita di riferimento e i laboratori aperti con gli stessi parametri del codice. Le tappe 16-25, regione «Selezione e distorsione», hanno anche la spiegazione estesa. Le sezioni della lezione sono le regioni del pianeta.
+
+Il pianeta compagno Nereide c (`#esercizi-M05`) ospita le nove schede del quaderno: scenari A e B nel laboratorio, script dell’esercizio eseguibile e verifica degli indicatori, senza pubblicare i valori attesi né le soluzioni del docente. Sorgenti in `lezioni/M05_Pelago`; `python3 -I scripts/lessons/import_lesson.py M05` rigenera tappe, schede, immagini, PDF marcato e archivio del progetto R (richiede R, XeLaTeX, Poppler, qpdf, pypdf e Pillow). Le spiegazioni sono in `content/lezioni/M05.md`, i valori che citano in `content/lezioni/M05-valori.R`.
+
 ## Narrazione e taccuino scientifico
 
 La cornice dell’atlante segue una spedizione che ricostruisce conoscenza a partire da osservazioni parziali. La pagina iniziale e i 17 sistemi presentano domande scientifiche specifiche. Su Pelago (M05), nove attività costituiscono una sequenza completa: scelta del bersaglio e selezione, incertezza, ricampionamento. Le altre 130 attività mantengono la prosa didattica precedente.

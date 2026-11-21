@@ -16,7 +16,7 @@ Testo legale: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
 
 Il codice sorgente è distribuito con licenza **PolyForm Noncommercial License 1.0.0**, riportata integralmente in [LICENSE-CODE.md](LICENSE-CODE.md): https://polyformproject.org/licenses/noncommercial/1.0.0
 
-Rientrano nel codice i programmi del sito e degli strumenti (`src/`, `scripts/`, `tests/`, configurazioni), i programmi R e Python dei laboratori e degli esperimenti, compreso il codice R conservato nei file JSON dei contenuti, e il codice delle slide. Chi ridistribuisce il codice deve trasmettere anche i termini della licenza, o il loro indirizzo, e la riga seguente:
+Rientrano nel codice i programmi del sito e degli strumenti (`src/`, `scripts/`, `tests/`, configurazioni), i programmi R e Python dei laboratori e degli esperimenti, compreso il codice R conservato nei file JSON dei contenuti, e il codice delle slide e dei progetti R delle lezioni (`lezioni/`). Chi ridistribuisce il codice deve trasmettere anche i termini della licenza, o il loro indirizzo, e la riga seguente:
 
 > Required Notice: Copyright 2026 Marzio De Corato (https://github.com/marzione00/Lab_Geo)
 
