@@ -75,9 +75,25 @@ try:
                 result[f] = r
                 mark = 'salto' if 'skipped' in r else ('=' if r['same'] else r['status'] + ' ≠')
                 print(lid, f, mark, r['seconds'], flush=True)
+            # Script delle schede del quaderno: devono girare in webR senza errori.
+            cards = page.evaluate("""async id => {
+              const L = window.GEO_LESSONS[id], out = {};
+              for (const c of L.exercises?.cards || []) {
+                try {
+                  const r = await window.GeoREngine.runSnippet({ project: L.project, code: c.script.code });
+                  out[c.script.file] = { status: r.status, tail: r.output.split('\\n').slice(-3).join('\\n') };
+                } catch (err) { out[c.script.file] = { status: 'failed', tail: String(err.message || err) }; }
+              }
+              return out;
+            }""", lid)
+            for f, r in cards.items():
+                print(lid, f, r['status'], flush=True)
             R = next((r['R'] for r in result.values() if r.get('R')), None)
-            (OUT / (lid + '.json')).write_text(json.dumps({'R': R, 'fragments': result}, ensure_ascii=False,
-                                                          indent=1) + '\n', encoding='utf-8')
+            record = {'R': R, 'fragments': result}
+            if cards:
+                record['cards'] = cards
+            (OUT / (lid + '.json')).write_text(json.dumps(record, ensure_ascii=False, indent=1) + '\n',
+                                               encoding='utf-8')
             done = [r for r in result.values() if 'skipped' not in r]
             print(lid, 'uguali', sum(r['same'] for r in done), 'su', len(done), 'errori',
                   sum(r['status'] != 'ok' for r in done), 'tempo', round(time.time() - started), flush=True)

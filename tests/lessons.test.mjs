@@ -105,11 +105,13 @@ for (const [id, cfg] of Object.entries(config)) {
   });
 
   test(id + ': schede del quaderno con scenari validi e controlli numerici', { skip: !E }, () => {
-    assert.equal(E.cards.length, 9);
+    assert.ok(E.cards.length >= 9);
     for (const c of E.cards) {
       assert.ok(labs.has(c.id));
       assert.deepEqual(Object.keys(c.scenarios).sort(), ['A', 'B']);
-      assert.ok(c.fields.length >= 2);
+      // Quaderni con valori attesi: indicatori da verificare; senza (M06): la tabella del confronto.
+      assert.ok(cfg.expected ? c.fields.length >= 1 : c.fields.length === 0 && c.table.length >= 2, c.id);
+      assert.ok(fs.existsSync(path.join(root, cfg.source, c.script.file)), c.script.file);
       for (const f of c.fields) {
         assert.ok(Number.isFinite(f.value) && f.tol >= 0);
         assert.ok(!/\.\d+(\.\d+)?%$/.test(f.label), f.label);

@@ -197,10 +197,7 @@ def site_url(url):
     """Indirizzi del sito e dei materiali del repository resi relativi al sito."""
     url = url.replace(r'\#', '#').replace(r'\_', '_')
     if url.startswith(SITE):
-        url = url[len(SITE):] or '#indice'
-        # Le pagine percorso/<modulo>.html non esistono nel sito: il modulo si apre con #modulo-<modulo>.
-        m = re.fullmatch(r'percorso/(T00|M\d{2})\.html', url)
-        return '#modulo-' + m.group(1) if m else url
+        return url[len(SITE):] or '#indice'
     m = REPO.match(url)
     return m.group(1) if m else url
 
@@ -788,16 +785,59 @@ def tolerance(v):
     return 0.5 * 10 ** (floor(log10(abs(v))) - 2)
 
 
-def exercises(cfg, src, acts, workdir):
-    checks_file = workdir / 'checks.json'
-    subprocess.run(['Rscript', str(ROOT / 'scripts/lessons/exercise_checks.R'), str(ROOT), str(src),
-                    str(src / cfg['workbook']), str(src / cfg['expected']), str(checks_file)],
-                   check=True, env={'LC_ALL': 'C.UTF-8', 'PATH': '/usr/bin:/bin'})
-    checks = json.loads(checks_file.read_text(encoding='utf-8'))
+def exercise_spec(cfg, src, book, prefix):
+    """Specifica per exercise_checks.R: laboratorio, scenari A e B e valori attesi di ogni scheda.
+
+    Le chiamate lab_*() della verifica locale danno gli scenari (M02-M05); in alternativa un file di
+    scenari con i parametri (M06). I valori attesi vengono da Risultati_attesi_laboratori.csv, nelle
+    sue varianti di colonne; expectedMap traduce gli scenari con nome (M02) in laboratorio e A o B."""
+    spec = {'labs_file': cfg.get('labs'), 'cards': []}
+    expected = {}
+    if cfg.get('expected'):
+        with open(src / cfg['expected'], encoding='utf-8') as fh:
+            for r in csv.DictReader(fh):
+                lab, sc = r.get('laboratorio'), r['scenario']
+                if cfg.get('expectedMap'):
+                    lab, sc = cfg['expectedMap'][sc]
+                if r['valore'] == 'NA':  # indicatore non definito: il sito lo mostra senza valore
+                    continue
+                expected.setdefault(lab, {'A': [], 'B': []})[sc].append(
+                    {'parametro': r.get('parametro') or r['indicatore'], 'valore': float(r['valore'])})
+    scenarios = {}
+    if cfg.get('scenarios'):
+        for r in json.loads((src / cfg['scenarios']).read_text(encoding='utf-8')):
+            scenarios.setdefault(prefix + r['id'], {})['A' if r['scenario'] == 'base' else 'B'] = r['parametri']
+    for e in book['esercizi']:
+        lab = e['id'] if e['id'].startswith(prefix) else prefix + e['id']
+        card = {'id': lab, 'expected': expected.get(lab, {'A': [], 'B': []})}
+        if lab in scenarios:
+            card['params'] = scenarios[lab]
+        else:
+            calls = dict(re.findall(r'^r([AB]) <- (lab_[a-z_]+\(.*\))\s*$', e['verifica_locale'], re.M))
+            if sorted(calls) != ['A', 'B']:
+                raise ValueError('scenari A e B non trovati nella verifica di %s' % lab)
+            card['calls'] = calls
+        if cfg.get('expected') and not any(card['expected'].values()):
+            raise ValueError('nessun valore atteso per %s' % lab)
+        spec['cards'].append(card)
+    return spec
+
+
+def exercises(cfg, src, acts, workdir, prefix):
     book = json.loads((src / cfg['workbook']).read_text(encoding='utf-8'))
+    spec_file, checks_file = workdir / 'spec.json', workdir / 'checks.json'
+    spec_file.write_text(json.dumps(exercise_spec(cfg, src, book, prefix), ensure_ascii=False), encoding='utf-8')
+    subprocess.run(['Rscript', str(ROOT / 'scripts/lessons/exercise_checks.R'), str(ROOT), str(src), str(spec_file),
+                    str(checks_file)], check=True, env={'LC_ALL': 'C.UTF-8', 'PATH': '/usr/bin:/bin'})
+    checks = json.loads(checks_file.read_text(encoding='utf-8'))
     cards = []
     for n, e in enumerate(book['esercizi'], 1):
-        ck = checks[e['id']]
+        lab = e['id'] if e['id'].startswith(prefix) else prefix + e['id']
+        ck = checks[lab]
+        for m in ck.get('missing', []):
+            warn('%s, scenario %s: indicatore %s del progetto non mostrato dal laboratorio del sito' % (
+                lab, m['scenario'], m['parametro']))
+        keys = {c['key'] for c in acts[lab]['controls']}
         labels = {}
         for c in ck['checks']:
             if c['scenario'] == 'A' and c['metrica']:
@@ -806,23 +846,25 @@ def exercises(cfg, src, acts, workdir):
         script = sorted((src / 'Esercizi').glob('%02d_*.R' % n))
         if len(script) != 1:
             raise ValueError('script dell\'esercizio %d non trovato' % n)
-        scen = {}
-        for name, sc in ck['scenarios'].items():
-            scen[name] = {'link': lab_link(acts, e['id'], sc['params'] or {}), 'full': sc['full']}
+        scen = {name: {'link': lab_link(acts, lab, sc['params'] or {}), 'full': sc['full']}
+                for name, sc in ck['scenarios'].items()}
         fields = []
         for c in ck['checks']:
-            if c['parametro'] in cfg.get('echo', []) or not labels.get(c['parametro']):
+            # Gli indicatori che ripetono un parametro dello scenario non verificano nulla.
+            if c['parametro'] in cfg.get('echo', []) or c['parametro'] in keys or not labels.get(c['parametro']):
                 continue
             fields.append({'scenario': c['scenario'], 'key': c['parametro'], 'label': labels[c['parametro']],
                            'value': c['valore'], 'tol': tolerance(c['valore'])})
-        cards.append({
-            'n': n, 'id': e['id'], 'title': e['titolo'], 'goal': e['obiettivo'], 'start': e['parametri_iniziali'],
-            'steps': e['passi'], 'questions': e['domande'], 'deliver': e['consegna'], 'limits': e['limiti'],
-            'scenarios': scen, 'fields': fields,
-            'script': {'file': 'Esercizi/' + script[0].name,
-                       'code': script[0].read_text(encoding='utf-8').rstrip('\n')},
-        })
-    return {'title': book['titolo'], 'subtitle': book['sottotitolo'], 'common': book['istruzioni_comuni'],
+        if 'domande' in e:
+            text = {'goal': e['obiettivo'], 'start': e['parametri_iniziali'], 'steps': e['passi'],
+                    'questions': e['domande'], 'deliver': e['consegna'], 'limits': e['limiti']}
+        else:  # quaderno con previsione, tabella da compilare, domanda e limite (M06)
+            text = {'goal': e['obiettivo'], 'start': e['parametri'], 'steps': e['passi'],
+                    'questions': [e['previsione'], e['domanda']], 'table': e['tabella'], 'limits': e['limite']}
+        cards.append({'n': n, 'id': lab, 'title': e['titolo'], **text, 'scenarios': scen, 'fields': fields,
+                      'script': {'file': 'Esercizi/' + script[0].name,
+                                 'code': script[0].read_text(encoding='utf-8').rstrip('\n')}})
+    return {'title': book['titolo'], 'subtitle': book['sottotitolo'], 'common': book.get('istruzioni_comuni', []),
             'cards': cards}
 
 
@@ -1137,7 +1179,7 @@ def main():
         ncards = 0
         ex_json = ROOT / 'content/esercizi' / (o.lesson + '.json')
         if cfg.get('workbook'):
-            ex = exercises(cfg, src, acts, work)
+            ex = exercises(cfg, src, acts, work, prefix)
             ex.update(lesson=o.lesson, world=cfg['exercisesWorld'], planet=cfg['planet'])
             ex_json.parent.mkdir(parents=True, exist_ok=True)
             ex_json.write_text(json.dumps(ex, ensure_ascii=False, indent=1) + '\n', encoding='utf-8')

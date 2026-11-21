@@ -241,6 +241,14 @@ assert(d.getElementById('verify-status').textContent.startsWith('Tutti'));
 d.querySelectorAll('#verify-form input')[1].value = '0.26';
 d.querySelector('#verify-form').dispatchEvent(new w.Event('submit', { cancelable: true }));
 assert(d.getElementById('verify-status').textContent.startsWith('5 indicatori su 6'));
+// A workbook without expected values (M06) shows the comparison table of the workbook.
+w.location.hash = '#esercizi-M06/1';
+await until(() => d.querySelectorAll('#table-form input').length > 0);
+assert.equal(d.querySelectorAll('#verify-form').length, 0);
+assert.equal(
+  d.querySelectorAll('#table-form input').length,
+  2 * (w.GEO_LESSONS.M06.exercises.cards[0].table.length - 1),
+);
 // Every other lesson: each tappa renders its slide panel, and a lesson without a workbook has no exercises route.
 let lessonPages = 0,
   lessonFormulas = 0;

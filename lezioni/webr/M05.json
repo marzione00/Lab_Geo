@@ -6,9 +6,9 @@
    "output": "> # Aprire Pelago_M05.Rproj.\n> source(\"setup.R\", encoding=\"UTF-8\")\n> # Dati sintetici del corso\n> head(fossili)\n    id morfotipo diametro_tot_um diametro_int_um diaframma_um spessore_um\n1 F001   Rounded        7.234159        6.351843     3.360359   0.4411581\n2 F002   Rounded        5.810230        5.006650     2.749251   0.4017900\n3 F003   Rounded        6.637885        5.631578     2.585601   0.5031534\n4 F004   Rounded        4.305180        3.502563     1.995113   0.4013086\n5 F005   Rounded        6.364019        5.683653     2.845647   0.3401828\n6 F006   Rounded        6.937162        6.139933     3.136544   0.3986145\n  rapporto_int_tot\n1        0.8780347\n2        0.8616957\n3        0.8483995\n4        0.8135694\n5        0.8930918\n6        0.8850785\n> head(provini)\n   id affioramento stazione massa_g volume_cm3 alterazione densita\n1 C01            A       A1  107.20         40       bassa    2.68\n2 C02            A       A1  121.95         45       bassa    2.71\n3 C03            A       A1  132.50         50       media    2.65\n4 C04            A       A1  113.40         42       bassa    2.70\n5 C05            A       A2   99.56         38       media    2.62\n6 C06            A       A2  117.04         44       bassa    2.66\n> # Argomenti e documentazione\n> args(mean)\nfunction (x, ...) \nNULL\n> help(\"sample\")\nsample                  package:base                   R Documentation\n\nRandom Samples and Permutations\n\nDescription:\n\n     ‘sample’ takes a sample of the specified size from the elements of\n     ‘x’ using either with or without replacement.\n\nUsage:\n\n     sample(x, size, replace = FALSE, prob = NULL)\n     \n     sample.int(n, size = n, replace = FALSE, prob = NULL,\n                useHash = (n > 1e+07 && !replace && is.null(prob) && size <= n/2))\n     \nArguments:\n\n       x: either a vector of one or more elements from which to choose,\n          or a positive integer.  See ‘Details.’\n\n       n: a positive number, the number of items to choose from.  See\n          ‘Details.’\n\n    size: a non-negative integer giving the number of items to choose.\n\n replace: should sampling be with replacement?\n\n    prob: a vector of probability weights for obtaining the elements of\n          the vector being sampled.\n\n useHash: ‘logical’ indicating if the hash-version of the algorithm\n          should be used.  Can only be used for ‘replace = FALSE’,\n          ‘prob = NULL’, and ‘size <= n/2’, and really should be used\n          for large ‘n’, as ‘useHash=FALSE’ will use memory\n          proportional to ‘n’.\n\nDetails:\n\n     If ‘x’ has length 1, is numeric (in the sense of ‘is.numeric’) and\n     ‘x >= 1’, sampling _via_ ‘sample’ takes place from ‘1:x’.  _Note_\n     that this convenience feature may lead to undesired behaviour when\n     ‘x’ is of varying length in calls such as ‘sample(x)’.  See the\n     examples.\n\n     Otherwise ‘x’ can be any R object for which ‘length’ and\n     subsetting by integers make sense: S3 or S4 methods for these\n     operations will be dispatched as appropriate.\n\n     For ‘sample’ the default for ‘size’ is the number of items\n     inferred from the first argument, so that ‘sample(x)’ generates a\n     random permutation of the elements of ‘x’ (or ‘1:x’).\n\n     It is allowed to ask for ‘size = 0’ samples with ‘n = 0’ or a\n     length-zero ‘x’, but otherwise ‘n > 0’ or positive ‘length(x)’ is\n     required.\n\n     Non-integer positive numerical values of ‘n’ or ‘x’ will be\n     truncated to the next smallest integer, which has to be no larger\n     than ‘.Machine$integer.max’.\n\n     The optional ‘prob’ argument can be used to give a vector of\n     weights for obtaining the elements of the vector being sampled.\n     They need not sum to one, but they should be non-negative and not\n     all zero.  If ‘replace’ is true, Walker's alias method (Ripley\n     1987) is used when there are more than 200 reasonably probable\n     values: this gives results incompatible with those from R < 2.2.0.\n\n     If ‘replace’ is false, these probabilities are applied\n     sequentially, that is the probability of choosing the next item is\n     proportional to the weights amongst the remaining items.  The\n     number of nonzero weights must be at least ‘size’ in this case.\n\n     ‘sample.int’ is a bare interface in which both ‘n’ and ‘size’ must\n     be supplied as integers.\n\n     Argument ‘n’ can be larger than the largest integer of type\n     ‘integer’, up to the largest representable integer in type\n     ‘double’.  Only uniform sampling is supported.  Two random numbers\n     are used to ensure uniform sampling of large integers.\n\nValue:\n\n     For ‘sample’ a vector of length ‘size’ with elements drawn from\n     either ‘x’ or from the integers ‘1:x’.\n\n     For ‘sample.int’, an integer vector of length ‘size’ with elements\n     from ‘1:n’, or a double vector if n >= 2^31.\n\nReferences:\n\n     Becker RA, Chambers JM, Wilks AR (1988). _The New S Language_.\n     Chapman and Hall/CRC, London. ISBN 053409192X.\n\n     Ripley BD (1987). _Stochastic Simulation_. Wiley, New York, NY.\n     ISBN 0471818844.\n\nSee Also:\n\n     ‘RNGkind(sample.kind = ..)’ about random number generation,\n     notably the change of ‘sample()’ results with R version 3.6.0.\n\n     CRAN package ‘sampling’ for other methods of weighted sampling\n     without replacement.\n\nExamples:\n\n     x <- 1:12\n     # a random permutation\n     sample(x)\n     # bootstrap resampling -- only if length(x) > 1 !\n     sample(x, replace = TRUE)\n     \n     # 100 Bernoulli trials\n     sample(c(0,1), 100, replace = TRUE)\n     \n     ## More careful bootstrapping --  Consider this when using sample()\n     ## programmatically (i.e., in your function or simulation)!\n     \n     # sample()'s surprise -- example\n     x <- 1:10\n         sample(x[x >  8]) # length 2\n         sample(x[x >  9]) # oops -- length 10!\n         sample(x[x > 10]) # length 0\n     \n     ## safer version:\n     resample <- function(x, ...) x[sample.int(length(x), ...)]\n     resample(x[x >  8]) # length 2\n     resample(x[x >  9]) # length 1\n     resample(x[x > 10]) # length 0\n     \n     ## R 3.0.0 and later\n     sample.int(1e10, 12, replace = TRUE)\n     sample.int(1e10, 12) # not that there is much chance of duplicates\n     ",
    "R": "R version 4.6.0 (2026-04-24)",
    "figures": 0,
-   "same": false,
+   "same": true,
    "hash": "dc0c44a9428670d4dd98",
-   "seconds": 19.1
+   "seconds": 18.5
   },
   "004_popolazione.R": {
    "status": "ok",
@@ -17,7 +17,7 @@
    "figures": 0,
    "same": true,
    "hash": "509ad89c46b31a5c2df9",
-   "seconds": 0.1
+   "seconds": 0.0
   },
   "005_unita.R": {
    "status": "ok",
@@ -107,7 +107,7 @@
    "figures": 0,
    "same": true,
    "hash": "530059e851b562f3777b",
-   "seconds": 0.1
+   "seconds": 0.0
   },
   "015_lab_estimandi.R": {
    "status": "ok",
@@ -116,7 +116,7 @@
    "figures": 0,
    "same": true,
    "hash": "2366c1c5ece81b61416e",
-   "seconds": 0.1
+   "seconds": 0.0
   },
   "016_lista_incompleta.R": {
    "status": "ok",
@@ -269,7 +269,7 @@
    "figures": 1,
    "same": true,
    "hash": "6d9ade5088bc966c8baf",
-   "seconds": 0.0
+   "seconds": 0.1
   },
   "033_standardizzazione.R": {
    "status": "ok",
@@ -449,7 +449,7 @@
    "figures": 0,
    "same": true,
    "hash": "f12cccaae3aa21c4aa04",
-   "seconds": 0.1
+   "seconds": 0.0
   },
   "053_lab_intervalli.R": {
    "status": "ok",
@@ -467,7 +467,7 @@
    "figures": 0,
    "same": true,
    "hash": "7ce75bb8033db208c323",
-   "seconds": 0.1
+   "seconds": 0.0
   },
   "055_contrasto.R": {
    "status": "ok",
@@ -512,7 +512,7 @@
    "figures": 1,
    "same": true,
    "hash": "be138a5bead9f7602a89",
-   "seconds": 0.0
+   "seconds": 0.1
   },
   "061_masse.R": {
    "status": "ok",
@@ -548,7 +548,7 @@
    "figures": 0,
    "same": true,
    "hash": "e4757752093e068bf33a",
-   "seconds": 0.1
+   "seconds": 0.0
   },
   "065_varianza_condizionata.R": {
    "status": "ok",
@@ -557,7 +557,7 @@
    "figures": 0,
    "same": true,
    "hash": "5d03a3064f68fb9415be",
-   "seconds": 0.1
+   "seconds": 0.0
   },
   "066_molte_repliche.R": {
    "status": "ok",
@@ -611,7 +611,7 @@
    "figures": 1,
    "same": true,
    "hash": "432ed6a13c3acadc032d",
-   "seconds": 0.1
+   "seconds": 0.0
   },
   "072_struttura_dati.R": {
    "status": "ok",
@@ -638,7 +638,7 @@
    "figures": 0,
    "same": true,
    "hash": "e05a0bea092e28ad978c",
-   "seconds": 0.2
+   "seconds": 0.3
   },
   "075_pooled_stratificato.R": {
    "status": "ok",
@@ -656,7 +656,7 @@
    "figures": 0,
    "same": true,
    "hash": "ca7ba1c1406f3ce7ee0f",
-   "seconds": 0.6
+   "seconds": 0.5
   },
   "077_coppie.R": {
    "status": "ok",
@@ -674,7 +674,7 @@
    "figures": 0,
    "same": true,
    "hash": "06f110bb9c37e0ba05dd",
-   "seconds": 0.0
+   "seconds": 0.1
   },
   "079_stazioni_intere.R": {
    "status": "ok",
@@ -710,7 +710,7 @@
    "figures": 0,
    "same": true,
    "hash": "c9647ce371ed76fde25a",
-   "seconds": 0.6
+   "seconds": 0.5
   },
   "083_pochi_siti.R": {
    "status": "ok",
@@ -719,7 +719,7 @@
    "figures": 0,
    "same": true,
    "hash": "47fc427347e42fbd8d0f",
-   "seconds": 0.2
+   "seconds": 0.3
   },
   "084_modello_stazioni.R": {
    "status": "ok",
@@ -818,7 +818,7 @@
    "figures": 0,
    "same": true,
    "hash": "86f841a8e21b4b1c03b6",
-   "seconds": 0.0
+   "seconds": 0.1
   },
   "097_stabilita_se.R": {
    "status": "ok",
@@ -854,7 +854,7 @@
    "figures": 0,
    "same": true,
    "hash": "0e90bc4171f1dcd1cbcb",
-   "seconds": 1.9
+   "seconds": 2.0
   },
   "101_laboratorio_precisione.R": {
    "status": "ok",
@@ -863,7 +863,7 @@
    "figures": 1,
    "same": true,
    "hash": "308d34c1ec7d9fd5c0ca",
-   "seconds": 0.4
+   "seconds": 0.3
   },
   "102_registro.R": {
    "status": "ok",
@@ -881,7 +881,7 @@
    "figures": 0,
    "same": true,
    "hash": "75ae669bd647de5fe120",
-   "seconds": 0.4
+   "seconds": 0.6
   },
   "107_relazione.R": {
    "status": "ok",
@@ -891,6 +891,44 @@
    "same": true,
    "hash": "97481700b4b3f1976c19",
    "seconds": 0.2
+  }
+ },
+ "cards": {
+  "Esercizi/01_estimandi.R": {
+   "status": "ok",
+   "tail": "  media_misure media_stazioni\nA     9.982584       7.963128\nB     8.014477       8.014477"
+  },
+  "Esercizi/02_selezione.R": {
+   "status": "ok",
+   "tail": "  bias_teorico se_teorico mse_simulato\nA           -1  0.2581989     1.038753\nB           -1  0.1290994     1.003284"
+  },
+  "Esercizi/03_distribuzioni.R": {
+   "status": "ok",
+   "tail": "  media_delle_medie sd_delle_medie se_teorico\nA         1.0070264      0.1246276  0.1290994\nB         0.9857088      0.1247833  0.1290994"
+  },
+  "Esercizi/04_dipendenza.R": {
+   "status": "ok",
+   "tail": "  se_indipendenza se_corretto sd_delle_medie   n_eff\nA       0.1290994   0.4618802      0.4567261  4.6875\nB       0.1290994   0.1290994      0.1328882 60.0000"
+  },
+  "Esercizi/05_intervalli.R": {
+   "status": "ok",
+   "tail": "  copertura livello_nominale   B  errore_mc\nA     0.935             0.95 200 0.01743201\nB     0.490             0.95 200 0.03534827"
+  },
+  "Esercizi/06_bootstrap.R": {
+   "status": "ok",
+   "tail": "  media_osservata se_bootstrap inferiore superiore\nA        1.363877    0.1243239  1.129377  1.604374\nB        1.363877    0.1155085  1.141827  1.591852"
+  },
+  "Esercizi/07_ricampionamento.R": {
+   "status": "ok",
+   "tail": "  se_misure se_stazioni stazioni_indipendenti\nA 0.2385281   0.4940452                    12\nB 0.1178871   0.1803520                    12"
+  },
+  "Esercizi/08_blocchi.R": {
+   "status": "ok",
+   "tail": "  se_individuale se_blocchi lunghezza_blocco   n\nA      0.1216752  0.2644455                8 120\nB      0.1216752  0.1296051                1 120"
+  },
+  "Esercizi/09_precisione.R": {
+   "status": "ok",
+   "tail": "    B sd_limite_superiore n_fisso\nA 200          0.02373867      30\nB 800          0.01225607      30"
   }
  }
 }
