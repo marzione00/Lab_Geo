@@ -143,3 +143,26 @@ g <- split(f$diametro_tot_um, f$morfotipo); v("45 var gruppi, n", c(sapply(g,var
 v("45 se pesi .3 .7", sqrt(sum(c(.3,.7)^2*sapply(g,var)/lengths(g)))); v("45 media strat .5", sum(.5*sapply(g,mean)))
 v("46 n per E .2, .05", ceiling((qnorm(.975)/c(.2,.05))^2)); v("46 z", qnorm(.975)); v("46 sigma 1.2 -> n", ceiling((qnorm(.975)*1.2/.1)^2))
 v("47 qt, qnorm", c(qt(.975,79), qnorm(.975))); v("47 IC", mean(r)+c(-1,1)*qt(.975,79)*sd(r)/sqrt(80)); v("47 quota entro +-sd", mean(abs(r-mean(r))<=sd(r)))
+
+# ---- tappe 48-59
+v("48 qt n=20, qnorm, qt df 4,100", c(qt(.975,19), qnorm(.975), qt(.975,4), qt(.975,100)))
+v("48 copertura di 1.96 con df 19", pt(1.96,19)-pt(-1.96,19))
+x <- c(4.2,5.1,5.4,6,6.3,7); v("49 media sd se q", c(mean(x), sd(x), sd(x)/sqrt(6), qt(.975,5))); v("49 semiampiezza", qt(.975,5)*sd(x)/sqrt(6))
+v("49 con 1.96", mean(x)+c(-1,1)*1.96*sd(x)/sqrt(6))
+q50 <- qt((1+c(.8,.9,.95,.99))/2, 19); v("50 rapporto 99/95, 95/80", c(q50[4]/q50[3], q50[3]/q50[1]))
+f <- read.csv("Dati/fossili_simulati.csv"); r <- f$diametro_tot_um[f$morfotipo=="Rounded"]; s <- f$diametro_tot_um[f$morfotipo=="Spiky"]
+v("51 ampiezza", diff(t.test(r)$conf.int)); v("51 IC 99", t.test(r, conf.level=.99)$conf.int)
+for (rho in c(0,.2)) { a <- lab_intervalli(n=30,B=200,rho=rho,level=.95,seed=17); v(paste("52/53 rho",rho), a$indicatori) }
+a <- lab_intervalli(n=30,B=200,rho=0,level=.95,seed=17); v("52 err MC con c=.95", sqrt(.95*.05/200)); v("52 z", (0.935-.95)/sqrt(.95*.05/200))
+b <- lab_intervalli(n=30,B=1000,rho=.2,level=.95,seed=17); v("53 B=1000 rho .2", b$indicatori)
+v("53 SE corretto/ind n=30 rho .2", sqrt(1+29*.2)); v("53 copertura teorica approx", 2*pnorm(1.96/sqrt(1+29*.2))-1)
+v("54 rapporto ampiezze", sqrt(1+1/80)*sqrt(80)); v("54 quota rounded nell'intervallo pred", mean(r >= 4.059869 & r <= 8.067385))
+d <- s-0; ss <- var(s)/80; rr <- var(r)/80; v("55 a b se nu", c(ss, rr, sqrt(ss+rr), (ss+rr)^2/(ss^2/79+rr^2/79)))
+v("55 t.test pooled", t.test(s,r,var.equal=TRUE)$conf.int); v("55 inverso", t.test(r,s)$conf.int)
+tot <- c(7.2,5.8,6.4); int <- c(6.3,5.0,5.3); v("56 sd tot int d cor", c(sd(tot), sd(int), sd(tot-int), cor(tot,int)))
+p <- f[f$morfotipo=="Rounded",]; dd <- p$diametro_tot_um - p$diametro_int_um
+v("57 sd tot int d cor", c(sd(p$diametro_tot_um), sd(p$diametro_int_um), sd(dd), cor(p$diametro_tot_um, p$diametro_int_um)))
+v("57 IC Welch indipendenti", t.test(p$diametro_tot_um, p$diametro_int_um)$conf.int); v("57 ampiezze", c(diff(t.test(dd)$conf.int), diff(t.test(p$diametro_tot_um, p$diametro_int_um)$conf.int)))
+x58 <- c(4.1,4.7,5,5.2,5.4,5.6,5.8,6); z58 <- x58; z58[8] <- 12
+v("58 mediane", c(median(x58), median(z58))); v("58 ampiezze", c(diff(t.test(x58)$conf.int), diff(t.test(z58)$conf.int)))
+v("53 rapporto e copertura approssimata", {r <- sqrt(1+30*.2/.8); c(r, 2*pnorm(qt(.975,29)/r)-1, sqrt(.2+.8/30), sqrt(.8/30))})
