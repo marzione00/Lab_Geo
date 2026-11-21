@@ -62,8 +62,8 @@ z <- t(replicate(p$B, {
 
 q <- qt((1 + p$level)/2, p$n - 1)
 
-data <- data.frame(replica = 1:p$B, media = z[, 1], inferiore = z[, 1] - q * z[, 2], superiore = z[, 
-    1] + q * z[, 2])
+data <- data.frame(replica = 1:p$B, media = z[, 1], inferiore = z[, 1] - q * z[, 2],
+    superiore = z[, 1] + q * z[, 2])
 
 data$copre <- data$inferiore <= 10 & data$superiore >= 10
 

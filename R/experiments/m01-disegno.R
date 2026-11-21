@@ -60,8 +60,8 @@ grid$z <- 10 + 5 * grid$x + 3 * grid$y
 
 xy <- if (p$design == "grid") {
     k <- ceiling(sqrt(p$n))
-    as.matrix(expand.grid(seq(0, 1, length.out = k), seq(0, 1, length.out = k))[round(seq(1, 
-        k * k, length.out = p$n)), ])
+    as.matrix(expand.grid(seq(0, 1, length.out = k),
+        seq(0, 1, length.out = k))[round(seq(1, k * k, length.out = p$n)), ])
 } else cbind(runif(p$n), if (p$design == "road") runif(p$n, 0, 0.1) else runif(p$n))
 
 data <- data.frame(x = xy[, 1], y = xy[, 2])

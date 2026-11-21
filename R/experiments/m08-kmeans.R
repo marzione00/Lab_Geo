@@ -68,8 +68,9 @@ for (it in seq_len(p$iterations)) {
 
 data <- data.frame(x = x[, 1], y = x[, 2], gruppo = factor(cl))
 
-plots <- list(point_plot(data, title = "Assegnazioni e centroidi", group = "gruppo") + geom_point(data = data.frame(x = cent[, 
-    1], y = cent[, 2]), aes(x, y), inherit.aes = FALSE, shape = 4, size = 6, stroke = 2))
+plots <- list(point_plot(data, title = "Assegnazioni e centroidi", group = "gruppo") +
+    geom_point(data = data.frame(x = cent[, 1], y = cent[, 2]), aes(x, y),
+    inherit.aes = FALSE, shape = 4, size = 6, stroke = 2))
 
 metrics <- metric(`Somma quadratica entro gruppi` = f(sum((x - cent[cl, ])^2)), Iterazioni = p$iterations)
 

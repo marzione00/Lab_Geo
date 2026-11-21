@@ -65,8 +65,8 @@ data <- data.frame(x = x[, 1], y = x[, 2])
 plots <- list(point_plot(data, title = "Geometria delle variabili", xl = "Variabile 1", yl = "Variabile 2") + 
     coord_equal())
 
-metrics <- metric(`SD variabile 1` = f(sd(x[, 1])), `SD variabile 2` = f(sd(x[, 2])), `Distanza punti 1 e 2` = f(sqrt(sum((x[1, 
-    ] - x[2, ])^2))))
+metrics <- metric(`SD variabile 1` = f(sd(x[, 1])), `SD variabile 2` = f(sd(x[, 2])),
+    `Distanza punti 1 e 2` = f(sqrt(sum((x[1, ] - x[2, ])^2))))
 
 print(metrics, row.names = FALSE)
 if (!interactive()) grDevices::cairo_pdf("figure_esperimento.pdf", width=9, height=5.5)

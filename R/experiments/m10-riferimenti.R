@@ -64,8 +64,8 @@ h <- 1:12
 
 actual <- y[o + h]
 
-pred <- cbind(Media = rep(mean(y[1:o]), 12), Ultimo = rep(y[o], 12), Stagionale = y[(o - 
-    11):o])
+pred <- cbind(Media = rep(mean(y[1:o]), 12), Ultimo = rep(y[o], 12),
+    Stagionale = y[(o - 11):o])
 
 data <- data.frame(x = rep(o + h, 4), y = c(actual, as.vector(pred)), metodo = rep(c("Osservato", 
     colnames(pred)), each = 12))

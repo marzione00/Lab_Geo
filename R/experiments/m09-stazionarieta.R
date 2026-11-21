@@ -62,8 +62,8 @@ data <- data.frame(x = rep(1:150, 6), y = as.vector(paths), traiettoria = factor
 plots <- list(line_plot(data, title = "Sei traiettorie indipendenti", xl = "Tempo", yl = "Valore", 
     group = "traiettoria"))
 
-metrics <- metric(`Varianza trasversale finale` = f(var(paths[150, ])), `Varianza trasversale iniziale` = f(var(paths[1, 
-    ])))
+metrics <- metric(`Varianza trasversale finale` = f(var(paths[150, ])),
+    `Varianza trasversale iniziale` = f(var(paths[1, ])))
 
 print(metrics, row.names = FALSE)
 if (!interactive()) grDevices::cairo_pdf("figure_esperimento.pdf", width=9, height=5.5)

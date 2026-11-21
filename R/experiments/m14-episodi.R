@@ -63,8 +63,8 @@ episode <- if (length(idx)) cumsum(c(1, diff(idx) > p$gap)) else integer()
 data <- data.frame(giorno = 1:200, valore = x, supera = x > p$threshold)
 
 plots <- list(line_plot(data, "giorno", "valore", "Superamenti della soglia", "Giorno", "Valore") + 
-    geom_hline(yintercept = p$threshold, colour = col_geo[2], linetype = 2) + geom_point(data = data[idx, 
-    , drop = FALSE], colour = col_geo[2], size = 2))
+    geom_hline(yintercept = p$threshold, colour = col_geo[2], linetype = 2) +
+        geom_point(data = data[idx, , drop = FALSE], colour = col_geo[2], size = 2))
 
 metrics <- metric(`Giorni sopra soglia` = length(idx), Episodi = if (length(idx)) max(episode) else 0, 
     `Separazione adottata` = p$gap)

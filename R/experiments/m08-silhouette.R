@@ -66,8 +66,8 @@ s <- sapply(1:nrow(x), function(i) {
     if (!length(same)) 
         return(0)
     a <- mean(dd[i, same])
-    b <- min(sapply(setdiff(unique(km$cluster), km$cluster[i]), function(g) mean(dd[i, km$cluster == 
-        g])))
+    b <- min(sapply(setdiff(unique(km$cluster), km$cluster[i]),
+        function(g) mean(dd[i, km$cluster == g])))
     (b - a)/max(a, b)
 })
 

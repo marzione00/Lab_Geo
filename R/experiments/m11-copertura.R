@@ -62,8 +62,9 @@ grid$z <- apply(dist_cross(as.matrix(grid), xy), 1, min)
 
 data <- grid
 
-plots <- list(map_plot(data, title = "Distanza al sito più vicino") + geom_point(data = data.frame(x = xy[, 
-    1], y = xy[, 2]), aes(x, y), inherit.aes = FALSE, size = 1.5))
+plots <- list(map_plot(data, title = "Distanza al sito più vicino") +
+    geom_point(data = data.frame(x = xy[, 1], y = xy[, 2]), aes(x, y),
+    inherit.aes = FALSE, size = 1.5))
 
 metrics <- metric(`Distanza massima [km]` = f(max(grid$z)), `Distanza media [km]` = f(mean(grid$z)))
 

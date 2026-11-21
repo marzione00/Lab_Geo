@@ -65,8 +65,8 @@ a <- aggregate(z ~ zona, data, mean)
 plots <- list(map_plot(data, title = "Campo e confine amministrativo") + geom_vline(xintercept = p$cut + 
     0.5, colour = "#FCF8E8", linewidth = 1.2))
 
-metrics <- metric(`Media Ovest` = f(a$z[a$zona == "Ovest"]), `Media Est` = f(a$z[a$zona == 
-    "Est"]), `Celle Ovest` = sum(data$zona == "Ovest"))
+metrics <- metric(`Media Ovest` = f(a$z[a$zona == "Ovest"]),
+    `Media Est` = f(a$z[a$zona == "Est"]), `Celle Ovest` = sum(data$zona == "Ovest"))
 
 print(metrics, row.names = FALSE)
 if (!interactive()) grDevices::cairo_pdf("figure_esperimento.pdf", width=9, height=5.5)

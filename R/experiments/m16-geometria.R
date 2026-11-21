@@ -71,8 +71,8 @@ c0 <- colMeans(z[y == 0, ])
 
 c1 <- colMeans(z[y == 1, ])
 
-grid <- expand.grid(x = seq(min(x[, 1]) - 1, max(x[, 1]) + 1, length.out = 45), y = seq(min(x[, 
-    2]) - 1, max(x[, 2]) + 1, length.out = 45))
+grid <- expand.grid(x = seq(min(x[, 1]) - 1, max(x[, 1]) + 1, length.out = 45),
+    y = seq(min(x[, 2]) - 1, max(x[, 2]) + 1, length.out = 45))
 
 zg <- sweep(sweep(as.matrix(grid), 2, center), 2, sc, "/")
 

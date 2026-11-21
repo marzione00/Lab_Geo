@@ -65,8 +65,9 @@ data <- data.frame(x = cuts, y = means)
 plots <- list(line_plot(data, title = "Sensibilità della media alla soglia", xl = "Soglia dichiarata", 
     yl = "Media dopo filtro") + geom_vline(xintercept = p$cut, linetype = 2, colour = col_geo[2]))
 
-metrics <- metric(`Soglia corrente` = p$cut, `Media corrente` = if (any(x <= p$cut)) f(mean(x[x <= 
-    p$cut])) else "Nessuna osservazione ammessa", `Osservazioni incluse` = sum(x <= p$cut))
+metrics <- metric(`Soglia corrente` = p$cut,
+    `Media corrente` = if (any(x <= p$cut)) f(mean(x[x <= p$cut])) else "Nessuna osservazione ammessa",
+    `Osservazioni incluse` = sum(x <= p$cut))
 
 print(metrics, row.names = FALSE)
 if (!interactive()) grDevices::cairo_pdf("figure_esperimento.pdf", width=9, height=5.5)

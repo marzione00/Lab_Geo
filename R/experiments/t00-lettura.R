@@ -61,8 +61,8 @@ plots <- list(ggplot(data, aes(gruppo, valore, fill = gruppo)) + geom_boxplot(wi
     scale_fill_manual(values = col_geo) + labs(title = "Misure e appartenenza", x = "Litologia", 
     y = "Valore"))
 
-metrics <- metric(`Media A` = f(mean(data$valore[data$gruppo == "A"])), `Media B` = f(mean(data$valore[data$gruppo == 
-    "B"])))
+metrics <- metric(`Media A` = f(mean(data$valore[data$gruppo == "A"])),
+    `Media B` = f(mean(data$valore[data$gruppo == "B"])))
 
 print(metrics, row.names = FALSE)
 if (!interactive()) grDevices::cairo_pdf("figure_esperimento.pdf", width=9, height=5.5)
