@@ -211,3 +211,26 @@ z <- lab_ricampionamento(tau=2, B=1000, seed=17); v("85 tau 2 B 1000", z$indicat
 v("87 SE se 10 stazioni sd 1", 1/sqrt(10))
 z <- lab_ricampionamento(tau=0,B=200,seed=17); v("85 tau 0 sd medie stazione, atteso", c(sd(colMeans(z$campione)), 1/sqrt(6)))
 z <- lab_ricampionamento(tau=2,B=200,seed=17); v("85 tau 2 sd medie stazione, atteso", c(sd(colMeans(z$campione)), sqrt(4+1/6)))
+
+# ---- tappe 88-107
+r <- lab_blocchi(length=8, rho=.7, B=200, seed=17); x <- r$campione
+v("88 media sd serie", c(mean(x), sd(x))); v("88 autocorr lag1 2 3", acf(x, lag.max=3, plot=FALSE)$acf[2:4]); v("88 corr teoriche", .7^(1:3))
+v("88 segni: run piu lunghi", max(rle(sign(x))$lengths)); v("88 cambi segno", sum(diff(sign(x))!=0))
+f <- function(n, rho) { h <- 1:(n-1); (n + 2*sum((n-h)*rho^h))/n^2 }
+v("89 neff, rapporto", c(120/(f(120,.7)*120), sqrt(f(120,.7))/(1/sqrt(120)))); v("89 approx (1+rho)/(1-rho)", sqrt((1+.7)/(1-.7)/120))
+v("89 SE rho .3 .9", sqrt(c(f(120,.3), f(120,.9))))
+v("90 se iid esatto", sqrt(119/120^2*var(x))); v("90 s/sqrt(n)", sd(x)/sqrt(120))
+v("92 blocchi", ceiling(120/8))
+for (L in c(1,8,15,30)) { z <- lab_blocchi(length=L, rho=.7, B=1000, seed=17); v(paste("94 L", L, "B 1000"), z$indicatori[1:2]) }
+z0 <- lab_blocchi(length=8, rho=0, B=200, seed=17); v("95 rho 0 L 8", z0$indicatori); z0b <- lab_blocchi(length=1, rho=0, B=200, seed=17); v("95 rho 0 L 1", z0b$indicatori)
+v("95 L 30 B 200", lab_blocchi(length=30, rho=.7, B=200, seed=17)$indicatori)
+set.seed(17); x97 <- rlnorm(30,0,.6); se97 <- function(B) sd(replicate(B, mean(sample(x97, replace=TRUE))))
+set.seed(717); s97 <- sapply(c(50,200,1000), function(B) replicate(12, se97(B)))
+v("97 sd colonne", apply(s97, 2, sd)); v("97 range colonne", apply(s97, 2, function(c) diff(range(c)))); v("97 media colonne", colMeans(s97)); v("97 atteso sd stima", 0.1136/sqrt(2*c(50,200,1000)))
+v("97 esatto", sqrt(29/900*var(x97)))
+for (B in c(40,200,1000)) { p <- lab_precisione(B=B, seed=17); v(paste("98-101 B", B), c(p$indicatori[2], mean(p$dati$y), range(p$dati$y))) }
+v("100 rapporto sd 200/1000, sqrt5", c(0.02373867/0.01292483, sqrt(5)))
+p2 <- lab_precisione(B=200, seed=18); v("101 seme 18 sd, media campione", c(p2$indicatori[2], mean(p2$campione)))
+s106 <- {g <- split(fossili$diametro_tot_um, fossili$morfotipo); set.seed(17); b <- replicate(2000, mean(sample(fossili$diametro_tot_um, replace=TRUE))); s <- replicate(2000, mean(vapply(g, function(z) mean(sample(z, replace=TRUE)), 0))); list(b=b, s=s)}
+v("106 quantili pooled", quantile(s106$b, c(.025,.975))); v("106 quantili strati", quantile(s106$s, c(.025,.975)))
+z <- lab_ricampionamento(tau=2, B=1000, seed=17); v("107 indicatori", z$indicatori)
