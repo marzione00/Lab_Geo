@@ -1,0 +1,215 @@
+{
+  "titolo": "Tellus - Quaderno di esercitazione",
+  "sottotitolo": "R e gestione dei dati: dieci esperimenti del modulo M02",
+  "data": "18 novembre 2026",
+  "istruzioni_comuni": [
+    "Aprire il laboratorio indicato. Mantenere il seme 17 nei confronti, salvo diversa indicazione.",
+    "Prima di eseguire lo scenario successivo, scrivere una previsione motivata.",
+    "Attendere il completamento del calcolo R, poi annotare parametri, conteggi e indicatori. Le anteprime statiche corrispondono alla configurazione iniziale.",
+    "Conservare le configurazioni A e B e il CSV quando occorre ricostruire il confronto.",
+    "Per la verifica locale, aprire Tellus_M02.Rproj ed eseguire source(\"Tellus_laboratori.R\"). I dati dei laboratori interattivi sono distinti dai CSV dei provini, fossili e microsonda."
+  ],
+  "esercizi": [
+    {
+      "id": "m02-progetto",
+      "titolo": "Parametri e trasformazione dei dati",
+      "obiettivo": "Ricostruire il risultato di una trasformazione affine a partire dagli ingressi e dai coefficienti dichiarati.",
+      "parametri_iniziali": "Pendenza a = 1; intercetta b = 0; seme = 17. Gli ingressi sono i dieci interi da 1 a 10.",
+      "passi": [
+        "Con a = 1 e b = 0, prevedere la media dei valori trasformati y = ax + b, poi eseguire il calcolo.",
+        "Conservare questa configurazione come scenario A.",
+        "Impostare a = 2 e b = 1. Prevedere il nuovo valore della media usando la media degli ingressi, poi eseguire lo scenario B.",
+        "Confrontare il grafico, i primi tre valori e la media. Annotare quali quantità dipendono da a e quali da b."
+      ],
+      "domande": [
+        "Come si ricava la media di y dalla media di x senza ricalcolare ogni riga?",
+        "Quale coefficiente modifica le differenze fra due valori trasformati?",
+        "Il seme può modificare questo risultato? Quale caratteristica del modello giustifica la risposta?"
+      ],
+      "consegna": "Una tabella con a, b, media prevista e media ottenuta per i due scenari; una frase sulle dipendenze del risultato.",
+      "verifica_locale": "rA <- lab_progetto(a = 1, b = 0)\nrB <- lab_progetto(a = 2, b = 1)\nrbind(A = rA$indicatori, B = rB$indicatori)\nhead(rB$dati, 3)",
+      "limiti": "I coefficienti sono assegnati, non stimati da standard di riferimento. L'esercizio non considera l'incertezza di una calibrazione sperimentale."
+    },
+    {
+      "id": "m02-selezioni",
+      "titolo": "Intersezione di condizioni logiche",
+      "obiettivo": "Definire un sottoinsieme con due condizioni e controllare il trattamento degli estremi.",
+      "parametri_iniziali": "Limite inferiore lo = 3; limite superiore hi = 8; seme = 17. La griglia contiene 21 valori da 0 a 10, con passo 0,5.",
+      "passi": [
+        "Elencare i valori della griglia che soddisfano contemporaneamente x ≥ 3 e x ≤ 8; prevederne il numero.",
+        "Eseguire lo scenario A con lo = 3 e hi = 8. Verificare che inclusi ed esclusi esauriscano le 21 righe.",
+        "Impostare lo = 8 e hi = 3. Scrivere che cosa ci si aspetta, poi eseguire lo scenario B.",
+        "Leggere il codice che ordina gli estremi e spiegare il risultato del secondo scenario."
+      ],
+      "domande": [
+        "Gli estremi 3 e 8 sono inclusi? Dove è dichiarata questa scelta?",
+        "Perché i due scenari producono lo stesso sottoinsieme?",
+        "In un controllo di qualità, quando sarebbe preferibile interrompere il calcolo se gli estremi sono invertiti?"
+      ],
+      "consegna": "Elenco dei valori inclusi, conteggi dei due scenari e descrizione della convenzione adottata sugli estremi.",
+      "verifica_locale": "rA <- lab_selezioni(lo = 3, hi = 8)\nrB <- lab_selezioni(lo = 8, hi = 3)\nrA$indicatori\nidentical(rA$dati$incluso, rB$dati$incluso)",
+      "limiti": "Il laboratorio usa una griglia priva di mancanti. La convenzione di ordinare gli estremi è una scelta del programma e deve essere dichiarata."
+    },
+    {
+      "id": "m02-importazione",
+      "titolo": "Separatore decimale e stato della conversione",
+      "obiettivo": "Distinguere una misura indisponibile da un numero non riconosciuto a causa di una convenzione incompatibile.",
+      "parametri_iniziali": "Separatore riconosciuto = Virgola; seme = 17. Le stringhe sono 1,2; 2,4; 3,1; 4,8; ND.",
+      "passi": [
+        "Classificare le cinque stringhe prima della conversione: quattro rappresentano numeri, una indica indisponibilità.",
+        "Eseguire lo scenario A riconoscendo la virgola. Annotare quante conversioni riescono e su quali righe viene calcolata la media.",
+        "Scegliere Punto ed eseguire lo scenario B. Confrontare il testo originale con la colonna numerica.",
+        "Scrivere due etichette distinte per descrivere ND e le quattro conversioni numeriche fallite nello scenario B."
+      ],
+      "domande": [
+        "Qual è il denominatore della media nello scenario A?",
+        "Nello scenario B, la presenza di cinque NA significa che cinque misure erano originariamente indisponibili?",
+        "Quali informazioni del file andrebbero registrate prima di importare una tabella più grande?"
+      ],
+      "consegna": "Una tabella con stringa originale, risultato nei due scenari e causa dell'eventuale NA; una breve nota sulle convenzioni del file.",
+      "verifica_locale": "rA <- lab_importazione(\"comma\")\nrB <- lab_importazione(\"point\")\nrA$dati\nrB$dati\nrbind(A = rA$indicatori, B = rB$indicatori)",
+      "limiti": "La sostituzione della virgola riguarda cinque stringhe predisposte. Non interpreta separatori delle migliaia, unità incorporate o formati locali complessi."
+    },
+    {
+      "id": "m02-aggregazioni",
+      "titolo": "Numerosità e pesi delle medie",
+      "obiettivo": "Collegare la media delle osservazioni e la media dei gruppi alle rispettive unità di sintesi.",
+      "parametri_iniziali": "nA = 50; nB = 10; seme = 17. I gruppi hanno medie teoriche 3 e 8, con deviazione standard 1.",
+      "passi": [
+        "Prevedere quale delle due medie sarà minore quando A contiene 50 osservazioni e B ne contiene 10.",
+        "Eseguire lo scenario A con nA = 50. Annotare media delle osservazioni e media delle medie.",
+        "Impostare nA = 10, mantenendo il seme 17, ed eseguire lo scenario B. Verificare se le due statistiche coincidono sullo stesso campione.",
+        "Calcolare anche le attese teoriche: (3nA + 80)/(nA + 10) e (3 + 8)/2. Separarle dai risultati campionari."
+      ],
+      "domande": [
+        "Quale peso riceve A nella media delle osservazioni quando nA = 50?",
+        "Perché con nA = nB le due statistiche coincidono esattamente sul medesimo campione?",
+        "Perché, a seme fisso, la media del gruppo B può cambiare quando si modifica nA?"
+      ],
+      "consegna": "Una tabella con numerosità, pesi, risultati campionari e attese teoriche per entrambi gli scenari; una frase che specifichi la domanda associata a ciascuna media.",
+      "verifica_locale": "rA <- lab_aggregazioni(nA = 50, seed = 17)\nrB <- lab_aggregazioni(nA = 10, seed = 17)\nrbind(A = rA$indicatori, B = rB$indicatori)\nrbind(A = rA$attese, B = rB$attese)",
+      "limiti": "Il modello usa due gruppi indipendenti. La scelta dei pesi richiede una domanda scientifica esplicita; il caso non fornisce pesi territoriali o probabilità di inclusione."
+    },
+    {
+      "id": "m02-join",
+      "titolo": "Chiave duplicata e moltiplicazione delle righe",
+      "obiettivo": "Riconoscere come una relazione fra tabelle possa modificare il peso delle osservazioni.",
+      "parametri_iniziali": "Chiave B nei metadati = Univoca; seme = 17. Le misure delle stazioni A, B e C sono rispettivamente 2, 5 e 9.",
+      "passi": [
+        "Eseguire lo scenario A con chiavi univoche. Contare le righe e verificare la media prima e dopo il collegamento.",
+        "Scegliere Duplicata: nei metadati B compare con quota 200 e con quota 210. Prevedere il numero di combinazioni prodotte.",
+        "Eseguire lo scenario B e identificare la misura che compare due volte nella tabella risultante.",
+        "Ricalcolare la media della colonna delle misure dopo il join e descrivere il cambiamento dei pesi."
+      ],
+      "domande": [
+        "Il join ha prodotto una nuova misura fisica della stazione B?",
+        "Quale controllo sulla tabella dei metadati avrebbe individuato il problema prima del collegamento?",
+        "Perché una media calcolata senza errori di R può comunque rispondere a una domanda diversa da quella prevista?"
+      ],
+      "consegna": "Le due tabelle risultanti, conteggi e medie; una regola esplicita sulla cardinalità attesa del collegamento.",
+      "verifica_locale": "rA <- lab_join(\"no\")\nrB <- lab_join(\"yes\")\nrB$siti\nrB$dati\nrbind(A = rA$indicatori, B = rB$indicatori)",
+      "limiti": "È un collegamento sinistro su tre chiavi tutte presenti. Chiavi prive di corrispondenza e relazioni molti-a-molti richiedono ulteriori controlli."
+    },
+    {
+      "id": "m02-mancanti",
+      "titolo": "Disponibilità casuale e selezione dei valori elevati",
+      "obiettivo": "Distinguere la quantità dei mancanti dal meccanismo che rende indisponibili le osservazioni.",
+      "parametri_iniziali": "Meccanismo = Casuale; frazione indicativa = 0,3; seme = 17. Il simulatore genera 200 valori lognormali con meanlog = 1 e sdlog = 0,5.",
+      "passi": [
+        "Prevedere l'effetto sulla media disponibile quando l'indisponibilità viene estratta indipendentemente dal valore.",
+        "Eseguire lo scenario A, Casuale, con rate = 0,3 e seme 17. Annotare il numero effettivo di mancanti e le due medie.",
+        "Scegliere Valori elevati meno disponibili, mantenendo rate = 0,3 e seme 17. Eseguire lo scenario B.",
+        "Confrontare le distribuzioni e spiegare perché il calo della media dipende dai valori rimossi."
+      ],
+      "domande": [
+        "Perché nello scenario casuale il conteggio può differire da 200 × 0,3?",
+        "Quali osservazioni vengono escluse nello scenario selettivo?",
+        "Nei dati reali si potrebbe ricostruire il meccanismo dei mancanti usando soltanto i valori osservati?"
+      ],
+      "consegna": "Una tabella con meccanismo, conteggio, media completa e media disponibile; una spiegazione dell'effetto della selezione.",
+      "verifica_locale": "rA <- lab_mancanti(\"random\", rate = 0.3, seed = 17)\nrB <- lab_mancanti(\"high\", rate = 0.3, seed = 17)\nrbind(A = rA$indicatori, B = rB$indicatori)\nrange(rB$dati$valore_completo[!rB$dati$disponibile])",
+      "limiti": "Sono simulati due meccanismi specifici. La media completa è nota al simulatore; l'esperimento non propone un metodo generale di imputazione."
+    },
+    {
+      "id": "m02-controlli",
+      "titolo": "Plausibilità fisica e segnalazione",
+      "obiettivo": "Applicare un criterio dichiarato, conservando il valore sospetto e distinguendo segnalazione e correzione.",
+      "parametri_iniziali": "Temperatura sospetta bad = 250 °C; seme = 17. Le altre 29 temperature sono simulate da N(15, 3²); il dominio didattico è da −50 a 60 °C.",
+      "passi": [
+        "Eseguire lo scenario A con bad = 250. Individuare la riga segnalata e annotare la media mostrata.",
+        "Verificare nel codice se la temperatura segnalata sia esclusa oppure conservata nel calcolo della media.",
+        "Impostare bad = 20, mantenendo il seme 17, ed eseguire lo scenario B.",
+        "Scrivere quali verifiche su unità, strumento e provenienza servirebbero prima di correggere una misura reale."
+      ],
+      "domande": [
+        "Quante righe vengono segnalate nei due scenari?",
+        "Perché la media cambia anche se il controllo non elimina nessuna riga?",
+        "Una misura compresa nell'intervallo dichiarato è necessariamente corretta?"
+      ],
+      "consegna": "Conteggi e medie nei due scenari; una registrazione di controllo con valore originale, motivo della segnalazione e verifica proposta.",
+      "verifica_locale": "rA <- lab_controlli(bad = 250, seed = 17)\nrB <- lab_controlli(bad = 20, seed = 17)\nrbind(A = rA$indicatori, B = rB$indicatori)\nrA$dati[!rA$dati$nel_dominio, ]",
+      "limiti": "L'intervallo è una convenzione didattica e non sostituisce una specifica dello strumento o una valutazione del contesto fisico."
+    },
+    {
+      "id": "m02-composizione",
+      "titolo": "Chiusura della composizione e denominatore comune",
+      "obiettivo": "Separare le variazioni delle quantità originarie da quelle prodotte dalla normalizzazione alla somma 100.",
+      "parametri_iniziali": "Quantità A = 40; B = 35; C = 25; seme = 17. Il controllo modifica soltanto A.",
+      "passi": [
+        "Eseguire lo scenario A con A = 40. Annotare quantità originarie, somma, percentuali e rapporto B/C.",
+        "Impostare A = 80. Prima del calcolo, prevedere se le percentuali di B e C cambieranno.",
+        "Eseguire lo scenario B e verificare le percentuali usando il nuovo totale.",
+        "Calcolare B/C usando sia le quantità originarie sia le percentuali dei due scenari."
+      ],
+      "domande": [
+        "B diminuisce in quantità oppure soltanto in percentuale?",
+        "Quale proprietà rende invariato il rapporto B/C?",
+        "Quale informazione viene persa se si conservano soltanto le percentuali normalizzate?"
+      ],
+      "consegna": "Una tabella con quantità, totale e percentuali nei due scenari; una frase che distingua quantità assolute e composizione.",
+      "verifica_locale": "rA <- lab_composizione(a = 40)\nrB <- lab_composizione(a = 80)\nrA$dati\nrB$dati\nrbind(A = rA$indicatori, B = rB$indicatori)",
+      "limiti": "Le componenti sono positive e confrontabili. La normalizzazione non corregge errori analitici, componenti omesse, zeri o valori censurati."
+    },
+    {
+      "id": "m02-funzioni",
+      "titolo": "Precondizione della standardizzazione",
+      "obiettivo": "Riconoscere quando una trasformazione è matematicamente definita e comunicare un esito esplicito negli altri casi.",
+      "parametri_iniziali": "Ampiezza spread = 1; seme = 17. Il vettore è x = 5 + spread × (−2, −1, 0, 1, 2).",
+      "passi": [
+        "Eseguire lo scenario A con spread = 1. Annotare il vettore, la deviazione standard e la media dei valori standardizzati.",
+        "Scrivere la condizione necessaria per dividere gli scarti dalla media per la deviazione standard.",
+        "Impostare spread = 0 e prevedere il risultato prima di eseguire lo scenario B.",
+        "Verificare come il programma rappresenta l'esito quando la condizione s > 0 è violata."
+      ],
+      "domande": [
+        "Quali sono i cinque valori quando spread = 1 e quando spread = 0?",
+        "Perché un vettore costante non può essere standardizzato con la formula proposta?",
+        "Quali controlli aggiungeresti a una funzione destinata a dati osservati?"
+      ],
+      "consegna": "Vettori di ingresso, deviazione standard, esito della precondizione e descrizione dei controlli necessari.",
+      "verifica_locale": "rA <- lab_funzioni(spread = 1)\nrB <- lab_funzioni(spread = 0)\nrA$dati\nrB$dati\nrbind(A = rA$indicatori, B = rB$indicatori)",
+      "limiti": "Il laboratorio verifica s > 0 su cinque valori predisposti. Non costituisce da solo un contratto completo per qualsiasi vettore R."
+    },
+    {
+      "id": "m02-tabella",
+      "titolo": "Controlli finali su chiavi e unità",
+      "obiettivo": "Separare i controlli di struttura da quelli di plausibilità e documentare le anomalie prima della consegna.",
+      "parametri_iniziali": "Duplica una chiave = No; unità dell'ultima misura = Coerente; seme = 17. La tabella contiene otto righe con lunghezze dichiarate in metri.",
+      "passi": [
+        "Eseguire lo scenario A con chiavi univoche e unità coerenti. Annotare numero di righe, duplicati aggiuntivi e valori fuori dominio.",
+        "Impostare Duplica una chiave = Sì e Millimetri letti come metri. Prevedere quali controlli reagiranno.",
+        "Eseguire lo scenario B e individuare la riga modificata: l'ID passa da 8 a 7 e la lunghezza da 1,2 a 1200.",
+        "Preparare un registro delle due segnalazioni, distinguendo ciò che il controllo rileva dalla prova necessaria per correggere i dati.",
+        "Indicare quali file e metadati consegnare insieme a una tabella analitica."
+      ],
+      "domande": [
+        "Perché il numero di righe rimane otto anche quando il numero delle chiavi distinte diminuisce?",
+        "Due segnalazioni implicano necessariamente due righe differenti?",
+        "Un valore maggiore di 10 dimostra da solo che il problema deriva da una conversione millimetri/metri?"
+      ],
+      "consegna": "Tabella dei controlli, registro motivato delle anomalie e elenco dei materiali necessari a ricostruire la preparazione dei dati.",
+      "verifica_locale": "rA <- lab_tabella(duplicate = \"no\", unit = \"ok\")\nrB <- lab_tabella(duplicate = \"yes\", unit = \"wrong\")\nrbind(A = rA$indicatori, B = rB$indicatori)\nrB$dati\nlength(unique(rB$dati$id))",
+      "limiti": "L'esercizio introduce due anomalie note. Unicità delle chiavi e valori entro soglia non garantiscono completezza, correttezza semantica o indipendenza delle osservazioni."
+    }
+  ]
+}

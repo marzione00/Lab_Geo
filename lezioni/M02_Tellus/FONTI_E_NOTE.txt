@@ -1,0 +1,154 @@
+TELLUS — R E GESTIONE DEI DATI
+Verifica, convenzioni scientifiche e fonti
+18 novembre 2026
+
+1. RISULTATI DELLA VERIFICA
+
+Il codice didattico è stato eseguito con R 4.6.0 tramite WebR 0.6.1,
+usando soltanto le funzioni distribuite con R e i CSV locali del progetto.
+
+- 72 frammenti R eseguiti nell'ordine delle slide in una sessione pulita,
+  dopo l'inizializzazione dei dati: 29 introduttivi, 21 su collegamenti,
+  mancanti e controlli, 22 su composizioni, funzioni e tabella analitica.
+  Non sono emersi errori non gestiti o avvisi. Il caso di contratto violato
+  nella sezione sulle funzioni produce un messaggio intenzionale, gestito
+  dal codice, e consente di proseguire l'esecuzione.
+
+- 20 scenari verificati, due per ciascuno dei dieci esperimenti M02.
+  I risultati delle configurazioni iniziali sono stati confrontati con
+  le anteprime ufficiali del sito. Nel laboratorio sui mancanti l'anteprima
+  mostra 80 righe, mentre gli indicatori si riferiscono alle 200 osservazioni
+  generate dall'esperimento.
+
+- Nella slide 57, il controllo specifico delle soglie 0,80, 0,85 e 0,90
+  conferma rispettivamente 2, 9 e 20 righe mantenute fra le 21 utilizzabili
+  per l'analisi geometrica. Lo script comprende questi valori definitivi.
+
+- La tabella analitica dei fossili contiene 21 righe e 21 chiavi distinte.
+  La rilettura del CSV conserva nomi delle colonne, ordine degli ID e valori;
+  il confronto numerico con all.equal() usa una tolleranza di 10^(-10).
+
+- Per la microsonda, 69 analisi su 75 hanno un totale fra 98 e 102% in massa.
+  Le 6 rimanenti hanno totali inferiori; nessun totale supera 102%.
+
+I risultati numerici dei laboratori sono riportati in
+Risultati_attesi_laboratori.csv. NOTE_DOCENTE.txt li accompagna con le
+risposte e le osservazioni da discutere. Gli esempi casuali del quaderno
+usano il seme 17; i risultati vanno confrontati mantenendo anche gli altri
+parametri e la stessa sequenza di generazione.
+
+2. COME LEGGERE I DATI E I CONTROLLI
+
+I CSV sono esempi didattici del repository Lab_Geo. Le anomalie dei fossili
+e della microsonda appartengono a casi predisposti per la lezione; non
+documentano nuove osservazioni raccolte sul territorio.
+
+Il file fossili_da_controllare.csv contiene 25 registrazioni. setup.R
+conserva il testo in fossili_raw e crea una copia con misure convertite e
+segnalazioni. La disponibilità dipende dall'analisi: richiedendo tutte le
+tre misure positive e coerenti si ottengono 20 righe; per lo spessore bastano
+diametro esterno e interno, e le righe ammesse diventano 21. Il criterio
+geometrico richiede D_est > 0 e 0 <= D_int <= D_est, categoria riconosciuta
+ed esclusione delle copie esatte successive alla prima occorrenza.
+
+Un ID ripetuto e una copia esatta sono controlli distinti. Le segnalazioni
+possono sovrapporsi sulla stessa riga: la somma dei conteggi dei singoli
+controlli non coincide necessariamente con il numero di righe coinvolte.
+Un valore mancante, una conversione fallita, un valore non finito e una
+registrazione censurata richiedono stati distinti.
+
+Il file censura_esempio.csv non dichiara un'unità. È trattato come esempio
+numerico: <0,05 conserva l'informazione sul limite e non viene trasformato
+in una misura puntuale. Le valutazioni per intervalli richiedono anche
+l'ipotesi dichiarata di non negatività.
+
+Lo spessore (D_est - D_int)/2 deriva dal modello geometrico illustrato.
+L'ammissibilità secondo questo modello non certifica da sola la qualità
+di una misura. Anche le soglie di selezione della slide 57 sono scelte
+dell'esercizio e devono essere motivate rispetto alla domanda scientifica.
+
+Per la microsonda, l'intervallo 98–102% è una convenzione didattica del caso.
+Un totale compreso nell'intervallo non garantisce l'accuratezza dell'analisi.
+La chiusura a 100 modifica il denominatore; occorre conservare il totale
+originale. La normalizzazione non ricostruisce componenti omesse e non
+corregge misure errate. Zeri, mancanti e valori non finiti richiedono una
+politica esplicita prima di calcolare rapporti o logaritmi.
+
+Nel rapporto molare si impiegano 40,304 g/mol per MgO e 71,844 g/mol per FeO:
+
+    X_Mg = (MgO / 40,304) / (MgO / 40,304 + FeO / 71,844)
+    Mg#  = 100 × X_Mg
+
+X_Mg è una frazione fra 0 e 1; Mg# è espresso sulla scala 0–100. Il CSV
+mg_num contiene la frazione. Il ferro è trattato come equivalente FeO nel
+calcolo: la tabella non determina la ripartizione fra Fe2+ e Fe3+.
+
+La media dei valori disponibili dipende dal processo che ha prodotto i
+mancanti. Il confronto con il campione completo è possibile nel simulatore
+perché esso conserva i valori latenti; nei dati reali questa informazione
+di solito non è osservata. L'imputazione della media modifica la dispersione.
+
+La tolleranza di rilettura del CSV è un criterio di confronto numerico tra
+due rappresentazioni degli stessi dati; non esprime l'incertezza delle
+misure. L'esecuzione senza errori verifica il funzionamento del codice;
+la correttezza scientifica richiede inoltre unità, modello, pesi e criteri
+di selezione coerenti con l'analisi.
+
+3. FONTI DEL CORSO
+
+Fonti consultate per questa edizione: 18 novembre 2026.
+
+Modulo M02 — R e gestione dei dati:
+https://marzione00.github.io/Lab_Geo/#modulo-M02
+
+Indice degli esperimenti:
+https://marzione00.github.io/Lab_Geo/#esperimenti
+
+Sorgenti del modulo M02:
+https://github.com/marzione00/Lab_Geo/tree/main/moduli/M02
+
+Definizione del modulo utilizzata come riferimento:
+https://github.com/marzione00/Lab_Geo/blob/main/moduli/M02/modulo.json
+Git blob SHA: d44ccaee9dbafaf97d9f63ad3097b60a775af211
+
+Dati didattici:
+https://github.com/marzione00/Lab_Geo/tree/main/materiali/dati
+
+Definizione dei parametri e delle interfacce degli esperimenti:
+https://github.com/marzione00/Lab_Geo/blob/main/content/experiments.json
+
+Script R originali degli esperimenti:
+https://github.com/marzione00/Lab_Geo/tree/main/R/experiments
+
+Gli esperimenti allineati al materiale sono m02-progetto, m02-selezioni,
+m02-importazione, m02-aggregazioni, m02-join, m02-mancanti, m02-controlli,
+m02-composizione, m02-funzioni e m02-tabella. Un collegamento diretto ha
+questa forma:
+https://marzione00.github.io/Lab_Geo/#laboratorio/m02-progetto
+
+Tellus_laboratori.R riproduce i calcoli dei dieci esperimenti con R di base.
+Il codice originale del sito comprende anche la costruzione dei grafici
+e altre dipendenze dell'applicazione web. Queste dipendenze non servono
+per eseguire gli script didattici inclusi nel progetto Tellus.
+
+PROVENIENZA_DATI.txt descrive i singoli dataset e le convenzioni adottate.
+Provenienza_fonti.json registra gli URL, gli SHA dei contenuti Git e le
+impronte SHA256 delle copie dei CSV. LAB_MAP.txt documenta parametri,
+configurazioni iniziali e limiti dei dieci esperimenti.
+
+4. DOCUMENTAZIONE UFFICIALE DI R
+
+R Core Team — An Introduction to R:
+https://cran.r-project.org/doc/manuals/r-release/R-intro.html
+
+R Core Team — R Data Import/Export:
+https://cran.r-project.org/doc/manuals/r-release/R-data.html
+
+Manuali ufficiali di R:
+https://cran.r-project.org/manuals.html
+
+Le pagine delle singole funzioni sono consultabili anche nella sessione R,
+per esempio con ?read.csv, ?merge, ?aggregate, ?complete.cases e ?write.csv.
+I manuali chiariscono tipi, argomenti e convenzioni delle operazioni usate
+nelle slide; il modello scientifico e le regole di ammissibilità restano
+quelli dichiarati per ciascun esercizio.
