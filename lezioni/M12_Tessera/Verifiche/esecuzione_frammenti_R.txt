@@ -1,0 +1,389 @@
+stdout 
+stdout SLIDE 010
+stdout 
+stdout > c(righe=nrow(r),colonne=ncol(r))
+stdout   righe colonne 
+stdout      24      30 
+stdout 
+stdout > terra::res(r)
+stdout [1] 30 30
+stdout 
+stdout > as.vector(terra::ext(r))
+stdout    xmin    xmax    ymin    ymax 
+stdout  500000  500900 4999280 5000000 
+stdout 
+stdout SLIDE 011
+stdout 
+stdout > M <- as.matrix(r,wide=TRUE)
+stdout 
+stdout > Z_nord <- Z[nrow(Z):1,]
+stdout 
+stdout > max(abs(M-Z_nord))
+stdout [1] 0
+stdout 
+stdout SLIDE 013
+stdout 
+stdout > d <- d[order(d$riga,d$colonna),]
+stdout 
+stdout > stopifnot(nrow(d)==720,
+stdout +  !anyDuplicated(d[c("riga","colonna")]))
+stdout 
+stdout > Z <- matrix(d$quota_m,24,30,byrow=TRUE)
+stdout 
+stdout > stopifnot(Z[1,1]==d$quota_m[1])
+stdout 
+stdout SLIDE 016
+stdout 
+stdout > r <- terra::rast("Dati/raster_v3.tif")
+stdout 
+stdout > terra::crs(r,describe=TRUE)
+stdout                    name authority  code
+stdout 1 WGS 84 / UTM zone 32N      EPSG 32632
+stdout                                                                                                                                                                                                                                                                                                                                    area
+stdout 1 Between 6°E and 12°E, northern hemisphere between equator and 84°N, onshore and offshore. Algeria. Austria. Cameroon. Denmark. Equatorial Guinea. France. Gabon. Germany. Italy. Libya. Liechtenstein. Monaco. Netherlands. Niger. Nigeria. Norway. Sao Tome and Principe. Svalbard. Sweden. Switzerland. Tunisia. Vatican City State
+stdout         extent
+stdout 1 6, 12, 0, 84
+stdout 
+stdout > stopifnot(terra::ncell(r)==720,
+stdout +  all(terra::res(r)==30))
+stdout 
+stdout SLIDE 022
+stdout 
+stdout > Zm <- Z
+stdout 
+stdout > Zm[5:8,10:15] <- NA_real_
+stdout 
+stdout > stopifnot(sum(is.na(Zm))==24)
+stdout 
+stdout > copertura <- mean(is.finite(Zm))
+stdout 
+stdout SLIDE 024
+stdout 
+stdout > Zzero <- Zm
+stdout 
+stdout > Zzero[is.na(Zzero)] <- 0
+stdout 
+stdout > c(completa=mean(Z),
+stdout +  disponibile=mean(Zm,na.rm=TRUE),
+stdout +  sostituita=mean(Zzero))
+stdout       completa    disponibile     sostituita 
+stdout 1015.311008665 1015.177919146  981.338655174 
+stdout 
+stdout SLIDE 025
+stdout 
+stdout > sel <- with(d,x_m>=300 & x_m<=600 &
+stdout +                   y_m>=180 & y_m<=510)
+stdout 
+stdout > stopifnot(sum(sel)==132)
+stdout 
+stdout > mean(d$quota_m[sel])
+stdout [1] 1071.47097644
+stdout 
+stdout SLIDE 027
+stdout 
+stdout > area_cella_ha <-
+stdout +  prod(terra::res(r))/1e4
+stdout 
+stdout > c(totale=720*area_cella_ha,
+stdout +  valida=696*area_cella_ha)
+stdout totale valida 
+stdout  64.80  62.64 
+stdout 
+stdout SLIDE 035
+stdout 
+stdout > r60 <- terra::aggregate(r,fact=2,fun=mean)
+stdout 
+stdout > m30 <- mean(terra::values(r))
+stdout 
+stdout > m60 <- mean(terra::values(r60))
+stdout 
+stdout > stopifnot(terra::ncell(r60)==180,
+stdout +  abs(m30-m60)<1e-9)
+stdout 
+stdout SLIDE 036
+stdout 
+stdout > nb <- c(1,3); mb <- c(10,20)
+stdout 
+stdout > c(per_cella=weighted.mean(mb,nb),
+stdout +  per_blocco=mean(mb))
+stdout  per_cella per_blocco 
+stdout       17.5       15.0 
+stdout 
+stdout SLIDE 043
+stdout 
+stdout > origine_A <- c(500000,5000000)
+stdout 
+stdout > origine_B <- origine_A+c(15,0)
+stdout 
+stdout > (origine_B-origine_A)/30
+stdout [1] 0.5 0.0
+stdout 
+stdout SLIDE 044
+stdout 
+stdout > r_shift <- terra::shift(r,dx=15)
+stdout 
+stdout > terra::compareGeom(r,r_shift,
+stdout +                    stopOnError=FALSE)
+stdout [1] FALSE
+stdout 
+stdout > r_align <- terra::resample(r_shift,r,
+stdout +  method="bilinear")
+stdout 
+stdout SLIDE 045
+stdout 
+stdout > a <- 0.12; delta <- 15
+stdout 
+stdout > scarto_atteso <- -a*delta
+stdout 
+stdout > stopifnot(abs(scarto_atteso+1.8)<1e-12)
+stdout 
+stdout SLIDE 051
+stdout 
+stdout > gx <- (Z[2:23,3:30]-
+stdout +        Z[2:23,1:28])/60
+stdout 
+stdout > gy <- (Z[3:24,2:29]-
+stdout +        Z[1:22,2:29])/60
+stdout 
+stdout SLIDE 053
+stdout 
+stdout > P <- outer((0:23)*30,(0:29)*30,
+stdout +  function(y,x)900+0.12*x+0.08*y)
+stdout 
+stdout > g_atteso <- sqrt(0.12^2+0.08^2)
+stdout 
+stdout > atan(g_atteso)*180/pi
+stdout [1] 8.206727074
+stdout 
+stdout SLIDE 054
+stdout 
+stdout > px <- (P[2:23,3:30]-P[2:23,1:28])/60
+stdout 
+stdout > py <- (P[3:24,2:29]-P[1:22,2:29])/60
+stdout 
+stdout > stopifnot(max(abs(px-0.12))<1e-12,
+stdout +           max(abs(py-0.08))<1e-12)
+stdout 
+stdout SLIDE 058
+stdout 
+stdout > g <- sqrt(gx^2+gy^2)
+stdout 
+stdout > slope_deg <- atan(g)*180/pi
+stdout 
+stdout > slope_pct <- 100*g
+stdout 
+stdout SLIDE 059
+stdout 
+stdout > angoli <- c(0,15,30,45,60)
+stdout 
+stdout > data.frame(gradi=angoli,
+stdout +  percento=100*tan(angoli*pi/180))
+stdout   gradi       percento
+stdout 1     0   0.0000000000
+stdout 2    15  26.7949192431
+stdout 3    30  57.7350269190
+stdout 4    45 100.0000000000
+stdout 5    60 173.2050807569
+stdout 
+stdout SLIDE 061
+stdout 
+stdout > stopifnot(identical(dim(gx),c(22L,28L)))
+stdout 
+stdout > c(celle_interne=length(gx),
+stdout +  celle_bordo=length(Z)-length(gx))
+stdout celle_interne   celle_bordo 
+stdout           616           104 
+stdout 
+stdout SLIDE 064
+stdout 
+stdout > aspect_deg <-
+stdout +  (atan2(-gx,-gy)*180/pi)%%360
+stdout 
+stdout > aspect_deg[g<1e-12] <- NA_real_
+stdout 
+stdout SLIDE 065
+stdout 
+stdout > th <- c(359,1)*pi/180
+stdout 
+stdout > S <- mean(sin(th)); C <- mean(cos(th))
+stdout 
+stdout > media_circolare(c(359,1))
+stdout    media_gradi     risultante              n 
+stdout 0.000000000000 0.999847695156 2.000000000000 
+stdout 
+stdout SLIDE 066
+stdout 
+stdout > s_terra <- terra::terrain(r,
+stdout +  v="slope",neighbors=4,
+stdout +  unit="degrees")
+stdout 
+stdout > terra::global(s_terra,"range",na.rm=TRUE)
+stdout                  min          max
+stdout slope 0.487565629865 28.529375424
+stdout 
+stdout SLIDE 070
+stdout 
+stdout > A <- 315*pi/180; h <- 45*pi/180
+stdout 
+stdout > luce <- c(cos(h)*sin(A),
+stdout +  cos(h)*cos(A),sin(h))
+stdout 
+stdout > L315 <- pmax((-gx*luce[1]-gy*luce[2]+
+stdout +  luce[3])/sqrt(1+gx^2+gy^2),0)
+stdout 
+stdout > stopifnot(identical(dim(L315),dim(gx)))
+stdout 
+stdout SLIDE 074
+stdout 
+stdout > stopifnot(all(L315>=0 & L315<=1))
+stdout 
+stdout > L_piano <- sin(45*pi/180)
+stdout 
+stdout > stopifnot(
+stdout +  abs(L_piano-sqrt(0.5))<1e-12)
+stdout 
+stdout SLIDE 079
+stdout 
+stdout > R_band <- 0.2+0.05*cos(d$y_m/150)
+stdout 
+stdout > NIR <- 0.4+0.1*sin(d$x_m/180)
+stdout 
+stdout > stopifnot(all(R_band>=0),all(NIR>=0))
+stdout 
+stdout SLIDE 080
+stdout 
+stdout > indice <- (NIR-R_band)/(NIR+R_band)
+stdout 
+stdout > stopifnot(all(is.finite(indice)),
+stdout +           all(abs(indice)<=1))
+stdout 
+stdout SLIDE 082
+stdout 
+stdout > I0 <- (NIR-R_band)/(NIR+R_band)
+stdout 
+stdout > I2 <- (2*NIR-2*R_band)/(2*NIR+2*R_band)
+stdout 
+stdout > stopifnot(max(abs(I0-I2))<1e-12)
+stdout 
+stdout SLIDE 086
+stdout 
+stdout > R0 <- c(.2,0,1e-10,.3)
+stdout 
+stdout > N0 <- c(.4,0,2e-10,.2)
+stdout 
+stdout > ok0 <- N0+R0>1e-6
+stdout 
+stdout > Itoy <- rep(NA_real_,4)
+stdout 
+stdout > Itoy[ok0] <- (N0[ok0]-R0[ok0])/
+stdout +               (N0[ok0]+R0[ok0])
+stdout 
+stdout SLIDE 087
+stdout 
+stdout > okI <- is.finite(R_band) &
+stdout +  is.finite(NIR) & (R_band+NIR>1e-6)
+stdout 
+stdout > Ival <- rep(NA_real_,length(NIR))
+stdout 
+stdout > Ival[okI] <- (NIR[okI]-R_band[okI])/
+stdout +               (NIR[okI]+R_band[okI])
+stdout 
+stdout SLIDE 089
+stdout 
+stdout > stopifnot(sum(is.na(Itoy))==2,
+stdout +  abs(Itoy[1]-1/3)<1e-12,
+stdout +  abs(Itoy[4]+0.2)<1e-12)
+stdout 
+stdout SLIDE 092
+stdout 
+stdout > zm <- aggregate(quota_m~unita,d,mean)
+stdout 
+stdout > zn <- table(d$unita)
+stdout 
+stdout > stopifnot(sum(zn)==720)
+stdout 
+stdout > zm
+stdout   unita        quota_m
+stdout 1     A  986.024752581
+stdout 2     B 1044.597264748
+stdout 
+stdout SLIDE 094
+stdout 
+stdout > okZ <- with(d,!(riga %in% 4:7 &
+stdout +                  colonna %in% 9:14))
+stdout 
+stdout > table(d$unita[okZ])/table(d$unita)
+stdout 
+stdout              A              B 
+stdout 0.933333333333 1.000000000000 
+stdout 
+stdout SLIDE 096
+stdout 
+stdout > d30 <- as.vector(Z[,2:30]-Z[,1:29])
+stdout 
+stdout > d300 <- as.vector(Z[,11:30]-Z[,1:20])
+stdout 
+stdout > stopifnot(length(d30)==696,
+stdout +           length(d300)==480)
+stdout 
+stdout > c(mean(abs(d30)),mean(abs(d300)))
+stdout [1]  5.50287463781 53.09705496401
+stdout 
+stdout SLIDE 098
+stdout 
+stdout > stopifnot(length(block_means)==12,
+stdout +  abs(mean(block_means)-mean(Z))<1e-10)
+stdout 
+stdout > mean(block_means)
+stdout [1] 1015.31100866
+stdout 
+stdout SLIDE 103
+stdout 
+stdout > nr <- 10000; nc <- 10000; nb <- 4
+stdout 
+stdout > byte_valori <- nr*nc*nb*8
+stdout 
+stdout > c(GB=byte_valori/1e9,
+stdout +  GiB=byte_valori/1024^3)
+stdout            GB           GiB 
+stdout 3.20000000000 2.98023223877 
+stdout 
+stdout SLIDE 104
+stdout 
+stdout > terra::readStart(r)
+stdout 
+stdout > win <- terra::readValues(r,row=5,
+stdout +  nrows=6,col=10,ncols=8,mat=FALSE)
+stdout 
+stdout > terra::readStop(r)
+stdout 
+stdout > attesi <- as.vector(t(M[5:10,10:17]))
+stdout 
+stdout > stopifnot(length(win)==48,
+stdout +  max(abs(win-attesi))<1e-10)
+stdout 
+stdout SLIDE 106
+stdout 
+stdout > r_out <- raster_locale(slope_deg,
+stdout +  x[2:29],y[2:23])
+stdout 
+stdout > stopifnot(terra::ncell(r_out)==616,
+stdout +  all(terra::res(r_out)==30))
+stdout 
+stdout SLIDE 107
+stdout 
+stdout > file_tif <- file.path("Risultati",
+stdout +  "pendenze_slide.tif")
+stdout 
+stdout > terra::writeRaster(r_out,file_tif,
+stdout +  overwrite=TRUE,datatype="FLT8S",
+stdout +  NAflag=-9999,gdal="COMPRESS=NONE")
+stdout 
+stdout SLIDE 108
+stdout 
+stdout > rr <- terra::rast(file_tif)
+stdout 
+stdout > stopifnot(terra::compareGeom(r_out,rr),
+stdout +  max(abs(terra::values(rr)-
+stdout +          terra::values(r_out)))<1e-10)
+stdout Tutti i frammenti delle slide sono stati eseguiti.
