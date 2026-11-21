@@ -1,0 +1,581 @@
+{
+ "R": "R version 4.6.0 (2026-04-24)",
+ "fragments": {
+  "003_dati.R": {
+   "status": "ok",
+   "output": "> # Avvio dalla cartella Annula_M07.\n> source(\"setup.R\", encoding = \"UTF-8\")\n> # Una riga corrisponde a un fossile.\n> head(f[, c(\"id\", \"diametro_tot_um\",\n+            \"diametro_int_um\")])\n    id diametro_tot_um diametro_int_um\n1 F001         7.23416         6.35184\n2 F002         5.81023         5.00665\n3 F003         6.63788         5.63158\n4 F004         4.30518         3.50256\n5 F005         6.36402         5.68365\n6 F006         6.93716         6.13993\n> stopifnot(!anyDuplicated(f$id))",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "6c739ea8dc2e7a546770",
+   "seconds": 17.8
+  },
+  "004_geometria.R": {
+   "status": "ok",
+   "output": "> # La relazione deriva dalla costruzione\n> # geometrica delle tre misure.\n> scarto <- with(f, diametro_tot_um -\n+   diametro_int_um - 2 * spessore_um)\n> max(abs(scarto))\n[1] 1e-08\n> # Circa 1e-8: arrotondamento del CSV.",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "c94d640dc033fcc0c854",
+   "seconds": 0.0
+  },
+  "005_nuvola.R": {
+   "status": "ok",
+   "output": "> # Colore secondo il morfotipo.\n> col <- c(\"#1D7890\", \"#C57E42\")\n> plot(diametro_int_um ~ diametro_tot_um,\n+   data = f, col = col[f$morfotipo],\n+   pch = 16, xlab = \"Totale (um)\",\n+   ylab = \"Interno (um)\")",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "420650b41ce58b5b4125",
+   "seconds": 0.1
+  },
+  "007_dominio.R": {
+   "status": "ok",
+   "output": "> # Campo realmente osservato nel file.\n> range(f$diametro_tot_um)\n[1] 3.67789 8.62098\n> # Un nuovo valore deve essere esaminato.\n> x0 <- 9\n> x0 >= min(f$diametro_tot_um) &&\n+   x0 <= max(f$diametro_tot_um)\n[1] FALSE",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "6ff8fe5d765b62a20e54",
+   "seconds": 0.0
+  },
+  "009_correlazione.R": {
+   "status": "ok",
+   "output": "> x <- f$diametro_tot_um\n> y <- f$diametro_int_um\n> cor(x, y, method = \"pearson\")\n[1] 0.965421\n> # Cambio di unita positivo: stesso r.\n> cor(x / 1000, y / 1000)\n[1] 0.965421\n> # L'inversione del segno cambia r.\n> cor(x, -y)\n[1] -0.965421",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "e28ef84782c13da87a66",
+   "seconds": 0.0
+  },
+  "010_ranghi.R": {
+   "status": "ok",
+   "output": "> # Spearman applica Pearson ai ranghi.\n> cor(x, y, method = \"spearman\")\n[1] 0.95225\n> cor(rank(x), rank(y))\n[1] 0.95225\n> # In caso di pareggi R usa ranghi medi.",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "f171e01dbb1527687f64",
+   "seconds": 0.0
+  },
+  "011_curvatura.R": {
+   "status": "ok",
+   "output": "> # Esempio costruito, senza rumore.\n> u <- seq(-2, 2, length.out = 101)\n> v <- u^2\n> cor(u, v)  # Praticamente zero.\n[1] 5.91204e-17\n> plot(u, v, pch = 16)",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "d6091884b8128634c56e",
+   "seconds": 0.0
+  },
+  "012_campo.R": {
+   "status": "ok",
+   "output": "> # Stessa legge, due campi del predittore.\n> set.seed(17)\n> u <- runif(1000, -4, 4)\n> v <- 2 * u + rnorm(1000)\n> centrali <- abs(u) < 1\n> c(intero = cor(u, v),\n+   ristretto = cor(u[centrali],\n+                  v[centrali]))\n   intero ristretto \n  0.97839   0.73154 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "1cbaa4452d3961686d24",
+   "seconds": 0.0
+  },
+  "017_scarti.R": {
+   "status": "ok",
+   "output": "> # Retta proposta, prima dell'ottimizzazione.\n> a <- -0.5\n> b <- 0.9\n> e_proposti <- y - (a + b * x)\n> sum(e_proposti^2)\n[1] 15.3586\n> # Confronto con il minimo trovato da lm.\n> sum(residuals(m0)^2)\n[1] 10.6461",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "503b164be337f126264a",
+   "seconds": 0.0
+  },
+  "022_minimi_mano.R": {
+   "status": "ok",
+   "output": "> # Scarti dalle rispettive medie.\n> xc <- x - mean(x)\n> yc <- y - mean(y)\n> b1 <- sum(xc * yc) / sum(xc^2)\n> b0 <- mean(y) - b1 * mean(x)\n> c(intercetta = b0, pendenza = b1)\nintercetta   pendenza \n -0.700282   0.956997 \n> # Le due procedure devono coincidere.\n> all.equal(unname(coef(m0)), c(b0, b1))\n[1] TRUE",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "152458632803090f34bc",
+   "seconds": 0.0
+  },
+  "023_lm.R": {
+   "status": "ok",
+   "output": "> # La risposta compare a sinistra di ~.\n> m0 <- lm(diametro_int_um ~\n+            diametro_tot_um, data = f)\n> coef(m0)      # Intercetta e pendenza.\n    (Intercept) diametro_tot_um \n      -0.700282        0.956997 \n> fitted(m0)    # Valori medi stimati.\n      1       2       3       4       5       6       7       8       9      10      11 \n6.22279 4.86009 5.65215 3.41976 5.39007 5.93856 5.31586 5.75732 3.96654 5.30596 4.94027 \n     12      13      14      15      16      17      18      19      20      21      22 \n5.03763 3.81674 3.05206 5.86687 6.38342 3.70685 5.40944 6.38269 5.10011 5.47388 5.33634 \n     23      24      25      26      27      28      29      30      31      32      33 \n3.94590 4.21184 5.59325 6.39230 3.67896 4.92401 6.53338 4.10524 5.04607 3.88117 5.61493 \n     34      35      36      37      38      39      40      41      42      43      44 \n6.78467 4.36287 4.08975 3.71940 5.25480 4.96901 2.98630 5.71304 4.50520 5.69310 5.83387 \n     45      46      47      48      49      50      51      52      53      54      55 \n4.01164 6.50855 5.73405 4.81601 4.21735 5.16134 3.68021 5.47735 3.55457 3.83769 5.50079 \n     56      57      58      59      60      61      62      63      64      65      66 \n6.53091 5.61510 6.11576 5.28434 5.64634 6.02059 5.99610 5.56254 4.84477 4.45918 5.31859 \n     67      68      69      70      71      72      73      74      75      76      77 \n6.18455 5.54973 7.19425 4.53457 5.29383 5.31371 6.51362 5.43046 3.12680 5.03184 4.19611 \n     78      79      80      81      82      83      84      85      86      87      88 \n5.59316 4.94191 5.23454 6.45024 6.05995 4.56168 5.65867 5.15078 5.01009 5.86775 4.55709 \n     89      90      91      92      93      94      95      96      97      98      99 \n7.20058 4.16516 2.81945 6.10607 5.05067 4.67870 6.93664 5.17584 6.76232 6.40330 5.49087 \n    100     101     102     103     104     105     106     107     108     109     110 \n4.93822 4.80383 6.62318 4.82628 6.54265 5.41295 4.22870 5.77529 4.56723 4.64092 6.07999 \n    111     112     113     114     115     116     117     118     119     120     121 \n5.48602 4.26639 6.04150 5.15512 4.99352 5.54785 6.84364 6.37290 6.46735 7.54997 4.34493 \n    122     123     124     125     126     127     128     129     130     131     132 \n5.38660 6.35947 6.82560 5.60149 5.55832 5.39799 5.90350 5.25384 5.00548 5.16373 5.71756 \n    133     134     135     136     137     138     139     140     141     142     143 \n6.90980 5.63119 6.00547 5.75806 7.05186 3.67983 5.50333 6.54882 7.04251 6.24702 5.29591 \n    144     145     146     147     148     149     150     151     152     153     154 \n7.01732 4.57207 6.57877 5.89961 5.40996 5.80885 6.34958 6.29644 6.26921 5.31568 6.49228 \n    155     156     157     158     159     160 \n5.87918 5.21869 5.88109 5.59504 4.98610 5.73579 \n> residuals(m0) # Osservato - stimato.\n          1           2           3           4           5           6           7 \n 0.12905530  0.14655834 -0.02057676  0.08279975  0.29358735  0.20137079 -0.27606935 \n          8           9          10          11          12          13          14 \n-0.22073832  0.03928342 -0.17700585 -0.41026842  0.21768674  0.03026726 -0.29282695 \n         15          16          17          18          19          20          21 \n-0.06111618  0.26636618  0.48288948  0.03048915  0.09465948  0.32380733  0.07247230 \n         22          23          24          25          26          27          28 \n 0.20991282  0.29801520  0.30931539  0.34488773  0.49393876  0.13746039  0.47937615 \n         29          30          31          32          33          34          35 \n 0.15954748 -0.07650796 -0.03445317  0.03645788  0.32338788  0.43715464  0.08035581 \n         36          37          38          39          40          41          42 \n 0.01155877  0.09049532 -0.09801196  0.51195569  0.31237893  0.22300582  0.54667000 \n         43          44          45          46          47          48          49 \n 0.18342408  0.40906996 -0.05934784 -0.19068665  0.43771939  0.00655042  0.10340760 \n         50          51          52          53          54          55          56 \n 0.33711454 -0.02373924  0.22045200 -0.41154130 -0.31849998  0.30047342 -0.17667238 \n         57          58          59          60          61          62          63 \n-0.02063922  0.17201041 -0.61308590 -0.06360769  0.12911287 -0.12467800  0.30289550 \n         64          65          66          67          68          69          70 \n-0.03311578 -0.27455090  0.20429007  0.25087120 -0.00112421 -0.11897750  0.41568855 \n         71          72          73          74          75          76          77 \n 0.57896463 -0.03287273  0.14090645  0.02985600 -0.21146799  0.14453606 -0.12977412 \n         78          79          80          81          82          83          84 \n 0.64197018  0.11634956  0.28072355  0.06328167 -0.39197479 -0.15302865  0.27573425 \n         85          86          87          88          89          90          91 \n-0.06614810  0.07930792 -0.25655669  0.02400197 -0.26064671 -0.33367405 -0.33676530 \n         92          93          94          95          96          97          98 \n-0.20735517 -0.22293991 -0.08082596  0.10699579  0.25373181  0.03418009  0.41772636 \n         99         100         101         102         103         104         105 \n-0.42355042 -0.18523286 -0.18678909 -0.50506930 -0.21156976 -0.16439609 -0.05918199 \n        106         107         108         109         110         111         112 \n-0.08368195 -0.33639557 -0.17810864 -0.41335133  0.04420061  0.28618383 -0.15570778 \n        113         114         115         116         117         118         119 \n-0.74604311  0.11473754 -0.04507304  0.50406775  0.01545872  0.27948949 -0.18350837 \n        120         121         122         123         124         125         126 \n 0.03276907 -0.15964767  0.29832306 -0.03450070 -0.34730172 -0.28265318 -0.32895175 \n        127         128         129         130         131         132         133 \n-0.33848237 -0.23250455 -0.07642006  0.27942681 -0.44798750 -0.14684341  0.34059719 \n        134         135         136         137         138         139         140 \n-0.02592344  0.03318711 -0.18959846 -0.13520775 -0.14945041 -0.33112084 -0.15689146 \n        141         142         143         144         145         146         147 \n-0.00703922 -0.34215994 -0.16833852 -0.09596163 -0.13217975 -0.35972964  0.03680977 \n        148         149         150         151         152         153         154 \n-0.07211404 -0.19230469 -0.36099292 -0.20149070 -0.08597428  0.02220018  0.17979709 \n        155         156         157         158         159         160 \n-0.09216639 -0.06133673 -0.02070349  0.02528890  0.00449383 -0.34003667 \n> summary(m0)\n\nCall:\nlm(formula = diametro_int_um ~ diametro_tot_um, data = f)\n\nResiduals:\n    Min      1Q  Median      3Q     Max \n-0.7460 -0.1795 -0.0206  0.1807  0.6420 \n\nCoefficients:\n                Estimate Std. Error t value Pr(>|t|)    \n(Intercept)      -0.7003     0.1322    -5.3  3.9e-07 ***\ndiametro_tot_um   0.9570     0.0206    46.5  < 2e-16 ***\n---\nSignif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1\n\nResidual standard error: 0.26 on 158 degrees of freedom\nMultiple R-squared:  0.932,\tAdjusted R-squared:  0.932 \nF-statistic: 2.17e+03 on 1 and 158 DF,  p-value: <2e-16\n",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "7827b748283b5f760eec",
+   "seconds": 0.1
+  },
+  "024_pendenza.R": {
+   "status": "ok",
+   "output": "> # Incremento medio per +0.5 um in X.\n> delta_x <- 0.5\n> coef(m0)[2] * delta_x\ndiametro_tot_um \n       0.478499 \n> # Previsione media a diametro totale 7.\n> predict(m0, newdata = data.frame(\n+   diametro_tot_um = 7))\n     1 \n5.9987 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "b943ab1a711d2dd8aa91",
+   "seconds": 0.0
+  },
+  "026_matrice.R": {
+   "status": "ok",
+   "output": "> # X contiene una colonna di 1 e il predittore.\n> X <- model.matrix(m0)\n> head(X)\n  (Intercept) diametro_tot_um\n1           1         7.23416\n2           1         5.81023\n3           1         6.63788\n4           1         4.30518\n5           1         6.36402\n6           1         6.93716\n> dim(X)       # 160 righe, 2 colonne.\n[1] 160   2\n> qr(X)$rank   # Rango della matrice.\n[1] 2",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "d4296181d59fc8fa8041",
+   "seconds": 0.1
+  },
+  "028_qr.R": {
+   "status": "ok",
+   "output": "> X <- model.matrix(m0)\n> # QR evita di formare esplicitamente\n> # l'inversa di t(X) %*% X.\n> b_qr <- qr.coef(qr(X), y)\n> max(abs(b_qr - coef(m0)))\n[1] 0\n> # Equazioni normali: quasi zero.\n> max(abs(crossprod(X, residuals(m0))))\n[1] 9.32587e-15",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "704923a48e5fc855e1b4",
+   "seconds": 0.0
+  },
+  "029_identita.R": {
+   "status": "ok",
+   "output": "> # Deviazioni standard con lo stesso denominatore.\n> b_da_r <- cor(x, y) * sd(y) / sd(x)\n> c(formula = b_da_r,\n+   lm = unname(coef(m0)[2]))\n formula       lm \n0.956997 0.956997 \n> # R2 = r^2: solo regressione semplice\n> # OLS con intercetta, sugli stessi casi.\n> c(r2 = cor(x, y)^2,\n+   R2 = summary(m0)$r.squared)\n      r2       R2 \n0.932037 0.932037 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "6cc49b07f32015e101ff",
+   "seconds": 0.0
+  },
+  "030_scomposizione.R": {
+   "status": "ok",
+   "output": "> SST <- sum((y - mean(y))^2)\n> SSE <- sum(residuals(m0)^2)\n> SSR <- sum((fitted(m0) - mean(y))^2)\n> c(totale = SST, modello = SSR,\n+   residua = SSE)\n  totale  modello  residua \n156.6468 146.0007  10.6461 \n> all.equal(SST, SSR + SSE)\n[1] TRUE",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "a2b585f773dd545ec0c0",
+   "seconds": 0.0
+  },
+  "033_sigma.R": {
+   "status": "ok",
+   "output": "> e <- residuals(m0)\n> n <- nobs(m0)\n> p <- m0$rank\n> s <- sqrt(sum(e^2) / (n - p))\n> c(calcolo = s, R = sigma(m0))\n calcolo        R \n0.259578 0.259578 \n> # RMSE in campione usa invece n.\n> sqrt(mean(e^2))\n[1] 0.25795",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "de779119e5ddd9b3e355",
+   "seconds": 0.0
+  },
+  "035_ci_coef.R": {
+   "status": "ok",
+   "output": "> # Intervalli t sotto le ipotesi classiche.\n> confint(m0, level = 0.95)\n                    2.5 %    97.5 %\n(Intercept)     -0.961481 -0.439083\ndiametro_tot_um  0.916391  0.997603\n> # La tabella riporta anche gli errori standard.\n> coef(summary(m0))\n                 Estimate Std. Error  t value    Pr(>|t|)\n(Intercept)     -0.700282  0.1322465 -5.29528 3.92379e-07\ndiametro_tot_um  0.956997  0.0205589 46.54899 3.68415e-94",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "40b8d4a9d7b88e8ab91b",
+   "seconds": 0.0
+  },
+  "039_predict.R": {
+   "status": "ok",
+   "output": "> nuovo <- data.frame(diametro_tot_um = 7)\n> # Incertezza della media condizionata.\n> predict(m0, newdata = nuovo,\n+         interval = \"confidence\")\n     fit     lwr     upr\n1 5.9987 5.95043 6.04696\n> # Variabilita di un nuovo individuo.\n> predict(m0, newdata = nuovo,\n+         interval = \"prediction\")\n     fit     lwr     upr\n1 5.9987 5.48374 6.51365",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "93cb3ae75a0b771005f9",
+   "seconds": 0.1
+  },
+  "040_estrapolazione.R": {
+   "status": "ok",
+   "output": "> # Lo stesso comando produce numeri\n> # anche fuori dal campo osservato.\n> fuori <- data.frame(diametro_tot_um = 11)\n> predict(m0, newdata = fuori,\n+         interval = \"prediction\")\n      fit    lwr     upr\n1 9.82669 9.2789 10.3745\n> range(f$diametro_tot_um)\n[1] 3.67789 8.62098",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "c495a1a2e387c6b8bc85",
+   "seconds": 0.0
+  },
+  "042_residui.R": {
+   "status": "ok",
+   "output": "> # m0 descrive il diametro interno.\n> e42 <- residuals(m0)\n> yhat42 <- fitted(m0)\n> plot(yhat42, e42, pch = 19,\n+      xlab = \"Valore stimato (um)\",\n+      ylab = \"Residuo (um)\")\n> abline(h = 0, lty = 2)\n> # La curva locale aiuta la lettura.\n> lines(lowess(yhat42, e42), col = 2)",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "4aa4a9d5615cf8ccfaa9",
+   "seconds": 0.1
+  },
+  "043_vincoli.R": {
+   "status": "ok",
+   "output": "> # Con intercetta e minimi quadrati:\n> e43 <- residuals(m0)\n> c(somma = sum(e43),\n+   media = mean(e43))\n       somma        media \n-5.88071e-16 -3.67545e-18 \n> # Anche X trasposta per e e' quasi 0.\n> X43 <- model.matrix(m0)\n> drop(crossprod(X43, e43))\n    (Intercept) diametro_tot_um \n   -3.33067e-16     9.32587e-15 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "fa1d41c591cf13603993",
+   "seconds": 0.1
+  },
+  "044_curvatura.R": {
+   "status": "ok",
+   "output": "> # Aggiungiamo un termine quadratico.\n> m_quad <- lm(diametro_int_um ~\n+   diametro_tot_um +\n+   I(diametro_tot_um^2), data = f)\n> plot(fitted(m_quad), resid(m_quad),\n+      pch = 19, xlab = \"Stima (um)\",\n+      ylab = \"Residuo (um)\")\n> abline(h = 0, lty = 2)",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "9b64989366c92b456f15",
+   "seconds": 0.0
+  },
+  "045_dispersione.R": {
+   "status": "ok",
+   "output": "> # Scala dei residui standardizzati.\n> rs45 <- rstandard(m0)\n> plot(fitted(m0), sqrt(abs(rs45)),\n+      pch = 19, xlab = \"Stima (um)\",\n+      ylab = \"Radice di |residuo std| \")\n> lines(lowess(fitted(m0),\n+              sqrt(abs(rs45))), col = 2)",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "49b6a80a5e292223d245",
+   "seconds": 0.1
+  },
+  "046_ordine.R": {
+   "status": "ok",
+   "output": "> # Esempio simulato: errori correlati.\n> set.seed(746)\n> e46 <- as.numeric(arima.sim(\n+   model = list(ar = 0.75), n = 80))\n> plot(e46, type = \"b\",\n+      xlab = \"Ordine temporale\",\n+      ylab = \"Errore simulato\")\n> abline(h = 0, lty = 2)\n> acf(e46, main = \"Autocorrelazione\")",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 2,
+   "same": true,
+   "hash": "86bc4634098f65a1fe7b",
+   "seconds": 0.1
+  },
+  "048_qqplot.R": {
+   "status": "ok",
+   "output": "> # Quantili dei residui standardizzati.\n> rs48 <- rstandard(m0)\n> qqnorm(rs48, pch = 19,\n+        xlab = \"Quantile normale\",\n+        ylab = \"Residuo standardizzato\")\n> qqline(rs48, col = 2)",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "138b0ddfe85d9b531efd",
+   "seconds": 0.1
+  },
+  "049_leva.R": {
+   "status": "ok",
+   "output": "> # La leva dipende dalla matrice X.\n> h49 <- hatvalues(m0)\n> plot(f$diametro_tot_um, h49,\n+      pch = 19, xlab = \"Diametro (um)\",\n+      ylab = \"Leva\")\n> c(somma = sum(h49),\n+   parametri = m0$rank)\n    somma parametri \n        2         2 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "8d16cf6018eae36ea35a",
+   "seconds": 0.0
+  },
+  "051_cook.R": {
+   "status": "ok",
+   "output": "> # Una misura del cambiamento globale.\n> D51 <- cooks.distance(m0)\n> plot(D51, type = \"h\",\n+      xlab = \"Indice del fossile\",\n+      ylab = \"Distanza di Cook\")\n> j51 <- which.max(D51)\n> f[j51, c(\"id\", \"morfotipo\")]\n     id morfotipo\n91 F091     Spiky",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "175251f7e9fa1c1a1d14",
+   "seconds": 0.1
+  },
+  "052_sensibilita.R": {
+   "status": "ok",
+   "output": "> # Confronto, senza modificare f.\n> j52 <- which.max(cooks.distance(m0))\n> m_sens <- update(m0, data = f[-j52, ])\n> rbind(completo = coef(m0),\n+       senza_caso = coef(m_sens))\n           (Intercept) diametro_tot_um\ncompleto     -0.700282        0.956997\nsenza_caso   -0.660192        0.951037\n> # Conserviamo l'identita' del caso.\n> f[j52, ]\n     id morfotipo diametro_tot_um diametro_int_um diaframma_um spessore_um\n91 F091     Spiky         3.67789         2.48269      1.62327    0.597604\n   rapporto_int_tot\n91         0.675029",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "af77082764be942703b6",
+   "seconds": 0.0
+  },
+  "053_errore_misura.R": {
+   "status": "ok",
+   "output": "> # Esempio classico, tutto simulato.\n> set.seed(753)\n> x53 <- rnorm(1000)\n> y53 <- 2 + 1.5*x53 + rnorm(1000)\n> w53 <- x53 + rnorm(1000, sd = 0.8)\n> c(latente = coef(lm(y53 ~ x53))[2],\n+   misurato = coef(lm(y53 ~ w53))[2])\n latente.x53 misurato.w53 \n    1.445182     0.884271 \n> # Pendenza limite attesa:\n> 1.5 / (1 + 0.8^2)\n[1] 0.914634",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "9d3f5fbf4dba9b7a374d",
+   "seconds": 0.0
+  },
+  "054_loglog.R": {
+   "status": "ok",
+   "output": "> # I logaritmi richiedono valori > 0.\n> stopifnot(all(f$diametro_int_um > 0),\n+           all(f$diametro_tot_um > 0))\n> m_loglog <- lm(log(diametro_int_um) ~\n+   log(diametro_tot_um), data = f)\n> coef(m_loglog)\n         (Intercept) log(diametro_tot_um) \n           -0.471418             1.163180 \n> plot(m_loglog, which = 1)",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "5eeacbe47bce11dd22c4",
+   "seconds": 0.0
+  },
+  "055_ritrasformazione.R": {
+   "status": "ok",
+   "output": "> # Profilo dentro il dominio osservato.\n> nuovo55 <- data.frame(\n+   diametro_tot_um = 7)\n> eta55 <- predict(m_loglog, nuovo55)\n> mediana55 <- exp(eta55)\n> # Media con errori log-normali omogenei.\n> media55 <- exp(eta55 +\n+   sigma(m_loglog)^2 / 2)\n> c(mediana = mediana55, media = media55)\nmediana.1   media.1 \n  6.00160   6.00954 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "ab65b6d5f53b4c78b794",
+   "seconds": 0.0
+  },
+  "056_multiplo.R": {
+   "status": "ok",
+   "output": "> # Un predittore quantitativo e un gruppo.\n> m_add <- lm(diametro_int_um ~\n+   diametro_tot_um + morfotipo,\n+   data = f)\n> coef(m_add)\n    (Intercept) diametro_tot_um  morfotipoSpiky \n      -0.797952        0.990321       -0.228186 \n> summary(m_add)$sigma\n[1] 0.235948",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "b4a710c44a06df43f017",
+   "seconds": 0.0
+  },
+  "058_riferimento.R": {
+   "status": "ok",
+   "output": "> # Scegliamo il gruppo di riferimento.\n> f$morfotipo <- relevel(\n+   factor(f$morfotipo), ref = \"Rounded\")\n> levels(f$morfotipo)\n[1] \"Rounded\" \"Spiky\"  \n> contrasts(f$morfotipo)\n        Spiky\nRounded     0\nSpiky       1\n> # La scelta entra nella parametrizzazione.\n> m_add <- lm(diametro_int_um ~\n+   diametro_tot_um + morfotipo, data = f)",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "f213cd25a656fc8ccfa1",
+   "seconds": 0.0
+  },
+  "059_matrice.R": {
+   "status": "ok",
+   "output": "> # Colonne usate realmente dal modello.\n> X59 <- model.matrix(m_add)\n> colnames(X59)\n[1] \"(Intercept)\"     \"diametro_tot_um\" \"morfotipoSpiky\" \n> head(X59, 6)\n  (Intercept) diametro_tot_um morfotipoSpiky\n1           1         7.23416              0\n2           1         5.81023              0\n3           1         6.63788              0\n4           1         4.30518              0\n5           1         6.36402              0\n6           1         6.93716              0\n> # La colonna iniziale vale sempre 1.\n> stopifnot(all(X59[, 1] == 1))",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "a0c0d0f620fc4cc0ec49",
+   "seconds": 0.0
+  },
+  "060_additivo.R": {
+   "status": "ok",
+   "output": "> # Contrasto a diametro totale fissato.\n> nuovi60 <- data.frame(\n+   diametro_tot_um = c(7, 7),\n+   morfotipo = c(\"Rounded\", \"Spiky\"))\n> mu60 <- predict(m_add, nuovi60)\n> diff(mu60)\n        2 \n-0.228186 \n> # Coincide con il coefficiente di gruppo.\n> coef(m_add)[\"morfotipoSpiky\"]\nmorfotipoSpiky \n     -0.228186 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "8a3c39f04e2ee00970a2",
+   "seconds": 0.0
+  },
+  "061_interazione.R": {
+   "status": "ok",
+   "output": "> # * include effetti principali e prodotto.\n> m_int <- lm(diametro_int_um ~\n+   diametro_tot_um * morfotipo,\n+   data = f)\n> coef(m_int)\n                   (Intercept)                diametro_tot_um \n                    -0.8430629                      0.9977609 \n                morfotipoSpiky diametro_tot_um:morfotipoSpiky \n                    -0.1245462                     -0.0162466 \n> # Le colonne rendono visibile il prodotto.\n> colnames(model.matrix(m_int))\n[1] \"(Intercept)\"                    \"diametro_tot_um\"               \n[3] \"morfotipoSpiky\"                 \"diametro_tot_um:morfotipoSpiky\"",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "e963b74ba151a5301c91",
+   "seconds": 0.0
+  },
+  "062_contrasto.R": {
+   "status": "ok",
+   "output": "> # Confrontiamo tre diametri scelti.\n> x62 <- c(6, 7, 8)\n> a62 <- data.frame(diametro_tot_um = x62,\n+                    morfotipo = \"Rounded\")\n> b62 <- a62; b62$morfotipo <- \"Spiky\"\n> delta62 <- predict(m_int, b62) -\n+            predict(m_int, a62)\n> data.frame(diametro = x62, delta = delta62)\n  diametro     delta\n1        6 -0.222026\n2        7 -0.238272\n3        8 -0.254519",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "217323845e832a917bec",
+   "seconds": 0.1
+  },
+  "063_centrare.R": {
+   "status": "ok",
+   "output": "> # Il valore 7 um ha significato nel dominio.\n> f$x_c <- f$diametro_tot_um - 7\n> m_c <- lm(diametro_int_um ~\n+   x_c * morfotipo, data = f)\n> coef(m_c)\n       (Intercept)                x_c     morfotipoSpiky x_c:morfotipoSpiky \n         6.1412631          0.9977609         -0.2382725         -0.0162466 \n> # Le previsioni restano uguali.\n> max(abs(fitted(m_c) - fitted(m_int)))\n[1] 2.75335e-14",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "c33eedac3a6beece28c0",
+   "seconds": 0.1
+  },
+  "064_intervallo_contrasto.R": {
+   "status": "ok",
+   "output": "> # m_c e' centrato a 7 um.\n> j64 <- match(\"morfotipoSpiky\",\n+              names(coef(m_c)))\n> d64 <- coef(m_c)[j64]\n> se64 <- sqrt(vcov(m_c)[j64, j64])\n> t64 <- qt(0.975, df.residual(m_c))\n> c(stima = d64,\n+   basso = d64 - t64*se64,\n+   alto = d64 + t64*se64)\nstima.morfotipoSpiky basso.morfotipoSpiky  alto.morfotipoSpiky \n           -0.238272            -0.329328            -0.147217 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "9a00b082497e0d38d127",
+   "seconds": 0.1
+  },
+  "065_profilo.R": {
+   "status": "ok",
+   "output": "> # Stessi nomi e livelli del modello.\n> nuovi65 <- data.frame(\n+   diametro_tot_um = c(6.5, 7.5),\n+   morfotipo = c(\"Rounded\", \"Spiky\"))\n> predict(m_int, newdata = nuovi65,\n+         interval = \"confidence\")\n      fit     lwr     upr\n1 5.64238 5.58533 5.69944\n2 6.39375 6.32222 6.46527\n> # Nuovi individui: intervallo piu' ampio.\n> predict(m_int, newdata = nuovi65,\n+         interval = \"prediction\")\n      fit     lwr     upr\n1 5.64238 5.17161 6.11315\n2 6.39375 5.92100 6.86649",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "a5a7a63d80c44d3e72c5",
+   "seconds": 0.1
+  },
+  "067_identita.R": {
+   "status": "ok",
+   "output": "> # Identita' delle misure sintetiche.\n> scarto67 <- with(f, diametro_tot_um -\n+   diametro_int_um - 2*spessore_um)\n> max(abs(scarto67))\n[1] 1e-08\n> # Anche l'arrotondamento conta.\n> summary(scarto67)\n     Min.   1st Qu.    Median      Mean   3rd Qu.      Max. \n-1.00e-08 -1.00e-08  0.00e+00 -6.25e-11  1.00e-08  1.00e-08 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "e734b6c82b8c53039c05",
+   "seconds": 0.1
+  },
+  "068_rango.R": {
+   "status": "ok",
+   "output": "> # Esempio con dipendenza esatta costruita.\n> x68 <- f$diametro_tot_um\n> s68 <- f$spessore_um\n> z68 <- x68 - 2*s68\n> X68 <- cbind(1, x68, z68, s68)\n> c(colonne = ncol(X68),\n+   rango = qr(X68)$rank)\ncolonne   rango \n      4       3 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "48e69db09f105f11a41d",
+   "seconds": 0.0
+  },
+  "069_modelli.R": {
+   "status": "ok",
+   "output": "> # Formule motivate da ipotesi diverse.\n> formule69 <- list(\n+   comune = diametro_int_um ~\n+     diametro_tot_um,\n+   additivo = diametro_int_um ~\n+     diametro_tot_um + morfotipo,\n+   interazione = diametro_int_um ~\n+     diametro_tot_um * morfotipo)\n> # La valutazione seguira' un protocollo.\n> names(formule69)\n[1] \"comune\"      \"additivo\"    \"interazione\"",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "46cdecb4955f376e2d16",
+   "seconds": 0.0
+  },
+  "071_risposta_binaria.R": {
+   "status": "ok",
+   "output": "> # 1 indica Spiky, 0 indica Rounded.\n> f$spiky <- as.integer(\n+   f$morfotipo == \"Spiky\")\n> table(f$morfotipo, f$spiky)\n         \n           0  1\n  Rounded 80  0\n  Spiky    0 80\n> stopifnot(all(f$spiky %in% c(0, 1)))",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "ca17c9185770af405c5c",
+   "seconds": 0.1
+  },
+  "072_odds.R": {
+   "status": "ok",
+   "output": "> # Tre scale per la stessa probabilita'.\n> p72 <- c(0.2, 0.5, 0.8)\n> data.frame(\n+   probabilita = p72,\n+   odds = p72 / (1 - p72),\n+   logit = qlogis(p72))\n  probabilita odds    logit\n1         0.2 0.25 -1.38629\n2         0.5 1.00  0.00000\n3         0.8 4.00  1.38629\n> # La funzione inversa recupera p.\n> plogis(qlogis(p72))\n[1] 0.2 0.5 0.8",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "8abd1e58fb7a0cef244a",
+   "seconds": 0.0
+  },
+  "073_curva_logistica.R": {
+   "status": "ok",
+   "output": "> # Curva teorica: eta varia da -4 a 4.\n> eta73 <- seq(-4, 4, length.out = 101)\n> plot(eta73, plogis(eta73), type = \"l\",\n+      xlab = \"Predittore lineare eta\",\n+      ylab = \"Probabilita'\", ylim = c(0, 1))\n> abline(h = 0.5, v = 0, lty = 2)",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "eee2e49644f3958943b7",
+   "seconds": 0.0
+  },
+  "074_glm.R": {
+   "status": "ok",
+   "output": "> # Stima descrittiva sul campione.\n> m_log <- glm(spiky ~ diametro_tot_um,\n+   data = f, family = binomial())\n> summary(m_log)$coefficients\n                 Estimate Std. Error  z value    Pr(>|z|)\n(Intercept)     -4.050064   1.159767 -3.49214 0.000479176\ndiametro_tot_um  0.636338   0.179876  3.53766 0.000403695\n> m_log$converged\n[1] TRUE\n> # Probabilita' nella scala 0--1.\n> p_log <- predict(m_log,\n+                  type = \"response\")\n> range(p_log)\n[1] 0.153205 0.807802",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "dd034af542dc35522ed2",
+   "seconds": 0.0
+  },
+  "075_odds_ratio.R": {
+   "status": "ok",
+   "output": "> # Effetto di +1 um sul rapporto degli odds.\n> b75 <- coef(m_log)[\"diametro_tot_um\"]\n> c(per_1_um = exp(b75),\n+   per_0_5_um = exp(0.5*b75))\n  per_1_um.diametro_tot_um per_0_5_um.diametro_tot_um \n                   1.88955                    1.37461 \n> # Cambiare l'unita' cambia l'incremento.",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "354ad1e645e20f400cb2",
+   "seconds": 0.0
+  },
+  "076_effetto_probabilita.R": {
+   "status": "ok",
+   "output": "> # Probabilita' per profili espliciti.\n> nuovi76 <- data.frame(\n+   diametro_tot_um = c(6, 7, 8))\n> p76 <- predict(m_log, nuovi76,\n+                type = \"response\")\n> data.frame(nuovi76, probabilita = p76)\n  diametro_tot_um probabilita\n1               6    0.442250\n2               7    0.599721\n3               8    0.738974\n> # Differenze per incrementi di 1 um.\n> diff(p76)\n       2        3 \n0.157471 0.139253 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "7e807875ebeda94b9bb4",
+   "seconds": 0.1
+  },
+  "077_soglia.R": {
+   "status": "ok",
+   "output": "> # Probabilita' descrittive gia' calcolate.\n> soglia77 <- 0.5\n> classe77 <- as.integer(p_log >= soglia77)\n> head(data.frame(\n+   probabilita = p_log,\n+   classe = classe77,\n+   osservato = f$spiky))\n  probabilita classe osservato\n1    0.634903      1         0\n2    0.412705      0         0\n3    0.543360      1         0\n4    0.212401      0         0\n5    0.499901      0         0\n6    0.590085      1         0",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "16d70e313ffc839a7817",
+   "seconds": 0.0
+  },
+  "078_classificazione.R": {
+   "status": "ok",
+   "output": "> # Livelli espliciti anche se un conteggio e' 0.\n> tab78 <- table(\n+   osservato = factor(f$spiky, levels = 0:1),\n+   previsto = factor(classe77, levels = 0:1))\n> tab78\n         previsto\nosservato  0  1\n        0 46 34\n        1 29 51\n> sum(diag(tab78)) / sum(tab78)\n[1] 0.60625",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "7198aece3f1a47ee6d29",
+   "seconds": 0.1
+  },
+  "079_sensibilita_specificita.R": {
+   "status": "ok",
+   "output": "> # tab78: righe osservate, colonne previste.\n> TP79 <- tab78[\"1\", \"1\"]\n> FN79 <- tab78[\"1\", \"0\"]\n> TN79 <- tab78[\"0\", \"0\"]\n> FP79 <- tab78[\"0\", \"1\"]\n> c(sensibilita = TP79/(TP79+FN79),\n+   specificita = TN79/(TN79+FP79))\nsensibilita specificita \n     0.6375      0.5750 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "a3b75fac057b7f46a714",
+   "seconds": 0.1
+  },
+  "080_brier.R": {
+   "status": "ok",
+   "output": "> # Valutazione descrittiva sul campione.\n> brier80 <- mean((p_log - f$spiky)^2)\n> # Riferimento costante: frequenza osservata.\n> pbase80 <- mean(f$spiky)\n> base80 <- mean((pbase80 - f$spiky)^2)\n> c(modello = brier80, riferimento = base80)\n    modello riferimento \n   0.228958    0.250000 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "1246e723d6f8fe59a407",
+   "seconds": 0.0
+  },
+  "081_calibrazione.R": {
+   "status": "ok",
+   "output": "> # Intervalli fissi di probabilita'.\n> d81 <- data.frame(\n+   bin = cut(p_log, breaks = seq(0, 1, 0.2),\n+             include.lowest = TRUE),\n+   p = p_log, y = f$spiky)\n> aggregate(cbind(p, y) ~ bin,\n+           data = d81, FUN = mean)\n        bin        p        y\n1   [0,0.2] 0.169341 0.250000\n2 (0.2,0.4] 0.304215 0.343750\n3 (0.4,0.6] 0.501203 0.475610\n4 (0.6,0.8] 0.675154 0.682927\n5   (0.8,1] 0.807802 1.000000\n> table(d81$bin)\n\n  [0,0.2] (0.2,0.4] (0.4,0.6] (0.6,0.8]   (0.8,1] \n        4        32        82        41         1 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "93504917ddd6489a6d86",
+   "seconds": 0.1
+  },
+  "083_split.R": {
+   "status": "ok",
+   "output": "> # Regola fissata prima della selezione.\n> is_test <- seq_len(nrow(f)) %% 5L == 0L\n> training <- f[!is_test, ]\n> test <- f[is_test, ]\n> c(training = nrow(training),\n+   test = nrow(test))\ntraining     test \n     128       32 \n> stopifnot(length(intersect(training$id,\n+                          test$id)) == 0L)",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "fc13a8ff2a12928a1cf0",
+   "seconds": 0.0
+  },
+  "084_riferimento.R": {
+   "status": "ok",
+   "output": "> # Il riferimento usa solo il training.\n> media_train <- mean(\n+   training$diametro_int_um)\n> prev_base <- rep(media_train,\n+                  nrow(test))\n> media_train\n[1] 5.41762",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "5227d0193f1069908c89",
+   "seconds": 0.0
+  },
+  "085_metriche.R": {
+   "status": "ok",
+   "output": "> metriche <- function(osservato, previsto) {\n+   e <- osservato - previsto\n+   c(MAE = mean(abs(e)),\n+     RMSE = sqrt(mean(e^2)))\n+ }\n> # Esempio con scarti noti.\n> metriche(c(0, 0, 0), c(1, 1, 4))\n    MAE    RMSE \n2.00000 2.44949 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "a5bca8ae79b8d530b401",
+   "seconds": 0.0
+  },
+  "086_fold.R": {
+   "status": "ok",
+   "output": "> # Cinque parti interne al solo training.\n> set.seed(714)\n> fold <- sample(rep(1:5,\n+   length.out = nrow(training)))\n> table(fold)\nfold\n 1  2  3  4  5 \n26 26 26 25 25 \n> # Il test esterno non compare nei fold.",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "f81e5e0a4ea099a0f048",
+   "seconds": 0.0
+  },
+  "087_trasformazioni.R": {
+   "status": "ok",
+   "output": "> # Parametri appresi soltanto nel training.\n> mu_x <- mean(training$diametro_tot_um)\n> sd_x <- sd(training$diametro_tot_um)\n> z_train <- (training$diametro_tot_um - mu_x) / sd_x\n> z_test <- (test$diametro_tot_um - mu_x) / sd_x\n> # Nei fold, mu_x e sd_x si ristimano\n> # ogni volta sui quattro fold di stima.",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "07409296af4defc86026",
+   "seconds": 0.0
+  },
+  "089_cv.R": {
+   "status": "ok",
+   "output": "> # Formule definite nel progetto.\n> formule <- formule_annula()\n> # Stessi fold per tutti i modelli.\n> cv <- valida_annula(training, fold,\n+                    formule)\n> cv[order(cv$RMSE), ]\n        modello      MAE     RMSE\n2 con_morfotipo 0.197218 0.252179\n3    polinomio3 0.220746 0.271853\n1       lineare 0.221272 0.273311\n> scelta <- cv$modello[\n+   which.min(cv$RMSE)]",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "34d7303361058a69eca4",
+   "seconds": 0.1
+  },
+  "090_test_finale.R": {
+   "status": "ok",
+   "output": "> # Ristima sui 128 casi di training.\n> mod_finale <- lm(formule[[scelta]],\n+                  data = training)\n> prev_test <- predict(mod_finale, newdata = test)\n> metriche(test$diametro_int_um, prev_test)\n     MAE     RMSE \n0.172135 0.199439 \n> metriche(test$diametro_int_um, prev_base)\n    MAE    RMSE \n0.74151 1.00291 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "7b361b915614f83a22f5",
+   "seconds": 0.2
+  },
+  "092_simulazione.R": {
+   "status": "ok",
+   "output": "> # Nuovi dati dalla stessa legge.\n> set.seed(17)\n> sim <- data.frame(\n+   x = seq(-1, 1, length.out = 24))\n> sim$y <- sin(3 * sim$x) + rnorm(24)\n> mp <- lm(y ~ poly(x, 3, raw = TRUE),\n+          data = sim)\n> nuovi <- data.frame(\n+   x = seq(-1, 1, length.out = 150))\n> nuovi$y <- sin(3 * nuovi$x) + rnorm(150)\n> metriche(nuovi$y,\n+   predict(mp, newdata = nuovi))\n    MAE    RMSE \n1.01268 1.28102 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "d4b815eb8d5f85e32542",
+   "seconds": 0.1
+  },
+  "097_logistica_test.R": {
+   "status": "ok",
+   "output": "> # Risposta: TRUE per i fossili Spiky.\n> g_train <- glm(\n+   I(morfotipo == \"Spiky\") ~\n+     diametro_tot_um +\n+     rapporto_int_tot,\n+   data = training,\n+   family = binomial())\n> p_test <- predict(g_train,\n+   newdata = test, type = \"response\")\n> y_test <- as.integer(\n+   test$morfotipo == \"Spiky\")\n> mean((p_test - y_test)^2) # Brier.\n[1] 0.159407\n> mean((p_test >= 0.5) == y_test)\n[1] 0.75",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "75649a019a9d61bc1779",
+   "seconds": 0.1
+  }
+ }
+}
