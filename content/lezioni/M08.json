@@ -1,0 +1,5892 @@
+{
+ "id": "M08",
+ "title": "Analisi multivariata dei campioni",
+ "planet": "Polychroma",
+ "world": "M08-d",
+ "exercisesWorld": "M08-c",
+ "pages": 108,
+ "pdf": "assets/lezioni/M08/Polychroma_M08_multivariata.pdf",
+ "project": {
+  "dir": "polychroma",
+  "files": [
+   "Dati/fossili_simulati.csv",
+   "Dati/rocce_simulate.csv",
+   "R/funzioni_analisi.R",
+   "R/rigenera_calcoli.R",
+   "setup.R"
+  ],
+  "setup": "setup.R"
+ },
+ "reference": {
+  "R": "R version 4.6.0 (2026-04-24), webR nel browser",
+  "native": "R version 4.3.3 (2024-02-29)",
+  "note": "Uscite registrate eseguendo il codice delle slide in ordine nel browser."
+ },
+ "sections": [
+  {
+   "title": "COPERTINA",
+   "first": 1,
+   "last": 1
+  },
+  {
+   "title": "I · CAMPIONI, SCALE E DISTANZE",
+   "first": 2,
+   "last": 14
+  },
+  {
+   "title": "II · RIDONDANZA E COMPOSIZIONI",
+   "first": 15,
+   "last": 26
+  },
+  {
+   "title": "III · GEOMETRIA DELLA PCA",
+   "first": 27,
+   "last": 44
+  },
+  {
+   "title": "IV · INTERPRETARE LE COMPONENTI",
+   "first": 45,
+   "last": 57
+  },
+  {
+   "title": "VI · K-MEANS",
+   "first": 58,
+   "last": 72
+  },
+  {
+   "title": "VII · NUMERO DEI GRUPPI",
+   "first": 73,
+   "last": 82
+  },
+  {
+   "title": "VIII · GERARCHIE DI WARD",
+   "first": 83,
+   "last": 93
+  },
+  {
+   "title": "VIII · STABILITÀ E INTERPRETAZIONE",
+   "first": 94,
+   "last": 103
+  },
+  {
+   "title": "IX · UN’ANALISI COMPLETA",
+   "first": 104,
+   "last": 108
+  }
+ ],
+ "slides": [
+  {
+   "page": 1,
+   "items": [],
+   "title": "Analisi multivariata dei campioni",
+   "section": "COPERTINA",
+   "lines": [
+    "POLYCHROMA",
+    "MODULO M08 · SCIENZE DELLA TERRA",
+    "Analisi multivariata dei campioni",
+    "Geometria della PCA, tizioni e interpretazione geologica",
+    "Marzio De Corato",
+    "© 2026 · CC BY-NC-SA 4.0"
+   ],
+   "recall": [],
+   "image": "assets/lezioni/M08/001.webp"
+  },
+  {
+   "page": 2,
+   "title": "Quali campioni si somigliano?",
+   "section": "I · CAMPIONI, SCALE E DISTANZE",
+   "recall": [
+    "Una struttura multivariata si interpreta insieme alle misure e alla geometria che l’hanno prodotta."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Una stessa matrice, più proprietà"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "002-1",
+     "w": 269,
+     "h": 150,
+     "src": "assets/lezioni/M08/figure/002-1.svg",
+     "ratio": 0.944
+    },
+    {
+     "t": "small",
+     "c": [
+      "I punti rappresentano le 90 rocce sintetiche proiettate sulle prime due componenti. I colori dei gruppi non sono ancora assegnati."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Ogni roccia è descritta da otto misure. La somiglianza dipende da quali proprietà confrontiamo e da come misuriamo le loro differenze."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "\\mathbf x_i=(x_{i1},\\ldots,x_{i8}).",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "La domanda della lezione: quali strutture persistono quando cambiamo rappresentazione, variabili o criterio di raggruppamento?"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "PCA e clustering richiedono scelte esplicite. L’interpretazione geologica viene discussa attraverso queste scelte."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 3,
+   "title": "Novanta rocce, otto proprietà",
+   "section": "I · CAMPIONI, SCALE E DISTANZE",
+   "recall": [
+    "Il significato di ogni colonna e la provenienza sintetica dei dati devono accompagnare l’analisi."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "003-1",
+     "w": 277,
+     "h": 130,
+     "src": "assets/lezioni/M08/figure/003-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il dataset comprende 90 campioni. Le etichette generatrici sono Basalto, Arenaria e Calcare: trenta casi per gruppo."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · leggere i campioni",
+     "file": "003_dati.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Colore e fossili sono indici convenzionali del simulatore. I valori non descrivono misure di un affioramento reale."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 4,
+   "title": "La matrice conserva le righe dei campioni",
+   "section": "I · CAMPIONI, SCALE E DISTANZE",
+   "recall": [
+    "Il punto nello spazio multivariato corrisponde a una riga identificabile della tabella."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "004-1",
+     "w": 277,
+     "h": 141,
+     "src": "assets/lezioni/M08/figure/004-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "math",
+     "v": "X=(x_{ij})\\in\\mathbb R^{90\\times8}.",
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "L’indice ",
+      {
+       "t": "m",
+       "v": "i"
+      },
+      " identifica il campione; ",
+      {
+       "t": "m",
+       "v": "j"
+      },
+      " identifica la variabile. Una riga confronta più proprietà della stessa roccia."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Una colonna contiene misure omogenee per definizione e unità. L’identificativo rimane esterno alla matrice numerica."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Conservare l’ordine delle righe consente di ricongiungere coordinate principali, gruppi e osservazioni originali."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 5,
+   "title": "Le unità definiscono le coordinate",
+   "section": "I · CAMPIONI, SCALE E DISTANZE",
+   "recall": [
+    "Una distanza fra variabili eterogenee incorpora una scelta di scala e di rilevanza."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "005-1",
+     "w": 277,
+     "h": 130,
+     "src": "assets/lezioni/M08/figure/005-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "Una differenza di dieci punti percentuali e una differenza di un grammo per centimetro cubo non hanno un peso naturale comune."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\mathbf x_i=(\\text{SiO}_2,\\ldots,\\rho,g,c,f)_i.",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La somma dei quadrati combina valori numerici. Le conversioni di unità possono modificare il contributo di una proprietà alla distanza."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Prima della standardizzazione, occorre stabilire quali differenze scientifiche debbano contare nella somiglianza."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 6,
+   "title": "Misure, identificativi ed etichette",
+   "section": "I · CAMPIONI, SCALE E DISTANZE",
+   "recall": [
+    "Una variabile usata per interpretare il risultato può restare esclusa dal calcolo dei gruppi."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "006-1",
+     "w": 277,
+     "h": 130,
+     "src": "assets/lezioni/M08/figure/006-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "L’etichetta del simulatore è tenuta separata. Usarla come una coordinata introdurrebbe la risposta attesa nel criterio di somiglianza."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · separare i ruoli",
+     "file": "006_etichette.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Le etichette potranno colorare un grafico già calcolato o alimentare una tabella di confronto."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 7,
+   "title": "Selezionare le variabili per nome",
+   "section": "I · CAMPIONI, SCALE E DISTANZE",
+   "recall": [
+    "Un dataset leggibile da R può ancora contenere colonne inappropriate per la domanda."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "007-1",
+     "w": 277,
+     "h": 141,
+     "src": "assets/lezioni/M08/figure/007-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "La selezione esplicita rende leggibile la scelta delle proprietà. L’ordine delle colonne è conservato nelle trasformazioni successive."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · costruire la matrice",
+     "file": "007_matrice.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "I controlli numerici verificano completezza e variabilità. La scelta scientifica delle colonne richiede comunque una motivazione."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 8,
+   "title": "La scala cambia la geometria",
+   "section": "I · CAMPIONI, SCALE E DISTANZE",
+   "recall": [
+    "Una conversione differente fra colonne cambia la distanza euclidea grezza."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "008-1",
+     "w": 277,
+     "h": 138,
+     "src": "assets/lezioni/M08/figure/008-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "Moltiplicare una coordinata per mille allunga la nuvola lungo quell’asse. Le distanze grezze cambiano anche se la proprietà fisica è la stessa."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · convertire una sola unità",
+     "file": "008_unita.R",
+     "col": "R"
+    },
+    {
+     "t": "lab",
+     "url": "https://marzione00.github.io/Lab_Geo/#laboratorio/m08-standardizzazione",
+     "c": [
+      "Esperimento · scale e distanze"
+     ],
+     "col": "R",
+     "lab": "m08-standardizzazione"
+    }
+   ]
+  },
+  {
+   "page": 9,
+   "title": "La distanza euclidea combina gli scarti",
+   "section": "I · CAMPIONI, SCALE E DISTANZE",
+   "recall": [
+    "Prima di interpretare una distanza, occorre conoscere coordinate, unità e trasformazioni."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "009-1",
+     "w": 277,
+     "h": 147,
+     "src": "assets/lezioni/M08/figure/009-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "Nel piano, il teorema di Pitagora collega gli scarti lungo due assi alla lunghezza del segmento. La stessa somma si estende a otto coordinate."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "d(i,h)^2=\\sum_{j=1}^{p}(x_{ij}-x_{hj})^2.",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      {
+       "t": "m",
+       "v": "i"
+      },
+      " e ",
+      {
+       "t": "m",
+       "v": "h"
+      },
+      " sono due campioni; ",
+      {
+       "t": "m",
+       "v": "p=8"
+      },
+      " è il numero delle variabili. Ogni scarto entra al quadrato."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "code",
+     "title": "R · calcolare una distanza",
+     "file": "009_distanza.R",
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 10,
+   "title": "Centrare e dividere per la dispersione",
+   "section": "I · CAMPIONI, SCALE E DISTANZE",
+   "recall": [
+    "Lo z-score cambia origine e scala; non elimina asimmetria, dipendenza o valori atipici."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "010-1",
+     "w": 277,
+     "h": 133,
+     "src": "assets/lezioni/M08/figure/010-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "Sottrarre la media sposta l’origine. Dividere per la deviazione standard modifica la scala della colonna."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "z_{ij}=\\frac{x_{ij}-\\bar x_j}{s_j},\\quad s_j>0.",
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "\\bar z_j=0,\\qquad s_{z_j}=1.",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La standardizzazione attribuisce lo stesso peso numerico iniziale a uno scarto di una deviazione standard in ciascuna colonna."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "La scelta resta sensibile agli estremi e alla definizione delle variabili. Non rende uguali le forme delle distribuzioni."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 11,
+   "title": "Conservare i parametri della standardizzazione",
+   "section": "I · CAMPIONI, SCALE E DISTANZE",
+   "recall": [
+    "Medie, scale e ordine delle colonne fanno parte del risultato dell’analisi."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "011-1",
+     "w": 277,
+     "h": 141,
+     "src": "assets/lezioni/M08/figure/011-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "I numeri standardizzati sono scarti relativi alla variabilità della colonna. Le medie e le scale permettono di ritrovare le unità originali."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · centrare e ridimensionare",
+     "file": "011_standardizzazione.R",
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "x_{ij}=\\bar x_j+s_jz_{ij}.",
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 12,
+   "title": "Collocare un nuovo campione",
+   "section": "I · CAMPIONI, SCALE E DISTANZE",
+   "recall": [
+    "Per confrontare campioni vecchi e nuovi si applica la stessa trasformazione."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "012-1",
+     "w": 277,
+     "h": 130,
+     "src": "assets/lezioni/M08/figure/012-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "Ricalcolare medie e scale sul nuovo insieme cambierebbe il sistema di coordinate, rendendo incomparabili le posizioni."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "z_{\\mathrm{nuovo},j}=\\frac{x_{\\mathrm{nuovo},j}-\\bar x_j}{s_j}.",
+     "col": "R"
+    },
+    {
+     "t": "code",
+     "title": "R · riutilizzare il riferimento",
+     "file": "012_nuovo_campione.R",
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 13,
+   "title": "Valori mancanti e variabili costanti",
+   "section": "I · CAMPIONI, SCALE E DISTANZE",
+   "recall": [
+    "La validità numerica della matrice precede il calcolo; la validità scientifica precede entrambe."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "013-1",
+     "w": 277,
+     "h": 130,
+     "src": "assets/lezioni/M08/figure/013-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "Nel dataset didattico le otto colonne sono complete e variabili. In un rilievo reale, mancanze e limiti analitici richiedono scelte documentate."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · controllare le colonne",
+     "file": "013_controlli.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Cancellare righe o imputare valori può cambiare distanze e gruppi. La modifica va valutata rispetto alla domanda e alle cause delle mancanze."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 14,
+   "title": "La standardizzazione conserva la correlazione",
+   "section": "I · CAMPIONI, SCALE E DISTANZE",
+   "recall": [
+    "Standardizzazione e rimozione della dipendenza rispondono a problemi diversi."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "014-1",
+     "w": 277,
+     "h": 133,
+     "src": "assets/lezioni/M08/figure/014-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "Una forte associazione fra due colonne rimane visibile dopo lo z-score. Il problema della ridondanza richiede un esame separato."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · confrontare le correlazioni",
+     "file": "014_correlazioni.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Media zero e varianza uno non implicano indipendenza. Due colonne standardizzate possono essere quasi identiche."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 15,
+   "title": "Una colonna duplicata pesa due volte",
+   "section": "II · RIDONDANZA E COMPOSIZIONI",
+   "recall": [
+    "La selezione delle colonne assegna anche pesi impliciti alle proprietà."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "015-1",
+     "w": 277,
+     "h": 135,
+     "src": "assets/lezioni/M08/figure/015-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "La duplicazione non aggiunge una misura indipendente. Aumenta il peso di una proprietà nella distanza complessiva."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "d_{\\rm nuovo}^2=d^2+(z_{ij}-z_{hj})^2.",
+     "col": "R"
+    },
+    {
+     "t": "code",
+     "title": "R · duplicare una coordinata",
+     "file": "015_duplicazione.R",
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 16,
+   "title": "I pesi rendono esplicita la scelta",
+   "section": "II · RIDONDANZA E COMPOSIZIONI",
+   "recall": [
+    "Un peso va motivato: il calcolo rende la scelta riproducibile, non la giustifica da solo."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "016-1",
+     "w": 277,
+     "h": 147,
+     "src": "assets/lezioni/M08/figure/016-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "Moltiplicare una coordinata per la radice di un peso equivale a pesare il suo scarto quadratico nella distanza."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "d_w^2(i,h)=\\sum_j w_j(z_{ij}-z_{hj})^2.",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Pesi positivi conservano una distanza euclidea dopo il ridimensionamento. Un peso nullo esclude una direzione dal confronto."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "code",
+     "title": "R · applicare pesi dichiarati",
+     "file": "016_pesi.R",
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 17,
+   "title": "Correlazione e ridondanza delle proprietà",
+   "section": "II · RIDONDANZA E COMPOSIZIONI",
+   "recall": [
+    "La ridondanza si interpreta attraverso la definizione delle misure e l’effetto sul risultato."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "017-1",
+     "w": 277,
+     "h": 135,
+     "src": "assets/lezioni/M08/figure/017-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "Una correlazione elevata può riflettere un legame fisico, il processo di simulazione, una definizione comune o un vincolo di composizione."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · esaminare la matrice",
+     "file": "017_ridondanza.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "L’esclusione di una misura correlata è una decisione scientifica. Va confrontata con il risultato ottenuto usando entrambe le colonne."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 18,
+   "title": "Una relazione esatta riduce la dimensione",
+   "section": "II · RIDONDANZA E COMPOSIZIONI",
+   "recall": [
+    "La dimensione effettiva può essere inferiore al numero delle colonne."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "018-1",
+     "w": 277,
+     "h": 144,
+     "src": "assets/lezioni/M08/figure/018-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "Nel caso dei fossili di Annula, tre colonne derivano da una relazione geometrica. Il terzo asse contiene soltanto l’arrotondamento numerico."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · ritrovare un vincolo noto",
+     "file": "018_fossili.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Lo scarto massimo è circa ",
+      {
+       "t": "m",
+       "v": "10^{-8}"
+      },
+      ", coerente con l’arrotondamento delle cifre del CSV."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 19,
+   "title": "Il rango distingue colonne e informazione",
+   "section": "II · RIDONDANZA E COMPOSIZIONI",
+   "recall": [
+    "Il numero di variabili registrate non coincide necessariamente con la dimensione effettiva."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "019-1",
+     "w": 277,
+     "h": 130,
+     "src": "assets/lezioni/M08/figure/019-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il rango conta le direzioni linearmente indipendenti. Nei calcoli numerici occorre distinguere uno zero esatto da un valore molto piccolo."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\operatorname{rank}(Z)\\leq\\min(n-1,p).",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La centratura limita il rango a ",
+      {
+       "t": "m",
+       "v": "n-1"
+      },
+      ". Ulteriori vincoli fra colonne possono ridurlo ancora."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "code",
+     "title": "R · valutare la dimensione numerica",
+     "file": "019_rango.R",
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 20,
+   "title": "Le parti di una composizione sono vincolate",
+   "section": "II · RIDONDANZA E COMPOSIZIONI",
+   "recall": [
+    "La composizione richiede parti dichiarate e un totale comune; non comprende tutte le colonne numeriche."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "020-1",
+     "w": 277,
+     "h": 150,
+     "src": "assets/lezioni/M08/figure/020-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il triangolo rappresenta tre parti che sommano a uno. Nel dataset, quattro ossidi e il resto completano invece il cento per cento."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\sum_{j=1}^{D}x_{ij}=100.",
+     "col": "R"
+    },
+    {
+     "t": "code",
+     "title": "R · verificare la composizione",
+     "file": "020_chiusura.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "La densità e la granulometria non sono parti della composizione chimica. Non entrano nella chiusura."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 21,
+   "title": "La chiusura può indurre associazioni",
+   "section": "II · RIDONDANZA E COMPOSIZIONI",
+   "recall": [
+    "Il vincolo sul totale contribuisce alla struttura delle correlazioni osservate."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "021-1",
+     "w": 277,
+     "h": 130,
+     "src": "assets/lezioni/M08/figure/021-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "La correlazione delle frazioni può differire dalla correlazione delle quantità assolute. Il segno non è fissato universalmente dalla sola chiusura."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · confrontare quantità e frazioni",
+     "file": "021_correlazione_chiusura.R",
+     "col": "R"
+    },
+    {
+     "t": "lab",
+     "url": "https://marzione00.github.io/Lab_Geo/#laboratorio/m08-composizioni",
+     "c": [
+      "Esperimento · composizioni"
+     ],
+     "col": "R",
+     "lab": "m08-composizioni"
+    }
+   ]
+  },
+  {
+   "page": 22,
+   "title": "Un rapporto conserva la scala relativa",
+   "section": "II · RIDONDANZA E COMPOSIZIONI",
+   "recall": [
+    "I rapporti restano invariati alla moltiplicazione comune delle quantità positive."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "022-1",
+     "w": 277,
+     "h": 138,
+     "src": "assets/lezioni/M08/figure/022-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "Moltiplicare tutte le parti per lo stesso fattore non modifica i rapporti. Il logaritmo esprime i rapporti come differenze."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · verificare l’invarianza",
+     "file": "022_rapporti.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Il log-rapporto rappresenta una relazione fra parti: occorre sapere quali parti vengono confrontate."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 23,
+   "title": "La trasformazione centrata dei log-rapporti",
+   "section": "II · RIDONDANZA E COMPOSIZIONI",
+   "recall": [
+    "La CLR descrive ogni parte rispetto alla media geometrica; non standardizza le otto proprietà miste."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "023-1",
+     "w": 277,
+     "h": 130,
+     "src": "assets/lezioni/M08/figure/023-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "math",
+     "v": "g(\\mathbf x)=\\exp\\!\\left(\\frac1D\\sum_j\\log x_j\\right).",
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\operatorname{clr}(\\mathbf x)_j=\\log x_j-\\frac1D\\sum_\\ell\\log x_\\ell.",
+     "col": "R"
+    },
+    {
+     "t": "code",
+     "title": "R · calcolare le coordinate CLR",
+     "file": "023_clr.R",
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 24,
+   "title": "Le coordinate CLR sommano a zero",
+   "section": "II · RIDONDANZA E COMPOSIZIONI",
+   "recall": [
+    "Una covarianza singolare può derivare da un vincolo scientifico noto, non da un errore del software."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "024-1",
+     "w": 277,
+     "h": 138,
+     "src": "assets/lezioni/M08/figure/024-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "Cinque coordinate CLR appartengono a uno spazio di dimensione al più quattro. La covarianza è singolare per costruzione."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\operatorname{rank}\\{\\operatorname{Cov}(\\mathrm{CLR})\\}\\leq D-1.",
+     "col": "R"
+    },
+    {
+     "t": "code",
+     "title": "R · riconoscere la singolarità",
+     "file": "024_pca_clr.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Qui la scala CLR viene mantenuta. Ridimensionare separatamente le sue colonne cambierebbe la geometria."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 25,
+   "title": "Gli zeri richiedono una spiegazione",
+   "section": "II · RIDONDANZA E COMPOSIZIONI",
+   "recall": [
+    "Prima di sostituire uno zero, occorre distinguere assenza reale, censura e arrotondamento."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "025-1",
+     "w": 277,
+     "h": 130,
+     "src": "assets/lezioni/M08/figure/025-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il logaritmo di zero non è definito. Aggiungere una costante cambia soprattutto i rapporti che coinvolgono parti poco abbondanti."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\log\\frac{x_j+\\delta}{x_\\ell+\\delta}\\not\\equiv\\log\\frac{x_j}{x_\\ell}.",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il parametro ",
+      {
+       "t": "m",
+       "v": "\\delta"
+      },
+      " introduce una scelta aggiuntiva. Deve essere collegato al processo di misura e valutato con un’analisi di sensibilità."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Le cinque parti chimiche del dataset sono positive. Gli zeri presenti in altri indici non autorizzano a includerli nella composizione."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 26,
+   "title": "Due geometrie per due domande",
+   "section": "II · RIDONDANZA E COMPOSIZIONI",
+   "recall": [
+    "La geometria dell’analisi deve corrispondere alla domanda sulle somiglianze dei campioni."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "026-1",
+     "w": 277,
+     "h": 138,
+     "src": "assets/lezioni/M08/figure/026-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il percorso principale usa le otto proprietà standardizzate del laboratorio. L’approfondimento CLR risponde a una domanda composizionale distinta."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Scelte da documentare"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Variabili incluse, trasformazione, unità, eventuali pesi e trattamento delle misure mancanti."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Le due rappresentazioni non si confrontano soltanto contando quanti gruppi producono. Cambiano le proprietà considerate e il significato della distanza."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La PCA viene ora costruita sulla matrice ",
+      {
+       "t": "m",
+       "v": "Z"
+      },
+      " delle otto variabili."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 27,
+   "title": "La nuvola dei campioni ha direzioni privilegiate",
+   "section": "III · GEOMETRIA DELLA PCA",
+   "recall": [
+    "Una componente principale è una coordinata costruita dalle variabili della matrice centrata."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "027-1",
+     "w": 269,
+     "h": 148,
+     "src": "assets/lezioni/M08/figure/027-1.svg",
+     "ratio": 0.944
+    },
+    {
+     "t": "p",
+     "c": [
+      "Esempio didattico con due variabili centrate: i punti occupano una fascia inclinata. Una direzione lungo la fascia ne conserva gran parte della variabilità."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Rappresentare con meno coordinate"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La PCA cerca assi nuovi attraverso il centro della nuvola. La prima direzione massimizza la varianza delle coordinate proiettate."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "La PCA considera congiuntamente le variabili selezionate. Non richiede una risposta da prevedere."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "\\mathbf z_i\\in\\mathbb R^p\\quad\\longmapsto\\quad t_i\\in\\mathbb R.",
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 28,
+   "title": "Il prodotto scalare dà una coordinata",
+   "section": "III · GEOMETRIA DELLA PCA",
+   "recall": [
+    "Lo score è il prodotto scalare fra la riga centrata e una direzione unitaria."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "028-1",
+     "w": 269,
+     "h": 148,
+     "src": "assets/lezioni/M08/figure/028-1.svg",
+     "ratio": 0.944
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il vettore unitario ",
+      {
+       "t": "m",
+       "v": "\\mathbf v=(0{,}8;0{,}6)"
+      },
+      " fissa una direzione. Il prodotto scalare misura la coordinata di ",
+      {
+       "t": "m",
+       "v": "\\mathbf z"
+      },
+      " lungo quella direzione."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "t=\\mathbf z^\\top\\mathbf v.",
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "t=2(0{,}8)+1(0{,}6)=2{,}2.",
+     "col": "R"
+    },
+    {
+     "t": "code",
+     "title": "R · calcolare uno score",
+     "file": "028_prodotto_scalare.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Il simbolo ",
+      {
+       "t": "m",
+       "v": "t"
+      },
+      " indica una coordinata scalare, non un vettore nel piano."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 29,
+   "title": "La proiezione torna nello spazio delle misure",
+   "section": "III · GEOMETRIA DELLA PCA",
+   "recall": [
+    "La proiezione è un vettore; lo score ne è la coordinata sull’asse scelto."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "029-1",
+     "w": 269,
+     "h": 148,
+     "src": "assets/lezioni/M08/figure/029-1.svg",
+     "ratio": 0.944
+    },
+    {
+     "t": "p",
+     "c": [
+      "Moltiplicando lo score per la direzione si ricostruisce la proiezione. Lo scarto residuo è ortogonale all’asse."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\widehat{\\mathbf z}=t\\mathbf v,\\qquad \\mathbf r=\\mathbf z-t\\mathbf v.",
+     "col": "R"
+    },
+    {
+     "t": "code",
+     "title": "R · controllare l’ortogonalità",
+     "file": "029_proiezione.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Nel diagramma: ",
+      {
+       "t": "m",
+       "v": "\\widehat{\\mathbf z}=(1{,}76;1{,}32)"
+      },
+      " e ",
+      {
+       "t": "m",
+       "v": "\\mathbf r=(0{,}24;-0{,}32)"
+      },
+      "."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 30,
+   "title": "Ruotare l’asse cambia la varianza",
+   "section": "III · GEOMETRIA DELLA PCA",
+   "recall": [
+    "La prima componente massimizza la varianza proiettata nella scala scelta."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "030-1",
+     "w": 269,
+     "h": 147,
+     "src": "assets/lezioni/M08/figure/030-1.svg",
+     "ratio": 0.944
+    },
+    {
+     "t": "p",
+     "c": [
+      "La stessa nuvola didattica viene proiettata su assi con angoli diversi. La direzione del massimo conserva la maggiore varianza in una coordinata."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\mathbf v(\\theta)=(\\cos\\theta,\\sin\\theta).",
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "t_i(\\theta)=\\mathbf z_i^\\top\\mathbf v(\\theta).",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Invertire l’asse di ",
+      {
+       "t": "m",
+       "v": "180^\\circ"
+      },
+      " cambia il segno degli scores, ma conserva la loro varianza."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "lab",
+     "url": "https://marzione00.github.io/Lab_Geo/#laboratorio/m08-pca-geometria",
+     "c": [
+      "Esperimento · ruotare un asse"
+     ],
+     "col": "R",
+     "lab": "m08-pca-geometria"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Il diagramma descrive l’esempio bidimensionale; la PCA delle rocce sarà calcolata sulle otto colonne."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 31,
+   "title": "La covarianza descrive la varianza proiettata",
+   "section": "III · GEOMETRIA DELLA PCA",
+   "recall": [
+    "La forma quadratica combina varianze e covarianze nella direzione scelta."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "031-1",
+     "w": 277,
+     "h": 124,
+     "src": "assets/lezioni/M08/figure/031-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "math",
+     "v": "S=\\frac{Z^\\top Z}{n-1}.",
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\operatorname{Var}(Z\\mathbf v)=\\mathbf v^\\top S\\mathbf v.",
+     "col": "R"
+    },
+    {
+     "t": "code",
+     "title": "R · costruire la forma quadratica",
+     "file": "031_covarianza.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Il divisore ",
+      {
+       "t": "m",
+       "v": "n-1"
+      },
+      " è quello della covarianza campionaria usata in questa lezione."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 32,
+   "title": "La norma unitaria rende definito il massimo",
+   "section": "III · GEOMETRIA DELLA PCA",
+   "recall": [
+    "Il problema di massimo confronta direzioni unitarie, non vettori di lunghezza arbitraria."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "032-1",
+     "w": 277,
+     "h": 150,
+     "src": "assets/lezioni/M08/figure/032-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "Senza un vincolo sulla lunghezza, moltiplicare ",
+      {
+       "t": "m",
+       "v": "\\mathbf v"
+      },
+      " per una costante farebbe crescere arbitrariamente la varianza degli scores."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\max_{\\mathbf v^\\top\\mathbf v=1}\\mathbf v^\\top S\\mathbf v.",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Con il moltiplicatore ",
+      {
+       "t": "m",
+       "v": "\\lambda"
+      },
+      " si considera"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "L(\\mathbf v,\\lambda)=\\mathbf v^\\top S\\mathbf v-\\lambda(\\mathbf v^\\top\\mathbf v-1).",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Il vincolo permette di confrontare orientamenti, mantenendo la stessa lunghezza del vettore."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 33,
+   "title": "Autovettore e autovalore emergono dal massimo",
+   "section": "III · GEOMETRIA DELLA PCA",
+   "recall": [
+    "L’autovalore misura la varianza dello score; l’autovettore definisce la direzione."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "033-1",
+     "w": 269,
+     "h": 148,
+     "src": "assets/lezioni/M08/figure/033-1.svg",
+     "ratio": 0.944
+    },
+    {
+     "t": "p",
+     "c": [
+      "Nella direzione ottimale, la matrice di covarianza moltiplica il vettore per un fattore scalare. Quel fattore è la varianza della componente."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\nabla_{\\mathbf v}L=2S\\mathbf v-2\\lambda\\mathbf v=0.",
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "S\\mathbf v=\\lambda\\mathbf v.",
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "\\mathbf v^\\top S\\mathbf v=\\lambda\\quad(\\|\\mathbf v\\|=1).",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La prima componente usa l’autovettore associato al maggiore autovalore. Gli altri autovalori descrivono la varianza lungo gli assi successivi."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Il disegno illustra una proiezione su un asse vicino alla direzione principale dell’esempio."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 34,
+   "title": "La seconda direzione è ortogonale alla prima",
+   "section": "III · GEOMETRIA DELLA PCA",
+   "recall": [
+    "Le componenti successive massimizzano la varianza imponendo l’ortogonalità alle precedenti."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "034-1",
+     "w": 277,
+     "h": 145,
+     "src": "assets/lezioni/M08/figure/034-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "La seconda componente massimizza la varianza rimasta fra le direzioni ortogonali alla prima. La scala grafica conserva gli angoli retti."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\mathbf v_1^\\top\\mathbf v_2=0,\\qquad\\|\\mathbf v_2\\|=1.",
+     "col": "R"
+    },
+    {
+     "t": "code",
+     "title": "R · verificare due assi",
+     "file": "034_ortogonali.R",
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 35,
+   "title": "Otto variabili producono otto coordinate principali",
+   "section": "III · GEOMETRIA DELLA PCA",
+   "recall": [
+    "Ruotare tutti gli assi e conservare soltanto pochi assi sono operazioni diverse."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "035-1",
+     "w": 277,
+     "h": 124,
+     "src": "assets/lezioni/M08/figure/035-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "Con tutti gli assi, la rotazione cambia le coordinate e conserva distanze e informazione. La riduzione di dimensione avviene quando si omettono componenti."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "T=ZV,\\qquad V^\\top V=I.",
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "\\|\\mathbf z_i-\\mathbf z_h\\|^2=\\|\\mathbf t_i-\\mathbf t_h\\|^2.",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "In questo caso ",
+      {
+       "t": "m",
+       "v": "n=90>p=8"
+      },
+      ". Un rango ridotto o un numero minore di campioni può limitare le componenti non nulle."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 36,
+   "title": "La SVD calcola la stessa geometria",
+   "section": "III · GEOMETRIA DELLA PCA",
+   "recall": [
+    "I quadrati dei valori singolari, divisi per n−1, sono le varianze delle componenti."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "036-1",
+     "w": 277,
+     "h": 124,
+     "src": "assets/lezioni/M08/figure/036-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "math",
+     "v": "Z=UDV^\\top,\\qquad\\lambda_k=\\frac{d_k^2}{n-1}.",
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · calcolare i valori singolari",
+     "file": "036_svd.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "La funzione ",
+      {
+       "t": "c",
+       "v": "prcomp"
+      },
+      " usa la SVD della matrice centrata e, se richiesto, ridimensionata."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 37,
+   "title": "Scores e direzioni hanno ruoli diversi",
+   "section": "III · GEOMETRIA DELLA PCA",
+   "recall": [
+    "Gli scores localizzano i campioni; i coefficienti della rotazione definiscono le componenti."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "037-1",
+     "w": 277,
+     "h": 124,
+     "src": "assets/lezioni/M08/figure/037-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "math",
+     "v": "t_{ik}=\\sum_{j=1}^{p}z_{ij}v_{jk}.",
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Lo score del campione ",
+      {
+       "t": "m",
+       "v": "i"
+      },
+      " sulla componente ",
+      {
+       "t": "m",
+       "v": "k"
+      },
+      " è una combinazione lineare delle sue otto misure standardizzate."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Una riga di ",
+      {
+       "t": "m",
+       "v": "T"
+      },
+      " identifica una roccia. Una riga di ",
+      {
+       "t": "m",
+       "v": "V"
+      },
+      " riguarda una variabile originaria. Confondere le due matrici cambia il significato del grafico."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "T=UD\\qquad\\text{dalla SVD di }Z.",
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 38,
+   "title": "L’oggetto PCA conserva la trasformazione",
+   "section": "III · GEOMETRIA DELLA PCA",
+   "recall": [
+    "L’oggetto stimato conserva i parametri necessari a trasformare altri campioni."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "038-1",
+     "w": 269,
+     "h": 150,
+     "src": "assets/lezioni/M08/figure/038-1.svg",
+     "ratio": 0.944
+    },
+    {
+     "t": "p",
+     "c": [
+      "Questa è la PCA delle otto proprietà delle rocce. Centratura e standardizzazione sono richieste esplicitamente nella chiamata."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · stimare la PCA",
+     "file": "038_prcomp.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Il campo ",
+      {
+       "t": "c",
+       "v": "sdev"
+      },
+      " contiene le deviazioni standard delle componenti. Le varianze si ottengono elevandole al quadrato."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 39,
+   "title": "Autovalori, SVD e risultato di R",
+   "section": "III · GEOMETRIA DELLA PCA",
+   "recall": [
+    "Le varianze delle componenti si sommano alla varianza totale della matrice analizzata."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "039-1",
+     "w": 269,
+     "h": 147,
+     "src": "assets/lezioni/M08/figure/039-1.svg",
+     "ratio": 0.944
+    },
+    {
+     "t": "p",
+     "c": [
+      "I primi due autovalori sono circa ",
+      {
+       "t": "m",
+       "v": "4{,}406"
+      },
+      " e ",
+      {
+       "t": "m",
+       "v": "2{,}521"
+      },
+      ". La loro somma descrive gran parte della varianza totale, pari a otto."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · confrontare le varianze",
+     "file": "039_autovalori.R",
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "\\operatorname{tr}(S)=\\sum_k\\lambda_k=p=8.",
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 40,
+   "title": "Gli scores sono incorrelati nel campione di stima",
+   "section": "III · GEOMETRIA DELLA PCA",
+   "recall": [
+    "La rotazione principale diagonalizza la covarianza del campione di stima."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "040-1",
+     "w": 277,
+     "h": 145,
+     "src": "assets/lezioni/M08/figure/040-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "math",
+     "v": "\\operatorname{Cov}(T)=V^\\top S V=\\operatorname{diag}(\\lambda_1,\\ldots,\\lambda_p).",
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · verificare la covarianza",
+     "file": "040_scores_covarianza.R",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La proprietà riguarda la matrice usata per stimare gli assi. Un nuovo insieme può mostrare covarianze differenti."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 41,
+   "title": "Incorrelazione e indipendenza",
+   "section": "III · GEOMETRIA DELLA PCA",
+   "recall": [
+    "La covarianza diagonale degli scores non dimostra indipendenza probabilistica."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "041-1",
+     "w": 269,
+     "h": 148,
+     "src": "assets/lezioni/M08/figure/041-1.svg",
+     "ratio": 0.944
+    },
+    {
+     "t": "info",
+     "c": [
+      "Gli stessi punti del codice R mostrano una dipendenza curva con correlazione campionaria nulla."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "Y=X^2,\\qquad X\\text{ simmetrico attorno a }0.",
+     "col": "R"
+    },
+    {
+     "t": "code",
+     "title": "R · riconoscere una dipendenza",
+     "file": "041_dipendenza_curva.R",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Conoscere ",
+      {
+       "t": "m",
+       "v": "X"
+      },
+      " determina ",
+      {
+       "t": "m",
+       "v": "Y"
+      },
+      ", anche se la covarianza è zero. L’indipendenza richiede condizioni ulteriori."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 42,
+   "title": "Il segno di una componente è arbitrario",
+   "section": "III · GEOMETRIA DELLA PCA",
+   "recall": [
+    "Cambiare il segno di un asse non cambia varianze, distanze o ricostruzione."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "042-1",
+     "w": 277,
+     "h": 144,
+     "src": "assets/lezioni/M08/figure/042-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "L’inversione congiunta di direzione e scores lascia invariata la ricostruzione. Un grafico specchiato può rappresentare la stessa PCA."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · invertire asse e coordinate",
+     "file": "042_segno.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Il segno dei coefficienti descrive contrasti fra variabili all’interno della stessa convenzione."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 43,
+   "title": "Autovalori vicini e direzioni poco stabili",
+   "section": "III · GEOMETRIA DELLA PCA",
+   "recall": [
+    "La stabilità di una rappresentazione non si valuta soltanto confrontando il segno dei coefficienti."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "043-1",
+     "w": 277,
+     "h": 144,
+     "src": "assets/lezioni/M08/figure/043-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "Quando due autovalori sono uguali, più basi ortonormali descrivono lo stesso sottospazio. Se sono vicini, piccole perturbazioni possono ruotare gli assi."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\lambda_k\\simeq\\lambda_{k+1}.",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La stabilità del piano può essere maggiore della stabilità dei suoi singoli vettori. Il confronto fra PCA richiede attenzione ai sottospazi e ai segni."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Un nome geologico attribuito a una singola componente va sostenuto dai coefficienti e dalla loro stabilità."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 44,
+   "title": "PCA e regressione minimizzano scarti diversi",
+   "section": "III · GEOMETRIA DELLA PCA",
+   "recall": [
+    "La PCA rappresenta la variabilità congiunta; la regressione ordinaria modella una risposta condizionata."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "044-1",
+     "w": 277,
+     "h": 144,
+     "src": "assets/lezioni/M08/figure/044-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "La regressione ordinaria distingue risposta e predittore. La PCA cerca una rappresentazione della nuvola nella metrica dichiarata."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Regressione lineare semplice"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "\\min_{a,b}\\sum_i(y_i-a-bx_i)^2.",
+     "col": "R"
+    },
+    {
+     "t": "label",
+     "c": [
+      "PCA con una componente"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "\\min_{\\|\\mathbf v\\|=1}\\sum_i\\|\\mathbf z_i-(\\mathbf z_i^\\top\\mathbf v)\\mathbf v\\|^2.",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Le due rette possono differire. Scambiando le coordinate, cambia il problema della regressione ordinaria."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 45,
+   "title": "Quanta varianza conserva ogni componente?",
+   "section": "IV · INTERPRETARE LE COMPONENTI",
+   "recall": [
+    "La varianza spiegata va riferita alla matrice e alla scala effettivamente analizzate."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "045-1",
+     "w": 269,
+     "h": 147,
+     "src": "assets/lezioni/M08/figure/045-1.svg",
+     "ratio": 0.944
+    },
+    {
+     "t": "p",
+     "c": [
+      "Nel caso delle rocce, PC1 conserva il ",
+      {
+       "t": "m",
+       "v": "55{,}1\\%"
+      },
+      " e PC2 il ",
+      {
+       "t": "m",
+       "v": "31{,}5\\%"
+      },
+      " della varianza standardizzata. Le altre sei componenti conservano la parte restante."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "q_k=\\frac{\\lambda_k}{\\sum_\\ell\\lambda_\\ell}.",
+     "col": "R"
+    },
+    {
+     "t": "code",
+     "title": "R · calcolare le quote",
+     "file": "045_quote.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "La percentuale riguarda la matrice trasformata. Una diversa scala delle colonne può cambiare le quote."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 46,
+   "title": "La cumulata orienta la scelta delle dimensioni",
+   "section": "IV · INTERPRETARE LE COMPONENTI",
+   "recall": [
+    "Il numero di componenti si motiva con perdita, leggibilità e scopo dell’analisi."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "046-1",
+     "w": 269,
+     "h": 147,
+     "src": "assets/lezioni/M08/figure/046-1.svg",
+     "ratio": 0.944
+    },
+    {
+     "t": "p",
+     "c": [
+      "Le prime due componenti conservano l’",
+      {
+       "t": "m",
+       "v": "86{,}6\\%"
+      },
+      "; tre arrivano al ",
+      {
+       "t": "m",
+       "v": "92{,}0\\%"
+      },
+      ". Aggiungere componenti riduce la perdita di ricostruzione."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "Q_q=\\sum_{k=1}^{q}q_k.",
+     "col": "R"
+    },
+    {
+     "t": "code",
+     "title": "R · leggere lo spettro",
+     "file": "046_cumulata.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Una soglia percentuale è un criterio di sintesi. La scelta dipende anche dalle proprietà che occorre rappresentare."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 47,
+   "title": "Il piano principale è una proiezione",
+   "section": "IV · INTERPRETARE LE COMPONENTI",
+   "recall": [
+    "La vicinanza nella proiezione non esclude differenze lungo le componenti omesse."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "047-1",
+     "w": 269,
+     "h": 150,
+     "src": "assets/lezioni/M08/figure/047-1.svg",
+     "ratio": 0.944
+    },
+    {
+     "t": "p",
+     "c": [
+      "Due punti vicini in figura possono differire su componenti escluse. La distanza proiettata non può superare quella nello spazio completo."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\sum_{k=1}^{2}(t_{ik}-t_{hk})^2\\leq\\sum_{k=1}^{8}(t_{ik}-t_{hk})^2.",
+     "col": "R"
+    },
+    {
+     "t": "code",
+     "title": "R · confrontare le distanze",
+     "file": "047_distanze_proiezione.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Gli assi riportano le quote di varianza. Nel disegno, un’unità su PC1 ha la stessa lunghezza di un’unità su PC2."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 48,
+   "title": "I coefficienti costruiscono una componente",
+   "section": "IV · INTERPRETARE LE COMPONENTI",
+   "recall": [
+    "I coefficienti si leggono insieme ai valori standardizzati e alla convenzione di segno."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "048-1",
+     "w": 277,
+     "h": 150,
+     "src": "assets/lezioni/M08/figure/048-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "La figura mostra i coefficienti della prima direzione. Segni concordi contribuiscono nello stesso verso; segni opposti definiscono un contrasto."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "t_{i1}=\\sum_j z_{ij}v_{j1},\\qquad\\sum_jv_{j1}^2=1.",
+     "col": "R"
+    },
+    {
+     "t": "code",
+     "title": "R · ricostruire uno score",
+     "file": "048_loadings.R",
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 49,
+   "title": "Coefficienti e correlazioni sono quantità diverse",
+   "section": "IV · INTERPRETARE LE COMPONENTI",
+   "recall": [
+    "La lunghezza di una freccia dipende dalla quantità rappresentata e dalla scala adottata."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "049-1",
+     "w": 277,
+     "h": 124,
+     "src": "assets/lezioni/M08/figure/049-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "math",
+     "v": "\\operatorname{Cor}(Z_j,T_k)=\\sqrt{\\lambda_k}\\,v_{jk}.",
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · ottenere le correlazioni",
+     "file": "049_correlazioni_pc.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Il campo ",
+      {
+       "t": "c",
+       "v": "rotation"
+      },
+      " contiene autovettori unitari. Per il cerchio delle correlazioni occorre includere la scala della componente."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 50,
+   "title": "Il cerchio delle correlazioni descrive le variabili",
+   "section": "IV · INTERPRETARE LE COMPONENTI",
+   "recall": [
+    "Il cerchio riporta correlazioni: non è il grafico dei coefficienti grezzi della rotazione."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "050-1",
+     "w": 277,
+     "h": 148,
+     "src": "assets/lezioni/M08/figure/050-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "Le coordinate delle frecce sono le correlazioni con PC1 e PC2. Una freccia corta può indicare informazione presente soprattutto nelle altre componenti."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "R^2_{j,2}=\\operatorname{Cor}(Z_j,T_1)^2+\\operatorname{Cor}(Z_j,T_2)^2.",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il valore misura quanta varianza della variabile ",
+      {
+       "t": "m",
+       "v": "j"
+      },
+      " è rappresentata nel piano. È compreso fra zero e uno."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Gli angoli approssimano le associazioni fra variabili soltanto nella misura in cui il piano le rappresenta bene."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 51,
+   "title": "Contributo all’asse e qualità di rappresentazione",
+   "section": "IV · INTERPRETARE LE COMPONENTI",
+   "recall": [
+    "Ogni indicatore deve dichiarare che cosa somma e rispetto a quale totale è normalizzato."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "051-1",
+     "w": 277,
+     "h": 141,
+     "src": "assets/lezioni/M08/figure/051-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "I due indicatori rispondono a domande diverse. Un coefficiente elevato su un asse non riassume da solo la rappresentazione totale di una proprietà."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · confrontare due indicatori",
+     "file": "051_qualita.R",
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "\\sum_jv_{jk}^2=1,\\qquad 0\\leq R^2_{j,q}\\leq1.",
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 52,
+   "title": "Un biplot richiede una convenzione di scala",
+   "section": "IV · INTERPRETARE LE COMPONENTI",
+   "recall": [
+    "Punti e frecce nello stesso grafico si interpretano soltanto dopo avere dichiarato la scala del biplot."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "052-1",
+     "w": 277,
+     "h": 124,
+     "src": "assets/lezioni/M08/figure/052-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "math",
+     "v": "\\widehat z_{ij}^{(2)}=\\mathbf t_{i,1:2}^\\top\\mathbf v_{j,1:2}.",
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il prodotto scalare fra un punto e il vettore di una variabile ricostruisce un valore standardizzato approssimato."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Questa convenzione usa gli scores e i coefficienti. Le frecce del cerchio delle correlazioni hanno una scala diversa."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Moltiplicare i marcatori delle righe per una costante e dividere quelli delle colonne per la stessa costante conserva i prodotti, ma cambia il disegno."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 53,
+   "title": "Ricostruire le otto variabili con due componenti",
+   "section": "IV · INTERPRETARE LE COMPONENTI",
+   "recall": [
+    "La riduzione a due componenti approssima tutte le colonne e conserva un errore misurabile."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "053-1",
+     "w": 269,
+     "h": 150,
+     "src": "assets/lezioni/M08/figure/053-1.svg",
+     "ratio": 0.944
+    },
+    {
+     "t": "p",
+     "c": [
+      "Ogni punto confronta un valore standardizzato con la sua ricostruzione. La diagonale corrisponde a una ricostruzione esatta."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\widehat Z_2=T_2V_2^\\top.",
+     "col": "R"
+    },
+    {
+     "t": "code",
+     "title": "R · ricostruire la matrice",
+     "file": "053_ricostruzione.R",
+     "col": "R"
+    },
+    {
+     "t": "lab",
+     "url": "https://marzione00.github.io/Lab_Geo/#laboratorio/m08-pca-ricostruzione",
+     "c": [
+      "Esperimento · ricostruzione"
+     ],
+     "col": "R",
+     "lab": "m08-pca-ricostruzione"
+    }
+   ]
+  },
+  {
+   "page": 54,
+   "title": "Gli autovalori omessi misurano la perdita",
+   "section": "IV · INTERPRETARE LE COMPONENTI",
+   "recall": [
+    "La perdita di ricostruzione e la varianza esclusa sono due letture della stessa quantità."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "054-1",
+     "w": 269,
+     "h": 147,
+     "src": "assets/lezioni/M08/figure/054-1.svg",
+     "ratio": 0.944
+    },
+    {
+     "t": "p",
+     "c": [
+      "Le sei componenti escluse conservano il ",
+      {
+       "t": "m",
+       "v": "13{,}4\\%"
+      },
+      " della varianza. L’errore quadratico totale della ricostruzione è circa ",
+      {
+       "t": "m",
+       "v": "95{,}51"
+      },
+      "."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\|Z-\\widehat Z_q\\|_F^2=(n-1)\\sum_{k>q}\\lambda_k.",
+     "col": "R"
+    },
+    {
+     "t": "code",
+     "title": "R · verificare la perdita",
+     "file": "054_errore_ricostruzione.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "La norma di Frobenius al quadrato somma i quadrati di tutti gli elementi della matrice."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 55,
+   "title": "Ritornare alle unità originali",
+   "section": "IV · INTERPRETARE LE COMPONENTI",
+   "recall": [
+    "Una ricostruzione va controllata nelle unità e nel dominio fisico delle variabili."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "055-1",
+     "w": 277,
+     "h": 124,
+     "src": "assets/lezioni/M08/figure/055-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "L’errore torna nelle unità della proprietà. Una buona ricostruzione standardizzata può avere rilevanza diversa per densità e concentrazione."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · invertire la trasformazione",
+     "file": "055_unita_originali.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "La ricostruzione lineare non impone vincoli fisici come positività o limiti di concentrazione."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 56,
+   "title": "Il numero di componenti dipende dallo scopo",
+   "section": "IV · INTERPRETARE LE COMPONENTI",
+   "recall": [
+    "Due componenti possono bastare per una figura e non bastare per ogni analisi successiva."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "056-1",
+     "w": 277,
+     "h": 135,
+     "src": "assets/lezioni/M08/figure/056-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "Una componente di varianza ridotta può contenere un contrasto scientificamente utile. La percentuale totale non ne misura automaticamente l’importanza."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · confrontare più dimensioni",
+     "file": "056_dimensioni.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Se si costruiscono i cluster su poche PC, si modifica la distanza eliminando le direzioni omesse. La scelta deve essere esplicita."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 57,
+   "title": "Proiettare nuovi dati con gli assi già stimati",
+   "section": "IV · INTERPRETARE LE COMPONENTI",
+   "recall": [
+    "La rappresentazione dei nuovi campioni usa i parametri dell’oggetto stimato."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "057-1",
+     "w": 269,
+     "h": 150,
+     "src": "assets/lezioni/M08/figure/057-1.svg",
+     "ratio": 0.944
+    },
+    {
+     "t": "p",
+     "c": [
+      "Le nuove righe usano medie, scale e rotazione dell’oggetto PCA. Le colonne devono corrispondere alle variabili della stima."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · applicare la trasformazione",
+     "file": "057_predict_pca.R",
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "T_{\\rm nuovo}=Z_{\\rm nuovo}V.",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Ristimare la PCA sull’insieme ampliato cambia il riferimento. Proiettare e ristimare sono operazioni distinte."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 58,
+   "title": "Una partizione dei campioni",
+   "section": "VI · K-MEANS",
+   "recall": [
+    "Una partizione dipende dalla rappresentazione dei campioni e dal criterio di somiglianza adottato."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Campioni assegnati a gruppi"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "058-1",
+     "w": 277,
+     "h": 133,
+     "src": "assets/lezioni/M08/figure/058-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "Una partizione assegna ogni campione a un solo gruppo. Le proprietà scelte e la distanza definiscono quali osservazioni vengono considerate vicine."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\mathcal C=\\{C_1,\\ldots,C_k\\},\\qquad \\bigcup_g C_g=\\{1,\\ldots,n\\}",
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "C_g\\cap C_h=\\varnothing\\quad(g\\ne h)",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "In K-means si fissa ",
+      {
+       "t": "m",
+       "v": "k"
+      },
+      " e si cercano gruppi compatti rispetto alla distanza euclidea al quadrato."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Il caso delle rocce usa 90 righe e otto variabili standardizzate. L’etichetta litologica generatrice resta esclusa."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 59,
+   "title": "La dispersione entro i gruppi",
+   "section": "VI · K-MEANS",
+   "recall": [
+    "K-means cerca una partizione con piccola dispersione quadratica rispetto ai centroidi."
+   ],
+   "items": [
+    {
+     "t": "math",
+     "v": "W(\\mathcal C)=\\sum_{g=1}^{k}\\sum_{i\\in C_g} \\|\\mathbf z_i-\\boldsymbol\\mu_g\\|^2",
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "059-1",
+     "w": 277,
+     "h": 133,
+     "src": "assets/lezioni/M08/figure/059-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "small",
+     "c": [
+      "Ogni segmento contribuisce con il quadrato della propria lunghezza. ",
+      {
+       "t": "m",
+       "v": "\\mathbf z_i"
+      },
+      " è il vettore delle misure; ",
+      {
+       "t": "m",
+       "v": "\\boldsymbol\\mu_g"
+      },
+      " è il centroide."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · calcolare la WSS",
+     "file": "059_obiettivo.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      {
+       "t": "c",
+       "v": "rowsum()"
+      },
+      " somma le righe di ciascun gruppo. Qui ogni gruppo ha tre osservazioni, quindi dividiamo per tre."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "WSS indica la somma quadratica entro i gruppi. Il suo valore dipende dalla scala delle variabili."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 60,
+   "title": "Perché il centroide è una media",
+   "section": "VI · K-MEANS",
+   "recall": [
+    "A parità di appartenenze, il centro che minimizza la WSS è la media delle coordinate del gruppo."
+   ],
+   "items": [
+    {
+     "t": "math",
+     "v": "\\boldsymbol\\mu_g=\\frac{1}{n_g} \\sum_{i\\in C_g}\\mathbf z_i",
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "060-1",
+     "w": 270,
+     "h": 111,
+     "src": "assets/lezioni/M08/figure/060-1.svg",
+     "ratio": 0.948
+    },
+    {
+     "t": "math",
+     "v": "\\begin{aligned} \\sum_{i\\in C_g}\\|\\mathbf z_i-\\mathbf c\\|^2 &=\\sum_{i\\in C_g}\\|\\mathbf z_i-\\boldsymbol\\mu_g\\|^2\\\\ &\\quad+n_g\\|\\mathbf c-\\boldsymbol\\mu_g\\|^2 \\end{aligned}",
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · confrontare due centri",
+     "file": "060_centroide.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "L’ultimo termine della scomposizione è non negativo e si annulla nel centroide. La media minimizza quindi la somma quadratica per un gruppo fissato."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 61,
+   "title": "L’assegnazione al centro più vicino",
+   "section": "VI · K-MEANS",
+   "recall": [
+    "L’appartenenza dipende dalla posizione del campione rispetto a tutti i centroidi."
+   ],
+   "items": [
+    {
+     "t": "math",
+     "v": "g_i\\leftarrow\\arg\\min_g \\|\\mathbf z_i-\\boldsymbol\\mu_g\\|^2",
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "061-1",
+     "w": 277,
+     "h": 133,
+     "src": "assets/lezioni/M08/figure/061-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "small",
+     "c": [
+      "Con centri fissati, ogni osservazione sceglie il contributo minore alla WSS. I confini fra due centri sono i luoghi dei punti equidistanti."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · confrontare le distanze",
+     "file": "061_assegnazione.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      {
+       "t": "c",
+       "v": "max.col(-dist261)"
+      },
+      " seleziona la colonna con distanza minima. La regola per le parità viene dichiarata esplicitamente."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 62,
+   "title": "L’aggiornamento dei centroidi",
+   "section": "VI · K-MEANS",
+   "recall": [
+    "Assegnazione e aggiornamento risolvono due problemi condizionati l’uno al risultato dell’altro."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Le appartenenze sono momentaneamente fissate"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "062-1",
+     "w": 277,
+     "h": 133,
+     "src": "assets/lezioni/M08/figure/062-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "Dopo l’assegnazione, ogni centro viene spostato nella media del proprio gruppo. Questo passaggio riduce o conserva la WSS per le appartenenze correnti."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · ricalcolare i centri",
+     "file": "062_aggiornamento.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Lo schema ha due gruppi non vuoti. Un’implementazione generale deve anche specificare come gestire un gruppo rimasto senza osservazioni."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 63,
+   "title": "Le iterazioni di Lloyd",
+   "section": "VI · K-MEANS",
+   "recall": [
+    "L’algoritmo illustrato e l’implementazione utilizzata devono essere identificati separatamente."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "063-1",
+     "w": 273,
+     "h": 128,
+     "src": "assets/lezioni/M08/figure/063-1.svg",
+     "ratio": 0.958
+    },
+    {
+     "t": "lab",
+     "url": "https://marzione00.github.io/Lab_Geo/#laboratorio/m08-kmeans",
+     "c": [
+      "Esperimento · iterazioni di K-means"
+     ],
+     "col": "L",
+     "lab": "m08-kmeans"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La procedura alternata rende visibile la ricerca. R usa per impostazione predefinita Hartigan–Wong; ",
+      {
+       "t": "c",
+       "v": "algorithm=\"Lloyd\""
+      },
+      " richiede invece questa variante."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · cinque passi sullo schema",
+     "file": "063_iterazioni.R",
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 64,
+   "title": "Inizializzazione e minimi locali",
+   "section": "VI · K-MEANS",
+   "recall": [
+    "Riproducibilità dell’esecuzione e ottimalità della partizione sono proprietà differenti."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Schema della funzione obiettivo"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "064-1",
+     "w": 273,
+     "h": 126,
+     "src": "assets/lezioni/M08/figure/064-1.svg",
+     "ratio": 0.958
+    },
+    {
+     "t": "p",
+     "c": [
+      "La discesa della WSS non garantisce il minimo globale. Più avvii aumentano le possibilità di trovare una soluzione migliore, senza costituire una dimostrazione di ottimalità."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · confrontare gli avvii",
+     "file": "064_avvii.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      {
+       "t": "c",
+       "v": "set.seed()"
+      },
+      " rende ripetibile la sequenza casuale. ",
+      {
+       "t": "c",
+       "v": "nstart"
+      },
+      " cambia il numero di inizializzazioni tentate."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 65,
+   "title": "K-means sulle 90 rocce",
+   "section": "VI · K-MEANS",
+   "recall": [
+    "La figura è bidimensionale; la funzione obiettivo considera tutte le coordinate della matrice Z."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "La partizione viene stimata in otto dimensioni"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "065-1",
+     "w": 269,
+     "h": 141,
+     "src": "assets/lezioni/M08/figure/065-1.svg",
+     "ratio": 0.944
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il grafico mostra le prime due componenti; il calcolo usa tutte le otto variabili standardizzate. I tre colori indicano le etichette numeriche di K-means."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · il modello di riferimento",
+     "file": "065_kmeans.R",
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "n_1=n_2=n_3=30,\\qquad W=129{,}50",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Qui studiamo la soluzione con ",
+      {
+       "t": "m",
+       "v": "k=3"
+      },
+      ". Le slide successive confrontano diversi valori di ",
+      {
+       "t": "m",
+       "v": "k"
+      },
+      "."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 66,
+   "title": "Controllare la funzione obiettivo",
+   "section": "VI · K-MEANS",
+   "recall": [
+    "Una quantità calcolata automaticamente diventa leggibile quando se ne ricostruisce la definizione."
+   ],
+   "items": [
+    {
+     "t": "math",
+     "v": "d_i^2=\\sum_{j=1}^{8}(z_{ij}-\\mu_{g_i j})^2, \\qquad W=\\sum_{i=1}^{90}d_i^2",
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "066-1",
+     "w": 273,
+     "h": 109,
+     "src": "assets/lezioni/M08/figure/066-1.svg",
+     "ratio": 0.958
+    },
+    {
+     "t": "p",
+     "c": [
+      "La verifica riproduce la quantità restituita da R usando le assegnazioni e i centroidi effettivi. Non dipende dalla proiezione mostrata in figura."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · ricostruire la WSS",
+     "file": "066_controllo_wss.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "L’indicizzazione ",
+      {
+       "t": "c",
+       "v": "km\\$centers[km\\$cluster, ]"
+      },
+      " associa a ogni campione il centroide del suo gruppo."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 67,
+   "title": "Dispersione totale, entro e fra gruppi",
+   "section": "VI · K-MEANS",
+   "recall": [
+    "La separazione fra i centroidi e la dispersione entro i gruppi compongono la variabilità totale."
+   ],
+   "items": [
+    {
+     "t": "math",
+     "v": "T=\\sum_i\\|\\mathbf z_i-\\bar{\\mathbf z}\\|^2=W+B",
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "B=\\sum_g n_g\\|\\boldsymbol\\mu_g-\\bar{\\mathbf z}\\|^2",
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "067-1",
+     "w": 273,
+     "h": 93,
+     "src": "assets/lezioni/M08/figure/067-1.svg",
+     "ratio": 0.958
+    },
+    {
+     "t": "p",
+     "c": [
+      "La matrice standardizzata ha media zero e otto varianze campionarie unitarie. La decomposizione confronta punti, centroidi e media generale."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · verificare T = W + B",
+     "file": "067_scomposizione.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Una grande quota fra gruppi descrive la partizione costruita. Non è una prova esterna dell’esistenza di tre litologie naturali."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 68,
+   "title": "I centroidi nelle unità originali",
+   "section": "VI · K-MEANS",
+   "recall": [
+    "L’interpretazione scientifica richiede le unità, le definizioni delle variabili e le distribuzioni entro i gruppi."
+   ],
+   "items": [
+    {
+     "t": "math",
+     "v": "\\bar x_{gj}=\\bar x_j+s_j\\,\\mu_{gj}",
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "068-1",
+     "w": 273,
+     "h": 117,
+     "src": "assets/lezioni/M08/figure/068-1.svg",
+     "ratio": 0.958
+    },
+    {
+     "t": "p",
+     "c": [
+      "Un centroide standardizzato misura uno scarto relativo. Tornare alle unità originali permette di descrivere quantitativamente i campioni del gruppo."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · recuperare la scala",
+     "file": "068_profili.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "I numeri sono medie dei dati sintetici. Non rappresentano criteri universali di classificazione petrografica."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 69,
+   "title": "Il piano PCA e lo spazio del clustering",
+   "section": "VI · K-MEANS",
+   "recall": [
+    "Una proiezione visualizza la partizione senza riprodurre necessariamente tutte le distanze usate per stimarla."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "La figura conserva l’86,59% della varianza"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "069-1",
+     "w": 269,
+     "h": 141,
+     "src": "assets/lezioni/M08/figure/069-1.svg",
+     "ratio": 0.944
+    },
+    {
+     "t": "math",
+     "v": "\\sum_{r=1}^{2}(t_{ir}-t_{hr})^2 \\leq\\sum_{r=1}^{8}(t_{ir}-t_{hr})^2",
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · mostrare i gruppi",
+     "file": "069_piano_pca.R",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Due punti vicini nel piano possono differire nelle componenti omesse. Il colore deriva dal modello calcolato sulle otto variabili."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "La quota di varianza sul grafico riguarda la PCA, non l’accuratezza della classificazione."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 70,
+   "title": "Tutte le componenti conservano le distanze",
+   "section": "VI · K-MEANS",
+   "recall": [
+    "Ruotare tutte le coordinate conserva la distanza euclidea; eliminarne o ridimensionarne alcune la modifica."
+   ],
+   "items": [
+    {
+     "t": "math",
+     "v": "\\|\\mathbf z_i-\\mathbf z_h\\|^2 =\\|\\mathbf t_i-\\mathbf t_h\\|^2",
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "070-1",
+     "w": 273,
+     "h": 114,
+     "src": "assets/lezioni/M08/figure/070-1.svg",
+     "ratio": 0.958
+    },
+    {
+     "t": "small",
+     "c": [
+      "La rotazione ortogonale conserva lunghezze e WSS per una data partizione. Troncamento e riscalatura delle PC cambiano invece la geometria."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · verificare le distanze",
+     "file": "070_distanze_pc.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Le due figure sono uno schema di isometria. Differenze di minimi locali o inizializzazione possono comunque dare esiti diversi in una ricerca numerica."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 71,
+   "title": "La selezione delle variabili pesa sul risultato",
+   "section": "VI · K-MEANS",
+   "recall": [
+    "La stabilità rispetto alle variabili utilizzate è una proprietà da valutare sul problema concreto."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "071-1",
+     "w": 273,
+     "h": 123,
+     "src": "assets/lezioni/M08/figure/071-1.svg",
+     "ratio": 0.958
+    },
+    {
+     "t": "p",
+     "c": [
+      "Una selezione diversa definisce una diversa nozione di somiglianza. Anche duplicare una colonna ne aumenta il peso implicito nella distanza."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · un’analisi di sensibilità",
+     "file": "071_variabili.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Nel dataset sintetico il confronto conserva le appartenenze per queste impostazioni. Il risultato va controllato, non assunto in generale."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 72,
+   "title": "La forma dei gruppi e i campioni estremi",
+   "section": "VI · K-MEANS",
+   "recall": [
+    "Il criterio di compattezza deve essere compatibile con la struttura che si vuole descrivere."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "072-1",
+     "w": 273,
+     "h": 126,
+     "src": "assets/lezioni/M08/figure/072-1.svg",
+     "ratio": 0.958
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il contributo alla WSS cresce con il quadrato della distanza. La funzione obiettivo attribuisce quindi grande peso agli scarti elevati. Gruppi allungati, densità molto diverse e osservazioni estreme possono richiedere una rappresentazione o un criterio differente."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\|\\mathbf z_i-\\boldsymbol\\mu_g\\|^2",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Prima di interpretare un gruppo piccolo, occorre controllare le sue osservazioni e il processo di misura. Un campione insolito può essere informativo oppure problematico."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Il disegno illustra condizioni possibili. Non è un risultato ricavato dalle 90 rocce del laboratorio."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 73,
+   "title": "Il numero dei gruppi è una scelta da motivare",
+   "section": "VII · NUMERO DEI GRUPPI",
+   "recall": [
+    "Il numero dei cluster deve rispondere alla domanda scientifica e a confronti espliciti fra alternative."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "073-1",
+     "w": 273,
+     "h": 123,
+     "src": "assets/lezioni/M08/figure/073-1.svg",
+     "ratio": 0.958
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il numero di categorie nel simulatore non deve fissare la risposta dell’analisi esplorativa. La scelta di ",
+      {
+       "t": "m",
+       "v": "k"
+      },
+      " va documentata sulla matrice dichiarata."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Tre elementi del confronto"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La WSS misura la dispersione interna. La silhouette confronta coesione e separazione. I profili descrivono il significato delle differenze."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Nel caso guida verranno confrontati ",
+      {
+       "t": "m",
+       "v": "k=2,\\ldots,7"
+      },
+      " sulle stesse otto variabili e con la stessa standardizzazione."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "L’etichetta generatrice sarà consultata successivamente, come informazione sulla simulazione."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 74,
+   "title": "La WSS e il numero dei gruppi",
+   "section": "VII · NUMERO DEI GRUPPI",
+   "recall": [
+    "Ridurre la WSS aumentando k è atteso: il guadagno va confrontato con la maggiore complessità."
+   ],
+   "items": [
+    {
+     "t": "math",
+     "v": "W^*_{k+1}\\leq W^*_k,\\qquad W^*_n=0",
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "074-1",
+     "w": 273,
+     "h": 106,
+     "src": "assets/lezioni/M08/figure/074-1.svg",
+     "ratio": 0.958
+    },
+    {
+     "t": "p",
+     "c": [
+      "La proprietà riguarda l’ottimo globale ",
+      {
+       "t": "m",
+       "v": "W^*_k"
+      },
+      ". La WSS trovata da un algoritmo con pochi avvii può non rispettare la monotonia a causa di minimi locali."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · un esempio di suddivisione",
+     "file": "074_suddivisione.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Con un gruppo per osservazione ogni campione coincide con il proprio centroide e la WSS è nulla. Questo estremo non offre una sintesi utile."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 75,
+   "title": "La curva della WSS nelle rocce sintetiche",
+   "section": "VII · NUMERO DEI GRUPPI",
+   "recall": [
+    "La curva della WSS mostra il guadagno di compattezza ottenuto aggiungendo gruppi."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Confronto effettivo da k = 2 a k = 7"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "075-1",
+     "w": 269,
+     "h": 144,
+     "src": "assets/lezioni/M08/figure/075-1.svg",
+     "ratio": 0.944
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il passaggio da due a tre gruppi riduce fortemente la WSS. Le riduzioni successive sono più piccole. La forma della curva suggerisce un’alternativa da approfondire."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · confrontare le soluzioni",
+     "file": "075_confronto_k.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Il cosiddetto gomito può essere ambiguo o assente. Non costituisce una regola universale per scegliere ",
+      {
+       "t": "m",
+       "v": "k"
+      },
+      "."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 76,
+   "title": "Coesione e separazione di un campione",
+   "section": "VII · NUMERO DEI GRUPPI",
+   "recall": [
+    "La silhouette confronta distanze medie tra osservazioni; non utilizza la sola distanza dai centroidi."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "076-1",
+     "w": 273,
+     "h": 131,
+     "src": "assets/lezioni/M08/figure/076-1.svg",
+     "ratio": 0.958
+    },
+    {
+     "t": "small",
+     "c": [
+      {
+       "t": "m",
+       "v": "b_i"
+      },
+      " è la minima fra le distanze medie verso ciascun altro gruppo. Non è la distanza dal singolo punto esterno più vicino. Schema con due gruppi."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · a e b per il campione R001",
+     "file": "076_coesione_separazione.R",
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 77,
+   "title": "La larghezza silhouette",
+   "section": "VII · NUMERO DEI GRUPPI",
+   "recall": [
+    "Una silhouette misura quanto un’assegnazione sia coerente con le distanze, non la verità geologica del gruppo."
+   ],
+   "items": [
+    {
+     "t": "math",
+     "v": "s_i=\\frac{b_i-a_i}{\\max(a_i,b_i)},\\qquad -1\\leq s_i\\leq1",
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "077-1",
+     "w": 273,
+     "h": 97,
+     "src": "assets/lezioni/M08/figure/077-1.svg",
+     "ratio": 0.958
+    },
+    {
+     "t": "p",
+     "c": [
+      "Una silhouette negativa segnala un’assegnazione poco convincente rispetto alla distanza scelta. Per un gruppo con un solo membro si adotta la convenzione ",
+      {
+       "t": "m",
+       "v": "s_i=0"
+      },
+      "."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · dalla definizione al vettore",
+     "file": "077_silhouette.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "La funzione del progetto gestisce anche il caso ",
+      {
+       "t": "m",
+       "v": "a_i=b_i=0"
+      },
+      ", restituendo zero. Il risultato resta un indice geometrico."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 78,
+   "title": "Le silhouette dei singoli campioni",
+   "section": "VII · NUMERO DEI GRUPPI",
+   "recall": [
+    "La silhouette media riassume la partizione; i valori individuali mostrano dove l’assegnazione è meno netta."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Partizione K-means con k = 3"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "078-1",
+     "w": 274,
+     "h": 144,
+     "src": "assets/lezioni/M08/figure/078-1.svg",
+     "ratio": 0.962
+    },
+    {
+     "t": "p",
+     "c": [
+      "Tutte le silhouette sono positive; la più piccola è circa 0,345. La figura permette di distinguere osservazioni meno separate anche quando la media è elevata."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · guardare anche la distribuzione",
+     "file": "078_silhouette_grafico.R",
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "\\bar s=0{,}626,\\qquad \\min s_i=0{,}345",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "La posizione orizzontale ordina i campioni per gruppo e silhouette. Non rappresenta una coordinata geografica."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 79,
+   "title": "Confrontare la silhouette media",
+   "section": "VII · NUMERO DEI GRUPPI",
+   "recall": [
+    "Un massimo della silhouette individua una soluzione preferibile rispetto alle alternative effettivamente confrontate."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Le stesse distanze per le sei partizioni"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "079-1",
+     "w": 269,
+     "h": 144,
+     "src": "assets/lezioni/M08/figure/079-1.svg",
+     "ratio": 0.944
+    },
+    {
+     "t": "lab",
+     "url": "https://marzione00.github.io/Lab_Geo/#laboratorio/m08-silhouette",
+     "c": [
+      "Esperimento · numero dei gruppi e silhouette"
+     ],
+     "col": "L",
+     "lab": "m08-silhouette"
+    },
+    {
+     "t": "code",
+     "title": "R · confronto fra k",
+     "file": "079_silhouette_k.R",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Tra le alternative esplorate, ",
+      {
+       "t": "m",
+       "v": "k=3"
+      },
+      " ha la silhouette media più elevata. Qui WSS e silhouette indicano la stessa soluzione."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "La preferenza vale per queste variabili, questa scala e queste soluzioni numeriche."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 80,
+   "title": "Che cosa aggiunge un quarto gruppo",
+   "section": "VII · NUMERO DEI GRUPPI",
+   "recall": [
+    "Aumentare k richiede di spiegare quali differenze aggiuntive vengano rappresentate."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "080-1",
+     "w": 273,
+     "h": 110,
+     "src": "assets/lezioni/M08/figure/080-1.svg",
+     "ratio": 0.958
+    },
+    {
+     "t": "p",
+     "c": [
+      "Si controllano dimensioni, profili e corrispondenze dei gruppi. Una nuova classe può descrivere una differenza interna oppure riflettere pochi campioni particolari."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · esaminare k = 4",
+     "file": "080_quattro_gruppi.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "La tabella di contingenza mostra come cambiano le appartenenze. K-means con ",
+      {
+       "t": "m",
+       "v": "k+1"
+      },
+      " può anche riassegnare campioni fra più gruppi."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 81,
+   "title": "Una scelta sostenuta da più controlli",
+   "section": "VII · NUMERO DEI GRUPPI",
+   "recall": [
+    "La scelta di k va motivata mostrando alternative e conseguenze, non soltanto un valore ottimo."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "081-1",
+     "w": 273,
+     "h": 120,
+     "src": "assets/lezioni/M08/figure/081-1.svg",
+     "ratio": 0.958
+    },
+    {
+     "t": "p",
+     "c": [
+      "Nessun indicatore esaurisce la decisione. Una separazione numerica deve restare leggibile nelle misure e sufficientemente stabile alle scelte dell’analisi."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · una tabella di confronto",
+     "file": "081_riepilogo.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Il massimo della silhouette è un criterio esplicito. Il confronto con WSS, numerosità e profili ne rende visibili le conseguenze."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 82,
+   "title": "La scelta nel caso sintetico",
+   "section": "VII · NUMERO DEI GRUPPI",
+   "recall": [
+    "Le evidenze interne sostengono una soluzione esplorativa sul campione; la validazione geologica richiede altro contesto."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "082-1",
+     "w": 273,
+     "h": 110,
+     "src": "assets/lezioni/M08/figure/082-1.svg",
+     "ratio": 0.958
+    },
+    {
+     "t": "p",
+     "c": [
+      "La riduzione della WSS e il confronto delle silhouette sostengono la scelta di tre gruppi nel caso guida. Occorre ancora descrivere i profili e valutare la sensibilità."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Una conclusione circoscritta"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Le tre classi rappresentano una sintesi delle 90 rocce simulate nella geometria scelta. L’etichetta del simulatore resta un confronto successivo."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Un dato reale può presentare transizioni continue, gruppi sovrapposti o più scale di organizzazione. Una partizione discreta è una scelta di rappresentazione."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 83,
+   "title": "Una gerarchia di fusioni",
+   "section": "VIII · GERARCHIE DI WARD",
+   "recall": [
+    "Il clustering gerarchico costruisce partizioni annidate attraverso fusioni successive e irreversibili."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "083-1",
+     "w": 273,
+     "h": 137,
+     "src": "assets/lezioni/M08/figure/083-1.svg",
+     "ratio": 0.958
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il metodo agglomerativo parte da un gruppo per campione e fonde due gruppi alla volta. Ogni fusione resta incorporata nelle successive."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "n\\ \\longrightarrow\\ n-1\\ \\longrightarrow\\cdots\\longrightarrow\\ 1",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il criterio di collegamento stabilisce quale fusione eseguire. Il dendrogramma conserva l’ordine e l’altezza delle fusioni."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "L’albero viene costruito prima di scegliere un taglio. Le foglie sono campioni; i nodi interni rappresentano gruppi fusi."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 84,
+   "title": "Il criterio di Ward",
+   "section": "VIII · GERARCHIE DI WARD",
+   "recall": [
+    "Ward minimizza l’incremento della dispersione interna a ogni singola fusione."
+   ],
+   "items": [
+    {
+     "t": "math",
+     "v": "\\Delta W(A,B)=\\frac{n_A n_B}{n_A+n_B} \\|\\bar{\\mathbf z}_A-\\bar{\\mathbf z}_B\\|^2",
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "084-1",
+     "w": 273,
+     "h": 110,
+     "src": "assets/lezioni/M08/figure/084-1.svg",
+     "ratio": 0.958
+    },
+    {
+     "t": "p",
+     "c": [
+      "Ward sceglie la fusione che aumenta meno la WSS. Il costo combina distanza fra centroidi e numerosità dei due gruppi."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "W_{A\\cup B}=W_A+W_B+\\Delta W(A,B)",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Il centroide del gruppo unito è la media ponderata dei due centroidi. La formula vale per la dispersione euclidea quadratica."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Due coppie con la stessa distanza fra centroidi possono avere costi di fusione diversi se cambiano le numerosità."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 85,
+   "title": "Un costo di fusione calcolato a mano",
+   "section": "VIII · GERARCHIE DI WARD",
+   "recall": [
+    "Il costo di Ward è una differenza di WSS, calcolabile anche direttamente sulle osservazioni."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "085-1",
+     "w": 273,
+     "h": 100,
+     "src": "assets/lezioni/M08/figure/085-1.svg",
+     "ratio": 0.958
+    },
+    {
+     "t": "math",
+     "v": "\\Delta W=\\frac{2\\cdot2}{2+2}(1-6)^2=25",
+     "col": "L"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Ogni gruppo ha WSS pari a 2. Il gruppo unito ha WSS pari a 29: l’aumento è 25."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · le due espressioni coincidono",
+     "file": "085_costo_fusione.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Questo piccolo esempio usa una sola coordinata. Nelle rocce si sommano gli scarti quadratici sulle otto coordinate."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 86,
+   "title": "Il dendrogramma delle 90 rocce",
+   "section": "VIII · GERARCHIE DI WARD",
+   "recall": [
+    "Il dendrogramma va letto attraverso i nodi e le loro altezze, non attraverso la distanza orizzontale delle foglie."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Gerarchia effettiva sulle otto variabili"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "086-1",
+     "w": 277,
+     "h": 152,
+     "src": "assets/lezioni/M08/figure/086-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "small",
+     "c": [
+      "Le foglie sono ordinate per disegnare l’albero senza incroci. L’asse orizzontale non rappresenta una distanza metrica tra campioni."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · costruire la gerarchia",
+     "file": "086_ward.R",
+     "col": "R"
+    },
+    {
+     "t": "lab",
+     "url": "https://marzione00.github.io/Lab_Geo/#laboratorio/m08-ward",
+     "c": [
+      "Esperimento · gerarchie e Ward"
+     ],
+     "col": "R",
+     "lab": "m08-ward"
+    },
+    {
+     "t": "small",
+     "c": [
+      {
+       "t": "c",
+       "v": "ward.D2"
+      },
+      " richiede distanze euclidee ordinarie e le eleva al quadrato durante gli aggiornamenti. ",
+      {
+       "t": "c",
+       "v": "h\\$merge"
+      },
+      " conserva le fusioni. Gli indici negativi indicano foglie; quelli positivi rinviano a fusioni precedenti."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 87,
+   "title": "La convenzione delle altezze Ward.D2",
+   "section": "VIII · GERARCHIE DI WARD",
+   "recall": [
+    "Le altezze di un dendrogramma dipendono dal metodo e dalla convenzione dell’implementazione."
+   ],
+   "items": [
+    {
+     "t": "math",
+     "v": "h_r=\\sqrt{2\\,\\Delta W_r},\\qquad \\Delta W_r=\\frac{h_r^2}{2}",
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "087-1",
+     "w": 273,
+     "h": 113,
+     "src": "assets/lezioni/M08/figure/087-1.svg",
+     "ratio": 0.958
+    },
+    {
+     "t": "p",
+     "c": [
+      "La relazione vale per ",
+      {
+       "t": "c",
+       "v": "hclust(dist(Z), method=\"ward.D2\")"
+      },
+      ". L’altezza restituita da R non coincide direttamente con l’incremento della WSS."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · controllare la prima fusione",
+     "file": "087_altezza.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Per due singoli campioni, ",
+      {
+       "t": "m",
+       "v": "n_A=n_B=1"
+      },
+      ": il costo è metà della distanza euclidea al quadrato. Il progetto verifica la relazione anche sulle fusioni successive."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 88,
+   "title": "Tagliare la gerarchia in tre gruppi",
+   "section": "VIII · GERARCHIE DI WARD",
+   "recall": [
+    "Il taglio sceglie una risoluzione dell’albero già costruito, senza ricalcolare tutte le fusioni."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Una partizione ottenuta dall’albero"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "088-1",
+     "w": 277,
+     "h": 152,
+     "src": "assets/lezioni/M08/figure/088-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "Un taglio orizzontale identifica i rami che rimangono separati. ",
+      {
+       "t": "c",
+       "v": "cutree()"
+      },
+      " restituisce l’appartenenza di ogni osservazione nell’ordine originale dei dati."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · ottenere le appartenenze",
+     "file": "088_taglio.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Passare da tre a quattro gruppi taglia un ramo della stessa gerarchia. Le partizioni sono annidate, a differenza di fit K-means indipendenti."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 89,
+   "title": "Ruotare i rami non cambia la gerarchia",
+   "section": "VIII · GERARCHIE DI WARD",
+   "recall": [
+    "Una gerarchia è definita dalle relazioni di inclusione dei gruppi, non dall’ordine sinistra-destra delle etichette."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "089-1",
+     "w": 273,
+     "h": 121,
+     "src": "assets/lezioni/M08/figure/089-1.svg",
+     "ratio": 0.958
+    },
+    {
+     "t": "p",
+     "c": [
+      "Scambiare i due figli di un nodo modifica l’ordine grafico senza cambiare i gruppi rappresentati. La vicinanza delle etichette sulla pagina non è una distanza geologica."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Che cosa resta invariato"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Rimangono gli insiemi di campioni riuniti da ogni nodo e le altezze delle fusioni. Cambia soltanto il loro ordine di disegno."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Il diagramma è uno schema di quattro campioni. L’asse orizzontale serve a disporre le foglie e non ha unità fisiche."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 90,
+   "title": "Confrontare Ward e K-means",
+   "section": "VIII · GERARCHIE DI WARD",
+   "recall": [
+    "Le etichette dei cluster sono arbitrarie: il confronto riguarda quali campioni vengono raggruppati insieme."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "090-1",
+     "w": 273,
+     "h": 126,
+     "src": "assets/lezioni/M08/figure/090-1.svg",
+     "ratio": 0.958
+    },
+    {
+     "t": "p",
+     "c": [
+      "Nel caso sintetico le appartenenze coincidono, pur con una permutazione dei numeri. Il gruppo 1 di K-means corrisponde al gruppo 3 di Ward."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · la tabella di contingenza",
+     "file": "090_confronto_ward.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "L’accordo tra due algoritmi usa gli stessi dati. È un controllo di coerenza interna, non un’evidenza geologica indipendente."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 91,
+   "title": "Confrontare le coappartenenze",
+   "section": "VIII · GERARCHIE DI WARD",
+   "recall": [
+    "Un confronto fra partizioni deve restare invariato quando si permutano le etichette dei gruppi."
+   ],
+   "items": [
+    {
+     "t": "math",
+     "v": "A_{ih}=\\mathbf 1\\{g_i=g_h\\},\\qquad i<h",
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "091-1",
+     "w": 273,
+     "h": 114,
+     "src": "assets/lezioni/M08/figure/091-1.svg",
+     "ratio": 0.958
+    },
+    {
+     "t": "p",
+     "c": [
+      "Per ogni coppia si registra se i due campioni appartengono allo stesso gruppo. Questa descrizione elimina la dipendenza dai nomi numerici dei cluster."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · accordo delle coppie",
+     "file": "091_coappartenenza.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Si usa il triangolo superiore per escludere la diagonale e non contare due volte ogni coppia. Il semplice accordo non corregge per il caso."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 92,
+   "title": "Due strategie di ricerca differenti",
+   "section": "VIII · GERARCHIE DI WARD",
+   "recall": [
+    "Un criterio locale di fusione e una ricerca a k fissato possono produrre partizioni differenti."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "092-1",
+     "w": 273,
+     "h": 123,
+     "src": "assets/lezioni/M08/figure/092-1.svg",
+     "ratio": 0.958
+    },
+    {
+     "t": "p",
+     "c": [
+      "Entrambi coinvolgono dispersioni quadratiche, ma esplorano le partizioni in modi diversi. L’accordo osservato sulle rocce sintetiche non è garantito su altri dati."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · confrontare la WSS",
+     "file": "092_wss_ward.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "La partizione di Ward può avere WSS maggiore di una soluzione K-means con lo stesso ",
+      {
+       "t": "m",
+       "v": "k"
+      },
+      ". Ogni fusione è scelta localmente nel percorso gerarchico."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 93,
+   "title": "Dalla concordanza alla robustezza",
+   "section": "VIII · GERARCHIE DI WARD",
+   "recall": [
+    "Concordanza fra metodi e stabilità rispetto ai dati rispondono a domande complementari."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "093-1",
+     "w": 273,
+     "h": 120,
+     "src": "assets/lezioni/M08/figure/093-1.svg",
+     "ratio": 0.958
+    },
+    {
+     "t": "p",
+     "c": [
+      "L’accordo fra Ward e K-means è una prima informazione. Per valutare la robustezza occorre anche modificare aspetti dichiarati dell’analisi e controllare quali campioni cambiano gruppo."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Che cosa resta da esaminare"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "L’inizializzazione riguarda la ricerca numerica. Una perturbazione delle misure riguarda la sensibilità ai dati. Una diversa selezione di colonne riguarda il significato della somiglianza."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "lab",
+     "url": "https://marzione00.github.io/Lab_Geo/#laboratorio/m08-robustezza",
+     "c": [
+      "Esperimento · sensibilità di una partizione"
+     ],
+     "col": "R",
+     "lab": "m08-robustezza"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Le diverse fonti di variazione vanno esaminate separatamente, mantenendo un riferimento riconoscibile."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 94,
+   "title": "Quale stabilità vogliamo verificare?",
+   "section": "VIII · STABILITÀ E INTERPRETAZIONE",
+   "recall": [
+    "La stabilità ha significato rispetto a una perturbazione specificata."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "094-1",
+     "w": 277,
+     "h": 144,
+     "src": "assets/lezioni/M08/figure/094-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "Ripetere l’algoritmo sugli stessi dati esamina una fonte di variabilità. Modificare dati o definizione della distanza ne esamina altre."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Dichiarare che cosa cambia"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Ogni confronto mantiene fisse alcune scelte e ne modifica altre. Il resoconto deve rendere riconoscibile questa distinzione."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Una partizione stabile rispetto agli avvii può essere sensibile alla scelta delle variabili o ai nuovi campioni."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Stabilità numerica, ripetibilità delle misure e plausibilità geologica richiedono verifiche differenti."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 95,
+   "title": "Alcuni avvii si fermano a partizioni peggiori",
+   "section": "VIII · STABILITÀ E INTERPRETAZIONE",
+   "recall": [
+    "Ripetere la ricerca aiuta a distinguere la struttura dei dati da una inizializzazione sfavorevole."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "095-1",
+     "w": 269,
+     "h": 147,
+     "src": "assets/lezioni/M08/figure/095-1.svg",
+     "ratio": 0.944
+    },
+    {
+     "t": "p",
+     "c": [
+      "Trenta avvii singoli sulle stesse rocce producono anche soluzioni con WSS molto più alta. La linea tratteggiata indica la soluzione di riferimento."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · ripetere avvii singoli",
+     "file": "095_avvii.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Gli avvii multipli riducono il rischio di una soluzione sfavorevole. Il minimo trovato rimane un risultato dell’algoritmo."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 96,
+   "title": "Perturbare i valori misura una sensibilità",
+   "section": "VIII · STABILITÀ E INTERPRETAZIONE",
+   "recall": [
+    "Il risultato dipende dall’ampiezza e dal modello della perturbazione adottata."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "096-1",
+     "w": 269,
+     "h": 148,
+     "src": "assets/lezioni/M08/figure/096-1.svg",
+     "ratio": 0.944
+    },
+    {
+     "t": "small",
+     "c": [
+      "Per ogni ampiezza: 20 perturbazioni gaussiane, ",
+      {
+       "t": "m",
+       "v": "k=3"
+      },
+      ", 50 avvii. Il grafico riporta l’accordo medio fra coppie con la partizione di riferimento."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "Z^*=Z+E,\\qquad E_{ij}\\sim N(0,\\sigma^2).",
+     "col": "R"
+    },
+    {
+     "t": "code",
+     "title": "R · costruire una prova",
+     "file": "096_perturbazione.R",
+     "col": "R"
+    },
+    {
+     "t": "lab",
+     "url": "https://marzione00.github.io/Lab_Geo/#laboratorio/m08-robustezza",
+     "c": [
+      "Esperimento · sensibilità"
+     ],
+     "col": "R",
+     "lab": "m08-robustezza"
+    },
+    {
+     "t": "small",
+     "c": [
+      "È una prova convenzionale; il rumore non è stimato da errori strumentali reali."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 97,
+   "title": "Confrontare appartenenze, non numeri di gruppo",
+   "section": "VIII · STABILITÀ E INTERPRETAZIONE",
+   "recall": [
+    "Una permutazione delle etichette conserva la partizione."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "097-1",
+     "w": 277,
+     "h": 141,
+     "src": "assets/lezioni/M08/figure/097-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "math",
+     "v": "A_{ih}=\\mathbf 1\\{g(i)=g(h)\\}.",
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · ignorare i nomi dei gruppi",
+     "file": "097_coappartenenza.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "L’accordo fra coppie conta unioni e separazioni concordi. L’indice di Rand corretto considera anche l’accordo atteso date le dimensioni dei gruppi."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 98,
+   "title": "I sottocampioni cambiano le righe osservate",
+   "section": "VIII · STABILITÀ E INTERPRETAZIONE",
+   "recall": [
+    "La frequenza di coappartenenza va riferita alle occasioni in cui entrambi i campioni erano presenti."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "098-1",
+     "w": 277,
+     "h": 150,
+     "src": "assets/lezioni/M08/figure/098-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "small",
+     "c": [
+      "Quaranta estrazioni di 72 righe su 90, senza reinserimento. Le scale di ",
+      {
+       "t": "m",
+       "v": "Z"
+      },
+      " restano fisse: si esamina la variazione delle righe, non la ristima delle scale."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\widehat P_{ih}=\\frac{\\#\\{\\text{presenti e uniti}\\}}{\\#\\{\\text{entrambi presenti}\\}}.",
+     "col": "R"
+    },
+    {
+     "t": "code",
+     "title": "R · estrarre le righe",
+     "file": "098_sottocampione.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Una coppia mai osservata avrebbe frequenza non definita. Questa frequenza non è una probabilità di verità geologica."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 99,
+   "title": "Cambiare le variabili cambia la domanda",
+   "section": "VIII · STABILITÀ E INTERPRETAZIONE",
+   "recall": [
+    "Una verifica di sensibilità deve riportare anche quando il risultato rimane invariato."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "099-1",
+     "w": 277,
+     "h": 141,
+     "src": "assets/lezioni/M08/figure/099-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "Su questi dati artificiali, i due insiemi di variabili producono la stessa partizione. È un risultato da registrare, senza supporlo valido per altri campioni."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · confrontare due selezioni",
+     "file": "099_variabili.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Qui si confrontano concentrazioni standardizzate. La geometria dei log-rapporti costituisce un’altra scelta di analisi."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 100,
+   "title": "Un campione distante richiede un controllo",
+   "section": "VIII · STABILITÀ E INTERPRETAZIONE",
+   "recall": [
+    "La distanza segnala uno scostamento; la spiegazione richiede il contesto del campione."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "100-1",
+     "w": 269,
+     "h": 150,
+     "src": "assets/lezioni/M08/figure/100-1.svg",
+     "ratio": 0.944
+    },
+    {
+     "t": "p",
+     "c": [
+      "Le distanze dal centro del proprio gruppo ordinano i campioni per scostamento interno. La linea segna il 95° percentile osservato, scelto come soglia esplorativa."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · identificare righe da esaminare",
+     "file": "100_campioni_distanti.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "La soglia non è un test probabilistico e non giustifica una cancellazione automatica. Occorre controllare misure, provenienza e sensibilità della partizione."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 101,
+   "title": "Descrivere i gruppi nelle unità originali",
+   "section": "VIII · STABILITÀ E INTERPRETAZIONE",
+   "recall": [
+    "L’interpretazione deve tornare alle proprietà misurate e alla variabilità dentro ciascun gruppo."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "101-1",
+     "w": 277,
+     "h": 143,
+     "src": "assets/lezioni/M08/figure/101-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "Le medie standardizzate facilitano il confronto dei profili. Tornare alle unità originali permette di discutere l’entità delle differenze."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · riassumere le proprietà",
+     "file": "101_profili_originali.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "La media non descrive la dispersione interna. Due gruppi possono avere profili simili e variabilità differente."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 102,
+   "title": "Confrontare con informazioni esterne",
+   "section": "VIII · STABILITÀ E INTERPRETAZIONE",
+   "recall": [
+    "Recuperare i gruppi costruiti dal simulatore è un controllo del caso didattico."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "102-1",
+     "w": 277,
+     "h": 141,
+     "src": "assets/lezioni/M08/figure/102-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "Nel simulatore conosciamo le etichette che hanno generato i dati. Recuperarle verifica il comportamento sul caso costruito."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · confrontare con il simulatore",
+     "file": "102_generatore.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "L’accordo perfetto ottenuto qui non dimostra una classificazione geologica valida su rocce reali. Servono dati indipendenti e un contesto osservativo."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 103,
+   "title": "Il nome geologico viene dopo le evidenze",
+   "section": "VIII · STABILITÀ E INTERPRETAZIONE",
+   "recall": [
+    "La separazione geometrica sostiene una descrizione; la spiegazione geologica richiede altre evidenze."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "103-1",
+     "w": 269,
+     "h": 150,
+     "src": "assets/lezioni/M08/figure/103-1.svg",
+     "ratio": 0.944
+    },
+    {
+     "t": "small",
+     "c": [
+      "I tre gruppi colorati usano gli otto z-score; la figura ne mostra due componenti. I nomi geologici non sono coordinate dell’algoritmo."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Una partizione raggruppa somiglianze rispetto alla metrica adottata. Una spiegazione geologica deve collegarle a processi, materiali e osservazioni pertinenti."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Nel dataset, colore e fossili sono indici sintetici convenzionali. Una loro differenza numerica non autorizza da sola una diagnosi petrografica."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Provenienza, unità, variabili escluse e disegno di campionamento delimitano ciò che il risultato può sostenere."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 104,
+   "title": "Dalla matrice ai risultati",
+   "section": "IX · UN’ANALISI COMPLETA",
+   "recall": [
+    "La sequenza delle trasformazioni deve permettere di ricostruire la distanza usata da ciascun metodo."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "104-1",
+     "w": 277,
+     "h": 148,
+     "src": "assets/lezioni/M08/figure/104-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "PCA, K-means e Ward analizzano qui la stessa matrice standardizzata. Il piano PCA viene usato per visualizzare i gruppi stimati nello spazio completo."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Passaggi conservati"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Le colonne sono scelte per nome. Le scale sono stimate una volta. Ogni risultato mantiene l’identificativo della riga originaria."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Usare soltanto PC1 e PC2 come dati del clustering definirebbe una diversa analisi. Occorrerebbe dichiararla e confrontarla."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il resoconto collega geometria, scelta del numero di gruppi, sensibilità e profili nelle unità originali."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 105,
+   "title": "Che cosa cambia passando da tre a quattro gruppi?",
+   "section": "IX · UN’ANALISI COMPLETA",
+   "recall": [
+    "Un gruppo aggiuntivo deve essere motivato dalle differenze introdotte e dallo scopo dell’analisi."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "105-1",
+     "w": 277,
+     "h": 147,
+     "src": "assets/lezioni/M08/figure/105-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "Nel calcolo mostrato, il gruppo 2 con trenta casi si divide in due gruppi di 18 e 12. Le altre due appartenenze rimangono unite."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · confrontare una suddivisione",
+     "file": "105_quattro_gruppi.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "La WSS diminuisce, ma la silhouette media peggiora nel confronto del caso. Le differenze nei profili aiutano a capire che cosa separa il nuovo taglio."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 106,
+   "title": "Due chiamate PCA equivalenti",
+   "section": "IX · UN’ANALISI COMPLETA",
+   "recall": [
+    "Le impostazioni di centratura e scala fanno parte della definizione dell’analisi."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "106-1",
+     "w": 277,
+     "h": 145,
+     "src": "assets/lezioni/M08/figure/106-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "La seconda chiamata evita di applicare di nuovo centratura e scala. Nel calcolo del corso gli scores coincidono numericamente."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · verificare le convenzioni",
+     "file": "106_equivalenza.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Fra implementazioni diverse possono cambiare segni o basi di sottospazi degeneri. La rappresentazione va confrontata tenendo conto di queste equivalenze."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 107,
+   "title": "Ogni risultato deve tornare al proprio campione",
+   "section": "IX · UN’ANALISI COMPLETA",
+   "recall": [
+    "L’identificativo consente di ricondurre scores, appartenenze e controlli alle osservazioni originarie."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "107-1",
+     "w": 277,
+     "h": 141,
+     "src": "assets/lezioni/M08/figure/107-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "La tabella finale permette di riesaminare i casi, collegarli alle misure e documentare quali trasformazioni hanno prodotto i risultati."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · salvare risultati identificabili",
+     "file": "107_tabella_finale.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Le scale, la selezione delle colonne e i semi casuali restano nel codice che accompagna la tabella."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 108,
+   "title": "Quali somiglianze sostengono questi dati?",
+   "section": "IX · UN’ANALISI COMPLETA",
+   "recall": [
+    "Una conclusione multivariata collega risultati numerici, scelte di analisi e significato delle misure."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "108-1",
+     "w": 269,
+     "h": 150,
+     "src": "assets/lezioni/M08/figure/108-1.svg",
+     "ratio": 0.944
+    },
+    {
+     "t": "p",
+     "c": [
+      "In questa simulazione, tre gruppi sono ben separati nella geometria standardizzata. K-means e Ward recuperano le stesse appartenenze."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Risultato del caso studiato"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Due componenti conservano l’",
+      {
+       "t": "m",
+       "v": "86{,}6\\%"
+      },
+      " della varianza. Il piano riassume la struttura principale e lascia un errore di ricostruzione misurabile."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Il risultato si sostiene con scale dichiarate, confronto dei gruppi, verifica degli avvii e perturbazioni. La sua estensione a rocce reali richiede un’altra evidenza."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La domanda da portare a un nuovo dataset: quali scelte producono la somiglianza osservata e quali osservazioni potrebbero metterla in discussione?"
+     ],
+     "col": "R"
+    }
+   ]
+  }
+ ],
+ "code": {
+  "003_dati.R": {
+   "code": "# Aprire il progetto Polychroma_M08.\nsource(\"setup.R\", encoding = \"UTF-8\")\ndim(d)\nhead(d[, c(\"id\", \"SiO2\", \"densita\")])\n# Un identificativo per campione.\nstopifnot(!anyDuplicated(d$id))",
+   "output": "> # Aprire il progetto Polychroma_M08.\n> source(\"setup.R\", encoding = \"UTF-8\")\n> dim(d)\n[1] 90 11\n> head(d[, c(\"id\", \"SiO2\", \"densita\")])\n    id    SiO2 densita\n1 R001 46.5383 2.94771\n2 R002 53.5257 3.10125\n3 R003 52.1015 3.01822\n4 R004 47.0133 2.85115\n5 R005 55.2746 2.99967\n6 R006 48.8404 2.90596\n> # Un identificativo per campione.\n> stopifnot(!anyDuplicated(d$id))",
+   "deps": []
+  },
+  "006_etichette.R": {
+   "code": "# Colonne con ruoli diversi.\nid <- d$id\netichette <- d$litologia_generatrice\nX <- as.matrix(d[v])\nstopifnot(!\"id\" %in% colnames(X),\n  !\"litologia_generatrice\" %in%\n    colnames(X))",
+   "output": "> # Colonne con ruoli diversi.\n> id <- d$id\n> etichette <- d$litologia_generatrice\n> X <- as.matrix(d[v])\n> stopifnot(!\"id\" %in% colnames(X),\n+   !\"litologia_generatrice\" %in%\n+     colnames(X))",
+   "deps": []
+  },
+  "007_matrice.R": {
+   "code": "# Evitare selezioni per posizione.\nv <- c(\"SiO2\", \"CaO\", \"MgO\", \"FeO\",\n       \"densita\", \"grana_mm\",\n       \"colore\", \"fossili\")\nX <- as.matrix(d[v])\nstopifnot(all(is.finite(X)),\n  all(apply(X, 2, sd) > 0))\ndim(X)",
+   "output": "> # Evitare selezioni per posizione.\n> v <- c(\"SiO2\", \"CaO\", \"MgO\", \"FeO\",\n+        \"densita\", \"grana_mm\",\n+        \"colore\", \"fossili\")\n> X <- as.matrix(d[v])\n> stopifnot(all(is.finite(X)),\n+   all(apply(X, 2, sd) > 0))\n> dim(X)\n[1] 90  8",
+   "deps": [
+    "006_etichette.R"
+   ]
+  },
+  "008_unita.R": {
+   "code": "# Stessa granulometria: mm oppure um.\na <- X[, c(\"SiO2\", \"grana_mm\")]\nb <- a\nb[, \"grana_mm\"] <- 1000 * b[, \"grana_mm\"]\nc(mm = as.numeric(dist(a))[1],\n  um = as.numeric(dist(b))[1])",
+   "output": "> # Stessa granulometria: mm oppure um.\n> a <- X[, c(\"SiO2\", \"grana_mm\")]\n> b <- a\n> b[, \"grana_mm\"] <- 1000 * b[, \"grana_mm\"]\n> c(mm = as.numeric(dist(a))[1],\n+   um = as.numeric(dist(b))[1])\n      mm       um \n 6.98742 19.43306 ",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R"
+   ]
+  },
+  "009_distanza.R": {
+   "code": "# Due righe della matrice originale.\nscarti <- X[1, ] - X[2, ]\nsqrt(sum(scarti^2))\n# Stesso valore nella matrice distanze.\nas.matrix(dist(X))[1, 2]",
+   "output": "> # Due righe della matrice originale.\n> scarti <- X[1, ] - X[2, ]\n> sqrt(sum(scarti^2))\n[1] 14.3801\n> # Stesso valore nella matrice distanze.\n> as.matrix(dist(X))[1, 2]\n[1] 14.3801",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R"
+   ]
+  },
+  "011_standardizzazione.R": {
+   "code": "Z <- scale(X, center = TRUE,\n           scale = TRUE)\nmedie <- attr(Z, \"scaled:center\")\ndevstd <- attr(Z, \"scaled:scale\")\n# Verificare la trasformazione.\nround(colMeans(Z), 10)\napply(Z, 2, sd)",
+   "output": "> Z <- scale(X, center = TRUE,\n+            scale = TRUE)\n> medie <- attr(Z, \"scaled:center\")\n> devstd <- attr(Z, \"scaled:scale\")\n> # Verificare la trasformazione.\n> round(colMeans(Z), 10)\n    SiO2      CaO      MgO      FeO  densita grana_mm   colore  fossili \n       0        0        0        0        0        0        0        0 \n> apply(Z, 2, sd)\n    SiO2      CaO      MgO      FeO  densita grana_mm   colore  fossili \n       1        1        1        1        1        1        1        1 ",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R"
+   ]
+  },
+  "012_nuovo_campione.R": {
+   "code": "# Esempio di applicazione ai primi casi.\n# Non sono dati nuovi indipendenti.\nnuovi <- X[1:3, , drop = FALSE]\nZnuovi <- scale(nuovi,\n  center = medie, scale = devstd)\nmax(abs(Znuovi - Z[1:3, ]))",
+   "output": "> # Esempio di applicazione ai primi casi.\n> # Non sono dati nuovi indipendenti.\n> nuovi <- X[1:3, , drop = FALSE]\n> Znuovi <- scale(nuovi,\n+   center = medie, scale = devstd)\n> max(abs(Znuovi - Z[1:3, ]))\n[1] 0",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "011_standardizzazione.R"
+   ]
+  },
+  "013_controlli.R": {
+   "code": "data.frame(variabile = colnames(X),\n  mancanti = colSums(is.na(X)),\n  deviazione = apply(X, 2, sd))\n# Un valore NA non significa zero.\n# Una colonna costante non ammette z-score.",
+   "output": "> data.frame(variabile = colnames(X),\n+   mancanti = colSums(is.na(X)),\n+   deviazione = apply(X, 2, sd))\n         variabile mancanti deviazione\nSiO2          SiO2        0  26.294255\nCaO            CaO        0  20.895104\nMgO            MgO        0   3.636268\nFeO            FeO        0   4.212920\ndensita    densita        0   0.193629\ngrana_mm  grana_mm        0   0.425471\ncolore      colore        0  27.571647\nfossili    fossili        0  30.833481\n> # Un valore NA non significa zero.\n> # Una colonna costante non ammette z-score.",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R"
+   ]
+  },
+  "014_correlazioni.R": {
+   "code": "# Stesse relazioni, nuove unità.\nmax(abs(cor(X) - cor(Z)))\nround(cor(Z)[1:4, 1:4], 2)\n# Zero è atteso entro l'errore numerico.",
+   "output": "> # Stesse relazioni, nuove unità.\n> max(abs(cor(X) - cor(Z)))\n[1] 2.22045e-16\n> round(cor(Z)[1:4, 1:4], 2)\n      SiO2   CaO   MgO   FeO\nSiO2  1.00 -0.95  0.09  0.28\nCaO  -0.95  1.00 -0.29 -0.47\nMgO   0.09 -0.29  1.00  0.88\nFeO   0.28 -0.47  0.88  1.00\n> # Zero è atteso entro l'errore numerico.",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "011_standardizzazione.R"
+   ]
+  },
+  "015_duplicazione.R": {
+   "code": "# Ripetere SiO2 cambia la distanza.\nZd <- cbind(Z, SiO2_copia = Z[, \"SiO2\"])\nc(prima = as.matrix(dist(Z))[1, 2],\n  dopo = as.matrix(dist(Zd))[1, 2])",
+   "output": "> # Ripetere SiO2 cambia la distanza.\n> Zd <- cbind(Z, SiO2_copia = Z[, \"SiO2\"])\n> c(prima = as.matrix(dist(Z))[1, 2],\n+   dopo = as.matrix(dist(Zd))[1, 2])\n  prima    dopo \n1.74854 1.76862 ",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "011_standardizzazione.R"
+   ]
+  },
+  "016_pesi.R": {
+   "code": "# Esempio: dimezzare il peso di SiO2.\npesi <- rep(1, ncol(Z))\npesi[1] <- 0.5\nZw <- sweep(Z, 2, sqrt(pesi), \"*\")\nas.matrix(dist(Zw))[1:3, 1:3]",
+   "output": "> # Esempio: dimezzare il peso di SiO2.\n> pesi <- rep(1, ncol(Z))\n> pesi[1] <- 0.5\n> Zw <- sweep(Z, 2, sqrt(pesi), \"*\")\n> as.matrix(dist(Zw))[1:3, 1:3]\n        1       2       3\n1 0.00000 1.73842 1.06843\n2 1.73842 0.00000 1.35284\n3 1.06843 1.35284 0.00000",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "011_standardizzazione.R"
+   ]
+  },
+  "017_ridondanza.R": {
+   "code": "# Esaminare la struttura, non una soglia sola.\nR <- cor(Z)\nround(R, 2)\n# Gli ossidi sono una parte di una\n# composizione: la chiusura conta.",
+   "output": "> # Esaminare la struttura, non una soglia sola.\n> R <- cor(Z)\n> round(R, 2)\n          SiO2   CaO   MgO   FeO densita grana_mm colore fossili\nSiO2      1.00 -0.95  0.09  0.28    0.04     0.51   0.36   -0.84\nCaO      -0.95  1.00 -0.29 -0.47   -0.21    -0.41  -0.52    0.90\nMgO       0.09 -0.29  1.00  0.88    0.79    -0.35   0.83   -0.42\nFeO       0.28 -0.47  0.88  1.00    0.75    -0.23   0.87   -0.56\ndensita   0.04 -0.21  0.79  0.75    1.00    -0.35   0.71   -0.36\ngrana_mm  0.51 -0.41 -0.35 -0.23   -0.35     1.00  -0.19   -0.31\ncolore    0.36 -0.52  0.83  0.87    0.71    -0.19   1.00   -0.61\nfossili  -0.84  0.90 -0.42 -0.56   -0.36    -0.31  -0.61    1.00\n> # Gli ossidi sono una parte di una\n> # composizione: la chiusura conta.",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "011_standardizzazione.R"
+   ]
+  },
+  "018_fossili.R": {
+   "code": "f <- read.csv(\"Dati/fossili_simulati.csv\")\nM <- as.matrix(f[c(\"diametro_tot_um\",\n  \"diametro_int_um\", \"spessore_um\")])\nmax(abs(M[, 1] - M[, 2] - 2*M[, 3]))\nprcomp(M, scale. = TRUE)$sdev",
+   "output": "> f <- read.csv(\"Dati/fossili_simulati.csv\")\n> M <- as.matrix(f[c(\"diametro_tot_um\",\n+   \"diametro_int_um\", \"spessore_um\")])\n> max(abs(M[, 1] - M[, 2] - 2*M[, 3]))\n[1] 1e-08\n> prcomp(M, scale. = TRUE)$sdev\n[1] 1.40274e+00 1.01603e+00 5.36325e-09",
+   "deps": []
+  },
+  "019_rango.R": {
+   "code": "sv_f <- svd(scale(M))$d\nsv_f / max(sv_f)\n# La terza direzione è trascurabile\n# alla precisione dei dati forniti.\nsum(sv_f > max(sv_f) * 1e-7)",
+   "output": "> sv_f <- svd(scale(M))$d\n> sv_f / max(sv_f)\n[1] 1.00000e+00 7.24321e-01 3.82341e-09\n> # La terza direzione è trascurabile\n> # alla precisione dei dati forniti.\n> sum(sv_f > max(sv_f) * 1e-7)\n[1] 2",
+   "deps": [
+    "018_fossili.R"
+   ]
+  },
+  "020_chiusura.R": {
+   "code": "parti <- c(\"SiO2\", \"CaO\", \"MgO\",\n           \"FeO\", \"resto_wt\")\ncomp <- as.matrix(d[parti])\nrange(rowSums(comp))\nmax(abs(rowSums(comp) - 100))",
+   "output": "> parti <- c(\"SiO2\", \"CaO\", \"MgO\",\n+            \"FeO\", \"resto_wt\")\n> comp <- as.matrix(d[parti])\n> range(rowSums(comp))\n[1] 100 100\n> max(abs(rowSums(comp) - 100))\n[1] 1e-08",
+   "deps": []
+  },
+  "021_correlazione_chiusura.R": {
+   "code": "set.seed(17)\nassolute <- matrix(rlnorm(450), ncol = 3)\nfrazioni <- assolute / rowSums(assolute)\nc(prima = cor(assolute)[1, 2],\n  dopo = cor(frazioni)[1, 2])",
+   "output": "> set.seed(17)\n> assolute <- matrix(rlnorm(450), ncol = 3)\n> frazioni <- assolute / rowSums(assolute)\n> c(prima = cor(assolute)[1, 2],\n+   dopo = cor(frazioni)[1, 2])\n     prima       dopo \n-0.0811292 -0.5766285 ",
+   "deps": []
+  },
+  "022_rapporti.R": {
+   "code": "# Il totale si semplifica nel rapporto.\nlr_prima <- log(assolute[, 1] /\n                assolute[, 2])\nlr_dopo <- log(frazioni[, 1] /\n               frazioni[, 2])\nmax(abs(lr_prima - lr_dopo))",
+   "output": "> # Il totale si semplifica nel rapporto.\n> lr_prima <- log(assolute[, 1] /\n+                 assolute[, 2])\n> lr_dopo <- log(frazioni[, 1] /\n+                frazioni[, 2])\n> max(abs(lr_prima - lr_dopo))\n[1] 8.88178e-16",
+   "deps": [
+    "021_correlazione_chiusura.R"
+   ]
+  },
+  "023_clr.R": {
+   "code": "# Solo le cinque parti chimiche.\nstopifnot(all(comp > 0))\nlog_comp <- log(comp)\nclr <- log_comp - rowMeans(log_comp)\nhead(clr, 3)\nmax(abs(rowSums(clr)))",
+   "output": "> # Solo le cinque parti chimiche.\n> stopifnot(all(comp > 0))\n> log_comp <- log(comp)\n> clr <- log_comp - rowMeans(log_comp)\n> head(clr, 3)\n        SiO2       CaO       MgO       FeO  resto_wt\n[1,] 1.12280 -0.443799 -0.509069 -0.772049  0.602113\n[2,] 1.23344 -0.514378 -0.433737 -0.171328 -0.113999\n[3,] 1.24288 -0.628792 -0.462518 -0.499639  0.348070\n> max(abs(rowSums(clr)))\n[1] 1.11022e-15",
+   "deps": [
+    "020_chiusura.R"
+   ]
+  },
+  "024_pca_clr.R": {
+   "code": "# PCA nella geometria CLR dichiarata.\npc_clr <- prcomp(clr, center = TRUE,\n                 scale. = FALSE)\npc_clr$sdev\n# Ultima SD circa zero: vincolo noto.",
+   "output": "> # PCA nella geometria CLR dichiarata.\n> pc_clr <- prcomp(clr, center = TRUE,\n+                  scale. = FALSE)\n> pc_clr$sdev\n[1] 1.80270e+00 1.04950e+00 7.32423e-01 4.21915e-01 2.82661e-16\n> # Ultima SD circa zero: vincolo noto.",
+   "deps": [
+    "020_chiusura.R",
+    "023_clr.R"
+   ]
+  },
+  "028_prodotto_scalare.R": {
+   "code": "z_es <- c(2, 1)\nv_es <- c(0.8, 0.6)\nsum(v_es^2)  # norma unitaria\nt_es <- sum(z_es * v_es)\nt_es",
+   "output": "> z_es <- c(2, 1)\n> v_es <- c(0.8, 0.6)\n> sum(v_es^2)  # norma unitaria\n[1] 1\n> t_es <- sum(z_es * v_es)\n> t_es\n[1] 2.2",
+   "deps": []
+  },
+  "029_proiezione.R": {
+   "code": "z_hat <- t_es * v_es\nres_es <- z_es - z_hat\nz_hat\n# Proiezione e residuo sono ortogonali.\nsum(res_es * v_es)",
+   "output": "> z_hat <- t_es * v_es\n> res_es <- z_es - z_hat\n> z_hat\n[1] 1.76 1.32\n> # Proiezione e residuo sono ortogonali.\n> sum(res_es * v_es)\n[1] -1.94289e-16",
+   "deps": [
+    "028_prodotto_scalare.R"
+   ]
+  },
+  "031_covarianza.R": {
+   "code": "S <- crossprod(Z) / (nrow(Z) - 1)\nmax(abs(S - cov(Z)))\n# Su colonne standardizzate, S è\n# anche la matrice di correlazione.\nmax(abs(S - cor(X)))",
+   "output": "> S <- crossprod(Z) / (nrow(Z) - 1)\n> max(abs(S - cov(Z)))\n[1] 6.66134e-16\n> # Su colonne standardizzate, S è\n> # anche la matrice di correlazione.\n> max(abs(S - cor(X)))\n[1] 6.66134e-16",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "011_standardizzazione.R"
+   ]
+  },
+  "034_ortogonali.R": {
+   "code": "v2_es <- c(-0.6, 0.8)\nsum(v_es * v2_es)\nsum(v2_es^2)\n# Due direzioni per descrivere il piano.",
+   "output": "> v2_es <- c(-0.6, 0.8)\n> sum(v_es * v2_es)\n[1] 0\n> sum(v2_es^2)\n[1] 1\n> # Due direzioni per descrivere il piano.",
+   "deps": [
+    "028_prodotto_scalare.R"
+   ]
+  },
+  "036_svd.R": {
+   "code": "# d contiene i valori singolari.\nsv <- svd(Z)\nlambda_svd <- sv$d^2 / (nrow(Z) - 1)\nlambda_svd\nmax(abs(crossprod(sv$v) - diag(8)))",
+   "output": "> # d contiene i valori singolari.\n> sv <- svd(Z)\n> lambda_svd <- sv$d^2 / (nrow(Z) - 1)\n> lambda_svd\n[1] 4.4055763 2.5212380 0.4325844 0.2685236 0.1386937 0.1152396 0.0956656 0.0224789\n> max(abs(crossprod(sv$v) - diag(8)))\n[1] 1.11022e-15",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "011_standardizzazione.R"
+   ]
+  },
+  "038_prcomp.R": {
+   "code": "pc <- prcomp(X, center = TRUE,\n             scale. = TRUE)\nhead(pc$x[, 1:2])  # scores\npc$rotation[, 1:2] # direzioni\npc$center          # medie\npc$scale           # deviazioni standard",
+   "output": "> pc <- prcomp(X, center = TRUE,\n+              scale. = TRUE)\n> head(pc$x[, 1:2])  # scores\n          PC1      PC2\n[1,] -2.35080 1.005934\n[2,] -3.23353 1.507371\n[3,] -2.69600 0.664284\n[4,] -2.57540 0.852963\n[5,] -2.90841 1.157001\n[6,] -2.16874 0.578840\n> pc$rotation[, 1:2] # direzioni\n                 PC1       PC2\nSiO2     -0.29343728 -0.471316\nCaO       0.36379307  0.380915\nMgO      -0.38046894  0.317994\nFeO      -0.42227978  0.209610\ndensita  -0.33961508  0.330452\ngrana_mm  0.00278357 -0.521801\ncolore   -0.43005546  0.156656\nfossili   0.39771661  0.285819\n> pc$center          # medie\n     SiO2       CaO       MgO       FeO   densita  grana_mm    colore   fossili \n42.711556 20.844306  3.970834  4.208174  2.728354  0.562501 44.121605 25.161377 \n> pc$scale           # deviazioni standard\n     SiO2       CaO       MgO       FeO   densita  grana_mm    colore   fossili \n26.294255 20.895104  3.636268  4.212920  0.193629  0.425471 27.571647 30.833481 ",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R"
+   ]
+  },
+  "039_autovalori.R": {
+   "code": "lam <- pc$sdev^2\nlam\nsum(lam) # otto colonne di varianza 1\nmax(abs(lam - lambda_svd))\n# Il confronto controlla la convenzione n-1.",
+   "output": "> lam <- pc$sdev^2\n> lam\n[1] 4.4055763 2.5212380 0.4325844 0.2685236 0.1386937 0.1152396 0.0956656 0.0224789\n> sum(lam) # otto colonne di varianza 1\n[1] 8\n> max(abs(lam - lambda_svd))\n[1] 8.88178e-16\n> # Il confronto controlla la convenzione n-1.",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "011_standardizzazione.R",
+    "036_svd.R",
+    "038_prcomp.R"
+   ]
+  },
+  "040_scores_covarianza.R": {
+   "code": "T <- pc$x\ncov_T <- cov(T)\nmax(abs(cov_T - diag(lam)))\n# Le piccole differenze sono numeriche.",
+   "output": "> T <- pc$x\n> cov_T <- cov(T)\n> max(abs(cov_T - diag(lam)))\n[1] 1.74316e-15\n> # Le piccole differenze sono numeriche.",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "011_standardizzazione.R",
+    "036_svd.R",
+    "038_prcomp.R",
+    "039_autovalori.R"
+   ]
+  },
+  "041_dipendenza_curva.R": {
+   "code": "# Relazione deterministica non lineare.\nu <- seq(-2, 2, length.out = 41)\ny_curva <- u^2\ncor(u, y_curva)\nplot(u, y_curva, pch = 19,\n  xlab = \"x\", ylab = \"x^2\")",
+   "output": "> # Relazione deterministica non lineare.\n> u <- seq(-2, 2, length.out = 41)\n> y_curva <- u^2\n> cor(u, y_curva)\n[1] 1.77611e-16\n> plot(u, y_curva, pch = 19,\n+   xlab = \"x\", ylab = \"x^2\")",
+   "deps": []
+  },
+  "042_segno.R": {
+   "code": "# Ricostruzione della sola PC1.\nR1 <- pc$x[, 1] %o% pc$rotation[, 1]\nR1_opposta <- (-pc$x[, 1]) %o%\n              (-pc$rotation[, 1])\nmax(abs(R1 - R1_opposta))",
+   "output": "> # Ricostruzione della sola PC1.\n> R1 <- pc$x[, 1] %o% pc$rotation[, 1]\n> R1_opposta <- (-pc$x[, 1]) %o%\n+               (-pc$rotation[, 1])\n> max(abs(R1 - R1_opposta))\n[1] 0",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "038_prcomp.R"
+   ]
+  },
+  "045_quote.R": {
+   "code": "quota <- pc$sdev^2 / sum(pc$sdev^2)\ndata.frame(PC = 1:8,\n  quota = quota, cumulata = cumsum(quota))",
+   "output": "> quota <- pc$sdev^2 / sum(pc$sdev^2)\n> data.frame(PC = 1:8,\n+   quota = quota, cumulata = cumsum(quota))\n  PC      quota cumulata\n1  1 0.55069703 0.550697\n2  2 0.31515475 0.865852\n3  3 0.05407305 0.919925\n4  4 0.03356545 0.953490\n5  5 0.01733671 0.970827\n6  6 0.01440495 0.985232\n7  7 0.01195820 0.997190\n8  8 0.00280986 1.000000",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "038_prcomp.R"
+   ]
+  },
+  "046_cumulata.R": {
+   "code": "barplot(100 * quota, names.arg = 1:8,\n  xlab = \"Componente\",\n  ylab = \"Varianza (%)\")\ncumsum(quota)",
+   "output": "> barplot(100 * quota, names.arg = 1:8,\n+   xlab = \"Componente\",\n+   ylab = \"Varianza (%)\")\n> cumsum(quota)\n[1] 0.550697 0.865852 0.919925 0.953490 0.970827 0.985232 0.997190 1.000000",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "038_prcomp.R",
+    "045_quote.R"
+   ]
+  },
+  "047_distanze_proiezione.R": {
+   "code": "DT <- as.matrix(dist(pc$x))\nD2 <- as.matrix(dist(pc$x[, 1:2]))\nmax(D2 - DT)\n# Differenza non positiva, salvo\n# arrotondamenti numerici.",
+   "output": "> DT <- as.matrix(dist(pc$x))\n> D2 <- as.matrix(dist(pc$x[, 1:2]))\n> max(D2 - DT)\n[1] 0\n> # Differenza non positiva, salvo\n> # arrotondamenti numerici.",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "038_prcomp.R"
+   ]
+  },
+  "048_loadings.R": {
+   "code": "pc$rotation[, 1]\n# Contributi della prima riga allo score.\na48 <- pc$rotation[, 1]\ncontributi_riga <- Z[1, ] * a48\nsum(contributi_riga)\npc$x[1, 1]",
+   "output": "> pc$rotation[, 1]\n       SiO2         CaO         MgO         FeO     densita    grana_mm      colore \n-0.29343728  0.36379307 -0.38046894 -0.42227978 -0.33961508  0.00278357 -0.43005546 \n    fossili \n 0.39771661 \n> # Contributi della prima riga allo score.\n> a48 <- pc$rotation[, 1]\n> contributi_riga <- Z[1, ] * a48\n> sum(contributi_riga)\n[1] -2.3508\n> pc$x[1, 1]\n    PC1 \n-2.3508 ",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "011_standardizzazione.R",
+    "038_prcomp.R"
+   ]
+  },
+  "049_correlazioni_pc.R": {
+   "code": "cor_PC <- sweep(pc$rotation, 2,\n                pc$sdev, \"*\")\nround(cor_PC[, 1:2], 3)\nmax(abs(cor_PC - cor(Z, pc$x)))",
+   "output": "> cor_PC <- sweep(pc$rotation, 2,\n+                 pc$sdev, \"*\")\n> round(cor_PC[, 1:2], 3)\n            PC1    PC2\nSiO2     -0.616 -0.748\nCaO       0.764  0.605\nMgO      -0.799  0.505\nFeO      -0.886  0.333\ndensita  -0.713  0.525\ngrana_mm  0.006 -0.829\ncolore   -0.903  0.249\nfossili   0.835  0.454\n> max(abs(cor_PC - cor(Z, pc$x)))\n[1] 6.77236e-15",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "011_standardizzazione.R",
+    "038_prcomp.R"
+   ]
+  },
+  "051_qualita.R": {
+   "code": "peso_PC1 <- pc$rotation[, 1]^2\nqualita2 <- rowSums(cor_PC[, 1:2]^2)\ndata.frame(variabile = v,\n  peso_PC1 = peso_PC1,\n  rappresentata_2PC = qualita2)",
+   "output": "> peso_PC1 <- pc$rotation[, 1]^2\n> qualita2 <- rowSums(cor_PC[, 1:2]^2)\n> data.frame(variabile = v,\n+   peso_PC1 = peso_PC1,\n+   rappresentata_2PC = qualita2)\n         variabile    peso_PC1 rappresentata_2PC\nSiO2          SiO2 8.61054e-02          0.939408\nCaO            CaO 1.32345e-01          0.948880\nMgO            MgO 1.44757e-01          0.892684\nFeO            FeO 1.78320e-01          0.896378\ndensita    densita 1.15338e-01          0.783447\ngrana_mm  grana_mm 7.74826e-06          0.686508\ncolore      colore 1.84948e-01          0.876675\nfossili    fossili 1.58178e-01          0.902834",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "011_standardizzazione.R",
+    "038_prcomp.R",
+    "049_correlazioni_pc.R"
+   ]
+  },
+  "053_ricostruzione.R": {
+   "code": "Z2 <- pc$x[, 1:2, drop = FALSE] %*%\n  t(pc$rotation[, 1:2, drop = FALSE])\nsqrt(mean((Z - Z2)^2))\n# RMSE nelle unità standardizzate.",
+   "output": "> Z2 <- pc$x[, 1:2, drop = FALSE] %*%\n+   t(pc$rotation[, 1:2, drop = FALSE])\n> sqrt(mean((Z - Z2)^2))\n[1] 0.364222\n> # RMSE nelle unità standardizzate.",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "011_standardizzazione.R",
+    "038_prcomp.R"
+   ]
+  },
+  "054_errore_ricostruzione.R": {
+   "code": "errore <- sum((Z - Z2)^2)\nteoria <- (nrow(Z)-1) * sum(lam[3:8])\nc(calcolato = errore, teoria = teoria)\nerrore / sum(Z^2)",
+   "output": "> errore <- sum((Z - Z2)^2)\n> teoria <- (nrow(Z)-1) * sum(lam[3:8])\n> c(calcolato = errore, teoria = teoria)\ncalcolato    teoria \n  95.5135   95.5135 \n> errore / sum(Z^2)\n[1] 0.134148",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "011_standardizzazione.R",
+    "036_svd.R",
+    "038_prcomp.R",
+    "039_autovalori.R",
+    "053_ricostruzione.R"
+   ]
+  },
+  "055_unita_originali.R": {
+   "code": "X2 <- sweep(Z2, 2, pc$scale, \"*\")\nX2 <- sweep(X2, 2, pc$center, \"+\")\nhead(cbind(originale = X[, \"densita\"],\n  ricostruita = X2[, \"densita\"]))",
+   "output": "> X2 <- sweep(Z2, 2, pc$scale, \"*\")\n> X2 <- sweep(X2, 2, pc$center, \"+\")\n> head(cbind(originale = X[, \"densita\"],\n+   ricostruita = X2[, \"densita\"]))\n     originale ricostruita\n[1,]   2.94771     2.94731\n[2,]   3.10125     3.03744\n[3,]   3.01822     2.94815\n[4,]   2.85115     2.95229\n[5,]   2.99967     2.99364\n[6,]   2.90596     2.90801",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "011_standardizzazione.R",
+    "038_prcomp.R",
+    "053_ricostruzione.R"
+   ]
+  },
+  "056_dimensioni.R": {
+   "code": "# Perdita relativa per q = 1,...,8.\ndata.frame(q = 1:8,\n  conservata = cumsum(quota),\n  persa = 1 - cumsum(quota))",
+   "output": "> # Perdita relativa per q = 1,...,8.\n> data.frame(q = 1:8,\n+   conservata = cumsum(quota),\n+   persa = 1 - cumsum(quota))\n  q conservata      persa\n1 1   0.550697 0.44930297\n2 2   0.865852 0.13414822\n3 3   0.919925 0.08007516\n4 4   0.953490 0.04650972\n5 5   0.970827 0.02917301\n6 6   0.985232 0.01476806\n7 7   0.997190 0.00280986\n8 8   1.000000 0.00000000",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "038_prcomp.R",
+    "045_quote.R"
+   ]
+  },
+  "057_predict_pca.R": {
+   "code": "# Esempio su righe già presenti:\n# verifica della trasformazione.\nscores_nuovi <- predict(pc, X[1:3, ])\nmax(abs(scores_nuovi - pc$x[1:3, ]))\n# Per veri nuovi campioni mantenere\n# nomi, unità e ordine delle variabili.",
+   "output": "> # Esempio su righe già presenti:\n> # verifica della trasformazione.\n> scores_nuovi <- predict(pc, X[1:3, ])\n> max(abs(scores_nuovi - pc$x[1:3, ]))\n[1] 0\n> # Per veri nuovi campioni mantenere\n> # nomi, unità e ordine delle variabili.",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "038_prcomp.R"
+   ]
+  },
+  "059_obiettivo.R": {
+   "code": "# Sei punti illustrativi, due gruppi.\nu59 <- rbind(c(1,1), c(1.2,2.1),\n c(2.2,1.35), c(5.3,2.4),\n c(6.7,2.9), c(6,1.6))\ng59 <- rep(1:2, each = 3)\ncent59 <- rowsum(u59, g59) / 3\n# Somma dei quadrati delle distanze.\nsum((u59 - cent59[g59, ])^2)",
+   "output": "> # Sei punti illustrativi, due gruppi.\n> u59 <- rbind(c(1,1), c(1.2,2.1),\n+  c(2.2,1.35), c(5.3,2.4),\n+  c(6.7,2.9), c(6,1.6))\n> g59 <- rep(1:2, each = 3)\n> cent59 <- rowsum(u59, g59) / 3\n> # Somma dei quadrati delle distanze.\n> sum((u59 - cent59[g59, ])^2)\n[1] 3.29833",
+   "deps": []
+  },
+  "060_centroide.R": {
+   "code": "# Tre osservazioni di un gruppo.\nA60 <- rbind(c(0,0), c(2,0),\n             c(1,3))\nmu60 <- colMeans(A60)\nmu60  # Il centroide e' (1, 1).\nw60 <- function(candidato) {\n sum(sweep(A60, 2, candidato)^2)\n}\nc(centroide = w60(mu60),\n  alternativa = w60(c(1,2)))",
+   "output": "> # Tre osservazioni di un gruppo.\n> A60 <- rbind(c(0,0), c(2,0),\n+              c(1,3))\n> mu60 <- colMeans(A60)\n> mu60  # Il centroide e' (1, 1).\n[1] 1 1\n> w60 <- function(candidato) {\n+  sum(sweep(A60, 2, candidato)^2)\n+ }\n> c(centroide = w60(mu60),\n+   alternativa = w60(c(1,2)))\n  centroide alternativa \n          8          11 ",
+   "deps": []
+  },
+  "061_assegnazione.R": {
+   "code": "# Centri provvisori dello schema.\ncent61 <- rbind(c(1,1), c(6,3))\ndist261 <- sapply(1:2, function(g) {\n rowSums(sweep(u59, 2,\n               cent61[g, ])^2)\n})\n# Righe: punti. Colonne: centri.\nround(dist261, 2)\nmax.col(-dist261,\n        ties.method = \"first\")",
+   "output": "> # Centri provvisori dello schema.\n> cent61 <- rbind(c(1,1), c(6,3))\n> dist261 <- sapply(1:2, function(g) {\n+  rowSums(sweep(u59, 2,\n+                cent61[g, ])^2)\n+ })\n> # Righe: punti. Colonne: centri.\n> round(dist261, 2)\n      [,1]  [,2]\n[1,]  0.00 29.00\n[2,]  1.25 23.85\n[3,]  1.56 17.16\n[4,] 20.45  0.85\n[5,] 36.10  0.50\n[6,] 25.36  1.96\n> max.col(-dist261,\n+         ties.method = \"first\")\n[1] 1 1 1 2 2 2",
+   "deps": [
+    "059_obiettivo.R"
+   ]
+  },
+  "062_aggiornamento.R": {
+   "code": "# Manteniamo i gruppi appena trovati.\ng62 <- max.col(-dist261,\n              ties.method = \"first\")\ncent62 <- rowsum(u59, g62) /\n as.vector(table(g62))\ncent62\n# Controllo prima e dopo le medie.\nc(prima = sum((u59-\n               cent61[g62, ])^2),\n  dopo = sum((u59-\n              cent62[g62, ])^2))",
+   "output": "> # Manteniamo i gruppi appena trovati.\n> g62 <- max.col(-dist261,\n+               ties.method = \"first\")\n> cent62 <- rowsum(u59, g62) /\n+  as.vector(table(g62))\n> cent62\n     [,1]    [,2]\n1 1.46667 1.48333\n2 6.00000 2.30000\n> # Controllo prima e dopo le medie.\n> c(prima = sum((u59-\n+                cent61[g62, ])^2),\n+   dopo = sum((u59-\n+               cent62[g62, ])^2))\n  prima    dopo \n6.12250 3.29833 ",
+   "deps": [
+    "059_obiettivo.R",
+    "061_assegnazione.R"
+   ]
+  },
+  "063_iterazioni.R": {
+   "code": "# Lloyd: una dimostrazione esplicita.\ncent63 <- cent61\nW63 <- numeric(5)\nfor (passo in 1:5) {\n dd <- sapply(1:2, function(g)\n  rowSums(sweep(u59,2,cent63[g,])^2))\n lab <- max.col(-dd,\n                ties.method=\"first\")\n cent63 <- rowsum(u59,lab) /\n   as.vector(table(lab))\n scarti63 <- u59-cent63[lab,]\n W63[passo] <- sum(scarti63^2)\n}\nW63",
+   "output": "> # Lloyd: una dimostrazione esplicita.\n> cent63 <- cent61\n> W63 <- numeric(5)\n> for (passo in 1:5) {\n+  dd <- sapply(1:2, function(g)\n+   rowSums(sweep(u59,2,cent63[g,])^2))\n+  lab <- max.col(-dd,\n+                 ties.method=\"first\")\n+  cent63 <- rowsum(u59,lab) /\n+    as.vector(table(lab))\n+  scarti63 <- u59-cent63[lab,]\n+  W63[passo] <- sum(scarti63^2)\n+ }\n> W63\n[1] 3.29833 3.29833 3.29833 3.29833 3.29833",
+   "deps": [
+    "059_obiettivo.R",
+    "061_assegnazione.R"
+   ]
+  },
+  "064_avvii.R": {
+   "code": "# Stessa matrice, singoli avvii.\nset.seed(818)\nW64 <- replicate(20,\n kmeans(Z, centers=3, nstart=1,\n        iter.max=100)$tot.withinss)\nrange(W64)\n# Ora molte inizializzazioni.\nset.seed(816)\nkm <- kmeans(Z, 3, nstart=50,\n             iter.max=100)\nkm$tot.withinss",
+   "output": "> # Stessa matrice, singoli avvii.\n> set.seed(818)\n> W64 <- replicate(20,\n+  kmeans(Z, centers=3, nstart=1,\n+         iter.max=100)$tot.withinss)\n> range(W64)\n[1] 129.498 372.260\n> # Ora molte inizializzazioni.\n> set.seed(816)\n> km <- kmeans(Z, 3, nstart=50,\n+              iter.max=100)\n> km$tot.withinss\n[1] 129.498",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "011_standardizzazione.R"
+   ]
+  },
+  "065_kmeans.R": {
+   "code": "# Otto colonne standardizzate in Z.\nset.seed(816)\nkm <- kmeans(Z, centers = 3,\n             nstart = 50,\n             iter.max = 100)\nkm$size\nround(km$centers, 2)\nc(WSS = km$tot.withinss,\n  totale = km$totss)",
+   "output": "> # Otto colonne standardizzate in Z.\n> set.seed(816)\n> km <- kmeans(Z, centers = 3,\n+              nstart = 50,\n+              iter.max = 100)\n> km$size\n[1] 30 30 30\n> round(km$centers, 2)\n   SiO2   CaO   MgO   FeO densita grana_mm colore fossili\n1 -1.32  1.38 -0.52 -0.77   -0.39    -0.51  -0.84    1.29\n2  1.03 -0.81 -0.78 -0.57   -0.75     0.93  -0.43   -0.55\n3  0.29 -0.58  1.30  1.33    1.15    -0.42   1.27   -0.75\n> c(WSS = km$tot.withinss,\n+   totale = km$totss)\n    WSS  totale \n129.498 712.000 ",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "011_standardizzazione.R",
+    "064_avvii.R"
+   ]
+  },
+  "066_controllo_wss.R": {
+   "code": "# Un centroide per ciascuna riga.\ncentri66 <- km$centers[\n km$cluster, , drop = FALSE]\ndist266 <- rowSums((Z-centri66)^2)\nc(manuale = sum(dist266),\n  kmeans = km$tot.withinss)\nstopifnot(abs(sum(dist266)-\n km$tot.withinss) < 1e-8)",
+   "output": "> # Un centroide per ciascuna riga.\n> centri66 <- km$centers[\n+  km$cluster, , drop = FALSE]\n> dist266 <- rowSums((Z-centri66)^2)\n> c(manuale = sum(dist266),\n+   kmeans = km$tot.withinss)\nmanuale  kmeans \n129.498 129.498 \n> stopifnot(abs(sum(dist266)-\n+  km$tot.withinss) < 1e-8)",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "011_standardizzazione.R",
+    "064_avvii.R",
+    "065_kmeans.R"
+   ]
+  },
+  "067_scomposizione.R": {
+   "code": "# Variabilita' totale, entro e fra.\nT67 <- sum(scale(Z,scale=FALSE)^2)\nW67 <- km$tot.withinss\nB67 <- sum(km$size *\n             rowSums(km$centers^2))\nc(T = T67, W = W67, B = B67)\nstopifnot(abs(T67-W67-B67)<1e-8)",
+   "output": "> # Variabilita' totale, entro e fra.\n> T67 <- sum(scale(Z,scale=FALSE)^2)\n> W67 <- km$tot.withinss\n> B67 <- sum(km$size *\n+              rowSums(km$centers^2))\n> c(T = T67, W = W67, B = B67)\n      T       W       B \n712.000 129.498 582.502 \n> stopifnot(abs(T67-W67-B67)<1e-8)",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "011_standardizzazione.R",
+    "064_avvii.R",
+    "065_kmeans.R"
+   ]
+  },
+  "068_profili.R": {
+   "code": "# Le medie nelle unita' originali.\nprof68 <- aggregate(d[v],\n list(cluster=km$cluster), mean)\nprof68\n# Oppure si inverte la scala di Z.\nmu68 <- sweep(km$centers, 2,\n attr(Z,\"scaled:scale\"), \"*\")\nmu68 <- sweep(mu68, 2,\n attr(Z,\"scaled:center\"), \"+\")\nround(mu68[,c(\"SiO2\",\"densita\")],2)",
+   "output": "> # Le medie nelle unita' originali.\n> prof68 <- aggregate(d[v],\n+  list(cluster=km$cluster), mean)\n> prof68\n  cluster     SiO2      CaO     MgO      FeO densita grana_mm  colore  fossili\n1       1  8.02369 49.74498 2.08221 0.967319 2.65221 0.345744 20.9248 65.06902\n2       2 69.67599  3.96667 1.14446 1.826872 2.58277 0.959919 32.1886  8.26626\n3       3 50.43498  8.82127 8.68583 9.830332 2.95008 0.381841 79.2514  2.14885\n> # Oppure si inverte la scala di Z.\n> mu68 <- sweep(km$centers, 2,\n+  attr(Z,\"scaled:scale\"), \"*\")\n> mu68 <- sweep(mu68, 2,\n+  attr(Z,\"scaled:center\"), \"+\")\n> round(mu68[,c(\"SiO2\",\"densita\")],2)\n   SiO2 densita\n1  8.02    2.65\n2 69.68    2.58\n3 50.43    2.95",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "011_standardizzazione.R",
+    "064_avvii.R",
+    "065_kmeans.R"
+   ]
+  },
+  "069_piano_pca.R": {
+   "code": "# La PCA serve qui alla figura.\npc <- prcomp(Z, center=FALSE,\n             scale.=FALSE)\nq69 <- pc$sdev^2 / sum(pc$sdev^2)\nplot(pc$x[,1:2], pch=19,asp=1,\n     col=km$cluster,\n     xlab=\"PC1\", ylab=\"PC2\")\nsum(q69[1:2])",
+   "output": "> # La PCA serve qui alla figura.\n> pc <- prcomp(Z, center=FALSE,\n+              scale.=FALSE)\n> q69 <- pc$sdev^2 / sum(pc$sdev^2)\n> plot(pc$x[,1:2], pch=19,asp=1,\n+      col=km$cluster,\n+      xlab=\"PC1\", ylab=\"PC2\")\n> sum(q69[1:2])\n[1] 0.865852",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "011_standardizzazione.R",
+    "038_prcomp.R",
+    "064_avvii.R",
+    "065_kmeans.R"
+   ]
+  },
+  "070_distanze_pc.R": {
+   "code": "# Tutte le PC: rotazione ortogonale.\nD70 <- as.matrix(dist(Z))\nT70 <- as.matrix(dist(pc$x))\nmax(abs(D70-T70))\n# Due PC: le distanze si contraggono.\nQ70 <- as.matrix(dist(pc$x[,1:2]))\nstopifnot(max(Q70-D70)<1e-8)",
+   "output": "> # Tutte le PC: rotazione ortogonale.\n> D70 <- as.matrix(dist(Z))\n> T70 <- as.matrix(dist(pc$x))\n> max(abs(D70-T70))\n[1] 2.66454e-15\n> # Due PC: le distanze si contraggono.\n> Q70 <- as.matrix(dist(pc$x[,1:2]))\n> stopifnot(max(Q70-D70)<1e-8)",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "011_standardizzazione.R",
+    "038_prcomp.R",
+    "064_avvii.R",
+    "065_kmeans.R",
+    "069_piano_pca.R"
+   ]
+  },
+  "071_variabili.R": {
+   "code": "# Una diversa domanda di somiglianza.\nchim71 <- c(\"SiO2\",\"CaO\",\"MgO\",\"FeO\")\nZ71 <- scale(d[chim71])\nset.seed(819)\nkm71 <- kmeans(Z71,3,nstart=50)\n# Tabella, senza confrontare i nomi.\ntable(tutte=km$cluster,\n      chimica=km71$cluster)",
+   "output": "> # Una diversa domanda di somiglianza.\n> chim71 <- c(\"SiO2\",\"CaO\",\"MgO\",\"FeO\")\n> Z71 <- scale(d[chim71])\n> set.seed(819)\n> km71 <- kmeans(Z71,3,nstart=50)\n> # Tabella, senza confrontare i nomi.\n> table(tutte=km$cluster,\n+       chimica=km71$cluster)\n     chimica\ntutte  1  2  3\n    1  0  0 30\n    2 30  0  0\n    3  0 30  0",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "011_standardizzazione.R",
+    "064_avvii.R",
+    "065_kmeans.R"
+   ]
+  },
+  "074_suddivisione.R": {
+   "code": "# Una suddivisione di un gruppo.\ng74a <- rep(1, nrow(u59))\ng74b <- rep(1:2, each=3)\nw74 <- function(lab) {\n cent <- rowsum(u59,lab) /\n   as.vector(table(lab))\n sum((u59-cent[lab,,drop=FALSE])^2)\n}\nc(un_gruppo=w74(g74a),\n  due_gruppi=w74(g74b))",
+   "output": "> # Una suddivisione di un gruppo.\n> g74a <- rep(1, nrow(u59))\n> g74b <- rep(1:2, each=3)\n> w74 <- function(lab) {\n+  cent <- rowsum(u59,lab) /\n+    as.vector(table(lab))\n+  sum((u59-cent[lab,,drop=FALSE])^2)\n+ }\n> c(un_gruppo=w74(g74a),\n+   due_gruppi=w74(g74b))\n un_gruppo due_gruppi \n  35.12542    3.29833 ",
+   "deps": [
+    "059_obiettivo.R",
+    "061_assegnazione.R",
+    "063_iterazioni.R"
+   ]
+  },
+  "075_confronto_k.R": {
+   "code": "# Stessa geometria per tutti i k.\nset.seed(817)\nks <- 2:7\nfits <- lapply(ks, function(k)\n kmeans(Z, k, nstart=50,\n        iter.max=100))\nW75 <- vapply(fits, function(m)\n m$tot.withinss, numeric(1))\ndata.frame(k=ks, WSS=W75)\nplot(ks,W75,type=\"b\",pch=19,\n     xlab=\"k\",ylab=\"WSS\")",
+   "output": "> # Stessa geometria per tutti i k.\n> set.seed(817)\n> ks <- 2:7\n> fits <- lapply(ks, function(k)\n+  kmeans(Z, k, nstart=50,\n+         iter.max=100))\n> W75 <- vapply(fits, function(m)\n+  m$tot.withinss, numeric(1))\n> data.frame(k=ks, WSS=W75)\n  k      WSS\n1 2 372.1793\n2 3 129.4978\n3 4 100.9551\n4 5  90.2612\n5 6  81.9135\n6 7  76.2525\n> plot(ks,W75,type=\"b\",pch=19,\n+      xlab=\"k\",ylab=\"WSS\")",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "011_standardizzazione.R"
+   ]
+  },
+  "076_coesione_separazione.R": {
+   "code": "# Un campione e il proprio gruppo.\nD <- dist(Z)\nDD76 <- as.matrix(D)\ni76 <- 1\ng76 <- km$cluster\nstessi76 <- which(g76==g76[i76] &\n          seq_along(g76)!=i76)\na76 <- mean(DD76[i76,stessi76])\naltri76 <- setdiff(unique(g76),\n                   g76[i76])\nb76 <- min(sapply(altri76,function(g)\n mean(DD76[i76,g76==g])))\nc(a=a76,b=b76)",
+   "output": "> # Un campione e il proprio gruppo.\n> D <- dist(Z)\n> DD76 <- as.matrix(D)\n> i76 <- 1\n> g76 <- km$cluster\n> stessi76 <- which(g76==g76[i76] &\n+           seq_along(g76)!=i76)\n> a76 <- mean(DD76[i76,stessi76])\n> altri76 <- setdiff(unique(g76),\n+                    g76[i76])\n> b76 <- min(sapply(altri76,function(g)\n+  mean(DD76[i76,g76==g])))\n> c(a=a76,b=b76)\n      a       b \n1.20881 4.26188 ",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "011_standardizzazione.R",
+    "064_avvii.R",
+    "065_kmeans.R"
+   ]
+  },
+  "077_silhouette.R": {
+   "code": "# Formula per il campione R001.\ns77 <- (b76-a76)/max(a76,b76)\ns77\n# Funzione fornita nel file\n# R/funzioni_analisi.R.\nsil <- silhouette_base(km$cluster,D)\nstopifnot(abs(s77-sil[i76])<1e-8)\nsummary(sil)",
+   "output": "> # Formula per il campione R001.\n> s77 <- (b76-a76)/max(a76,b76)\n> s77\n[1] 0.716367\n> # Funzione fornita nel file\n> # R/funzioni_analisi.R.\n> sil <- silhouette_base(km$cluster,D)\n> stopifnot(abs(s77-sil[i76])<1e-8)\n> summary(sil)\n   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. \n  0.345   0.597   0.647   0.626   0.687   0.763 ",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "011_standardizzazione.R",
+    "064_avvii.R",
+    "065_kmeans.R",
+    "076_coesione_separazione.R"
+   ]
+  },
+  "078_silhouette_grafico.R": {
+   "code": "# Distribuzione delle 90 silhouette.\nord78 <- order(km$cluster,sil)\nbarplot(sil[ord78], space=0,\n col=km$cluster[ord78], border=NA,\n ylab=\"Silhouette\",xlab=\"Campioni\")\nabline(h=0,lty=2)\nc(media=mean(sil),minimo=min(sil),\n  massimo=max(sil))",
+   "output": "> # Distribuzione delle 90 silhouette.\n> ord78 <- order(km$cluster,sil)\n> barplot(sil[ord78], space=0,\n+  col=km$cluster[ord78], border=NA,\n+  ylab=\"Silhouette\",xlab=\"Campioni\")\n> abline(h=0,lty=2)\n> c(media=mean(sil),minimo=min(sil),\n+   massimo=max(sil))\n   media   minimo  massimo \n0.625823 0.344644 0.762866 ",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "011_standardizzazione.R",
+    "064_avvii.R",
+    "065_kmeans.R",
+    "076_coesione_separazione.R",
+    "077_silhouette.R"
+   ]
+  },
+  "079_silhouette_k.R": {
+   "code": "# Le soluzioni di k = 2,...,7.\nS79 <- vapply(fits, function(m)\n mean(silhouette_base(m$cluster,D)),\n numeric(1))\nindici <- data.frame(k=ks,WSS=W75,\n                      silhouette=S79)\nindici\nplot(ks,S79,type=\"b\",pch=19,\n xlab=\"k\",ylab=\"Silhouette media\")",
+   "output": "> # Le soluzioni di k = 2,...,7.\n> S79 <- vapply(fits, function(m)\n+  mean(silhouette_base(m$cluster,D)),\n+  numeric(1))\n> indici <- data.frame(k=ks,WSS=W75,\n+                       silhouette=S79)\n> indici\n  k      WSS silhouette\n1 2 372.1793   0.471586\n2 3 129.4978   0.625823\n3 4 100.9551   0.543914\n4 5  90.2612   0.414873\n5 6  81.9135   0.274585\n6 7  76.2525   0.231713\n> plot(ks,S79,type=\"b\",pch=19,\n+  xlab=\"k\",ylab=\"Silhouette media\")",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "011_standardizzazione.R",
+    "064_avvii.R",
+    "065_kmeans.R",
+    "075_confronto_k.R",
+    "076_coesione_separazione.R"
+   ]
+  },
+  "080_quattro_gruppi.R": {
+   "code": "# Un'alternativa esplicita: k = 4.\nset.seed(1601)\nkm4 <- kmeans(Z,4,nstart=50,\n              iter.max=100)\nkm4$size\ntable(k3=km$cluster,k4=km4$cluster)\naggregate(d[v],\n list(cluster=km4$cluster),mean)",
+   "output": "> # Un'alternativa esplicita: k = 4.\n> set.seed(1601)\n> km4 <- kmeans(Z,4,nstart=50,\n+               iter.max=100)\n> km4$size\n[1] 18 12 30 30\n> table(k3=km$cluster,k4=km4$cluster)\n   k4\nk3   1  2  3  4\n  1  0  0  0 30\n  2 18 12  0  0\n  3  0  0 30  0\n> aggregate(d[v],\n+  list(cluster=km4$cluster),mean)\n  cluster     SiO2      CaO     MgO      FeO densita grana_mm  colore  fossili\n1       1 69.91277  3.52195 1.19733 1.823175 2.56949 1.296914 31.6158  9.26574\n2       2 69.32082  4.63376 1.06516 1.832417 2.60269 0.454427 33.0477  6.76704\n3       3 50.43498  8.82127 8.68583 9.830332 2.95008 0.381841 79.2514  2.14885\n4       4  8.02369 49.74498 2.08221 0.967319 2.65221 0.345744 20.9248 65.06902",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "011_standardizzazione.R",
+    "064_avvii.R",
+    "065_kmeans.R"
+   ]
+  },
+  "081_riepilogo.R": {
+   "code": "# Indici per le stesse soluzioni.\ndata.frame(k=ks,\n WSS=round(W75,2),\n silhouette=round(S79,3),\n minimo_gruppo=vapply(fits,\n  function(m)min(m$size),numeric(1)))\n# La scelta non legge la litologia.\nks[which.max(S79)]",
+   "output": "> # Indici per le stesse soluzioni.\n> data.frame(k=ks,\n+  WSS=round(W75,2),\n+  silhouette=round(S79,3),\n+  minimo_gruppo=vapply(fits,\n+   function(m)min(m$size),numeric(1)))\n  k    WSS silhouette minimo_gruppo\n1 2 372.18      0.472            30\n2 3 129.50      0.626            30\n3 4 100.96      0.544            12\n4 5  90.26      0.415            11\n5 6  81.91      0.275            11\n6 7  76.25      0.232             7\n> # La scelta non legge la litologia.\n> ks[which.max(S79)]\n[1] 3",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "011_standardizzazione.R",
+    "064_avvii.R",
+    "065_kmeans.R",
+    "075_confronto_k.R",
+    "076_coesione_separazione.R",
+    "079_silhouette_k.R"
+   ]
+  },
+  "085_costo_fusione.R": {
+   "code": "# Due gruppi, una sola coordinata.\nA85 <- c(0,2)\nB85 <- c(5,7)\nw85 <- function(x) sum((x-mean(x))^2)\ndelta85 <- w85(c(A85,B85))-\n           w85(A85)-w85(B85)\nf85 <- length(A85)*length(B85) /\n (length(A85)+length(B85)) *\n (mean(A85)-mean(B85))^2\nc(incremento=delta85,formula=f85)",
+   "output": "> # Due gruppi, una sola coordinata.\n> A85 <- c(0,2)\n> B85 <- c(5,7)\n> w85 <- function(x) sum((x-mean(x))^2)\n> delta85 <- w85(c(A85,B85))-\n+            w85(A85)-w85(B85)\n> f85 <- length(A85)*length(B85) /\n+  (length(A85)+length(B85)) *\n+  (mean(A85)-mean(B85))^2\n> c(incremento=delta85,formula=f85)\nincremento    formula \n        25         25 ",
+   "deps": []
+  },
+  "086_ward.R": {
+   "code": "# Distanze euclidee ordinarie.\nD <- dist(Z, method=\"euclidean\")\nh <- hclust(D, method=\"ward.D2\")\nplot(h,labels=FALSE,\n     xlab=\"Campioni\",sub=\"Ward.D2\",\n     ylab=\"Altezza\")\ntail(h$height,3)",
+   "output": "> # Distanze euclidee ordinarie.\n> D <- dist(Z, method=\"euclidean\")\n> h <- hclust(D, method=\"ward.D2\")\n> plot(h,labels=FALSE,\n+      xlab=\"Campioni\",sub=\"Ward.D2\",\n+      ylab=\"Altezza\")\n> tail(h$height,3)\n[1]  7.23729 22.03096 26.06993",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "011_standardizzazione.R",
+    "064_avvii.R",
+    "065_kmeans.R",
+    "076_coesione_separazione.R"
+   ]
+  },
+  "087_altezza.R": {
+   "code": "# Prima fusione: due campioni.\nf87 <- -h$merge[1, ]\ndelta87 <- sum((Z[f87[1], ]-\n                Z[f87[2], ])^2)/2\nc(deltaW=delta87,\n  altezza2_su_2=h$height[1]^2/2)\nstopifnot(abs(delta87-\n             h$height[1]^2/2)<1e-8)",
+   "output": "> # Prima fusione: due campioni.\n> f87 <- -h$merge[1, ]\n> delta87 <- sum((Z[f87[1], ]-\n+                 Z[f87[2], ])^2)/2\n> c(deltaW=delta87,\n+   altezza2_su_2=h$height[1]^2/2)\n       deltaW altezza2_su_2 \n    0.0703238     0.0703238 \n> stopifnot(abs(delta87-\n+              h$height[1]^2/2)<1e-8)",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "011_standardizzazione.R",
+    "064_avvii.R",
+    "065_kmeans.R",
+    "076_coesione_separazione.R",
+    "086_ward.R"
+   ]
+  },
+  "088_taglio.R": {
+   "code": "# Taglio della stessa gerarchia.\nward <- cutree(h, k=3)\ntable(ward)\nplot(h,labels=FALSE,sub=\"Ward.D2\")\nrect.hclust(h,k=3,border=1:3)\n# L'albero resta lo stesso.\nward4 <- cutree(h,k=4)\ntable(tre=ward,quattro=ward4)",
+   "output": "> # Taglio della stessa gerarchia.\n> ward <- cutree(h, k=3)\n> table(ward)\nward\n 1  2  3 \n30 30 30 \n> plot(h,labels=FALSE,sub=\"Ward.D2\")\n> rect.hclust(h,k=3,border=1:3)\n> # L'albero resta lo stesso.\n> ward4 <- cutree(h,k=4)\n> table(tre=ward,quattro=ward4)\n   quattro\ntre  1  2  3  4\n  1 30  0  0  0\n  2  0 21  9  0\n  3  0  0  0 30",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "011_standardizzazione.R",
+    "064_avvii.R",
+    "065_kmeans.R",
+    "076_coesione_separazione.R",
+    "086_ward.R"
+   ]
+  },
+  "090_confronto_ward.R": {
+   "code": "# Stessi campioni, stessa scala, k=3.\ntab90 <- table(Kmeans=km$cluster,\n               Ward=ward)\ntab90\n# I numeri dei gruppi non sono nomi\n# geologici ne' ordini di grandezza.",
+   "output": "> # Stessi campioni, stessa scala, k=3.\n> tab90 <- table(Kmeans=km$cluster,\n+                Ward=ward)\n> tab90\n      Ward\nKmeans  1  2  3\n     1  0  0 30\n     2  0 30  0\n     3 30  0  0\n> # I numeri dei gruppi non sono nomi\n> # geologici ne' ordini di grandezza.",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "011_standardizzazione.R",
+    "064_avvii.R",
+    "065_kmeans.R",
+    "076_coesione_separazione.R",
+    "086_ward.R",
+    "088_taglio.R"
+   ]
+  },
+  "091_coappartenenza.R": {
+   "code": "# Confronto senza nomi dei gruppi.\nA91 <- outer(km$cluster,\n              km$cluster,\"==\")\nB91 <- outer(ward,ward,\"==\")\nsopra91 <- upper.tri(A91)\nmean(A91[sopra91]==B91[sopra91])\n# Confronto non sensibile ai nomi.\nall(A91==B91)",
+   "output": "> # Confronto senza nomi dei gruppi.\n> A91 <- outer(km$cluster,\n+               km$cluster,\"==\")\n> B91 <- outer(ward,ward,\"==\")\n> sopra91 <- upper.tri(A91)\n> mean(A91[sopra91]==B91[sopra91])\n[1] 1\n> # Confronto non sensibile ai nomi.\n> all(A91==B91)\n[1] TRUE",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "011_standardizzazione.R",
+    "064_avvii.R",
+    "065_kmeans.R",
+    "076_coesione_separazione.R",
+    "086_ward.R",
+    "088_taglio.R"
+   ]
+  },
+  "092_wss_ward.R": {
+   "code": "# WSS della partizione di Ward.\nmu92 <- rowsum(Z,ward) /\n         as.vector(table(ward))\nW92 <- sum((Z-mu92[ward,])^2)\nc(Kmeans=km$tot.withinss,Ward=W92)\n# Nello stesso spazio, confrontiamo\n# la stessa quantita' geometrica.",
+   "output": "> # WSS della partizione di Ward.\n> mu92 <- rowsum(Z,ward) /\n+          as.vector(table(ward))\n> W92 <- sum((Z-mu92[ward,])^2)\n> c(Kmeans=km$tot.withinss,Ward=W92)\n Kmeans    Ward \n129.498 129.498 \n> # Nello stesso spazio, confrontiamo\n> # la stessa quantita' geometrica.",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "011_standardizzazione.R",
+    "064_avvii.R",
+    "065_kmeans.R",
+    "076_coesione_separazione.R",
+    "086_ward.R",
+    "088_taglio.R"
+   ]
+  },
+  "095_avvii.R": {
+   "code": "set.seed(818)\nW_avvii <- replicate(30, {\n  m <- kmeans(Z, 3, nstart = 1,\n              iter.max = 100)\n  m$tot.withinss\n})\nrange(W_avvii)",
+   "output": "> set.seed(818)\n> W_avvii <- replicate(30, {\n+   m <- kmeans(Z, 3, nstart = 1,\n+               iter.max = 100)\n+   m$tot.withinss\n+ })\n> range(W_avvii)\n[1] 129.498 374.017",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "011_standardizzazione.R"
+   ]
+  },
+  "096_perturbazione.R": {
+   "code": "# Una perturbazione nelle unità di Z.\nset.seed(819)\nZp <- Z + matrix(rnorm(length(Z),\n  sd = 0.4), nrow(Z))\nkp <- kmeans(Zp, 3, nstart = 50,\n             iter.max = 100)\naccordo_coppie(km$cluster, kp$cluster)",
+   "output": "> # Una perturbazione nelle unità di Z.\n> set.seed(819)\n> Zp <- Z + matrix(rnorm(length(Z),\n+   sd = 0.4), nrow(Z))\n> kp <- kmeans(Zp, 3, nstart = 50,\n+              iter.max = 100)\n> accordo_coppie(km$cluster, kp$cluster)\n[1] 1",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "011_standardizzazione.R",
+    "064_avvii.R",
+    "065_kmeans.R"
+   ]
+  },
+  "097_coappartenenza.R": {
+   "code": "a <- c(1, 1, 2, 2, 3, 3)\nb <- c(3, 3, 1, 1, 2, 2)\n# I numeri dei gruppi sono arbitrari.\nmean(a == b)\naccordo_coppie(a, b)  # vale 1\nindice_rand_corretto(a, b)",
+   "output": "> a <- c(1, 1, 2, 2, 3, 3)\n> b <- c(3, 3, 1, 1, 2, 2)\n> # I numeri dei gruppi sono arbitrari.\n> mean(a == b)\n[1] 0\n> accordo_coppie(a, b)  # vale 1\n[1] 1\n> indice_rand_corretto(a, b)\n[1] 1",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "008_unita.R"
+   ]
+  },
+  "098_sottocampione.R": {
+   "code": "# Una delle quaranta estrazioni.\nset.seed(820)\nidx <- sort(sample(1:nrow(Z), 72))\nks <- kmeans(Z[idx, ], 3, nstart = 30,\n             iter.max = 100)\nouter(ks$cluster, ks$cluster, \"==\")[1:4, 1:4]",
+   "output": "> # Una delle quaranta estrazioni.\n> set.seed(820)\n> idx <- sort(sample(1:nrow(Z), 72))\n> ks <- kmeans(Z[idx, ], 3, nstart = 30,\n+              iter.max = 100)\n> outer(ks$cluster, ks$cluster, \"==\")[1:4, 1:4]\n     [,1] [,2] [,3] [,4]\n[1,] TRUE TRUE TRUE TRUE\n[2,] TRUE TRUE TRUE TRUE\n[3,] TRUE TRUE TRUE TRUE\n[4,] TRUE TRUE TRUE TRUE",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "011_standardizzazione.R",
+    "075_confronto_k.R"
+   ]
+  },
+  "099_variabili.R": {
+   "code": "chim <- c(\"SiO2\", \"CaO\", \"MgO\", \"FeO\")\nset.seed(819)\nkc <- kmeans(scale(d[chim]), 3,\n              nstart = 50)\naccordo_coppie(km$cluster, kc$cluster)",
+   "output": "> chim <- c(\"SiO2\", \"CaO\", \"MgO\", \"FeO\")\n> set.seed(819)\n> kc <- kmeans(scale(d[chim]), 3,\n+               nstart = 50)\n> accordo_coppie(km$cluster, kc$cluster)\n[1] 1",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "011_standardizzazione.R",
+    "064_avvii.R",
+    "065_kmeans.R"
+   ]
+  },
+  "100_campioni_distanti.R": {
+   "code": "delta <- Z - km$centers[km$cluster, ]\nd2_centro <- rowSums(delta^2)\nsoglia <- quantile(d2_centro, .95)\nsegnala <- d2_centro > soglia\nd[segnala, c(\"id\", v)]",
+   "output": "> delta <- Z - km$centers[km$cluster, ]\n> d2_centro <- rowSums(delta^2)\n> soglia <- quantile(d2_centro, .95)\n> segnala <- d2_centro > soglia\n> d[segnala, c(\"id\", v)]\n     id    SiO2      CaO     MgO     FeO densita grana_mm  colore  fossili\n31 R031 68.9621  3.61307 1.59352 1.32899 2.57643 2.099592 39.1518  5.27482\n49 R049 65.6152  1.84908 2.54045 2.80845 2.59443 0.030000 18.5139  9.74750\n59 R059 67.2029  6.81273 1.52592 2.72105 2.49124 1.792527 21.3818  1.75352\n67 R067 12.0934 57.81487 2.16505 1.45686 2.48151 0.030000 50.4372 96.47579\n88 R088 13.4146 52.92634 2.18990 0.05000 2.87234 0.802711 25.8293 22.52157",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "011_standardizzazione.R",
+    "064_avvii.R",
+    "065_kmeans.R"
+   ]
+  },
+  "101_profili_originali.R": {
+   "code": "profili <- aggregate(d[v],\n  list(gruppo = km$cluster), mean)\nprofili[, c(\"gruppo\", \"SiO2\",\n             \"densita\", \"grana_mm\")]\n# Esaminare anche dispersione e casi.",
+   "output": "> profili <- aggregate(d[v],\n+   list(gruppo = km$cluster), mean)\n> profili[, c(\"gruppo\", \"SiO2\",\n+              \"densita\", \"grana_mm\")]\n  gruppo     SiO2 densita grana_mm\n1      1  8.02369 2.65221 0.345744\n2      2 69.67599 2.58277 0.959919\n3      3 50.43498 2.95008 0.381841\n> # Esaminare anche dispersione e casi.",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "011_standardizzazione.R",
+    "064_avvii.R",
+    "065_kmeans.R"
+   ]
+  },
+  "102_generatore.R": {
+   "code": "# L'etichetta non e stata usata nella stima.\ngeneratore <- d$litologia_generatrice\ntable(gruppo = km$cluster, generatore)\nindice_rand_corretto(km$cluster, generatore)",
+   "output": "> # L'etichetta non e stata usata nella stima.\n> generatore <- d$litologia_generatrice\n> table(gruppo = km$cluster, generatore)\n      generatore\ngruppo Arenaria Basalto Calcare\n     1        0       0      30\n     2       30       0       0\n     3        0      30       0\n> indice_rand_corretto(km$cluster, generatore)\n[1] 1",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "011_standardizzazione.R",
+    "064_avvii.R",
+    "065_kmeans.R"
+   ]
+  },
+  "105_quattro_gruppi.R": {
+   "code": "set.seed(1601)\nkm4 <- kmeans(Z, 4, nstart = 50)\ntable(k3 = km$cluster, k4 = km4$cluster)\nmean(silhouette_base(km4$cluster, dist(Z)))\naggregate(d[v], list(gruppo = km4$cluster), mean)",
+   "output": "> set.seed(1601)\n> km4 <- kmeans(Z, 4, nstart = 50)\n> table(k3 = km$cluster, k4 = km4$cluster)\n   k4\nk3   1  2  3  4\n  1  0  0  0 30\n  2 18 12  0  0\n  3  0  0 30  0\n> mean(silhouette_base(km4$cluster, dist(Z)))\n[1] 0.543914\n> aggregate(d[v], list(gruppo = km4$cluster), mean)\n  gruppo     SiO2      CaO     MgO      FeO densita grana_mm  colore  fossili\n1      1 69.91277  3.52195 1.19733 1.823175 2.56949 1.296914 31.6158  9.26574\n2      2 69.32082  4.63376 1.06516 1.832417 2.60269 0.454427 33.0477  6.76704\n3      3 50.43498  8.82127 8.68583 9.830332 2.95008 0.381841 79.2514  2.14885\n4      4  8.02369 49.74498 2.08221 0.967319 2.65221 0.345744 20.9248 65.06902",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "011_standardizzazione.R",
+    "064_avvii.R",
+    "065_kmeans.R",
+    "080_quattro_gruppi.R"
+   ]
+  },
+  "106_equivalenza.R": {
+   "code": "pa <- prcomp(X, center = TRUE,\n             scale. = TRUE)\npb <- prcomp(scale(X), center = FALSE,\n             scale. = FALSE)\nmax(abs(pa$sdev - pb$sdev))\nmax(abs(pa$x - pb$x))",
+   "output": "> pa <- prcomp(X, center = TRUE,\n+              scale. = TRUE)\n> pb <- prcomp(scale(X), center = FALSE,\n+              scale. = FALSE)\n> max(abs(pa$sdev - pb$sdev))\n[1] 0\n> max(abs(pa$x - pb$x))\n[1] 0",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R"
+   ]
+  },
+  "107_tabella_finale.R": {
+   "code": "sil <- silhouette_base(km$cluster, dist(Z))\nrisultati <- data.frame(id = d$id,\n  pc$x[, 1:2], kmeans = km$cluster,\n  ward = cutree(h, k = 3), silhouette = sil)\nwrite.csv(risultati, \"Risultati/campioni.csv\",\n          row.names = FALSE)",
+   "output": "> sil <- silhouette_base(km$cluster, dist(Z))\n> risultati <- data.frame(id = d$id,\n+   pc$x[, 1:2], kmeans = km$cluster,\n+   ward = cutree(h, k = 3), silhouette = sil)\n> write.csv(risultati, \"Risultati/campioni.csv\",\n+           row.names = FALSE)",
+   "deps": [
+    "006_etichette.R",
+    "007_matrice.R",
+    "011_standardizzazione.R",
+    "038_prcomp.R",
+    "064_avvii.R",
+    "065_kmeans.R",
+    "069_piano_pca.R",
+    "076_coesione_separazione.R",
+    "077_silhouette.R",
+    "086_ward.R"
+   ]
+  }
+ },
+ "download": "assets/lezioni/M08/Polychroma_M08_progetto_R.zip"
+}
