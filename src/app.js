@@ -519,13 +519,13 @@
     else codePage(m);
     return true;
   }
-  // Modules with a lesson in the new edition point to its tappe; the earlier slides stay readable.
+  // Modules with a lesson point to its tappe; the earlier slides stay readable.
   function lessonNotice(m) {
     const l = lessonIndex[m.id];
     if (!l) return;
     const box = document.createElement('section');
     box.className = 'lesson-notice';
-    box.innerHTML = html`<p class="eyebrow">NUOVA EDIZIONE DELLA LEZIONE</p><h2>${l.planet}: ${l.title}</h2><p>Le ${l.pages} slide della nuova lezione hanno ciascuna una tappa sul sito, con il testo, il codice R eseguibile e i laboratori con gli stessi parametri. Gli esercizi del quaderno sono sul pianeta compagno del sistema.</p><div class="lab-actions"><a class="button" href="#lezione-${m.id}">Tappe della lezione →</a><a class="button secondary" href="#esercizi-${m.id}">Quaderno degli esercizi →</a></div>`;
+    box.innerHTML = html`<p class="eyebrow">LEZIONE A TAPPE</p><h2>${l.planet}: ${l.title}</h2><p>Ognuna delle ${l.pages} slide della lezione ha una tappa sul sito, con il testo, il codice R eseguibile e i laboratori con gli stessi parametri. Gli esercizi del quaderno sono sul pianeta compagno del sistema.</p><div class="lab-actions"><a class="button" href="#lezione-${m.id}">Tappe della lezione →</a><a class="button secondary" href="#esercizi-${m.id}">Quaderno degli esercizi →</a></div>`;
     (main.querySelector('.module-head') || main.firstElementChild)?.after(box);
   }
   function markNavigation(r) {

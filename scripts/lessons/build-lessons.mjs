@@ -87,6 +87,13 @@ export function blocks(text) {
   return out;
 }
 
+// Explanations continue the text of the slide: paragraphs and display formulas only, no headings or lists.
+function prose(list, where) {
+  const other = list.find(b => b.t !== 'p' && b.t !== 'math');
+  if (other) throw Error('Solo paragrafi e formule nel testo (' + where + '): trovato ' + other.t);
+  return list;
+}
+
 export function explanations(source, slides) {
   const parts = source.split(/^## /m),
     notes = {};
@@ -99,9 +106,9 @@ export function explanations(source, slides) {
     if (!slide) throw Error('Tappa inesistente: ' + page);
     if (slide.title !== m[2]) throw Error('Titolo della tappa ' + page + ' diverso dalla slide: ' + m[2]);
     if (notes[page]) throw Error('Tappa ripetuta: ' + page);
-    notes[page] = blocks(body.join('\n'));
+    notes[page] = prose(blocks(body.join('\n')), 'tappa ' + page);
   }
-  return { intro: blocks(parts[0]), notes };
+  return { intro: prose(blocks(parts[0]), 'introduzione'), notes };
 }
 
 const safe = v =>

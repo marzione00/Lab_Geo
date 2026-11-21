@@ -62,8 +62,16 @@ for (const [id, cfg] of Object.entries(config)) {
     assert.ok(Object.keys(notes).length > 0);
     assert.throws(() => inline('[x](javascript:alert(1))'), /Destinazione non ammessa/);
     assert.throws(() => explanations('## 16 · Titolo diverso\n\nTesto.', L.slides), /diverso dalla slide/);
+    for (const blocks of [intro, ...Object.values(notes)])
+      for (const b of blocks) assert.ok(b.t === 'p' || b.t === 'math', 'solo paragrafi e formule');
+    assert.throws(
+      () => explanations('## 16 · ' + L.slides[15].title + '\n\n### Titolo\n\nTesto.', L.slides),
+      /Solo paragrafi/,
+    );
+    assert.throws(() => explanations('## 16 · ' + L.slides[15].title + '\n\n- voce', L.slides), /Solo paragrafi/);
     const text = read('content/lezioni/' + id + '.md');
-    assert.ok(!text.includes('—'), 'lineette lunghe nel testo');
+    for (const banned of ['—', 'non solo', 'Inoltre', 'In sintesi', 'fondamentale', 'cruciale', 'Conviene', 'Prova a'])
+      assert.ok(!text.includes(banned), 'espressione da evitare: ' + banned);
   });
 
   test(id + ': schede del quaderno con scenari validi e controlli numerici', () => {

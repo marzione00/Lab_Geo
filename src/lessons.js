@@ -106,7 +106,7 @@
         return html`<p class="lesson-small">Riquadro di codice «${it.title}»: <code>${it.file}</code>, eseguibile nella sezione Codice R.</p>`;
       if (it.t === 'lab') return html`<p>${inline(it.c)}: <a href="${labUrl(it.lab)}">apri il laboratorio ↗</a></p>`;
       return '';
-    })}${s.transcribed ? html`<p class="lesson-small">Testo trascritto dal PDF della lezione: il sorgente LaTeX distribuito non contiene i riquadri di questa slide.</p>` : ''}`;
+    })}`;
   }
 
   // ---------------------------------------------------------------- R code of a slide
@@ -147,7 +147,7 @@
       deps = c.deps.length
         ? html`Prima di questo codice vengono eseguiti, senza mostrarli, <code>setup.R</code> e ${c.deps.map((d, i) => html`${i ? ', ' : ''}<a href="#lezione-${L.id}/${Number(d.slice(0, 3))}"><code>${d}</code></a>`)}.`
         : html`Prima di questo codice viene eseguito, senza mostrarlo, <code>setup.R</code>.`;
-    return html`<article class="lesson-code" data-file="${it.file}"><header><h3>${it.title}</h3><code>${opts.path || 'Codice/' + it.file}</code></header><p class="lesson-small">${deps}</p><label class="sr-only" for="${id}">Codice R modificabile · ${it.file}</label><textarea class="lab-editor lesson-editor" id="${id}" spellcheck="false" maxlength="${S.limits.code}" rows="${Math.min(22, c.code.split('\n').length + 1)}">${c.code}</textarea><div class="lab-actions"><button type="button" class="button small" data-run>Esegui in R</button><button type="button" class="button small secondary" data-restore>Ripristina il codice della slide</button><button type="button" class="button small secondary" data-copy-code>Copia</button><button type="button" class="button small secondary" data-download>Scarica .R</button></div><p class="lesson-output-head" data-head>Uscita di riferimento · ${L.reference.R}, codice delle slide eseguito in ordine</p><pre class="lab-code-output lesson-output" tabindex="0" role="region" aria-label="Uscita di R · ${it.file}" data-output>${c.output}</pre><div class="lesson-figures" data-figures></div></article>`;
+    return html`<article class="lesson-code" data-file="${it.file}"><header><h3>${it.title}</h3><code>${opts.path || 'Codice/' + it.file}</code></header><p class="lesson-small">${deps}</p><label class="sr-only" for="${id}">Codice R modificabile · ${it.file}</label><textarea class="lab-editor lesson-editor" id="${id}" spellcheck="false" maxlength="${S.limits.code}" rows="${Math.min(22, c.code.split('\n').length + 1)}">${c.code}</textarea><div class="lab-actions"><button type="button" class="button small" data-run>Esegui in R</button><button type="button" class="button small secondary" data-restore>Ripristina il codice della slide</button><button type="button" class="button small secondary" data-copy-code>Copia</button><button type="button" class="button small secondary" data-download>Scarica .R</button></div><p class="lesson-output-head" data-head>Uscita attesa</p><pre class="lab-code-output lesson-output" tabindex="0" role="region" aria-label="Uscita di R · ${it.file}" data-output>${c.output}</pre><div class="lesson-figures" data-figures></div></article>`;
   }
   function bindCode(host, L, announce) {
     const urls = [];
@@ -159,8 +159,7 @@
         editor = $('textarea');
       $('[data-restore]').addEventListener('click', () => {
         editor.value = original;
-        $('[data-head]').textContent =
-          'Uscita di riferimento · ' + L.reference.R + ', codice delle slide eseguito in ordine';
+        $('[data-head]').textContent = 'Uscita attesa';
         $('[data-output]').textContent = L.code[file].output;
         $('[data-figures]').replaceChildren();
         announce('Codice della slide ripristinato');
@@ -211,14 +210,14 @@
 
   // ---------------------------------------------------------------- lesson pages
   const regionName = t => t.charAt(0) + t.slice(1).toLowerCase();
-  function sidebar(L, page, explained) {
+  function sidebar(L, page) {
     return html`<aside class="reader-sidebar lesson-sidebar" aria-label="Tappe della lezione"><h2>${L.planet} · Tappe</h2><input type="search" id="cerca-tappa" aria-label="Cerca fra le tappe" placeholder="Cerca una tappa">${L.sections.map(
       sec =>
         html`<p class="toc-section">${regionName(sec.title)}</p>${L.slides
           .slice(sec.first - 1, sec.last)
           .map(
             s =>
-              html`<a class="toc-link" href="#lezione-${L.id}/${s.page}" data-search="${(s.title + ' ' + sec.title).toLowerCase()}"${s.page === page ? html` aria-current="page"` : ''}><span>${String(s.page).padStart(2, '0')}</span><span>${s.title}${explained.has(s.page) ? html` <b class="lesson-mark" title="Spiegazione estesa">✦</b>` : ''}</span></a>`,
+              html`<a class="toc-link" href="#lezione-${L.id}/${s.page}" data-search="${(s.title + ' ' + sec.title).toLowerCase()}"${s.page === page ? html` aria-current="page"` : ''}><span>${String(s.page).padStart(2, '0')}</span><span>${s.title}</span></a>`,
           )}`,
     )}</aside>`;
   }
@@ -226,35 +225,18 @@
     return html`<div class="breadcrumb"><a href="#indice">Galassia</a><span>/</span><a href="#sistema-${L.id}">Sistema di ${L.planet}</a><span>/</span><a href="#lezione-${L.id}">${L.planet} · Lezione ${L.id}</a>${extra ? html`<span>/</span><span>${extra}</span>` : ''}</div>`;
   }
   function overview(main, L) {
-    const explained = new Set(Object.keys(L.notes).map(Number)),
-      done = new Set(load().done);
+    const done = new Set(load().done);
     main.innerHTML = html`<div class="wrap lesson-overview">${crumbs(L)}<header class="module-head lesson-head"><p class="eyebrow">${L.id} · PIANETA ${L.planet.toUpperCase()} · LEZIONE</p><h1>${L.title}</h1><div class="lesson-intro">${blocks(L.intro)}</div><div class="lab-actions"><a class="button" href="#lezione-${L.id}/2">Inizia dalla tappa 2 →</a><a class="button secondary" href="${L.pdf}" target="_blank" rel="noopener">PDF della lezione con i codici di tappa ↗</a><a class="button secondary" href="${L.download}" download>Progetto R: codice e dati</a><a class="button secondary" href="#esercizi-${L.id}">Quaderno degli esercizi →</a></div></header><section class="lesson-regions" aria-label="Regioni del pianeta">${L.sections
       .filter(sec => sec.first > 2)
       .map(sec => {
-        const tappe = L.slides.slice(sec.first - 1, sec.last),
-          extended = tappe.filter(s => explained.has(s.page)).length;
-        return html`<article class="lesson-region-card${extended ? ' explained' : ''}"><p class="eyebrow">Tappe ${sec.first}–${sec.last}</p><h2>${regionName(sec.title)}</h2><p class="lesson-small">${extended ? extended + ' tappe con spiegazione estesa' : 'Slide, testo, codice R eseguibile e laboratori'} · ${tappe.filter(s => done.has(L.id + ':' + s.page)).length} studiate</p><ol start="${sec.first}">${tappe.map(s => html`<li><a href="#lezione-${L.id}/${s.page}">${s.title}</a>${explained.has(s.page) ? html` <b class="lesson-mark" title="Spiegazione estesa">✦</b>` : ''}</li>`)}</ol></article>`;
+        const tappe = L.slides.slice(sec.first - 1, sec.last);
+        return html`<article class="lesson-region-card"><p class="eyebrow">Tappe ${sec.first}–${sec.last}</p><h2>${regionName(sec.title)}</h2><p class="lesson-small">${tappe.length} tappe · ${tappe.filter(s => done.has(L.id + ':' + s.page)).length} studiate</p><ol start="${sec.first}">${tappe.map(s => html`<li><a href="#lezione-${L.id}/${s.page}">${s.title}</a></li>`)}</ol></article>`;
       })}</section></div>`;
     typeset(main.querySelector('.lesson-intro'));
-  }
-  function pilot(L, explained) {
-    const pages = [...explained].sort((a, b) => a - b);
-    if (!pages.length) return '';
-    const sec = L.sections.find(x => x.first <= pages[0] && x.last >= pages[0]);
-    return (
-      ': per ora le spiegazioni estese coprono le tappe ' +
-      pages[0] +
-      '–' +
-      pages.at(-1) +
-      ', regione «' +
-      regionName(sec.title) +
-      '»'
-    );
   }
   function tappa(main, L, page, announce) {
     const s = L.slides[page - 1],
       sec = L.sections.find(x => page >= x.first && page <= x.last),
-      explained = new Set(Object.keys(L.notes).map(Number)),
       state = load(),
       doneKey = L.id + ':' + page,
       codes = s.items.filter(it => it.t === 'code'),
@@ -264,11 +246,7 @@
       ],
       prev = L.slides[page - 2],
       next = L.slides[page];
-    main.innerHTML = html`<div class="viewer lesson-viewer">${crumbs(L, 'Tappa ' + page)}<div class="reader-layout">${sidebar(L, page, explained)}<div class="reader-main lesson-main"><div class="reader-title"><h1>${s.title}</h1><span class="page-counter">${String(page).padStart(2, '0')} / ${L.pages}</span></div><div class="reader-tools"><p class="lesson-stop"><span class="lesson-stop-code">${L.planet} · ${page}</span> ${regionName(sec.title)}${sec.first < sec.last ? ' · tappe ' + sec.first + '–' + sec.last : ''}</p><div class="pager"><button data-step="-1" aria-label="Tappa precedente"${prev ? '' : ' disabled'}>←</button><button data-step="1" aria-label="Tappa successiva"${next ? '' : ' disabled'}>→</button></div></div><figure class="slide-frame lesson-slide"><img src="${s.image}" alt="Slide ${page} della lezione ${L.id}: ${s.title}. Il testo della slide è riportato sotto l’immagine." width="1134" height="709"></figure><div class="slide-caption"><span>Slide proiettata in aula · codice di tappa nel piè di pagina</span><a href="${s.image}" target="_blank" rel="noopener">Ingrandisci ↗</a><a href="${L.pdf}#page=${page}" target="_blank" rel="noopener">Apri nel PDF ↗</a></div>${s.recall.length ? html`<div class="recall lesson-recall"><strong>Da ricordare.</strong> ${inline(s.recall)}</div>` : ''}<details class="lesson-transcript"${explained.has(page) ? '' : ' open'}><summary>Testo della slide</summary><div class="lesson-transcript-body">${transcript(s)}</div></details><section class="reading lesson-notes" aria-labelledby="lesson-notes-title"><h2 id="lesson-notes-title">Spiegazione estesa</h2>${
-      L.notes[page]
-        ? blocks(L.notes[page])
-        : html`<p class="lesson-pending">La spiegazione estesa di questa tappa non è ancora disponibile${pilot(L, explained)}. Qui trovi la slide, il suo testo e il codice R eseguibile.</p>`
-    }</section>${
+    main.innerHTML = html`<div class="viewer lesson-viewer">${crumbs(L, 'Tappa ' + page)}<div class="reader-layout">${sidebar(L, page)}<div class="reader-main lesson-main"><div class="reader-title"><h1>${s.title}</h1><span class="page-counter">${String(page).padStart(2, '0')} / ${L.pages}</span></div><div class="reader-tools"><p class="lesson-stop"><span class="lesson-stop-code">${L.planet} · ${page}</span> ${regionName(sec.title)}${sec.first < sec.last ? ' · tappe ' + sec.first + '–' + sec.last : ''}</p><div class="pager"><button data-step="-1" aria-label="Tappa precedente"${prev ? '' : ' disabled'}>←</button><button data-step="1" aria-label="Tappa successiva"${next ? '' : ' disabled'}>→</button></div></div><figure class="slide-frame lesson-slide"><img src="${s.image}" alt="Slide ${page} della lezione ${L.id}: ${s.title}. Il testo della slide è riportato sotto l’immagine." width="1134" height="709"></figure><div class="slide-caption"><span>Slide della lezione</span><a href="${s.image}" target="_blank" rel="noopener">Ingrandisci ↗</a><a href="${L.pdf}#page=${page}" target="_blank" rel="noopener">Apri nel PDF ↗</a></div>${s.recall.length ? html`<div class="recall lesson-recall"><strong>Da ricordare.</strong> ${inline(s.recall)}</div>` : ''}<section class="lesson-text" aria-label="Testo della slide ${page}"><div class="lesson-transcript-body">${transcript(s)}</div>${L.notes[page] ? html`<div class="lesson-notes">${blocks(L.notes[page])}</div>` : ''}</section>${
       codes.length
         ? html`<section class="lesson-code-section" aria-labelledby="lesson-code-title"><h2 id="lesson-code-title">Codice R della slide</h2><p class="lesson-small">Modifica il codice ed eseguilo: R lavora su questo dispositivo, nella cartella del progetto ${L.planet}. Esegui soltanto codice di cui conosci la provenienza.</p><p class="lab-engine-state" role="status" aria-live="polite" data-engine></p>${codes.map(it => codeBox(L, it))}</section>`
         : ''
