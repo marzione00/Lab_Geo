@@ -24,6 +24,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import unicodedata
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -214,6 +215,17 @@ def text_of(nodes):
     return out
 
 
+SUB = str.maketrans('0123456789', '₀₁₂₃₄₅₆₇₈₉')
+
+
+def title_text(nodes):
+    """Testo di un titolo: le formule brevi diventano caratteri Unicode (H₀, CO₂, 1/√B)."""
+    def math(v):
+        v = re.sub(r'\\sqrt\{([^{}]*)\}', r'√\1', v)
+        return re.sub(r'_\{?(\d+)\}?', lambda m: m.group(1).translate(SUB), v)
+    return ''.join(n if isinstance(n, str) else math(n['v']) if n['t'] == 'm' else text_of([n]) for n in nodes)
+
+
 ITEM = re.compile(r'\\(PLabel|PBody|PSmall|PInfo|PCode|PLab)\{|(?<!\\)\\\[|\\begin\{tikzpicture\}|'
                   r'\\includegraphics(?:\[([^\]]*)\])?\{([^}]*)\}|\\begin\{tabular\}|'
                   r'\\resizebox\{([\d.]*)\\linewidth\}\{!\}\{\\input\{([^}]*)\}\}|\\input\{([^}]*)\}|'
@@ -222,7 +234,7 @@ ITEM = re.compile(r'\\(PLabel|PBody|PSmall|PInfo|PCode|PLab)\{|(?<!\\)\\\[|\\beg
 LAYOUT = re.compile(r'\\begin\{minipage\}(?:\[[^\]]*\])?\{[^}]*\}|\\end\{minipage\}|\\(?:begin|end)\{center\}|'
                     r'\\color\{[^}]*\}|\\fontsize\{[^}]*\}\{[^}]*\}|\\selectfont|\\raggedright|\\centering|'
                     r'\\renewcommand\{\\arraystretch\}\{[^}]*\}|\\(?:vspace|hspace)\*?\{[^}]*\}|\\par\b|\\nointerlineskip|'
-                    r'\\hfill|\\(?:small|med|big)skip|\\noindent|\\rule\{[^}]*\}\{[^}]*\}|%[^\n]*')
+                    r'\\hfill|\\(?:small|med|big)skip|\\noindent|\\rule\{[^}]*\}\{[^}]*\}|(?<!\\)%[^\n]*')
 
 
 def unwrap(text):
@@ -450,7 +462,7 @@ def parse_tex(path):
             (title, section, num, recall), _ = args(frame, c + len(r'\PilotChrome'), 4)
             if int(num) != page:
                 raise ValueError('numero di pagina incoerente nella slide %d' % page)
-            s.update(title=text_of(inline(bare(title))), section=text_of(inline(section)), recall=inline(recall))
+            s.update(title=title_text(inline(bare(title))), section=title_text(inline(section)), recall=inline(recall))
             # I riquadri possono precedere il frame (M03-M06) o stare al suo interno (M07-M16).
             s['items'] = boxes(pre + frame, page)
             for it in s['items']:
@@ -1011,7 +1023,7 @@ def main():
             s['items'] = [{'t': 'figure', 'col': 'W', 'box': 18.1, 'fig': '%03d-1' % s['page'],
                            'alt': region_text(pdf, s['page'], rect)}]
     for s in slides:
-        plain_title = re.sub(r'\\[A-Za-z]+|[{}^_]', '', s['title'])
+        plain_title = unicodedata.normalize('NFKC', re.sub(r'\\[A-Za-z]+|[{}^_]', '', s['title']))
         if s['page'] > 1 and norm(plain_title[:40]) not in norm(pdf_text(pdf, s['page'])):
             raise ValueError('titolo della slide %d assente nel PDF: %s' % (s['page'], s['title']))
     acts = lab_catalogue()
