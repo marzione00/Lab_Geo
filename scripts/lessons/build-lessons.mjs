@@ -130,7 +130,10 @@ export function buildLessons(root, out) {
       const image = 'assets/lezioni/' + id + '/' + String(s.page).padStart(3, '0') + (s.page === 1 ? '.webp' : '.svg');
       if (!fs.existsSync(path.join(root, image))) throw Error('Immagine della slide assente: ' + image);
       s.image = image;
-      for (const it of s.items) if (it.t === 'code' && !lesson.code[it.file]) throw Error('Codice assente: ' + it.file);
+      for (const it of s.items) {
+        if (it.t === 'code' && !lesson.code[it.file]) throw Error('Codice assente: ' + it.file);
+        if (it.t === 'figure' && !fs.existsSync(path.join(root, it.src))) throw Error('Figura assente: ' + it.src);
+      }
     }
     for (const f of [lesson.pdf, lesson.workbook, lesson.download])
       if (!fs.existsSync(path.join(root, f))) throw Error('File della lezione assente: ' + f);

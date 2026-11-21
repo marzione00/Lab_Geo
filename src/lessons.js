@@ -92,21 +92,48 @@
     Object.entries(params)
       .map(([k, v]) => k + ' = ' + String(v).replace('.', ','))
       .join(' · ');
-  function transcript(s) {
-    if (s.page === 1) return html`${s.lines.map(t => html`<p>${t}</p>`)}`;
-    if (s.page === 2)
-      return html`<p class="lesson-slide-label">Domanda centrale</p><p>${s.question}</p><ol>${s.steps.map(t => html`<li>${t}</li>`)}</ol>`;
-    return html`${s.items.map(it => {
-      if (it.t === 'label') return html`<p class="lesson-slide-label">${inline(it.c)}</p>`;
-      if (it.t === 'p') return html`<p>${inline(it.c)}</p>`;
-      if (it.t === 'small') return html`<p class="lesson-small">${inline(it.c)}</p>`;
-      if (it.t === 'info') return html`<p class="lesson-info">${inline(it.c)}</p>`;
-      if (it.t === 'math') return html`<div class="math">\\[${it.v}\\]</div>`;
-      if (it.t === 'code')
-        return html`<p class="lesson-small">Riquadro di codice «${it.title}»: <code>${it.file}</code>, eseguibile nella sezione Codice R.</p>`;
-      if (it.t === 'lab') return html`<p>${inline(it.c)}: <a href="${labUrl(it.lab)}">apri il laboratorio ↗</a></p>`;
-      return '';
-    })}`;
+  // The slide rebuilt as a site panel: its boxes in the original columns, figures from the TikZ source.
+  function slideItem(L, it, page, label) {
+    if (it.t === 'label') return html`<p class="lesson-slide-label">${inline(it.c)}</p>`;
+    if (it.t === 'p') return html`<p class="lesson-slide-body">${inline(it.c)}</p>`;
+    if (it.t === 'small') return html`<p class="lesson-small">${inline(it.c)}</p>`;
+    if (it.t === 'info') return html`<p class="lesson-info">${inline(it.c)}</p>`;
+    if (it.t === 'math') return html`<div class="math">\\[${it.v}\\]</div>`;
+    if (it.t === 'figure')
+      return html`<figure class="lesson-figure"><img src="${it.src}" alt="Figura della slide ${page}${label ? ': ' + label : ''}" width="${it.w}" height="${it.h}" style="width:${Math.round(it.ratio * 1000) / 10}%" loading="lazy"></figure>`;
+    if (it.t === 'code')
+      return html`<div class="lesson-slide-code"><div class="lesson-slide-code-head"><span>${it.title}</span><button type="button" data-goto="${it.file}">Modifica ed esegui ↓</button></div><pre><code>${root.GeoCodeGuide ? root.GeoCodeGuide.highlight(L.code[it.file].code) : L.code[it.file].code}</code></pre></div>`;
+    if (it.t === 'lab')
+      return html`<p><a class="button small secondary" href="${labUrl(it.lab)}">${inline(it.c)} ↗</a></p>`;
+    return '';
+  }
+  function column(L, list, page) {
+    let label = '';
+    return html`<div class="lesson-col">${list.map(it => {
+      if (it.t === 'label') label = text(it.c);
+      return slideItem(L, it, page, label);
+    })}</div>`;
+  }
+  const text = list => list.map(n => (typeof n === 'string' ? n : n.v || text(n.c || []))).join('');
+  function recallBox(label, nodes) {
+    return html`<div class="lesson-panel-recall"><span>${label}</span><p>${inline(nodes)}</p></div>`;
+  }
+  function slidePanel(L, s) {
+    const page = s.page;
+    if (page === 1)
+      return html`<section class="lesson-panel lesson-slide-panel" aria-label="Slide 1: ${s.title}"><figure class="lesson-figure lesson-cover"><img src="${s.image}" alt="Copertina della lezione: ${s.lines.join(', ')}" width="1134" height="709"></figure></section>`;
+    if (page === 2)
+      return html`<section class="lesson-panel lesson-slide-panel" aria-label="Slide 2: ${s.title}"><p class="lesson-slide-label">Domanda centrale</p><p class="lesson-question">${s.question}</p><div class="lesson-steps">${s.steps.map(
+        t => {
+          const [head, ...rest] = t.split(' · ');
+          return html`<div><span>${head}</span><p>${rest.join(' · ')}</p></div>`;
+        },
+      )}</div>${recallBox('Idea guida', s.recall)}</section>`;
+    const by = col => s.items.filter(it => it.col === col);
+    const wide = by('W');
+    return html`<section class="lesson-panel lesson-slide-panel" aria-label="Slide ${page}: ${s.title}"><div class="lesson-columns${wide.length ? ' wide' : ''}">${
+      wide.length ? column(L, wide, page) : html`${column(L, by('L'), page)}${column(L, by('R'), page)}`
+    }</div>${s.recall.length ? recallBox('Da ricordare', s.recall) : ''}</section>`;
   }
 
   // ---------------------------------------------------------------- R code of a slide
@@ -246,13 +273,13 @@
       ],
       prev = L.slides[page - 2],
       next = L.slides[page];
-    main.innerHTML = html`<div class="viewer lesson-viewer">${crumbs(L, 'Tappa ' + page)}<div class="reader-layout">${sidebar(L, page)}<div class="reader-main lesson-main"><div class="reader-title"><h1>${s.title}</h1><span class="page-counter">${String(page).padStart(2, '0')} / ${L.pages}</span></div><div class="reader-tools"><p class="lesson-stop"><span class="lesson-stop-code">${L.planet} · ${page}</span> ${regionName(sec.title)}${sec.first < sec.last ? ' · tappe ' + sec.first + '–' + sec.last : ''}</p><div class="pager"><button data-step="-1" aria-label="Tappa precedente"${prev ? '' : ' disabled'}>←</button><button data-step="1" aria-label="Tappa successiva"${next ? '' : ' disabled'}>→</button></div></div><figure class="slide-frame lesson-slide"><img src="${s.image}" alt="Slide ${page} della lezione ${L.id}: ${s.title}. Il testo della slide è riportato sotto l’immagine." width="1134" height="709"></figure><div class="slide-caption"><span>Slide della lezione</span><a href="${s.image}" target="_blank" rel="noopener">Ingrandisci ↗</a><a href="${L.pdf}#page=${page}" target="_blank" rel="noopener">Apri nel PDF ↗</a></div>${s.recall.length ? html`<div class="recall lesson-recall"><strong>Da ricordare.</strong> ${inline(s.recall)}</div>` : ''}<section class="lesson-text" aria-label="Testo della slide ${page}"><div class="lesson-transcript-body">${transcript(s)}</div>${L.notes[page] ? html`<div class="lesson-notes">${blocks(L.notes[page])}</div>` : ''}</section>${
+    main.innerHTML = html`<div class="viewer lesson-viewer">${crumbs(L, 'Tappa ' + page)}<div class="reader-layout">${sidebar(L, page)}<div class="reader-main lesson-main"><div class="reader-title"><h1>${s.title}</h1><span class="page-counter">${String(page).padStart(2, '0')} / ${L.pages}</span></div><div class="reader-tools"><p class="lesson-stop"><span class="lesson-stop-code">${L.planet} · ${page}</span> ${regionName(sec.title)}${sec.first < sec.last ? ' · tappe ' + sec.first + '–' + sec.last : ''}</p><div class="pager"><button data-step="-1" aria-label="Tappa precedente"${prev ? '' : ' disabled'}>←</button><button data-step="1" aria-label="Tappa successiva"${next ? '' : ' disabled'}>→</button></div></div>${slidePanel(L, s)}<div class="slide-caption lesson-caption"><span>Slide originale</span><a href="${s.image}" target="_blank" rel="noopener">Immagine ↗</a><a href="${L.pdf}#page=${page}" target="_blank" rel="noopener">PDF ↗</a></div>${L.notes[page] ? html`<section class="lesson-panel lesson-notes" aria-label="Commento alla slide ${page}">${blocks(L.notes[page])}</section>` : ''}${
       codes.length
-        ? html`<section class="lesson-code-section" aria-labelledby="lesson-code-title"><h2 id="lesson-code-title">Codice R della slide</h2><p class="lesson-small">Modifica il codice ed eseguilo: R lavora su questo dispositivo, nella cartella del progetto ${L.planet}. Esegui soltanto codice di cui conosci la provenienza.</p><p class="lab-engine-state" role="status" aria-live="polite" data-engine></p>${codes.map(it => codeBox(L, it))}</section>`
+        ? html`<section class="lesson-panel lesson-code-section" aria-labelledby="lesson-code-title"><h2 id="lesson-code-title">Codice R della slide</h2><p class="lesson-small">Modifica il codice ed eseguilo: R lavora su questo dispositivo, nella cartella del progetto ${L.planet}. Esegui soltanto codice di cui conosci la provenienza.</p><p class="lab-engine-state" role="status" aria-live="polite" data-engine></p>${codes.map(it => codeBox(L, it))}</section>`
         : ''
     }${
       labs.length
-        ? html`<section class="lesson-labs" aria-labelledby="lesson-labs-title"><h2 id="lesson-labs-title">Laboratorio</h2><ul>${labs.map(
+        ? html`<section class="lesson-panel lesson-labs" aria-labelledby="lesson-labs-title"><h2 id="lesson-labs-title">Laboratorio</h2><ul>${labs.map(
             lab => {
               const a = root.GeoLabs?.byId.get(lab.id);
               return a
@@ -281,6 +308,13 @@
       e.currentTarget.textContent = on ? '✓ Tappa studiata' : 'Segna la tappa come studiata';
       announce(on ? 'Tappa segnata come studiata' : 'Segnalazione rimossa');
     });
+    main.querySelectorAll('[data-goto]').forEach(b =>
+      b.addEventListener('click', () => {
+        const box = main.querySelector('.lesson-code[data-file="' + b.dataset.goto + '"]');
+        box?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+        box?.querySelector('textarea').focus({ preventScroll: true });
+      }),
+    );
     bindCode(main, L, announce);
     engineState(main);
     typeset(main.querySelector('.lesson-main'));
@@ -324,7 +358,7 @@
             f =>
               html`<label><span>${f.label}</span><input type="text" inputmode="decimal" autocomplete="off" name="${fieldKey(f)}" value="${saved.values[fieldKey(f)] || ''}" aria-describedby="fb-${f.scenario}-${f.key}"><small id="fb-${f.scenario}-${f.key}" class="lesson-feedback" aria-live="polite"></small></label>`,
           )}</fieldset>`,
-    )}<button class="button" type="submit">Verifica</button><p id="verify-status" class="lesson-verify-status" role="status">${saved.passed ? 'Esercizio già verificato in questo browser.' : ''}</p></form><label class="lesson-notes-label" for="card-notes">Risposte alle domande e confronto fra gli scenari</label><textarea id="card-notes" class="lab-notes" rows="6" maxlength="${S.limits.notes}">${saved.notes}</textarea><p class="lesson-small">Valori e risposte restano soltanto in questo browser.</p></section></div><section class="lesson-code-section" aria-labelledby="card-code-title"><h3 id="card-code-title">Codice R dell’esercizio</h3><p class="lesson-small">Lo script del quaderno chiama le funzioni del progetto ${L.planet} con i parametri dei due scenari. Scrivi una previsione prima di eseguirlo.</p><p class="lab-engine-state" role="status" aria-live="polite" data-engine></p><article class="lesson-code" data-card><header><h3>${card.script.file}</h3></header><label class="sr-only" for="card-editor">Codice R modificabile dell’esercizio</label><textarea class="lab-editor lesson-editor" id="card-editor" spellcheck="false" maxlength="${S.limits.code}" rows="${Math.min(22, card.script.code.split('\n').length + 1)}">${card.script.code}</textarea><div class="lab-actions"><button type="button" class="button small" data-run>Esegui in R</button><button type="button" class="button small secondary" data-restore>Ripristina</button><button type="button" class="button small secondary" data-download>Scarica .R</button></div><p class="lesson-output-head" data-head>L’uscita comparirà dopo l’esecuzione.</p><pre class="lab-code-output lesson-output" tabindex="0" role="region" aria-label="Uscita di R dell’esercizio" data-output></pre></article></section><nav class="lesson-pager" aria-label="Esercizi vicini">${n > 1 ? html`<a href="#esercizi-${L.id}/${n - 1}">← Esercizio ${n - 1}</a>` : html`<span></span>`}${n < E.cards.length ? html`<a href="#esercizi-${L.id}/${n + 1}">Esercizio ${n + 1} →</a>` : html`<a href="#lezione-${L.id}">Tappe di ${L.planet} →</a>`}</nav></article></div>`;
+    )}<button class="button" type="submit">Verifica</button><p id="verify-status" class="lesson-verify-status" role="status">${saved.passed ? 'Esercizio già verificato in questo browser.' : ''}</p></form><label class="lesson-notes-label" for="card-notes">Risposte alle domande e confronto fra gli scenari</label><textarea id="card-notes" class="lab-notes" rows="6" maxlength="${S.limits.notes}">${saved.notes}</textarea><p class="lesson-small">Valori e risposte restano soltanto in questo browser.</p></section></div><section class="lesson-panel lesson-code-section" aria-labelledby="card-code-title"><h3 id="card-code-title">Codice R dell’esercizio</h3><p class="lesson-small">Lo script del quaderno chiama le funzioni del progetto ${L.planet} con i parametri dei due scenari. Scrivi una previsione prima di eseguirlo.</p><p class="lab-engine-state" role="status" aria-live="polite" data-engine></p><article class="lesson-code" data-card><header><h3>${card.script.file}</h3></header><label class="sr-only" for="card-editor">Codice R modificabile dell’esercizio</label><textarea class="lab-editor lesson-editor" id="card-editor" spellcheck="false" maxlength="${S.limits.code}" rows="${Math.min(22, card.script.code.split('\n').length + 1)}">${card.script.code}</textarea><div class="lab-actions"><button type="button" class="button small" data-run>Esegui in R</button><button type="button" class="button small secondary" data-restore>Ripristina</button><button type="button" class="button small secondary" data-download>Scarica .R</button></div><p class="lesson-output-head" data-head>L’uscita comparirà dopo l’esecuzione.</p><pre class="lab-code-output lesson-output" tabindex="0" role="region" aria-label="Uscita di R dell’esercizio" data-output></pre></article></section><nav class="lesson-pager" aria-label="Esercizi vicini">${n > 1 ? html`<a href="#esercizi-${L.id}/${n - 1}">← Esercizio ${n - 1}</a>` : html`<span></span>`}${n < E.cards.length ? html`<a href="#esercizi-${L.id}/${n + 1}">Esercizio ${n + 1} →</a>` : html`<a href="#lezione-${L.id}">Tappe di ${L.planet} →</a>`}</nav></article></div>`;
     const form = main.querySelector('#verify-form'),
       notes = main.querySelector('#card-notes');
     const persist = patch => {

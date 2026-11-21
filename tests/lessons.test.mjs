@@ -29,6 +29,19 @@ for (const [id, cfg] of Object.entries(config)) {
     L.sections.forEach((sec, i) => i && assert.equal(sec.first, L.sections[i - 1].last + 1));
   });
 
+  test(id + ': riquadri in colonna e figure ricavate dal sorgente TikZ', () => {
+    for (const s of L.slides.slice(2)) {
+      assert.ok(s.items.length > 0, 'slide ' + s.page);
+      const cols = new Set(s.items.map(it => it.col));
+      assert.ok(cols.has('W') ? cols.size === 1 : cols.has('L') && cols.has('R'), 'colonne della slide ' + s.page);
+      for (const it of s.items.filter(x => x.t === 'figure')) {
+        assert.ok(fs.existsSync(path.join(root, it.src)), it.src);
+        assert.ok(it.ratio > 0.3 && it.ratio <= 1 && it.w > 0 && it.h > 0, it.src);
+        assert.ok(!('tex' in it));
+      }
+    }
+  });
+
   test(id + ': ogni file di codice appartiene alla sua slide e dipende solo da slide precedenti', () => {
     const files = fs.readdirSync(path.join(root, cfg.source, 'Codice')).filter(f => /^\d{3}_.*\.R$/.test(f));
     assert.deepEqual(Object.keys(L.code).sort(), files.sort());

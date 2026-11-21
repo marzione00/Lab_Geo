@@ -16,6 +16,7 @@ Il PDF e le slide restano quelli forniti: il codice di tappa viene sovrapposto a
 import argparse
 import csv
 import json
+import math
 import os
 import re
 import shutil
@@ -161,9 +162,8 @@ def items(chunk):
             out.append({'t': 'math', 'v': re.sub(r'\s+', ' ', chunk[m.end():j]).strip()})
             i = j + 2
         elif tok.startswith(r'\begin{tikz'):
-            j = chunk.index(r'\end{tikzpicture}', m.end())
-            if not out or out[-1]['t'] != 'figure':
-                out.append({'t': 'figure'})
+            j = chunk.index(r'\end{tikzpicture}', m.end()) + len(r'\end{tikzpicture}')
+            out.append({'t': 'figure', 'tex': chunk[m.start():j]})
             i = j
         else:
             name = m.group(1)
@@ -176,6 +176,29 @@ def items(chunk):
             else:
                 out.append({'t': {'PLabel': 'label', 'PBody': 'p', 'PSmall': 'small', 'PInfo': 'info'}[name],
                             'c': inline(a[0])})
+
+
+BOXES = {'PilotLeftBox': 'L', 'PilotRightBox': 'R', 'FullWideBox': 'W'}
+
+
+def boxes(pre, page):
+    """Riquadri della slide: colonna sinistra, destra o a tutta larghezza, con la larghezza in cm."""
+    out = []
+    for m in re.finditer(r'\\begin\{lrbox\}\{\\(\w+)\}(.*?)\\end\{lrbox\}', pre, re.S):
+        width = float(re.search(r'\\begin\{minipage\}\[t\]\{([\d.]+)cm\}', m.group(2)).group(1))
+        for it in items(m.group(2)):
+            it['col'] = BOXES[m.group(1)]
+            if it['t'] == 'figure':
+                it['box'] = width
+            out.append(it)
+    if not out:
+        return []
+    k = 0
+    for it in out:
+        if it['t'] == 'figure':
+            k += 1
+            it['fig'] = '%03d-%d' % (page, k)
+    return out
 
 
 def parse_tex(path):
@@ -193,7 +216,7 @@ def parse_tex(path):
             if int(num) != page:
                 raise ValueError('numero di pagina incoerente nella slide %d' % page)
             s.update(title=text_of(inline(title)), section=text_of(inline(section)), recall=inline(recall))
-            s['items'] = items(pre)
+            s['items'] = boxes(pre, page)
         else:
             s['items'] = []
             s['custom'] = frame
@@ -306,6 +329,73 @@ def stamp_pdf(src_pdf, out_pdf, lesson_id, planet, pages, workdir):
     subprocess.run(['qpdf', '--object-streams=generate', '--compress-streams=y', '--recompress-flate',
                     '--compression-level=9', '--deterministic-id', str(workdir / 'stamped.pdf'), str(out_pdf)], check=True)
     return 'sovrapposto'
+
+
+SVG_HEAD = re.compile(r'<svg([^>]*?) width="[\d.]+" height="[\d.]+" viewBox="[\d. ]+"')
+
+
+def crop_svg(svg, x, y, w, h):
+    """Restringe la vista di una pagina SVG di pdftocairo al rettangolo indicato (in punti)."""
+    out, n = SVG_HEAD.subn(lambda m: '<svg%s width="%g" height="%g" viewBox="%g %g %g %g"' % (m.group(1), w, h, x, y, w, h),
+                           svg, count=1)
+    if n != 1:
+        raise ValueError('intestazione SVG inattesa')
+    return out
+
+
+def figures(tex, slides, cfg, pdf, outdir, lesson_id, workdir):
+    """Figure TikZ dei riquadri compilate una per pagina con il preambolo della lezione e ritagliate."""
+    outdir.mkdir(parents=True, exist_ok=True)
+    for old in outdir.glob('*.svg'):
+        old.unlink()
+    figs = [(s, it) for s in slides for it in s['items'] if it['t'] == 'figure']
+    build = [(s, it) for s, it in figs if it['tex'].count('\\') > 2]
+    preamble = tex[:tex.index(r'\begin{document}')]
+    fc = subprocess.run(['fc-list', ':family=Nimbus Sans'], capture_output=True, text=True).stdout
+    doc = [preamble, r'\setsansfont{Nimbus Sans}\setmainfont{Nimbus Sans}' if fc.strip() else '', r'\begin{document}']
+    for i, (s, it) in enumerate(build):
+        doc.append(r'\begin{frame}[plain]\setbox0=\hbox{\color{Ink}\fontsize{11.3}{14.8}\selectfont ' + it['tex'] + '}'
+                   r'\typeout{FIGBOX:' + str(i) + r':\the\wd0:\the\ht0:\the\dp0}'
+                   r'\begin{tikzpicture}[remember picture,overlay]\node[anchor=north west,inner sep=0] at '
+                   r'([xshift=3bp,yshift=-3bp]current page.north west) {\copy0};\end{tikzpicture}\end{frame}')
+    doc.append(r'\end{document}')
+    (workdir / 'figure.tex').write_text('\n'.join(doc), encoding='utf-8')
+    for _ in range(2):
+        r = subprocess.run(['xelatex', '-interaction=nonstopmode', '-halt-on-error', 'figure.tex'], cwd=workdir,
+                           capture_output=True, text=True)
+        if r.returncode:
+            raise ValueError('compilazione delle figure non riuscita:\n' + r.stdout[-2000:])
+    log = (workdir / 'figure.log').read_text(encoding='utf-8', errors='replace')
+    dims = {int(m[1]): (float(m[2]), float(m[3]) + float(m[4]))
+            for m in re.finditer(r'FIGBOX:(\d+):([\d.]+)pt:([\d.]+)pt:([\d.]+)pt', log)}
+    if len(dims) != len(build):
+        raise ValueError('dimensioni delle figure incomplete: %d su %d' % (len(dims), len(build)))
+    bp = 72 / 72.27
+    for i, (s, it) in enumerate(build):
+        w, h = math.ceil(dims[i][0] * bp) + 6, math.ceil(dims[i][1] * bp) + 6
+        subprocess.run(['pdftocairo', '-svg', '-f', str(i + 1), '-l', str(i + 1), str(workdir / 'figure.pdf'),
+                        str(workdir / 'f.svg')], check=True)
+        svg = crop_svg((workdir / 'f.svg').read_text(encoding='utf-8'), 0, 0, w, h)
+        (outdir / (it['fig'] + '.svg')).write_text(svg, encoding='utf-8')
+        it.update(w=w, h=h)
+    # Figure assenti nel sorgente: ritaglio dichiarato della pagina del PDF distribuito.
+    crops = cfg.get('fromPdfFigures', {})
+    for s, it in figs:
+        if any(it is b for _, b in build):
+            continue
+        rect = crops.get(str(s['page']))
+        if not rect:
+            raise ValueError('figura della slide %d senza sorgente né ritaglio' % s['page'])
+        subprocess.run(['pdftocairo', '-svg', '-f', str(s['page']), '-l', str(s['page']), str(pdf),
+                        str(workdir / 'f.svg')], check=True)
+        svg = crop_svg((workdir / 'f.svg').read_text(encoding='utf-8'), *rect)
+        (outdir / (it['fig'] + '.svg')).write_text(svg, encoding='utf-8')
+        it.update(w=rect[2], h=rect[3])
+    for s, it in figs:
+        it['src'] = 'assets/lezioni/%s/figure/%s.svg' % (lesson_id, it['fig'])
+        it['ratio'] = round(min(1, it['w'] / (it.pop('box') / 2.54 * 72)), 3)
+        it.pop('tex')
+    return len(figs)
 
 
 def images(pdf, outdir, pages):
@@ -448,7 +538,7 @@ def main():
         s = slides[int(page) - 1]
         if s['items']:
             raise ValueError('la slide %s ha già un contenuto nel sorgente' % page)
-        s['items'] = items(snippet)
+        s['items'] = boxes(snippet, s['page'])
         s['transcribed'] = True
         for it in s['items']:
             if it['t'] in ('p', 'small', 'info', 'label') and norm(text_of(it['c'])[:30]) not in norm(
@@ -518,6 +608,7 @@ def main():
         shutil.copyfile(src / cfg['workbookPdf'], assets / cfg['workbookPdf'])
         lesson['download'] = 'assets/lezioni/%s/%s' % (o.lesson, cfg['zip']['name'])
         project_zip(src, assets / cfg['zip']['name'], cfg)
+        nfig = figures(tex, slides, cfg, pdf, assets / 'figure', o.lesson, work)
         if not o.no_images:
             images(stamped, assets, pages)
         out_json.parent.mkdir(parents=True, exist_ok=True)
@@ -527,8 +618,8 @@ def main():
         ex_json = ROOT / 'content/esercizi' / (o.lesson + '.json')
         ex_json.parent.mkdir(parents=True, exist_ok=True)
         ex_json.write_text(json.dumps(ex, ensure_ascii=False, indent=1) + '\n', encoding='utf-8')
-    print('%s: %d slide, %d sezioni, %d file R, %d esercizi' % (
-        o.lesson, pages, len(lesson['sections']), len(code), len(ex['cards'])))
+    print('%s: %d slide, %d sezioni, %d figure, %d file R, %d esercizi' % (
+        o.lesson, pages, len(lesson['sections']), nfig, len(code), len(ex['cards'])))
 
 
 if __name__ == '__main__':
