@@ -14,17 +14,19 @@ const C = globalThis.GeoCore;
 
 for (const [id, cfg] of Object.entries(config)) {
   const L = JSON.parse(read('content/lezioni/' + id + '.json')),
-    E = JSON.parse(read('content/esercizi/' + id + '.json')),
+    E = cfg.workbook ? JSON.parse(read('content/esercizi/' + id + '.json')) : null,
+    md = fs.existsSync(path.join(root, 'content/lezioni/' + id + '.md')),
     labs = new Map(JSON.parse(read('content/experiments.json')).activities.map(a => [a.id, a]));
 
-  test(id + ': una tappa per pagina, con titolo, sezione e immagine', () => {
+  test(id + ': una tappa per pagina, con titolo, sezione, copertina e PDF timbrato', () => {
     assert.equal(L.slides.length, L.pages);
     L.slides.forEach((s, i) => {
       assert.equal(s.page, i + 1);
       assert.ok(s.title && s.section);
-      const image = 'assets/lezioni/' + id + '/' + String(s.page).padStart(3, '0') + (s.page === 1 ? '.webp' : '.svg');
-      assert.ok(fs.existsSync(path.join(root, image)), image);
+      assert.equal(Boolean(s.image), s.page === 1, 'immagine soltanto in copertina');
     });
+    assert.ok(fs.existsSync(path.join(root, L.slides[0].image)), L.slides[0].image);
+    assert.ok(fs.existsSync(path.join(root, L.pdf)), L.pdf);
     assert.equal(L.sections.at(-1).last, L.pages);
     L.sections.forEach((sec, i) => i && assert.equal(sec.first, L.sections[i - 1].last + 1));
   });
@@ -32,8 +34,9 @@ for (const [id, cfg] of Object.entries(config)) {
   test(id + ': riquadri in colonna e figure ricavate dal sorgente TikZ', () => {
     for (const s of L.slides.slice(2)) {
       assert.ok(s.items.length > 0, 'slide ' + s.page);
-      const cols = new Set(s.items.map(it => it.col));
-      assert.ok(cols.has('W') ? cols.size === 1 : cols.has('L') && cols.has('R'), 'colonne della slide ' + s.page);
+      const cols = [...new Set(s.items.map(it => it.col))].sort().join('');
+      // Full width alone, two columns, or (M10-M12) a full-width box above the right column.
+      assert.ok(['W', 'LR', 'RW'].includes(cols), 'colonne della slide ' + s.page + ': ' + cols);
       for (const it of s.items.filter(x => x.t === 'figure')) {
         assert.ok(fs.existsSync(path.join(root, it.src)), it.src);
         assert.ok(it.ratio > 0.3 && it.ratio <= 1 && it.w > 0 && it.h > 0, it.src);
@@ -43,13 +46,27 @@ for (const [id, cfg] of Object.entries(config)) {
   });
 
   test(id + ': ogni file di codice appartiene alla sua slide e dipende solo da slide precedenti', () => {
-    const files = fs.readdirSync(path.join(root, cfg.source, 'Codice')).filter(f => /^\d{3}_.*\.R$/.test(f));
+    if (cfg.standalone) {
+      // T00, M13-M16: script autonomi per capitolo, collegati alla prima slide che li cita.
+      const cited = L.slides.flatMap(s => s.items.filter(x => x.t === 'code').map(x => [x.file, s.page]));
+      assert.deepEqual(Object.keys(L.code).sort(), [...new Set(cited.map(c => c[0]))].sort());
+      for (const [file, page] of cited) {
+        assert.equal(L.code[file].page, Math.min(...cited.filter(c => c[0] === file).map(c => c[1])), file);
+        assert.ok(L.code[file].page <= page);
+        assert.deepEqual(L.code[file].deps, []);
+        assert.equal(L.code[file].code, read(path.join(cfg.source, 'Codice', file)).replace(/\n+$/, ''));
+        assert.equal(L.code[file].lang === 'python', file.endsWith('.py'));
+      }
+      assert.ok(!('setup' in L.project));
+      return;
+    }
+    const files = fs.readdirSync(path.join(root, cfg.source, 'Codice')).filter(f => /^\d{2,3}_.*\.R$/.test(f));
     assert.deepEqual(Object.keys(L.code).sort(), files.sort());
     for (const s of L.slides)
-      for (const it of s.items.filter(x => x.t === 'code')) {
-        assert.equal(Number(it.file.slice(0, 3)), s.page);
+      for (const it of [...s.items.filter(x => x.t === 'code'), ...(s.code || [])]) {
+        assert.equal(parseInt(it.file, 10), s.page);
         assert.equal(L.code[it.file].code, read(path.join(cfg.source, 'Codice', it.file)).replace(/\n+$/, ''));
-        for (const d of L.code[it.file].deps) assert.ok(d < it.file && L.code[d], it.file + ' → ' + d);
+        for (const d of L.code[it.file].deps) assert.ok(parseInt(d, 10) < s.page && L.code[d], it.file + ' → ' + d);
       }
   });
 
@@ -69,7 +86,7 @@ for (const [id, cfg] of Object.entries(config)) {
       }
   });
 
-  test(id + ': spiegazioni estese con titoli identici alle slide e solo collegamenti ammessi', () => {
+  test(id + ': spiegazioni estese con titoli identici alle slide e solo collegamenti ammessi', { skip: !md }, () => {
     const { intro, notes } = explanations(read('content/lezioni/' + id + '.md'), L.slides);
     assert.ok(intro.length > 0);
     assert.ok(Object.keys(notes).length > 0);
@@ -87,7 +104,7 @@ for (const [id, cfg] of Object.entries(config)) {
       assert.ok(!text.includes(banned), 'espressione da evitare: ' + banned);
   });
 
-  test(id + ': schede del quaderno con scenari validi e controlli numerici', () => {
+  test(id + ': schede del quaderno con scenari validi e controlli numerici', { skip: !E }, () => {
     assert.equal(E.cards.length, 9);
     for (const c of E.cards) {
       assert.ok(labs.has(c.id));
@@ -101,14 +118,16 @@ for (const [id, cfg] of Object.entries(config)) {
   });
 
   test(id + ': percorsi della lezione e degli esercizi', () => {
-    const index = { [id]: { pages: L.pages, cards: E.cards.length } };
+    const index = { [id]: { pages: L.pages, cards: E ? E.cards.length : 0 } };
     assert.deepEqual(C.parseRoute('#lezione-' + id, cat, index), { type: 'lesson', id, page: null });
     assert.deepEqual(C.parseRoute('#lezione-' + id + '/16', cat, index), { type: 'lesson', id, page: 16 });
     assert.equal(C.parseRoute('#lezione-' + id + '/' + (L.pages + 1), cat, index).type, 'notfound');
     assert.equal(C.parseRoute('#lezione-' + id + '/0', cat, index).type, 'notfound');
     assert.equal(C.parseRoute('#lezione-' + id + '/016', cat, index).type, 'notfound');
-    assert.deepEqual(C.parseRoute('#esercizi-' + id, cat, index), { type: 'exercises', id, card: 1 });
-    assert.equal(C.parseRoute('#esercizi-' + id + '/10', cat, index).type, 'notfound');
+    if (E) {
+      assert.deepEqual(C.parseRoute('#esercizi-' + id, cat, index), { type: 'exercises', id, card: 1 });
+      assert.equal(C.parseRoute('#esercizi-' + id + '/' + (E.cards.length + 1), cat, index).type, 'notfound');
+    } else assert.equal(C.parseRoute('#esercizi-' + id, cat, index).type, 'notfound');
     assert.equal(C.parseRoute('#lezione-M99', cat, index).type, 'notfound');
     assert.equal(C.parseRoute('#lezione-' + id, cat).type, 'notfound');
   });

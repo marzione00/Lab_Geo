@@ -412,9 +412,12 @@ console.log(
     counts.worlds +
     ' pianeti e ' +
     counts.missions +
-    ' spedizioni; lezioni a tappe: ' +
-    Object.entries(lessons)
-      .map(([id, l]) => id + ' (' + l.pages + ' tappe, ' + l.explained.length + ' spiegazioni estese)')
-      .join(', ') +
+    ' spedizioni; ' +
+    Object.keys(lessons).length +
+    ' lezioni a tappe (' +
+    Object.values(lessons).reduce((n, l) => n + l.pages, 0) +
+    ' tappe, ' +
+    Object.values(lessons).reduce((n, l) => n + l.explained.length, 0) +
+    ' commentate)' +
     '; materiali originali conservati.',
 );

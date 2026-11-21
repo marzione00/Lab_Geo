@@ -116,6 +116,54 @@ const safe = v =>
     .replace(/</g, '\\u003c')
     .replace(/[\u2028\u2029]/g, c => '\\u' + c.charCodeAt(0).toString(16));
 
+// Project files for the R runtime of the browser: text as strings, binary data in base64.
+function projectFiles(dir, list) {
+  const decoder = new TextDecoder('utf-8', { fatal: true });
+  return Object.fromEntries(
+    list.map(f => {
+      const buf = fs.readFileSync(path.join(dir, f));
+      try {
+        return [f, decoder.decode(buf)];
+      } catch {
+        return [f, { b64: buf.toString('base64') }];
+      }
+    }),
+  );
+}
+
+// Links of the slides: site routes, local materials or HTTPS pages; a tappa must exist.
+function checkLinks(root, id, lesson, nodes) {
+  for (const n of nodes) {
+    if (typeof n !== 'object') continue;
+    if (n.t === 'a') {
+      const tappa = /^#lezione-([A-Z]\d{2})\/(\d+)$/.exec(n.h);
+      if (!/^(https:\/\/|#[a-z]|materiali\/[\w./-]+$|assets\/[\w./-]+$)/.test(n.h))
+        throw Error('Collegamento non ammesso in ' + id + ': ' + n.h);
+      if (tappa && (tappa[1] !== id || Number(tappa[2]) > lesson.pages)) throw Error('Tappa inesistente: ' + n.h);
+      if (/^(materiali|assets)\//.test(n.h) && !fs.existsSync(path.join(root, n.h)))
+        throw Error('File collegato assente: ' + n.h);
+    }
+    checkLinks(root, id, lesson, n.c || []);
+  }
+}
+
+// Files, code and links of a lesson.
+function checkLesson(root, id, lesson) {
+  const exists = p => fs.existsSync(path.join(root, p));
+  if (!exists(lesson.slides[0].image)) throw Error('Copertina assente: ' + id);
+  for (const s of lesson.slides) {
+    checkLinks(root, id, lesson, s.recall || []);
+    for (const it of [...s.items, ...(s.code || [])]) {
+      const cells = [...(it.head || []), ...(it.rows || [])].flat().flatMap(cell => cell.c);
+      checkLinks(root, id, lesson, [...(it.c || []), ...cells]);
+      if (it.t === 'code' && !lesson.code[it.file]) throw Error('Codice assente: ' + it.file);
+      if (it.t === 'figure' && !exists(it.src)) throw Error('Figura assente: ' + it.src);
+    }
+  }
+  for (const f of [lesson.pdf, lesson.workbook, lesson.download].filter(Boolean))
+    if (!exists(f)) throw Error('File della lezione assente: ' + f);
+}
+
 export function buildLessons(root, out) {
   const config = JSON.parse(fs.readFileSync(path.join(root, 'lezioni/lezioni.json'), 'utf8'));
   const index = {};
@@ -123,21 +171,15 @@ export function buildLessons(root, out) {
   for (const [id, cfg] of Object.entries(config)) {
     const read = p => fs.readFileSync(path.join(root, p), 'utf8');
     const lesson = JSON.parse(read('content/lezioni/' + id + '.json'));
-    const exercises = JSON.parse(read('content/esercizi/' + id + '.json'));
-    const { intro, notes } = explanations(read('content/lezioni/' + id + '.md'), lesson.slides);
-    const files = Object.fromEntries(lesson.project.files.map(f => [f, read(path.join(cfg.source, f))]));
-    for (const s of lesson.slides) {
-      const image = 'assets/lezioni/' + id + '/' + String(s.page).padStart(3, '0') + (s.page === 1 ? '.webp' : '.svg');
-      if (!fs.existsSync(path.join(root, image))) throw Error('Immagine della slide assente: ' + image);
-      s.image = image;
-      for (const it of s.items) {
-        if (it.t === 'code' && !lesson.code[it.file]) throw Error('Codice assente: ' + it.file);
-        if (it.t === 'figure' && !fs.existsSync(path.join(root, it.src))) throw Error('Figura assente: ' + it.src);
-      }
-    }
-    for (const f of [lesson.pdf, lesson.workbook, lesson.download])
-      if (!fs.existsSync(path.join(root, f))) throw Error('File della lezione assente: ' + f);
-    const data = { ...lesson, intro, notes, exercises, project: { dir: lesson.project.dir, files } };
+    const exFile = 'content/esercizi/' + id + '.json';
+    const exercises = fs.existsSync(path.join(root, exFile)) ? JSON.parse(read(exFile)) : null;
+    const mdFile = 'content/lezioni/' + id + '.md';
+    const { intro, notes } = fs.existsSync(path.join(root, mdFile))
+      ? explanations(read(mdFile), lesson.slides)
+      : { intro: [], notes: {} };
+    const files = projectFiles(path.join(root, cfg.source), lesson.project.files);
+    checkLesson(root, id, lesson);
+    const data = { ...lesson, intro, notes, exercises, project: { ...lesson.project, files } };
     fs.writeFileSync(
       path.join(out, 'assets/lessons', id + '.js'),
       'window.GEO_LESSONS=window.GEO_LESSONS||{};window.GEO_LESSONS.' + id + '=' + safe(data) + ';\n',
@@ -150,7 +192,7 @@ export function buildLessons(root, out) {
       pages: lesson.pages,
       explained: Object.keys(notes).map(Number),
       sections: lesson.sections,
-      cards: exercises.cards.length,
+      cards: exercises ? exercises.cards.length : 0,
     };
   }
   fs.writeFileSync(path.join(out, 'assets/lesson-index.js'), 'window.GEO_LESSON_INDEX=' + safe(index) + ';\n');

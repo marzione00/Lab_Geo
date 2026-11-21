@@ -241,23 +241,51 @@ assert(d.getElementById('verify-status').textContent.startsWith('Tutti'));
 d.querySelectorAll('#verify-form input')[1].value = '0.26';
 d.querySelector('#verify-form').dispatchEvent(new w.Event('submit', { cancelable: true }));
 assert(d.getElementById('verify-status').textContent.startsWith('5 indicatori su 6'));
-let lessonFormulas = 0;
-const L = w.GEO_LESSONS.M05,
-  texOf = list => list.flatMap(n => (typeof n === 'string' ? [] : n.t === 'm' ? [n.v] : n.c ? texOf(n.c) : []));
-const lessonTex = [
-  ...L.slides.flatMap(s => [
-    ...texOf(s.recall),
-    ...s.items.flatMap(it => (it.t === 'math' ? [it.v] : it.c ? texOf(it.c) : [])),
-  ]),
-  ...Object.values(L.notes).flatMap(bs =>
-    bs.flatMap(b => (b.t === 'math' ? [b.v] : b.t === 'ul' ? b.items.flatMap(texOf) : texOf(b.c))),
-  ),
-];
-for (const tex of lessonTex) {
-  const node = await w.MathJax.tex2svgPromise(tex, { display: true });
-  const problem = node.querySelector('[data-mml-node="merror"]');
-  assert(!problem, 'Lezione M05: ' + tex + ' ' + problem?.textContent);
-  lessonFormulas++;
+// Every other lesson: each tappa renders its slide panel, and a lesson without a workbook has no exercises route.
+let lessonPages = 0,
+  lessonFormulas = 0;
+const lessonIds = Object.keys(w.GEO_LESSON_INDEX);
+for (const id of lessonIds) {
+  const pages = w.GEO_LESSON_INDEX[id].pages;
+  for (let p = 1; p <= pages; p++) {
+    w.location.hash = '#lezione-' + id + '/' + p;
+    await until(
+      () => d.querySelector('.page-counter')?.textContent === String(p).padStart(2, '0') + ' / ' + pages,
+    ).catch(e => {
+      throw new Error(id + '/' + p + ': ' + (d.querySelector('main')?.textContent.slice(0, 300) || ''), { cause: e });
+    });
+    assert.equal(d.querySelectorAll('.lesson-main > .lesson-slide-panel').length, 1, id + '/' + p);
+    assert(!/\bundefined\b/.test(d.querySelector('.lesson-main').textContent), 'testo indefinito in ' + id + '/' + p);
+    for (const a of d.querySelectorAll('.lesson-main a[href]'))
+      assert(!/undefined|NaN/.test(a.getAttribute('href')), 'collegamento indefinito in ' + id + '/' + p);
+    assert(d.querySelector('.breadcrumb').textContent.includes('Sistema ' + w.GeoAstro.generate(id, 0).name));
+    lessonPages++;
+  }
+  if (!w.GEO_LESSON_INDEX[id].cards) {
+    w.location.hash = '#esercizi-' + id;
+    await until(() => d.querySelector('.error h1')?.textContent === 'Pagina non trovata');
+  }
+}
+const texOf = list => list.flatMap(n => (typeof n === 'string' ? [] : n.t === 'm' ? [n.v] : n.c ? texOf(n.c) : []));
+for (const id of lessonIds) {
+  const L = w.GEO_LESSONS[id];
+  const lessonTex = [
+    ...L.slides.flatMap(s => [
+      ...texOf(s.recall || []),
+      ...s.items.flatMap(it =>
+        it.t === 'math' ? [it.v] : it.t === 'table' ? texOf([...it.head, ...it.rows].flat()) : it.c ? texOf(it.c) : [],
+      ),
+    ]),
+    ...Object.values(L.notes || {}).flatMap(bs =>
+      bs.flatMap(b => (b.t === 'math' ? [b.v] : b.t === 'ul' ? b.items.flatMap(texOf) : texOf(b.c))),
+    ),
+  ];
+  for (const tex of lessonTex) {
+    const node = await w.MathJax.tex2svgPromise(tex, { display: true });
+    const problem = node.querySelector('[data-mml-node="merror"]');
+    assert(!problem, 'Lezione ' + id + ': ' + tex + ' ' + problem?.textContent);
+    lessonFormulas++;
+  }
 }
 assert.deepEqual(errors, []);
 const result = {
@@ -267,12 +295,20 @@ const result = {
   laboratori_T00_R_e_Python: 40,
   formule_verificate: formulas,
   formule_esperimenti: labFormulas,
+  tappe_lezioni: lessonPages,
   formule_lezioni: lessonFormulas,
   errori: errors,
 };
 fs.mkdirSync(path.join(root, 'qa'), { recursive: true });
 fs.writeFileSync(path.join(root, 'qa/dom.json'), JSON.stringify(result, null, 2));
 console.log(labFormulas + ' espressioni dei laboratori verificate.');
-console.log(lessonFormulas + ' espressioni della lezione M05 verificate (slide e spiegazioni).');
+console.log(
+  lessonIds.length +
+    ' lezioni: ' +
+    lessonPages +
+    ' tappe visualizzate e ' +
+    lessonFormulas +
+    ' espressioni verificate (slide e spiegazioni).',
+);
 console.log('DOM virtuale: 28 moduli e ' + formulas + ' espressioni matematiche verificati.');
 w.close();

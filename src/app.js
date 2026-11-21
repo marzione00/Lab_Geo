@@ -525,7 +525,7 @@
     if (!l) return;
     const box = document.createElement('section');
     box.className = 'lesson-notice';
-    box.innerHTML = html`<p class="eyebrow">LEZIONE A TAPPE</p><h2>${l.planet}: ${l.title}</h2><p>Ognuna delle ${l.pages} slide della lezione ha una tappa sul sito, con il testo, il codice R eseguibile e i laboratori con gli stessi parametri. Gli esercizi del quaderno sono sul pianeta compagno del sistema.</p><div class="lab-actions"><a class="button" href="#lezione-${m.id}">Tappe della lezione →</a><a class="button secondary" href="#esercizi-${m.id}">Quaderno degli esercizi →</a></div>`;
+    box.innerHTML = html`<p class="eyebrow">LEZIONE A TAPPE</p><h2>${l.planet}: ${l.title}</h2><p>Ognuna delle ${l.pages} slide della lezione ha una tappa sul sito, con il testo, il codice R eseguibile e i laboratori con gli stessi parametri.${l.cards ? ' Gli esercizi del quaderno sono sul pianeta compagno del sistema.' : ''}</p><div class="lab-actions"><a class="button" href="#lezione-${m.id}">Tappe della lezione →</a>${l.cards ? html`<a class="button secondary" href="#esercizi-${m.id}">Quaderno degli esercizi →</a>` : ''}</div>`;
     (main.querySelector('.module-head') || main.firstElementChild)?.after(box);
   }
   function markNavigation(r) {

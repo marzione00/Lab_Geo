@@ -222,19 +222,25 @@
     const dir = '/home/web_user/' + project.dir;
     if (projects.get(dir) === generation) return dir;
     const files = Object.entries(project.files);
-    if (!/^[a-z0-9_-]+$/i.test(project.dir) || files.some(([p]) => !/^[\w-]+(?:\/[\w.-]+)*\.(?:R|csv)$/.test(p)))
+    if (
+      !/^[a-z0-9_-]+$/i.test(project.dir) ||
+      files.some(
+        ([p, v]) =>
+          !/^[\w-]+(?:\/[\w.-]+)*\.(?:R|csv|json|txt|tif|tiff|rds)$/i.test(p) ||
+          !(typeof v === 'string' || (v && typeof v.b64 === 'string' && /^[A-Za-z0-9+/=]*$/.test(v.b64))),
+      )
+    )
       throw Error('Progetto R non valido.');
     await r.evalRVoid(
       files
         .map(
-          ([p, text]) =>
+          ([p, v]) =>
             'dir.create(dirname(' +
             rstring(dir + '/' + p) +
-            '),recursive=TRUE,showWarnings=FALSE);cat(' +
-            rstring(text) +
-            ',file=' +
-            rstring(dir + '/' + p) +
-            ')',
+            '),recursive=TRUE,showWarnings=FALSE);' +
+            (typeof v === 'string'
+              ? 'cat(' + rstring(v) + ',file=' + rstring(dir + '/' + p) + ')'
+              : 'writeBin(jsonlite::base64_dec(' + rstring(v.b64) + '),' + rstring(dir + '/' + p) + ')'),
         )
         .join('\n'),
     );
@@ -256,6 +262,7 @@
   }
   function runSnippet({ project, deps = [], code, edited = false }) {
     code = S.code(code);
+    if (project.setup && !/^[\w-]+(?:\/[\w.-]+)*\.R$/.test(project.setup)) throw Error('Preludio R non valido.');
     deps.forEach(S.code);
     const gen = generation,
       jobId = ++latest;
@@ -274,18 +281,26 @@
     svglite::svglite('/tmp/geostat-snippet-%03d.svg', width=9, height=5.5, bg='#F5F6F3')
     dev <- grDevices::dev.cur(); on.exit(if (dev %in% grDevices::dev.list()) grDevices::dev.off(dev), add=TRUE)
     quiet <- function(src) invisible(utils::capture.output(eval(parse(text=src, keep.source=FALSE), envir=e)))
-    quiet(paste(readLines('setup.R', warn=FALSE, encoding='UTF-8'), collapse='\\n'))
+    for (ex in ${project.setup ? `parse(${rstring(project.setup)}, keep.source=FALSE, encoding='UTF-8')` : 'expression()'})
+      invisible(utils::capture.output(suppressMessages(try(eval(ex, envir=e), silent=TRUE))))
     for (d in ${'c(' + deps.map(rstring).join(',') + ')'}) quiet(d)
+    # help() pages are shown as text in the output instead of calling an external pager.
+    op <- options(pager=function(files, header, title, delete.file)
+      for (f in files) cat(gsub('.\\b', '', readLines(f, warn=FALSE), useBytes=TRUE), sep='\\n'))
+    on.exit(options(op), add=TRUE)
     lines <- character()
     tc <- textConnection('lines', 'w', local=TRUE)
-    sink(tc); sink(tc, type='message')
+    sink(tc)
+    # webR does not divert the message stream to a sink: messages, warnings and errors are written
+    # to the same connection as the printed output, in the order they occur.
     status <- tryCatch(withCallingHandlers({
       source(exprs=parse(text=${rstring(code)}, keep.source=TRUE), local=e, echo=TRUE, print.eval=TRUE,
              spaced=FALSE, max.deparse.length=Inf)
       'ok'
-    }, warning=function(w) { message('Avviso: ', conditionMessage(w)); invokeRestart('muffleWarning') }),
-    error=function(err) { message('Errore: ', conditionMessage(err)); 'error' })
-    sink(type='message'); sink(); close(tc)
+    }, message=function(m) { cat(conditionMessage(m), file=tc); invokeRestart('muffleMessage') },
+    warning=function(w) { cat('Avviso: ', conditionMessage(w), '\\n', sep='', file=tc); invokeRestart('muffleWarning') }),
+    error=function(err) { cat('Errore: ', conditionMessage(err), '\\n', sep='', file=tc); 'error' })
+    sink(); close(tc)
     if (dev %in% grDevices::dev.list()) grDevices::dev.off(dev)
     drawn <- Filter(function(p) any(grepl('<(path|polyline|polygon|circle|line|text)\\\\b', readLines(p, warn=FALSE))),
                     sort(Sys.glob('/tmp/geostat-snippet-*.svg')))
