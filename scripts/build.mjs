@@ -4,6 +4,7 @@ import { execFileSync } from 'node:child_process';
 import vm from 'node:vm';
 import { hardenBuild } from './harden-build.mjs';
 import { compactCourseSVG } from './compact-course-svg.mjs';
+import { buildLessons } from './lessons/build-lessons.mjs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'),
@@ -142,6 +143,7 @@ for (const m of catalogue.modules) {
     'window.GEO_MODULES=window.GEO_MODULES||{};window.GEO_MODULES.' + m.id + '=' + safe(data) + ';\n',
   );
 }
+const lessons = buildLessons(root, out);
 for (const name of [
   'html.js',
   'static.css',
@@ -179,6 +181,8 @@ for (const name of [
   'planet-families.js',
   'research-projects.js',
   'research-projects.css',
+  'lessons.js',
+  'lessons.css',
 ])
   fs.copyFileSync(path.join(root, 'src', name), path.join(out, 'assets', name));
 fs.writeFileSync(
@@ -380,7 +384,7 @@ for (const f of ['THIRD_PARTY_NOTICES.md', 'LICENSE.md', 'LICENSE-CODE.md'])
 // Compact generated SVG markup without changing coordinates, colours or precision.
 // Keep the editable course assets untouched.
 let svgBytesSaved = 0;
-for (const dir of ['assets/slides', 'assets/visuals']) {
+for (const dir of ['assets/slides', 'assets/visuals', 'assets/lezioni']) {
   for (const entry of fs.readdirSync(path.join(out, dir), { recursive: true })) {
     if (!entry.endsWith('.svg')) continue;
     const file = path.join(out, dir, entry),
@@ -408,5 +412,9 @@ console.log(
     counts.worlds +
     ' pianeti e ' +
     counts.missions +
-    ' spedizioni; materiali originali conservati.',
+    ' spedizioni; lezioni a tappe: ' +
+    Object.entries(lessons)
+      .map(([id, l]) => id + ' (' + l.pages + ' tappe, ' + l.explained.length + ' spiegazioni estese)')
+      .join(', ') +
+    '; materiali originali conservati.',
 );

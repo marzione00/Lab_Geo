@@ -47,6 +47,8 @@
   }
   const labDetails = () => loadData('experiments-details.js', () => !!window.GEO_LABS?.detailed);
   const solutions = () => loadData('solution-data.js', () => !!window.GEO_SOLUTIONS);
+  const lessonData = id => loadData('lessons/' + id + '.js', () => !!window.GEO_LESSONS?.[id]);
+  const lessonIndex = window.GEO_LESSON_INDEX || {};
   // Briefing: stylesheet and script, both with SRI, loaded only when the briefing or a hint is shown.
   let briefingStyle = null;
   function briefingAssets() {
@@ -467,6 +469,17 @@
       document.title = config.title + ' · Taccuino delle esplorazioni';
       announce('Taccuino delle esplorazioni');
     },
+    lesson: r => {
+      const L = window.GEO_LESSONS[r.id];
+      window.GeoLessons.lesson(main, L, r.page, announce);
+      document.title = config.title + ' · ' + L.planet + (r.page ? ' · Tappa ' + r.page : ' · Lezione ' + r.id);
+      announce(r.page ? 'Tappa ' + r.page + ' · ' + L.slides[r.page - 1].title : 'Lezione ' + r.id + ' · ' + L.title);
+    },
+    exercises: r => {
+      window.GeoLessons.exercises(main, window.GEO_LESSONS[r.id], r.card, announce);
+      document.title = config.title + ' · Quaderno di ' + window.GEO_LESSONS[r.id].planet + ' · Esercizio ' + r.card;
+      announce('Esercizio ' + r.card);
+    },
     taccuino: () => window.GeoNarrative.journal(main),
     indice: r => home(r.type),
     catalogo: r => home(r.type),
@@ -478,6 +491,12 @@
   };
   // Lab details and worked solutions arrive before the views that read them; false if the route changed meanwhile.
   async function routeData(r, token) {
+    if (r.type === 'lesson' || r.type === 'exercises') {
+      if (!window.GEO_LESSONS?.[r.id]) main.innerHTML = html`<p class="loading">Apertura della lezione ${r.id}…</p>`;
+      // The R engine reads the pinned packages and common functions from the laboratory details.
+      await Promise.all([lessonData(r.id), labDetails()]);
+      return token === renderId;
+    }
     if (r.type !== 'experiment' && r.type !== 'exploration') return true;
     if (!window.GEO_LABS?.detailed && r.type === 'experiment')
       main.innerHTML = html`<p class="loading">Apertura del laboratorio…</p>`;
@@ -495,9 +514,19 @@
     if (r.type === 'module') {
       if (m.category === 'progetti') window.GeoLabs.mission(main, m);
       else window.GeoLabs.module(main, m);
+      lessonNotice(m);
     } else if (r.type === 'slide') slidePage(m, r.page);
     else codePage(m);
     return true;
+  }
+  // Modules with a lesson in the new edition point to its tappe; the earlier slides stay readable.
+  function lessonNotice(m) {
+    const l = lessonIndex[m.id];
+    if (!l) return;
+    const box = document.createElement('section');
+    box.className = 'lesson-notice';
+    box.innerHTML = html`<p class="eyebrow">NUOVA EDIZIONE DELLA LEZIONE</p><h2>${l.planet}: ${l.title}</h2><p>Le ${l.pages} slide della nuova lezione hanno ciascuna una tappa sul sito, con il testo, il codice R eseguibile e i laboratori con gli stessi parametri. Gli esercizi del quaderno sono sul pianeta compagno del sistema.</p><div class="lab-actions"><a class="button" href="#lezione-${m.id}">Tappe della lezione →</a><a class="button secondary" href="#esercizi-${m.id}">Quaderno degli esercizi →</a></div>`;
+    (main.querySelector('.module-head') || main.firstElementChild)?.after(box);
   }
   function markNavigation(r) {
     document.querySelectorAll('.site-header nav a').forEach(a => {
@@ -512,11 +541,20 @@
     main.innerHTML = html`<section class="error"><h1>Il modulo non è disponibile</h1><p>${err.message}</p><p>Verifica che l’intera cartella del sito sia stata copiata.</p>${link('#indice', 'Torna all’indice', 'button')}</section>`;
   }
   function cleanupViews() {
-    for (const view of [window.GeoResearch, window.GeoLabs, window.GeoGalaxy, window.GeoBriefing]) view?.cleanup();
+    for (const view of [window.GeoResearch, window.GeoLabs, window.GeoGalaxy, window.GeoBriefing, window.GeoLessons])
+      view?.cleanup();
+  }
+  function resolveRoute() {
+    const r = window.GeoLabs?.parseHash(location.hash) || C.parseRoute(location.hash, catalog, lessonIndex);
+    // The companion world of a lesson hosts its exercises instead of the optional exploration.
+    const companion = r.type === 'exploration' && window.GeoLessons?.forWorld(r.world);
+    if (companion?.role !== 'exercises') return r;
+    history.replaceState(null, '', '#esercizi-' + companion.id);
+    return { type: 'exercises', id: companion.id, card: 1 };
   }
   async function render() {
     const token = ++renderId;
-    current = window.GeoLabs?.parseHash(location.hash) || C.parseRoute(location.hash, catalog);
+    current = resolveRoute();
     cleanupViews();
     if (window.MathJax?.typesetClear) window.MathJax.typesetClear([main]);
     document.title =
@@ -534,9 +572,16 @@
       renderError(err);
     }
   }
+  // Arrow keys move between tappe as they move between slides.
+  function stepLesson(e) {
+    const n = (current.page || 1) + (e.key === 'ArrowRight' ? 1 : -1);
+    if (!current.page || n < 1 || n > lessonIndex[current.id].pages) return;
+    e.preventDefault();
+    location.hash = '#lezione-' + current.id + '/' + n;
+  }
   document.addEventListener('keydown', e => {
     if (
-      current?.type !== 'slide' ||
+      !['slide', 'lesson'].includes(current?.type) ||
       e.defaultPrevented ||
       e.altKey ||
       e.ctrlKey ||
@@ -546,6 +591,7 @@
     )
       return;
     if (!['ArrowLeft', 'ArrowRight'].includes(e.key)) return;
+    if (current.type === 'lesson') return stepLesson(e);
     const m = catalog.find(x => x.id === current.id),
       n = current.page + (e.key === 'ArrowRight' ? 1 : -1);
     if (n >= 1 && n <= m.pages) {
@@ -559,6 +605,7 @@
     main.scrollIntoView({ block: 'start' });
   });
   window.GeoLabs.configure({ typeset });
+  window.GeoLessons?.configure({ typeset });
   window.addEventListener('hashchange', render);
   render();
 })();

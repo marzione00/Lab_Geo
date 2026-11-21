@@ -214,10 +214,109 @@
     queue = promise.catch(() => {});
     return promise;
   }
+  // Lesson code: the project files of the lesson are written once per runtime, then setup.R and the
+  // fragments the current one depends on run silently; the current fragment is echoed like the R console.
+  const projects = new Map();
+  const rstring = s => JSON.stringify(String(s));
+  async function writeProject(r, project) {
+    const dir = '/home/web_user/' + project.dir;
+    if (projects.get(dir) === generation) return dir;
+    const files = Object.entries(project.files);
+    if (!/^[a-z0-9_-]+$/i.test(project.dir) || files.some(([p]) => !/^[\w-]+(?:\/[\w.-]+)*\.(?:R|csv)$/.test(p)))
+      throw Error('Progetto R non valido.');
+    await r.evalRVoid(
+      files
+        .map(
+          ([p, text]) =>
+            'dir.create(dirname(' +
+            rstring(dir + '/' + p) +
+            '),recursive=TRUE,showWarnings=FALSE);cat(' +
+            rstring(text) +
+            ',file=' +
+            rstring(dir + '/' + p) +
+            ')',
+        )
+        .join('\n'),
+    );
+    projects.set(dir, generation);
+    return dir;
+  }
+  function snippetResult(v) {
+    if (
+      !v ||
+      typeof v.output !== 'string' ||
+      v.output.length > 70000 ||
+      !['ok', 'error'].includes(v.status) ||
+      !Array.isArray(v.figures) ||
+      v.figures.length > S.limits.figures ||
+      typeof v.R !== 'string'
+    )
+      throw Error('Il risultato R ha un formato non consentito.');
+    return { output: v.output, status: v.status, figures: v.figures.map(S.svg), R: v.R };
+  }
+  function runSnippet({ project, deps = [], code, edited = false }) {
+    code = S.code(code);
+    deps.forEach(S.code);
+    const gen = generation,
+      jobId = ++latest;
+    const job = async () => {
+      if (jobId !== latest || gen !== generation) throw Error('Calcolo superato da una nuova richiesta.');
+      const r = await init();
+      if (gen !== generation) throw Error('Calcolo interrotto');
+      notify('running', 'R esegue il codice della slide…');
+      const dir = await writeProject(r, project);
+      // An edited fragment may change the global environment: the next laboratory restarts R.
+      if (edited) customRuntime = true;
+      const expression = `local({
+    owd <- setwd(${rstring(dir)}); on.exit(setwd(owd), add=TRUE)
+    e <- new.env(parent=globalenv())
+    unlink(Sys.glob('/tmp/geostat-snippet-*.svg'))
+    svglite::svglite('/tmp/geostat-snippet-%03d.svg', width=9, height=5.5, bg='#F5F6F3')
+    dev <- grDevices::dev.cur(); on.exit(if (dev %in% grDevices::dev.list()) grDevices::dev.off(dev), add=TRUE)
+    quiet <- function(src) invisible(utils::capture.output(eval(parse(text=src, keep.source=FALSE), envir=e)))
+    quiet(paste(readLines('setup.R', warn=FALSE, encoding='UTF-8'), collapse='\\n'))
+    for (d in ${'c(' + deps.map(rstring).join(',') + ')'}) quiet(d)
+    lines <- character()
+    tc <- textConnection('lines', 'w', local=TRUE)
+    sink(tc); sink(tc, type='message')
+    status <- tryCatch(withCallingHandlers({
+      source(exprs=parse(text=${rstring(code)}, keep.source=TRUE), local=e, echo=TRUE, print.eval=TRUE,
+             spaced=FALSE, max.deparse.length=Inf)
+      'ok'
+    }, warning=function(w) { message('Avviso: ', conditionMessage(w)); invokeRestart('muffleWarning') }),
+    error=function(err) { message('Errore: ', conditionMessage(err)); 'error' })
+    sink(type='message'); sink(); close(tc)
+    if (dev %in% grDevices::dev.list()) grDevices::dev.off(dev)
+    drawn <- Filter(function(p) any(grepl('<(path|polyline|polygon|circle|line|text)\\\\b', readLines(p, warn=FALSE))),
+                    sort(Sys.glob('/tmp/geostat-snippet-*.svg')))
+    figures <- lapply(head(drawn, 6), function(p) paste(readLines(p, warn=FALSE), collapse='\\n'))
+    out <- paste(lines, collapse='\\n')
+    if (nchar(out) > 60000) out <- paste0(substr(out, 1, 60000), '\\n[...] uscita abbreviata')
+    jsonlite::toJSON(list(output=out, status=status, figures=figures, R=R.version.string), auto_unbox=TRUE)
+   })`;
+      try {
+        const value = await deadline(
+          r.evalRString(expression),
+          60000,
+          'Calcolo interrotto dopo 60 secondi. Riduci il carico o scarica il codice R.',
+        );
+        if (gen !== generation) throw Error('Calcolo interrotto');
+        notify('ready', 'R pronto · codice eseguito');
+        return snippetResult(S.parseJSON(value, S.limits.result));
+      } catch (err) {
+        if (gen === generation) notify('ready', 'R pronto · controlla il messaggio del calcolo');
+        throw err;
+      }
+    };
+    const promise = queue.then(job, job);
+    queue = promise.catch(() => {});
+    return promise;
+  }
   root.GeoREngine = Object.freeze({
     packageDrift,
     init,
     run,
+    runSnippet,
     reset,
     script,
     paramsCode,

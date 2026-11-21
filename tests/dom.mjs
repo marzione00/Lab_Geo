@@ -214,6 +214,45 @@ for (const a of w.GEO_LABS.activities) {
     labFormulas++;
   }
 }
+// Lessons: overview, a tappa with its code, the exercises world, and every formula of slides and explanations.
+w.location.hash = '#lezione-M05';
+await until(() => d.querySelectorAll('.lesson-region-card').length === 10);
+w.location.hash = '#lezione-M05/23';
+await until(() => d.querySelector('.page-counter')?.textContent === '23 / 109');
+assert.equal(d.querySelectorAll('.lesson-code textarea').length, 1);
+assert(d.querySelector('[data-output]').textContent.includes('mse_simulato'));
+assert.equal(d.querySelectorAll('.lesson-labs a').length, 4);
+assert.equal(d.querySelectorAll('.lesson-notes h3').length, 2);
+w.location.hash = '#lezione-M05/110';
+await until(() => d.querySelector('.error h1')?.textContent === 'Pagina non trovata');
+w.location.hash = '#esplorazione/M05-c';
+await until(() => w.location.hash === '#esercizi-M05' && d.querySelectorAll('#verify-form input').length > 0);
+w.location.hash = '#esercizi-M05/2';
+await until(() => d.querySelectorAll('#verify-form input').length === 6);
+['-1', '0,258', '1.04', '-1', '0.129', '1'].forEach((v, i) => (d.querySelectorAll('#verify-form input')[i].value = v));
+d.querySelector('#verify-form').dispatchEvent(new w.Event('submit', { cancelable: true }));
+assert(d.getElementById('verify-status').textContent.startsWith('Tutti'));
+d.querySelectorAll('#verify-form input')[1].value = '0.26';
+d.querySelector('#verify-form').dispatchEvent(new w.Event('submit', { cancelable: true }));
+assert(d.getElementById('verify-status').textContent.startsWith('5 indicatori su 6'));
+let lessonFormulas = 0;
+const L = w.GEO_LESSONS.M05,
+  texOf = list => list.flatMap(n => (typeof n === 'string' ? [] : n.t === 'm' ? [n.v] : n.c ? texOf(n.c) : []));
+const lessonTex = [
+  ...L.slides.flatMap(s => [
+    ...texOf(s.recall),
+    ...s.items.flatMap(it => (it.t === 'math' ? [it.v] : it.c ? texOf(it.c) : [])),
+  ]),
+  ...Object.values(L.notes).flatMap(bs =>
+    bs.flatMap(b => (b.t === 'math' ? [b.v] : b.t === 'ul' ? b.items.flatMap(texOf) : texOf(b.c))),
+  ),
+];
+for (const tex of lessonTex) {
+  const node = await w.MathJax.tex2svgPromise(tex, { display: true });
+  const problem = node.querySelector('[data-mml-node="merror"]');
+  assert(!problem, 'Lezione M05: ' + tex + ' ' + problem?.textContent);
+  lessonFormulas++;
+}
 assert.deepEqual(errors, []);
 const result = {
   esito: 'superato',
@@ -222,10 +261,12 @@ const result = {
   laboratori_T00_R_e_Python: 40,
   formule_verificate: formulas,
   formule_esperimenti: labFormulas,
+  formule_lezioni: lessonFormulas,
   errori: errors,
 };
 fs.mkdirSync(path.join(root, 'qa'), { recursive: true });
 fs.writeFileSync(path.join(root, 'qa/dom.json'), JSON.stringify(result, null, 2));
 console.log(labFormulas + ' espressioni dei laboratori verificate.');
+console.log(lessonFormulas + ' espressioni della lezione M05 verificate (slide e spiegazioni).');
 console.log('DOM virtuale: 28 moduli e ' + formulas + ' espressioni matematiche verificati.');
 w.close();

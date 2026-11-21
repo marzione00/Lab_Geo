@@ -6,8 +6,21 @@
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
       .toLowerCase();
-  function parseRoute(hash, modules) {
+  // Lessons: one tappa per slide on the main planet; exercises on the companion world.
+  function lessonRoute(key, modules, lessons) {
+    const m = /^(lezione|esercizi)-(T00|M\d{2})(?:\/([1-9]\d{0,2}))?$/.exec(key);
+    if (!m) return null;
+    const l = Object.hasOwn(lessons, m[2]) ? lessons[m[2]] : null,
+      n = m[3] === undefined ? null : Number(m[3]);
+    if (!l || !modules.some(x => x.id === m[2])) return { type: 'notfound' };
+    if (m[1] === 'lezione')
+      return n === null || n <= l.pages ? { type: 'lesson', id: m[2], page: n } : { type: 'notfound' };
+    return n === null || n <= l.cards ? { type: 'exercises', id: m[2], card: n || 1 } : { type: 'notfound' };
+  }
+  function parseRoute(hash, modules, lessons = {}) {
     const key = String(hash || '#indice').replace(/^#/, '');
+    const lesson = lessonRoute(key, modules, lessons);
+    if (lesson) return lesson;
     if (
       [
         'indice',

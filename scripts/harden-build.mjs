@@ -17,6 +17,7 @@ export function hardenBuild(out) {
     'assets/briefing.css',
     'assets/audio.js',
     ...fs.readdirSync(path.join(out, 'assets/content')).map(f => 'assets/content/' + f),
+    ...fs.readdirSync(path.join(out, 'assets/lessons')).map(f => 'assets/lessons/' + f),
   ];
   fs.writeFileSync(
     path.join(out, 'assets/integrity.js'),
