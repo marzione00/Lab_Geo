@@ -1,0 +1,453 @@
+[
+  {
+    "id": "m03-supporto",
+    "module": "M03",
+    "section": 1,
+    "sectionTitle": "Domanda, unità e rappresentazione",
+    "page": 3,
+    "title": "Supporto della rappresentazione",
+    "goal": "Confrontare misure puntuali e medie di stazione.",
+    "action": "Cambia la dispersione entro stazione e confronta le due rappresentazioni.",
+    "conclusion": "Il grafico deve rendere riconoscibile l’unità che ciascun simbolo rappresenta.",
+    "formula": "\\bar x_g=n_g^{-1}\\sum_jx_{gj}",
+    "controls": [
+      {
+        "key": "noise",
+        "label": "Deviazione standard dell’errore",
+        "type": "number",
+        "value": 1,
+        "min": 0.1,
+        "max": 4,
+        "step": 0.1,
+        "help": ""
+      },
+      {
+        "key": "seed",
+        "label": "Seme casuale",
+        "type": "number",
+        "value": 17,
+        "min": 1,
+        "max": 99999,
+        "step": 1,
+        "help": "A parità di ambiente R, il seme permette di ricostruire la simulazione."
+      }
+    ],
+    "prose": [
+      "Le osservazioni sono organizzate in sei stazioni, per ciascuna delle quali vengono generate otto misure. I punti mostrano la variabilità entro stazione, mentre i rombi rappresentano le medie dei rispettivi gruppi; aumentando il rumore, si amplia la dispersione delle misure attorno ai livelli assegnati.",
+      "La distinzione fra misure e medie chiarisce il supporto della rappresentazione. Una media di stazione sintetizza otto osservazioni e possiede una variabilità differente da quella delle singole misure; il numero dei simboli visualizzati deve quindi essere interpretato insieme alla loro definizione. Lo spostamento orizzontale dei punti facilita la lettura e non introduce un ulteriore predittore."
+    ],
+    "limits": "Ogni stazione contiene otto misure con errore gaussiano e una media prefissata. I simboli delle medie riassumono i gruppi, senza rappresentarne l’incertezza; il jitter sposta soltanto la posizione grafica e non modifica le misure.",
+    "presets": [],
+    "source": "R/experiments/m03-supporto.R",
+    "code": "g <- rep(1:6, each = 8)\n\ndata <- data.frame(gruppo = factor(g), valore = rep(seq(2, 7), each = 8) + rnorm(48, sd = p$noise))\n\na <- aggregate(valore ~ gruppo, data, mean)\n\nplots <- list(ggplot(data, aes(gruppo, valore)) + geom_point(position = position_jitter(width = 0.12, \n    seed = p$seed), colour = col_geo[1], size = 2) + geom_point(data = a, shape = 18, size = 5, \n    colour = col_geo[2]) + labs(title = \"Misure e medie di stazione\", x = \"Stazione\", y = \"Valore\"))\n\nmetrics <- metric(Misure = 48, `Medie di stazione` = 6)",
+    "symbols": "$x_{gj}$ è la misura $j$ della stazione $g$; $n_g$ è il numero di misure della stazione; $\\bar x_g$ è la loro media."
+  },
+  {
+    "id": "m03-denominatori",
+    "module": "M03",
+    "section": 2,
+    "sectionTitle": "Frequenze, denominatori e pesi",
+    "page": 6,
+    "title": "Frequenze, denominatori e pesi",
+    "goal": "Confrontare conteggi e proporzioni fra gruppi di dimensione diversa.",
+    "action": "Modifica il denominatore del secondo gruppo mantenendo i conteggi degli eventi.",
+    "conclusion": "Un conteggio acquista significato comparativo quando è accompagnato dal denominatore pertinente.",
+    "formula": "\\widehat p_g=k_g/n_g",
+    "controls": [
+      {
+        "key": "nB",
+        "label": "Osservazioni nel gruppo B",
+        "type": "number",
+        "value": 100,
+        "min": 20,
+        "max": 200,
+        "step": 10,
+        "help": ""
+      },
+      {
+        "key": "scale",
+        "label": "Rappresentazione",
+        "type": "select",
+        "options": [
+          {
+            "value": "count",
+            "label": "Conteggi"
+          },
+          {
+            "value": "rate",
+            "label": "Proporzioni"
+          }
+        ],
+        "value": "count",
+        "help": ""
+      },
+      {
+        "key": "seed",
+        "label": "Seme casuale",
+        "type": "number",
+        "value": 17,
+        "min": 1,
+        "max": 99999,
+        "step": 1,
+        "help": "A parità di ambiente R, il seme permette di ricostruire la simulazione."
+      }
+    ],
+    "prose": [
+      "I due gruppi presentano conteggi di eventi prefissati, mentre il denominatore del secondo gruppo è modificabile. Passando dai conteggi alle proporzioni si osserva come il confronto dipenda dalle opportunità nelle quali l’evento avrebbe potuto verificarsi.",
+      "La frequenza relativa richiede che numeratore e denominatore si riferiscano alla stessa unità e al medesimo dominio. Nel modello il primo gruppo contiene dieci eventi su cinquanta osservazioni; nel secondo, venti eventi sono rapportati al denominatore scelto. La variazione della proporzione deriva interamente da questa scelta, poiché l’attività non genera nuove realizzazioni casuali."
+    ],
+    "limits": "I conteggi di eventi restano fissati a dieci e venti mentre cambia il denominatore del secondo gruppo. Le proporzioni non sono accompagnate da intervalli e presuppongono denominatori pertinenti allo stesso tipo di evento e alla stessa popolazione a rischio.",
+    "presets": [],
+    "source": "R/experiments/m03-denominatori.R",
+    "code": "data <- data.frame(gruppo = c(\"A\", \"B\"), eventi = c(10, 20), n = c(50, p$nB))\n\ndata$valore <- if (p$scale == \"count\") data$eventi else data$eventi/data$n\n\nplots <- list(bar_plot(data, title = \"Denominatori del confronto\", yl = if (p$scale == \"count\") \"Eventi\" else \"Proporzione\"))\n\nmetrics <- metric(`Proporzione A` = 0.2, `Proporzione B` = f(20/p$nB))",
+    "symbols": "$k_g$ indica il numero di eventi nel gruppo $g$; $n_g$ è il denominatore; $\\widehat p_g$ è la proporzione osservata."
+  },
+  {
+    "id": "m03-posizione",
+    "module": "M03",
+    "section": 3,
+    "sectionTitle": "Misure di posizione",
+    "page": 9,
+    "title": "Media e mediana sotto contaminazione",
+    "goal": "Valutare la sensibilità delle misure di posizione.",
+    "action": "Sposta l’osservazione estrema lasciando ferme le altre.",
+    "conclusion": "La media e la mediana rispondono in modo differente a una perturbazione localizzata.",
+    "formula": "\\bar x=n^{-1}\\sum x_i,\\quad\\widetilde x=Q_{0.5}",
+    "controls": [
+      {
+        "key": "outlier",
+        "label": "Valore dell’ultima osservazione",
+        "type": "number",
+        "value": 15,
+        "min": 0,
+        "max": 100,
+        "step": 1,
+        "help": ""
+      },
+      {
+        "key": "seed",
+        "label": "Seme casuale",
+        "type": "number",
+        "value": 17,
+        "min": 1,
+        "max": 99999,
+        "step": 1,
+        "help": "A parità di ambiente R, il seme permette di ricostruire la simulazione."
+      }
+    ],
+    "prose": [
+      "Il campione contiene ventinove valori generati attorno a un livello comune e una trentesima osservazione il cui valore è controllabile. Spostando quest’ultima si può seguire l’effetto di una perturbazione localizzata sulla media e sulla mediana, mantenendo ferme le altre misure.",
+      "La media incorpora direttamente l’ampiezza della perturbazione, mentre la mediana dipende dalle posizioni centrali nell’ordinamento. Le due linee orizzontali permettono di confrontare queste risposte sullo stesso campione. La resistenza della mediana a un valore estremo riguarda la sensibilità dello stimatore; la scelta della sintesi deve comunque rispettare la quantità scientifica che si intende descrivere."
+    ],
+    "limits": "Una sola osservazione di un campione di trenta viene sostituita con un valore controllabile. La sensibilità osservata riguarda questa contaminazione puntuale; la maggiore stabilità della mediana non stabilisce da sola quale misura di posizione risponda alla domanda scientifica.",
+    "presets": [],
+    "source": "R/experiments/m03-posizione.R",
+    "code": "x <- c(rnorm(29, 10, 1), p$outlier)\n\ndata <- data.frame(x = 1:30, y = x)\n\nplots <- list(point_plot(data, title = \"Una sola osservazione modificata\", xl = \"Indice\", \n    yl = \"Valore\") + geom_hline(yintercept = mean(x), colour = col_geo[2]) + geom_hline(yintercept = median(x), \n    colour = col_geo[3], linetype = 2))\n\nmetrics <- metric(Media = f(mean(x)), Mediana = f(median(x)))",
+    "symbols": "$x_i$ sono le osservazioni; $n$ è la numerosità; $\\bar x$ è la media; $Q_{0.5}=\\widetilde x$ è la mediana."
+  },
+  {
+    "id": "m03-quantili",
+    "module": "M03",
+    "section": 4,
+    "sectionTitle": "Dispersione e quantili",
+    "page": 12,
+    "title": "Dispersione e intervallo interquartile",
+    "goal": "Confrontare dispersione quadratica e dispersione centrale.",
+    "action": "Aumenta l’ampiezza della distribuzione e osserva deviazione standard e IQR.",
+    "conclusion": "I quantili delimitano frazioni della distribuzione empirica; la deviazione standard pesa le distanze quadratiche.",
+    "formula": "\\operatorname{IQR}=Q_{0.75}-Q_{0.25}",
+    "controls": [
+      {
+        "key": "noise",
+        "label": "Deviazione standard dell’errore",
+        "type": "number",
+        "value": 1,
+        "min": 0.1,
+        "max": 4,
+        "step": 0.1,
+        "help": ""
+      },
+      {
+        "key": "n",
+        "label": "Numero di osservazioni",
+        "type": "number",
+        "value": 60,
+        "min": 12,
+        "max": 300,
+        "step": 6,
+        "help": ""
+      },
+      {
+        "key": "seed",
+        "label": "Seme casuale",
+        "type": "number",
+        "value": 17,
+        "min": 1,
+        "max": 99999,
+        "step": 1,
+        "help": "A parità di ambiente R, il seme permette di ricostruire la simulazione."
+      }
+    ],
+    "prose": [
+      "Le misure sono estratte da una distribuzione normale della quale si possono modificare dispersione e numerosità campionaria. Il boxplot delimita la metà centrale del campione mediante primo e terzo quartile e colloca la mediana all’interno di tale intervallo.",
+      "Deviazione standard e intervallo interquartile descrivono aspetti differenti della dispersione. La prima utilizza le distanze quadratiche di tutte le osservazioni dalla media; il secondo dipende da due quantili. Le stime variano fra campioni, anche quando i parametri della popolazione rimangono costanti. I punti oltre i baffi sono identificati dalla convenzione grafica del boxplot e richiedono interpretazione nel contesto delle misure."
+    ],
+    "limits": "Il boxplot riassume un campione gaussiano indipendente mediante quartili e dispersione. I punti oltre i baffi derivano da una convenzione grafica e non identificano automaticamente errori; IQR e deviazione standard descrivono aspetti differenti della variabilità.",
+    "presets": [],
+    "source": "R/experiments/m03-quantili.R",
+    "code": "x <- rnorm(p$n, 10, p$noise)\n\ndata <- data.frame(gruppo = \"Campione\", valore = x)\n\nplots <- list(ggplot(data, aes(gruppo, valore)) + geom_boxplot(fill = col_geo[1], width = 0.4) + \n    labs(title = \"Quantili e dispersione\", x = NULL, y = \"Misura\"))\n\nmetrics <- metric(`Deviazione standard` = f(sd(x)), IQR = f(IQR(x)), Q25 = f(quantile(x, \n    0.25)), Q75 = f(quantile(x, 0.75)))",
+    "symbols": "$Q_{0.25}$ e $Q_{0.75}$ sono primo e terzo quartile; IQR indica la loro differenza."
+  },
+  {
+    "id": "m03-smoothing",
+    "module": "M03",
+    "section": 5,
+    "sectionTitle": "Distribuzioni e scelte di smoothing",
+    "page": 15,
+    "title": "Istogramma e stima di densità",
+    "goal": "Distinguere struttura dei dati e scelte di rappresentazione.",
+    "action": "Modifica numero di classi e banda della densità senza generare nuovi dati.",
+    "conclusion": "La regolarità della curva dipende dal parametro di smoothing.",
+    "formula": "\\widehat f_h(x)=\\frac1{nh}\\sum_iK\\!\\left(\\frac{x-x_i}{h}\\right)",
+    "controls": [
+      {
+        "key": "bins",
+        "label": "Classi dell’istogramma",
+        "type": "number",
+        "value": 18,
+        "min": 4,
+        "max": 50,
+        "step": 1,
+        "help": ""
+      },
+      {
+        "key": "bw",
+        "label": "Banda della densità",
+        "type": "number",
+        "value": 0.5,
+        "min": 0.1,
+        "max": 2,
+        "step": 0.1,
+        "help": ""
+      },
+      {
+        "key": "seed",
+        "label": "Seme casuale",
+        "type": "number",
+        "value": 17,
+        "min": 1,
+        "max": 99999,
+        "step": 1,
+        "help": "A parità di ambiente R, il seme permette di ricostruire la simulazione."
+      }
+    ],
+    "prose": [
+      "Il campione proviene da una miscela di due popolazioni normali e rimane invariato quando si modificano i controlli grafici. L’istogramma ripartisce l’asse in classi, mentre la stima di densità distribuisce il contributo di ogni osservazione attraverso un nucleo regolarizzato.",
+      "Un numero elevato di classi rende visibili fluttuazioni locali, mentre una banda ampia della densità può attenuare o unire strutture distinte. Il confronto permette di riconoscere quali caratteristiche siano sostenute stabilmente dai dati e quali dipendano dalla risoluzione della rappresentazione. Entrambe le figure sono espresse in densità, così che l’area complessiva rappresenti una probabilità unitaria."
+    ],
+    "limits": "La popolazione simulata è una miscela di due gaussiane con pesi fissati a cento e ottanta osservazioni. Numero di classi e banda cambiano la rappresentazione dello stesso campione; il numero apparente di modi non costituisce una selezione formale del numero di popolazioni.",
+    "presets": [],
+    "source": "R/experiments/m03-smoothing.R",
+    "code": "x <- c(rnorm(100, -1, 0.6), rnorm(80, 1.4, 0.7))\n\ndata <- data.frame(valore = x)\n\nplots <- list(ggplot(data, aes(valore)) + geom_histogram(aes(y = after_stat(density)), bins = p$bins, \n    fill = col_geo[1], alpha = 0.6, colour = \"#F5F6F3\") + geom_density(bw = p$bw, colour = col_geo[2], \n    linewidth = 1.2) + labs(title = \"Le stesse osservazioni\", x = \"Valore\", y = \"Densità\"))\n\nmetrics <- metric(Osservazioni = length(x), Banda = p$bw, Classi = p$bins)",
+    "symbols": "$n$ è la numerosità; $h>0$ è la banda; $K$ è il nucleo gaussiano; $\\widehat f_h(x)$ è la densità stimata nel punto $x$."
+  },
+  {
+    "id": "m03-gruppi",
+    "module": "M03",
+    "section": 6,
+    "sectionTitle": "Confronti fra gruppi",
+    "page": 19,
+    "title": "Confronti fra distribuzioni",
+    "goal": "Separare differenze di posizione e dispersione.",
+    "action": "Varia la differenza delle medie e la dispersione del secondo gruppo.",
+    "conclusion": "La sovrapposizione delle distribuzioni e lo spostamento della media descrivono proprietà differenti.",
+    "formula": "\\Delta=E(Y_B)-E(Y_A)",
+    "controls": [
+      {
+        "key": "delta",
+        "label": "Differenza delle medie",
+        "type": "number",
+        "value": 1,
+        "min": -3,
+        "max": 3,
+        "step": 0.25,
+        "help": ""
+      },
+      {
+        "key": "ratio",
+        "label": "Rapporto delle deviazioni standard",
+        "type": "number",
+        "value": 1,
+        "min": 0.25,
+        "max": 3,
+        "step": 0.25,
+        "help": ""
+      },
+      {
+        "key": "seed",
+        "label": "Seme casuale",
+        "type": "number",
+        "value": 17,
+        "min": 1,
+        "max": 99999,
+        "step": 1,
+        "help": "A parità di ambiente R, il seme permette di ricostruire la simulazione."
+      }
+    ],
+    "prose": [
+      "Le osservazioni appartengono a due popolazioni gaussiane, delle quali si possono modificare separatamente differenza delle medie e rapporto delle deviazioni standard. Le curve di densità rappresentano le distribuzioni campionarie dei valori osservati e consentono di confrontarne posizione e dispersione.",
+      "La distanza fra le medie descrive uno spostamento del livello, mentre la sovrapposizione delle curve dipende anche dalla variabilità entro gruppo. Poiché le curve sono stimate da campioni finiti, il loro aspetto comprende fluttuazioni campionarie e smoothing. Per discutere un contrasto fra popolazioni occorre quindi affiancare alla visualizzazione una stima dell’incertezza coerente con il disegno."
+    ],
+    "limits": "Il confronto usa settanta osservazioni indipendenti per ciascuna di due distribuzioni gaussiane. Le densità sono stime smussate e il rapporto osservato delle deviazioni standard è variabile; non vengono eseguiti test né costruiti intervalli per le differenze.",
+    "presets": [],
+    "source": "R/experiments/m03-gruppi.R",
+    "code": "data <- data.frame(gruppo = rep(c(\"A\", \"B\"), each = 70), valore = c(rnorm(70), rnorm(70, \n    p$delta, p$ratio)))\n\nplots <- list(ggplot(data, aes(valore, colour = gruppo)) + geom_density(linewidth = 1.1) + \n    scale_colour_manual(values = col_geo) + labs(title = \"Posizione e dispersione\", x = \"Misura\", \n    y = \"Densità\"))\n\nmetrics <- metric(`Differenza osservata` = f(diff(tapply(data$valore, data$gruppo, mean))), \n    `Rapporto SD osservato` = f(sd(data$valore[71:140])/sd(data$valore[1:70])))",
+    "symbols": "$Y_A$ e $Y_B$ sono le risposte nelle due popolazioni; $\\Delta$ è la differenza fra le loro medie."
+  },
+  {
+    "id": "m03-relazioni",
+    "module": "M03",
+    "section": 7,
+    "sectionTitle": "Relazioni fra misure",
+    "page": 22,
+    "title": "Relazione lineare e non lineare",
+    "goal": "Confrontare forma del legame e coefficiente di correlazione.",
+    "action": "Passa da una relazione lineare a una curva mantenendo simile il rumore.",
+    "conclusion": "Una correlazione prossima a zero può accompagnare una relazione non lineare definita.",
+    "formula": "r=\\frac{\\sum_i(x_i-\\bar x)(y_i-\\bar y)}{\\sqrt{\\sum_i(x_i-\\bar x)^2\\sum_i(y_i-\\bar y)^2}}",
+    "controls": [
+      {
+        "key": "shape",
+        "label": "Forma",
+        "type": "select",
+        "options": [
+          {
+            "value": "line",
+            "label": "Lineare"
+          },
+          {
+            "value": "curve",
+            "label": "Quadratica"
+          }
+        ],
+        "value": "line",
+        "help": ""
+      },
+      {
+        "key": "noise",
+        "label": "Deviazione standard dell’errore",
+        "type": "number",
+        "value": 1,
+        "min": 0.1,
+        "max": 4,
+        "step": 0.1,
+        "help": ""
+      },
+      {
+        "key": "seed",
+        "label": "Seme casuale",
+        "type": "number",
+        "value": 17,
+        "min": 1,
+        "max": 99999,
+        "step": 1,
+        "help": "A parità di ambiente R, il seme permette di ricostruire la simulazione."
+      }
+    ],
+    "prose": [
+      "Il predittore percorre un intervallo simmetrico attorno allo zero; la risposta viene costruita mediante una relazione lineare oppure quadratica, alla quale si aggiunge rumore gaussiano con deviazione standard controllabile. Il grafico permette di leggere la forma del legame prima di sintetizzarlo.",
+      "Il coefficiente di Pearson misura l’associazione lineare. Nella configurazione quadratica, le due metà simmetriche del campione possono compensarsi nella covarianza, sebbene la risposta dipenda sistematicamente dal predittore. Anche la correlazione di Spearman riguarda un ordinamento monotono, che una parabola completa non possiede. La lettura della forma rimane pertanto necessaria per interpretare entrambi i coefficienti."
+    ],
+    "limits": "La relazione è lineare oppure quadratica su una griglia simmetrica, con rumore gaussiano additivo. Pearson e Spearman sintetizzano associazioni lineari e monotone; un valore vicino a zero è compatibile con la dipendenza quadratica rappresentata.",
+    "presets": [],
+    "source": "R/experiments/m03-relazioni.R",
+    "code": "x <- seq(-2, 2, length.out = 100)\n\ny <- if (p$shape == \"line\") x else x^2\n\ny <- y + rnorm(100, sd = p$noise)\n\ndata <- data.frame(x, y)\n\nplots <- list(point_plot(data, title = \"Forma dell’associazione\"))\n\nmetrics <- metric(`Pearson r` = f(cor(x, y)), `Spearman rho` = f(cor(x, y, method = \"spearman\")))",
+    "symbols": "$x_i$ e $y_i$ sono le coppie osservate; le barre indicano le medie; $r$ è la correlazione campionaria di Pearson."
+  },
+  {
+    "id": "m03-mappa",
+    "module": "M03",
+    "section": 8,
+    "sectionTitle": "Posizione e rappresentazione spaziale",
+    "page": 25,
+    "title": "Posizione e rappresentazione spaziale",
+    "goal": "Riconoscere una struttura geografica nascosta in un riepilogo.",
+    "action": "Varia il gradiente territoriale e confronta mappa e istogramma.",
+    "conclusion": "La distribuzione marginale omette l’ordinamento geografico delle misure.",
+    "formula": "z(s)=\\mu+\\beta x(s)+\\varepsilon(s)",
+    "controls": [
+      {
+        "key": "gradient",
+        "label": "Gradiente verso Est",
+        "type": "number",
+        "value": 4,
+        "min": 0,
+        "max": 8,
+        "step": 0.5,
+        "help": ""
+      },
+      {
+        "key": "seed",
+        "label": "Seme casuale",
+        "type": "number",
+        "value": 17,
+        "min": 1,
+        "max": 99999,
+        "step": 1,
+        "help": "A parità di ambiente R, il seme permette di ricostruire la simulazione."
+      }
+    ],
+    "prose": [
+      "Il campo sintetico è definito su una griglia regolare, con un livello di base, un gradiente verso Est e una componente casuale locale. Il controllo modifica il gradiente; il seme conserva la stessa realizzazione della componente casuale durante il confronto.",
+      "La mappa conserva le posizioni delle osservazioni, mentre l’istogramma ne rappresenta soltanto la distribuzione marginale. Due campi con lo stesso insieme di valori potrebbero condividere l’istogramma e possedere organizzazioni territoriali differenti. La lettura congiunta delle figure permette quindi di distinguere dispersione dei valori e struttura geografica, prima di introdurre misure formali di dipendenza spaziale."
+    ],
+    "limits": "La griglia regolare contiene un gradiente deterministico lungo una coordinata e rumore indipendente. L’istogramma perde le posizioni dei valori; il confronto non introduce autocorrelazione residua né una procedura di interpolazione fra punti osservati.",
+    "presets": [],
+    "source": "R/experiments/m03-mappa.R",
+    "code": "data <- expand.grid(x = 1:20, y = 1:20)\n\ndata$z <- 10 + p$gradient * data$x/20 + rnorm(nrow(data), sd = 0.3)\n\nplots <- list(map_plot(data, title = \"Distribuzione nel territorio\"), hist_plot(data$z, \"Distribuzione marginale\", \n    \"Valore\"))\n\nmetrics <- metric(Media = f(mean(data$z)), `Deviazione standard` = f(sd(data$z)))",
+    "symbols": "$s$ è una posizione; $z(s)$ è il valore del campo; $\\mu$ è il livello di base; $x(s)$ è la coordinata Est; $\\beta$ governa il gradiente; $\\varepsilon(s)$ è il rumore locale."
+  },
+  {
+    "id": "m03-scale",
+    "module": "M03",
+    "section": 9,
+    "sectionTitle": "Scale e trasformazioni",
+    "page": 27,
+    "title": "Scale lineari e logaritmiche",
+    "goal": "Esaminare un processo moltiplicativo su due scale.",
+    "action": "Cambia la dispersione logaritmica e confronta dati originali e logaritmi.",
+    "conclusion": "Il logaritmo trasforma rapporti in differenze e modifica la quantità sintetizzata.",
+    "formula": "\\log(xy)=\\log x+\\log y",
+    "controls": [
+      {
+        "key": "sdlog",
+        "label": "Deviazione standard logaritmica",
+        "type": "number",
+        "value": 0.7,
+        "min": 0.1,
+        "max": 1.5,
+        "step": 0.1,
+        "help": ""
+      },
+      {
+        "key": "seed",
+        "label": "Seme casuale",
+        "type": "number",
+        "value": 17,
+        "min": 1,
+        "max": 99999,
+        "step": 1,
+        "help": "A parità di ambiente R, il seme permette di ricostruire la simulazione."
+      }
+    ],
+    "prose": [
+      "Le concentrazioni simulate sono positive e seguono un modello lognormale. Il parametro modificabile è la deviazione standard dei logaritmi, che determina l’ampiezza della variabilità moltiplicativa e l’importanza della coda destra nella scala originale.",
+      "La trasformazione logaritmica consente di esprimere variazioni relative attraverso differenze additive. Media aritmetica e media geometrica riassumono quantità differenti: la seconda è l’esponenziale della media dei logaritmi. Confrontando le due figure e i due riepiloghi si osserva perché una trasformazione richieda una dichiarazione esplicita della scala sulla quale viene formulata e interpretata la conclusione."
+    ],
+    "limits": "Tutte le concentrazioni sono positive perché generate da una distribuzione lognormale. La trasformazione logaritmica e la media geometrica non sono direttamente applicabili a zeri o valori negativi; la scelta della scala cambia la quantità sintetizzata.",
+    "presets": [],
+    "source": "R/experiments/m03-scale.R",
+    "code": "x <- rlnorm(200, 1, p$sdlog)\n\ndata <- data.frame(originale = x, logaritmo = log(x))\n\nplots <- list(hist_plot(x, \"Scala originale\", \"Concentrazione\"), hist_plot(log(x), \"Scala logaritmica\", \n    \"Log concentrazione\"))\n\nmetrics <- metric(`Media aritmetica` = f(mean(x)), `Media geometrica` = f(exp(mean(log(x)))))",
+    "symbols": "$x$ e $y$ sono quantità positive; $\\log$ è il logaritmo naturale. La media geometrica campionaria è $\\exp(n^{-1}\\sum_i\\log x_i)$."
+  }
+]

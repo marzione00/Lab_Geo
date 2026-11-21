@@ -1,0 +1,98 @@
+IRIDE M03 — FONTI E CONVENZIONI, SLIDE 24–50
+Consultazione: 18 novembre 2026.
+
+1. Modulo ufficiale M03 e laboratori
+https://github.com/marzione00/Lab_Geo/blob/main/moduli/M03/modulo.json
+Snapshot locale: iride_work/reference/modulo_M03.json.
+Git blob SHA: 25c9f2facfdc36009365522e51c5bd28c54d09f5.
+https://marzione00.github.io/Lab_Geo/
+Esperimenti m03-quantili, m03-smoothing, m03-gruppi: parametri e modelli
+ricavati dai corrispondenti script del repository, riprodotti in
+support/Iride_laboratori.R e verificati dall'autore dei dati.
+Slide31: noise1→2, n60, seed17.
+Slide41: bins18,bw.5 → bins8,bw1.5, seed17; passaggio intermedio bins8,bw.5
+per distinguere l'effetto delle classi da quello della banda.
+Slide50: delta1, ratio1→2, seed17.
+I dataset dei laboratori sono distinti dai CSV del caso guida.
+
+2. Varianza e deviazione standard, slide24–27,30,49
+https://stat.ethz.ch/R-manual/R-devel/library/stats/html/sd.html
+https://stat.ethz.ch/R-manual/R-devel/library/stats/html/cor.html
+Le funzioni var e sd usano denominatore n-1. Con n<2 la sd è NA.
+La descrizione numerica del campione viene tenuta distinta dall'inferenza.
+La non distorsione della varianza campionaria richiede osservazioni
+indipendenti con la stessa distribuzione e varianza finita.
+La trasformazione affine dà s(a+bx)=|b|s(x); la varianza usa b^2.
+
+3. Quantili e IQR, slide28–31,43,49
+https://stat.ethz.ch/R-manual/R-devel/library/stats/html/quantile.html
+https://stat.ethz.ch/R-manual/R-devel/library/stats/html/IQR.html
+Tutti i quartili numerici qui sono quantile(type=7), salvo le cerniere
+esplicitamente calcolate da boxplot.stats. Formula tipo7 per0<p<1,n>1:
+h=1+(n-1)p, j=floor(h), gamma=h-j, Q=(1-gamma)x_(j)+gamma x_(j+1).
+Ai bordi si usano minimo e massimo; con un valore i quantili coincidono.
+Esempio1,2,4,7,8,9,10,12: Q25=3.5, mediana7.5, Q75=9.25, IQR5.75.
+
+4. Istogrammi, slide32–36
+https://stat.ethz.ch/R-manual/R-devel/library/graphics/html/hist.html
+Vettori breaks per fissare classi esatte; breaks numerico è indicativo.
+right=TRUE usa(a,b], con minimo incluso dal default include.lowest=TRUE.
+right=FALSE usa[a,b), con massimo incluso da include.lowest=TRUE.
+R applica una tolleranza numerica ai confini (fuzz predefinito).
+Densità=count/(n*ampiezza): area totale1 e unità inverse alla misura.
+Slide34: istogrammi sul CSV fossili, classi seq(2,14,by=.5) e by1;
+area mostrata2–10 micrometri, asse comune0–70. Tutte le osservazioni
+sono in questo campo; gli intervalli da10 a14 hanno conteggio nullo.
+
+5. Stima a kernel, slide37–39
+https://stat.ethz.ch/R-manual/R-devel/library/stats/html/density.html
+KDE gaussiana con bw in unità della misura. L'area dà una probabilità
+stimata; il valore della densità in un punto non è probabilità puntuale.
+Default bw=nrd0: punto di partenza, non scelta ottimale universale.
+Il kernel gaussiano estende la curva oltre il dominio osservato;
+attenzione ai bordi di variabili con dominio fisico limitato.
+Slide37: somma analitica di tre kernel gaussiani, misure2,5,8mm,
+h=.7mm. Le curve sono calcolate in Python dal modello esplicito.
+Slide38: density(diam,bw=.15/.4/1.2,from=2,to=14,n=256), R4.6.0 WebR.
+Slide39: due density di gruppi con bw=.4 e medesima griglia. Gli80+80
+fossili producono pesi.5+.5. La presenza di due gruppi non impone due
+modi alla distribuzione aggregata. È una descrizione dei CSV simulati.
+Coordinate R esportate in distributions_proof/figure_data/*.csv;
+script di rigenerazione distributions_proof/calcoli_figure.R.
+
+6. Cumulativa empirica, slide40,48
+https://stat.ethz.ch/R-manual/R-devel/library/stats/html/ecdf.html
+Fn(t)=numero(x_i<=t)/n; funzione continua da destra, salti k/n se k
+osservazioni hanno lo stesso valore. La slide40 distingue punto pieno
+(valore al salto) e vuoto (limite da sinistra). Serie4.1,4.8,5.2,5.2,6.4:
+Fn(5.2)=.8. Le ecdf per gruppi usano i rispettivi denominatori80.
+
+7. Boxplot e cerniere, slide42–44
+https://stat.ethz.ch/R-manual/R-devel/library/grDevices/html/boxplot.stats.html
+Convenzione R base: stats contiene baffi,cerniere,mediana; coef1.5.
+Cerniere differenti dai quartili tipo7 in campioni pari:
+1:8: cerniere2.5/6.5, quartili2.75/6.25, mediana4.5.
+Per1:8+20: stats1,3,5,7,8; B=4, soglie-3 e13, punto segnalato20.
+I baffi terminano alle osservazioni entro le soglie, non sulle soglie.
+Il termine out di R segnala valori oltre i baffi; nessuna rimozione
+è giustificata automaticamente. La verifica usa ID e registrazione.
+
+8. Singole osservazioni e confronti, slide45–49
+https://stat.ethz.ch/R-manual/R-devel/library/stats/html/Uniform.html
+https://stat.ethz.ch/R-manual/R-devel/library/graphics/html/boxplot.html
+Slide45: jitter orizzontale da runif(-.12,.12), seed303; diametri invariati.
+I livelli del factor sono Rounded/Spiky; medesima sequenza del codice.
+Slide46: esempio costruito per mostrare distanze con scale diverse;
+il codice applica una scala comune ai fossili.
+Slide47: curve normali teoriche con parametri esplicitamente indicati;
+non sono stime delle distribuzioni dei fossili.
+Slide49: dati di support/Calcoli/fossili_sintesi.csv e quantili tipo7;
+arrotondamento solo di presentazione, tre cifre decimali.
+
+9. Provenienza dei dati
+support/Dati/fossili_simulati.csv è identico al CSV omonimo del progetto
+Tellus:160 osservazioni simulate,80 Rounded e80 Spiky. Non coincide con
+le25 registrazioni con anomalie usate in precedenza per la pulizia.
+Nessun CSV del caso guida viene modificato dai frammenti R.
+Tutte le figure sono TikZ nativo; i dati R numerici sono incorporati
+come coordinate nel sorgente TeX finale. Non sono screenshot.
