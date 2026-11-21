@@ -250,7 +250,14 @@ def norm(t):
 
 
 def stamp_pdf(src_pdf, out_pdf, lesson_id, planet, pages, workdir):
-    """Sovrappone a ogni pagina, dalla terza, il codice di tappa con il collegamento al sito."""
+    """Sovrappone a ogni pagina, dalla terza, il codice di tappa con il collegamento al sito.
+
+    Un PDF compilato dal sorgente aggiornato (\\PilotChrome con il codice di tappa) lo contiene già:
+    in quel caso il file viene soltanto compattato."""
+    if all('Sul sito: %s · %d' % (planet, p) in pdf_text(src_pdf, p) for p in (3, pages)):
+        subprocess.run(['qpdf', '--object-streams=generate', '--compress-streams=y', '--deterministic-id',
+                        str(src_pdf), str(out_pdf)], check=True)
+        return 'presente nel PDF'
     from pypdf import PdfReader, PdfWriter
     from pypdf.generic import ArrayObject, DictionaryObject, FloatObject, NameObject, NumberObject, TextStringObject
     w, h = 566.93, 354.33
@@ -298,6 +305,7 @@ def stamp_pdf(src_pdf, out_pdf, lesson_id, planet, pages, workdir):
     # pypdf scrive oggetti non compressi: qpdf ricostruisce flussi e tabelle compatte.
     subprocess.run(['qpdf', '--object-streams=generate', '--compress-streams=y', '--recompress-flate',
                     '--compression-level=9', '--deterministic-id', str(workdir / 'stamped.pdf'), str(out_pdf)], check=True)
+    return 'sovrapposto'
 
 
 def images(pdf, outdir, pages):
