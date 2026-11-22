@@ -121,20 +121,20 @@ S(107,'La relazione accompagna il risultato numerico',r'''
 \PInfo{La conclusione specifica popolazione, ipotesi e metodo dell'intervallo.}
 ''','Un risultato è interpretabile quando la relazione rende espliciti bersaglio, disegno, metodo e limiti.')
 
-SLIDES[108]=dict(title='Domande per verificare il ragionamento',section='LABORATORIO E CONCLUSIONI',wide=r'''
-\PLabel{Risposte motivate, con una formula o un esempio}
+SLIDES[108]=dict(title='Sei nodi del ragionamento',section='LABORATORIO E CONCLUSIONI',wide=r'''
+\PLabel{Ogni nodo rimanda a tappe precise della lezione}
 \begin{tikzpicture}[x=1cm,y=1cm]
 \foreach \xx/\yy/\n/\q in {
-4.25/4.4/1/{Due stazioni hanno 2 e 8 misure. Quali pesi servono per descrivere la stazione media?},
-13.35/4.4/2/{Perché 60 osservazioni correlate possono contenere poca informazione sulla media?},
-4.25/2.4/3/{Quale quantità resta fissa e quale cambia nello studio della copertura?},
-13.35/2.4/4/{Quali unità entrano insieme in una replica bootstrap di dati appaiati?},
-4.25/.4/5/{Perché aumentare B può stabilizzare un limite senza correggere la selezione?},
-13.35/.4/6/{Che cosa bisogna conservare quando si ricampiona una serie temporale?}}{
+4.25/4.4/1/{I pesi di una media di stazioni con 2 e 8 misure.},
+13.35/4.4/2/{L'informazione sulla media in 60 osservazioni correlate.},
+4.25/2.4/3/{La quantità fissa e quella variabile nello studio della copertura.},
+13.35/2.4/4/{Le unità che entrano insieme in una replica bootstrap di dati appaiati.},
+4.25/.4/5/{Un limite stabilizzato da un B grande e una selezione che resta distorta.},
+13.35/.4/6/{Le strutture da conservare ricampionando una serie temporale.}}{
 \node[pFlow,text width=7.9cm,minimum height=1.55cm] at(\xx,\yy){\textbf{\n.}\ \q};
 }
 \end{tikzpicture}
-\PSmall{Le risposte devono distinguere le proprietà teoriche del metodo dai risultati di una singola simulazione. Indicazioni per il docente nel progetto.}
+\PSmall{Le proprietà teoriche di un metodo, valide su ripetizioni del disegno, vanno distinte dai risultati di una singola simulazione.}
 ''',recall='La scelta del metodo deve poter essere spiegata a partire dalla domanda e dal disegno, prima di eseguire il codice.')
 
 S(109,'Riferimenti per formule e procedure',r'''

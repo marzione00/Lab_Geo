@@ -508,7 +508,7 @@ summary(f93[variabili93])
 # Completare Esercizi/
 # 12_verifica_finale.R
 ''')
-S(93,"Verifica finale · due contrasti pianificati",r"""
+S(93,"Esercizio conclusivo · due contrasti pianificati",r"""
 \PLabel{Applicare il metodo a una famiglia dichiarata}
 \begin{tikzpicture}[x=1cm,y=1cm]
 \node[pFlow,text width=3.8cm] (a) at(2.2,3.7){Diametro totale\\Spiky meno Rounded};
@@ -520,7 +520,7 @@ S(93,"Verifica finale · due contrasti pianificati",r"""
 \PSmall{Motivare il disegno, mostrare i dati, calcolare i contrasti e scrivere una relazione di 120–180 parole. Indicare che i due esiti sono misurati sugli stessi fossili.}
 """,r"""
 \PCode{R · predisporre l’analisi}{093_verifica_finale.R}
-\PSmall{Il file dell’esercizio contiene la traccia; la cartella \texttt{Docente/} conserva risultati e criteri di valutazione.}
+\PSmall{Il file dell’esercizio contiene la traccia del calcolo, con i due contrasti e la correzione della famiglia.}
 \PInfo{I due intervalli al 95\% sono marginali: non diventano simultanei correggendo soltanto i p-value con Holm.}
 ""","La correzione della famiglia riguarda le decisioni sui test. Copertura degli intervalli, dipendenze e interpretazione vanno dichiarate separatamente.")
 
