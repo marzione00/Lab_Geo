@@ -10,8 +10,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'scripts'))
 from public_materials import public_path, public_bytes, checksum_manifest
 OUT = ROOT / 'assets/downloads'
-MATERIAL_DIRS = ('R', 'dati', 'documentazione', 'estratti', 'laboratori',
-           'laboratori_python', 'sorgenti', 'strumenti', 'tikz')
+MATERIAL_DIRS = ('R', 'dati', 'documentazione', 'laboratori', 'laboratori_python', 'strumenti')
 
 
 def payloads():
@@ -25,10 +24,10 @@ def payloads():
                          item['role'], ';'.join(item['activities'])])
     source = [p for directory in MATERIAL_DIRS for p in (ROOT / 'materiali' / directory).rglob('*')]
     source += list((ROOT / 'materiali').iterdir())
-    r6 = {str(p.relative_to(ROOT)): public_bytes(p.relative_to(ROOT / 'materiali').as_posix()) for p in source
+    materials = {str(p.relative_to(ROOT)): public_bytes(p.relative_to(ROOT / 'materiali').as_posix()) for p in source
           if p.is_file() and public_path(p.relative_to(ROOT / 'materiali'))
           and p.name != 'MANIFEST_SHA256.txt'}
-    r6['materiali/MANIFEST_SHA256.txt'] = checksum_manifest({k.removeprefix('materiali/'): v for k, v in r6.items()})
+    materials['materiali/MANIFEST_SHA256.txt'] = checksum_manifest({k.removeprefix('materiali/'): v for k, v in materials.items()})
     files = list((ROOT / 'R').rglob('*.R')) + [ROOT / p for p in (
         'content/experiments.json', 'vendor/r-packages-lock.json',
         'docs/LABORATORI_INTERATTIVI.md', 'scripts/labs/check-r.R',
@@ -48,8 +47,8 @@ def payloads():
     ).encode()
     for name in ('LICENSE.md', 'LICENSE-CODE.md'):
         labs[name] = (ROOT / name).read_bytes()
-        r6[name] = (ROOT / name).read_bytes()
-    return {'GeoStatLab_codice_dati.zip': r6, 'GeoStatLab_esperimenti_R.zip': labs}, stream.getvalue().encode('utf-8-sig')
+        materials[name] = (ROOT / name).read_bytes()
+    return {'GeoStatLab_codice_dati.zip': materials, 'GeoStatLab_esperimenti_R.zip': labs}, stream.getvalue().encode('utf-8-sig')
 
 
 def verify_archive(file, expected):

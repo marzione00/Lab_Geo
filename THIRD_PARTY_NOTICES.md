@@ -3,10 +3,10 @@
 | Componente | Versione o fonte | Avviso incluso |
 |---|---|---|
 | MathJax | 3.2.2 · https://github.com/mathjax/MathJax | [Apache 2.0](vendor/mathjax/LICENSE) |
-| Nimbus Sans | Caratteri conservati nel template del corso | [Licenza Nimbus](materiali/sorgenti/font/LICENZA_Nimbus.txt) |
-| Latin Modern | Carattere monospaziato e componenti matematiche del corso | [Licenza Latin Modern](materiali/sorgenti/font/LICENZA_LatinModern.txt) |
+| Nimbus Sans | Caratteri conservati nel template del corso | [Licenza Nimbus](lezioni/Font/LICENZA_Nimbus.txt) |
+| Latin Modern | Carattere monospaziato e componenti matematiche del corso | [Licenza Latin Modern](lezioni/Font/LICENZA_LatinModern.txt) |
 
-Le presentazioni delle lezioni derivano dai sorgenti in `lezioni/`; i PDF e gli SVG delle spedizioni derivano dai materiali in `materiali/`. L’immagine topografica della copertina è una composizione illustrativa e non rappresenta una superficie osservata.
+Le presentazioni delle lezioni e delle spedizioni derivano dai sorgenti in `lezioni/`; le copertine sono scene Blender costruite da codice, senza texture esterne né immagini generate. L’immagine topografica della copertina è una composizione illustrativa e non rappresenta una superficie osservata.
 
 Il repository [QuantumLab_Public](https://github.com/marzione00/QuantumLab_Public), esaminato al commit `275b07805da69af75ba6c2f64ea0ba99ae4144ea`, è il riferimento organizzativo. Il suo motore di simulazione e i suoi contenuti non sono incorporati in GeoStat Lab.
 
@@ -28,10 +28,6 @@ webR 0.6.0 proviene dalla distribuzione ufficiale [r-wasm/webr](https://github.c
 I 23 pacchetti R WebAssembly provengono dal repository ufficiale `https://repo.r-wasm.org/bin/emscripten/contrib/4.6/`. Gli archivi originali sono inclusi in `vendor/r-repo/`; ogni pacchetto conserva DESCRIPTION e gli eventuali file LICENSE. Una copia consultabile di questi avvisi è in `vendor/r-package-licenses/`. Nomi, versioni, licenze e SHA-256 sono registrati in [vendor/r-packages-lock.json](vendor/r-packages-lock.json). Le fonti dei pacchetti CRAN sono disponibili nelle rispettive pagine `https://cran.r-project.org/package=NOME` e negli archivi sorgente delle versioni indicate.
 
 Le nuove figure scientifiche provengono dai programmi originali di `R/experiments/`, applicati a dati sintetici. Le relative superfici spaziali rappresentano simulazioni didattiche, non misurazioni del territorio. La palette e il tema sono definiti in `R/lab-common.R`.
-
-Le copie web degli SVG sono ottimizzate mediante [SVGO 4.0.0](https://github.com/svg/svgo/tree/v4.0.0), strumento di sviluppo con licenza MIT. La trasformazione conserva otto cifre decimali; gli originali PDF e i font del corso non sono modificati.
-
-I 232 pannelli TikZ nella lettura testuale riutilizzano lo stesso SVG della slide mediante una finestra vettoriale sulle coordinate originali del diagramma. Le copie dei pannelli rimangono nel repository; la distribuzione evita di trasferire due volte lo stesso contenuto.
 
 ## Strumenti di collaudo della versione 3.1
 

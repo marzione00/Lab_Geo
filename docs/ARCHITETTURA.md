@@ -1,18 +1,18 @@
 # Architettura e manutenzione
 
-GeoStat Lab è un’applicazione statica nella quale il browser esegue programmi R mediante webR. L’unità principale di navigazione è l’esperimento: i 17 moduli ne organizzano 139, mentre le 11 spedizioni collegano attività preparatorie a casi applicativi. Ogni modulo ha una lezione a tappe, una per slide della propria presentazione; le spedizioni conservano i propri fascicoli di slide.
+GeoStat Lab è un’applicazione statica nella quale il browser esegue programmi R mediante webR. L’unità principale di navigazione è l’esperimento: i 17 moduli ne organizzano 139, mentre le 11 spedizioni collegano attività preparatorie a casi applicativi. Ogni modulo e ogni spedizione hanno una lezione a tappe, una per slide della propria presentazione.
 
 ## Sorgenti e prodotti generati
 
 | Sorgente canonica | Prodotti e utilizzo |
 |---|---|
-| `lezioni/`, `scripts/lessons/import_lesson.py` | Sorgenti LaTeX, R e figure delle diciassette presentazioni; l’importatore genera `content/lezioni/*.json` e `assets/lezioni/` |
-| `materiali/` | Laboratori R e Python, dati e funzioni comuni; fascicoli, sorgenti e figure delle spedizioni P01–P11 |
+| `lezioni/`, `scripts/lessons/import_lesson.py` | Sorgenti LaTeX, R e figure delle ventotto presentazioni, caratteri in `lezioni/Font`, copiati in `assets/fonts/` per il sito; l’importatore genera `content/lezioni/*.json` e `assets/lezioni/` |
+| `materiali/` | Laboratori R e Python, dati e funzioni comuni, compresi i dati delle spedizioni |
 | `scripts/labs/build_catalogue.py` | Definisce algoritmi R, parametri, formalismo e raccordo con le sezioni; genera il catalogo degli esperimenti e gli script autonomi |
 | `content/prose-*.json` | Spiegazioni, simboli e limiti specifici: ogni attività appartiene a un solo file editoriale |
 | `content/research-*.json`, `assets/research/*/provenance.json` | Cinque missioni osservate, codici, campioni congelati e provenienza |
 | `content/solution-guides-research.json` | Guide delle missioni e documenti scaricabili prodotti da `scripts/prepare-solution-documents.mjs` |
-| `content/course-solutions.json` | Guide P01–P11; `scripts/prepare-course-solutions.R` genera il codice formattato equivalente agli originali |
+| `content/course-solutions.json` | Guide P01–P11; `scripts/prepare-course-solutions.R` genera il codice formattato equivalente agli script `R/<id>_figure.R` delle lezioni delle spedizioni |
 | `src/solution-terminal.js` | Unica navigazione dei passaggi dei progetti; incorpora il sorgente senza un secondo navigatore |
 | `scripts/package-research.mjs` | Programmi autonomi e ZIP delle missioni osservate |
 | `R/lab-common.R` | Funzioni statistiche e tema grafico condivisi |
@@ -49,13 +49,13 @@ La grafica planetaria dispone di rendering WebGL e di un’alternativa Canvas 2D
 | `#modulo-M05` | Percorso sperimentale del modulo |
 | `#progetti`, `#modulo-P01` | Indice delle spedizioni e relative fasi |
 | `#catalogo`, `#materiali` | Indice testuale e risorse |
-| `#modulo-P01/slide/10`, `#modulo-M05/codici` | Slide R6 dei macroprogetti e programmi originali; per i moduli con una lezione, `#modulo-M05/slide/44` apre `#lezione-M05` |
+| `#lezione-P01/10`, `#modulo-M05/codici` | Tappe delle presentazioni e programmi dei laboratori; i vecchi indirizzi `#modulo-<ID>/slide/<n>` aprono `#lezione-<ID>` |
 
 I percorsi degli asset sono relativi alla radice del sito e supportano sottocartelle GitHub Pages. Le rotte a frammento vanno aperte sul sito avviato, non sulla pagina del repository GitHub.
 
 ## Aggiornamenti riproducibili
 
-Per correggere una lezione, modificare i sorgenti in `lezioni/`, ricompilare la presentazione e rieseguire `scripts/lessons/import_lesson.py`; la build genera le tappe da `content/lezioni/`. Le slide delle spedizioni restano in `materiali/` e in `moduli/P*/modulo.json`; dopo una modifica ai materiali aggiornare il manifesto approvato.
+Per correggere una lezione, modificare i sorgenti in `lezioni/`, ricompilare la presentazione e rieseguire `scripts/lessons/import_lesson.py`; la build genera le tappe da `content/lezioni/`. Le copertine delle spedizioni si ricostruiscono con `lezioni/Edizione_P01-P11/copertine.py`. Dopo una modifica a `materiali/` aggiornare il manifesto approvato.
 
 Per gli esperimenti, modificare il generatore e il file editoriale dell’attività, quindi seguire la [sequenza di rigenerazione](LABORATORI_INTERATTIVI.md#struttura-dei-sorgenti). Quando cambia un algoritmo o un parametro occorre rigenerare e ricollaudare anche le basi numeriche e le figure. Le sole correzioni editoriali devono preservare codice R e parametri approvati.
 

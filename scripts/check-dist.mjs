@@ -11,38 +11,24 @@ const exists = p => {
 const ctx = vm.createContext({ window: {} });
 vm.runInContext(fs.readFileSync(path.join(dist, 'assets/catalogue.js'), 'utf8'), ctx);
 const c = ctx.window.GEO_CATALOG;
-let pages = 0,
-  visuals = 0,
-  labs = 0;
+let labs = 0;
 vm.runInContext(fs.readFileSync(path.join(dist, 'assets/lesson-index.js'), 'utf8'), ctx);
 const lessonIndex = ctx.window.GEO_LESSON_INDEX;
+// Every module and expedition is a lesson a tappe: no slides, figures or PDF of an earlier edition.
 for (const m of c.modules) {
   vm.runInContext(fs.readFileSync(path.join(dist, 'assets/content', m.id + '.js'), 'utf8'), ctx);
   const d = ctx.window.GEO_MODULES[m.id];
-  if (lessonIndex[m.id]) {
-    if (m.pdf || m.pages || d.slides || fs.existsSync(path.join(dist, 'assets/slides', m.id)))
-      throw Error('Slide precedenti pubblicate per una lezione: ' + m.id);
-    exists(lessonIndex[m.id].pdf);
-  } else {
-    exists(m.pdf);
-    exists(m.script);
-    if (d.slides.length !== m.pages) throw Error(m.id);
-  }
-  for (const s of d.slides || []) {
-    if ('review' in s) throw Error('Nota editoriale pubblicata: ' + m.id);
-    pages++;
-    exists(s.image);
-    if (s.codePath) exists(s.codePath);
-    if (s.figure || s.diagram) {
-      visuals++;
-      if (s.figure) exists('assets/visuals/' + m.id + '/' + String(s.page).padStart(3, '0') + '.svg');
-    }
-  }
+  if (!lessonIndex[m.id]) throw Error('Lezione assente: ' + m.id);
+  if (m.pdf || m.pages || m.script || d.slides || d.figureCode) throw Error('Strato precedente pubblicato per ' + m.id);
+  exists(lessonIndex[m.id].pdf);
+  exists(lessonIndex[m.id].download);
   for (const l of d.laboratories) {
     labs++;
     exists(l.path);
   }
 }
+for (const dir of ['assets/slides', 'assets/visuals', 'materiali/pdf', 'materiali/sorgenti', 'materiali/estratti'])
+  if (fs.existsSync(path.join(dist, dir))) throw Error('Cartella dello strato precedente pubblicata: ' + dir);
 for (const f of [
   'assets/mark.svg',
   'assets/topography.svg',
@@ -89,13 +75,8 @@ const actual = fs
   .filter(name => name !== 'MANIFEST_SHA256.txt' && fs.statSync(path.join(materials, name)).isFile());
 if (actual.length !== listed.size || actual.some(name => !listed.has(name)))
   throw Error('Manifesto pubblico incompleto');
-if (
-  c.modules.length !== 28 ||
-  Object.keys(lessonIndex).length !== 17 ||
-  pages !== 208 ||
-  visuals !== 128 ||
-  labs !== 360
-)
+const tappe = Object.values(lessonIndex).reduce((n, l) => n + l.pages, 0);
+if (c.modules.length !== 28 || Object.keys(lessonIndex).length !== 28 || labs !== 360)
   throw Error('Copertura incompleta.');
 const source = fs.readFileSync(path.join(dist, 'index.html'), 'utf8');
 if (source.includes('{{')) throw Error('Segnaposto non risolto.');
@@ -113,11 +94,9 @@ for (const f of textPages) {
 }
 for (const f of ['assets/social-card.jpg', 'assets/static.css']) exists(f);
 console.log(
-  'Distribuzione verificata: 17 lezioni a tappe, 11 fascicoli dei macroprogetti con ' +
-    pages +
-    ' slide e ' +
-    visuals +
-    ' pannelli, 360 laboratori R/Python, ' +
+  'Distribuzione verificata: 28 lezioni a tappe (17 moduli e 11 spedizioni, ' +
+    tappe +
+    ' tappe), 360 laboratori R/Python, ' +
     textPages.length +
     ' pagine testuali.',
 );

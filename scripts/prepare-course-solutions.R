@@ -2,6 +2,8 @@
 suppressPackageStartupMessages(library(jsonlite))
 guides <- fromJSON('content/course-solutions.json', simplifyVector=FALSE)
 stopifnot(length(guides)==11)
+# Program of each expedition: R/<id>_figure.R in the folder of its lesson.
+lessons <- fromJSON('lezioni/lezioni.json', simplifyVector=FALSE)
 prepared <- list()
 format_expression <- function(x) {
  controls <- c("keepInteger","niceNames","showAttributes","keepNA")
@@ -12,7 +14,7 @@ format_expression <- function(x) {
 }
 for (id in names(guides)) {
   g <- guides[[id]]
-  original <- readLines(paste0('materiali/R/',id,'_figure.R'),warn=FALSE)
+  original <- readLines(file.path(lessons[[id]]$source,'R',paste0(id,'_figure.R')),warn=FALSE)
   next_line <- 1L
   chunks <- list()
   for (i in seq_along(g$stages)) {
@@ -28,7 +30,7 @@ for (id in names(guides)) {
   }
   stopifnot(next_line==length(original)+1L)
   g$code <- paste('# GeoStat Lab · Marzio De Corato',
-                 '# Soluzione commentata del progetto originale; eseguire dalla cartella materiali.',
+                 '# Soluzione commentata della spedizione; eseguire dalla cartella del progetto R, con R/ e dati/.',
                  paste(chunks,collapse='\n\n'),sep='\n')
   if(!identical(parse(text=original,keep.source=FALSE),parse(text=g$code,keep.source=FALSE))) stop(paste('R expression mismatch:',id))
   prepared[[id]] <- g

@@ -7,49 +7,54 @@ Separazione dei dati, standardizzazione e classificatore dei centroidi.
 
 Valuta un classificatore su nuove stazioni, distinguendo geometria, probabilità previste e decisioni operative.
 
-Le tre fasi collegano esperimenti preparatori con dati sintetici. Il caso applicativo e i suoi dati rimangono nei materiali R6 descritti sotto.
+Le tre fasi collegano esperimenti preparatori con dati sintetici. Il caso applicativo, con dati e codice, è nella presentazione a tappe descritta sotto.
 
 ### Definire il trasferimento
 
-- **Bersaglio predittivo e nuove stazioni** — Confrontare predizione di misure e trasferimento a nuove unità. [Programma R](../../R/experiments/m16-bersaglio.R); rotta del sito: `#laboratorio/m16-bersaglio`.
-- **Standardizzazione e confine decisionale** — Esaminare un classificatore a centroidi nella metrica scelta. [Programma R](../../R/experiments/m16-geometria.R); rotta del sito: `#laboratorio/m16-geometria`.
+- **Bersaglio predittivo e nuove stazioni**: Confrontare predizione di misure e trasferimento a nuove unità. [Programma R](../../R/experiments/m16-bersaglio.R); rotta del sito: `#laboratorio/m16-bersaglio`.
+- **Standardizzazione e confine decisionale**: Esaminare un classificatore a centroidi nella metrica scelta. [Programma R](../../R/experiments/m16-geometria.R); rotta del sito: `#laboratorio/m16-geometria`.
 
 ### Selezionare e addestrare
 
-- **Selezione dei predittori e contaminazione** — Valutare la selezione di variabili su puro rumore. [Programma R](../../R/experiments/m16-selezione.R); rotta del sito: `#laboratorio/m16-selezione`.
-- **Alberi e aggregazione di classificatori** — Confrontare un albero con un insieme di alberi su campioni bootstrap. [Programma R](../../R/experiments/m16-alberi.R); rotta del sito: `#laboratorio/m16-alberi`.
+- **Selezione dei predittori e contaminazione**: Valutare la selezione di variabili su puro rumore. [Programma R](../../R/experiments/m16-selezione.R); rotta del sito: `#laboratorio/m16-selezione`.
+- **Alberi e aggregazione di classificatori**: Confrontare un albero con un insieme di alberi su campioni bootstrap. [Programma R](../../R/experiments/m16-alberi.R); rotta del sito: `#laboratorio/m16-alberi`.
 
 ### Verificare probabilità e decisioni
 
-- **Soglia, discriminazione e calibrazione** — Separare probabilità previste e decisione binaria. [Programma R](../../R/experiments/m16-metriche.R); rotta del sito: `#laboratorio/m16-metriche`.
-- **Trasferibilità e cambiamento della relazione** — Valutare un modello su una popolazione differente. [Programma R](../../R/experiments/m16-trasferimento.R); rotta del sito: `#laboratorio/m16-trasferimento`.
+- **Soglia, discriminazione e calibrazione**: Separare probabilità previste e decisione binaria. [Programma R](../../R/experiments/m16-metriche.R); rotta del sito: `#laboratorio/m16-metriche`.
+- **Trasferibilità e cambiamento della relazione**: Valutare un modello su una popolazione differente. [Programma R](../../R/experiments/m16-trasferimento.R); rotta del sito: `#laboratorio/m16-trasferimento`.
 
 
-Ogni attività esplicita formula, simboli, ipotesi e limiti del procedimento. Il materiale seguente conserva la numerazione delle slide e dei laboratori originali R6.
+Ogni attività esplicita formula, simboli, ipotesi e limiti del procedimento. Il materiale seguente descrive la presentazione a tappe della spedizione.
 <!-- END INTERACTIVE GUIDE -->
 
-**17 slide · 6 figure · 4 diagrammi TikZ · 0 laboratori.**
+**Spedizione P11: 27 tappe.**
 
-[PDF del modulo](../../materiali/pdf/P11_R6.pdf) · [Codice R delle figure](../../materiali/R/P11_figure.R) · [Sorgente LaTeX](../../materiali/sorgenti/P11_R6.tex) · [Indice del repository](../../README.md)
+[Presentazione PDF](../../assets/lezioni/P11/P11_Stazioni.pdf) · [Progetto R della spedizione](../../assets/lezioni/P11/Spedizione_P11_progetto_R.zip) · [Sorgenti della presentazione](../../lezioni/P11_Stazioni/) · [Indice del repository](../../README.md)
 
 ## Percorso
 
-- Pagina 3: Bersaglio e protocollo di valutazione.
-- Pagina 7: Geometria standardizzata e centroidi.
-- Pagina 12: Prestazione e limiti dell’interpretazione.
-- Pagina 16: Scheda del modello e consegna.
+Ogni slide della presentazione è una tappa del sito (`#lezione-P11`).
+
+- Tappa 3: Il caso guida.
+- Tappe 4–7: Bersaglio e protocollo di valutazione.
+- Tappe 8–12: Geometria standardizzata e centroidi.
+- Tappe 13–16: Prestazione e limiti dell’interpretazione.
+- Tappe 17–18: Scheda del modello e consegna.
+- Tappe 19–25: Laboratori della spedizione.
+- Tappa 26: Sintesi.
+- Tappa 27: Riferimenti.
 
 ## Esecuzione
 
-Aprire `materiali/Corso_Geologia.Rproj`, oppure avviare R nella cartella `materiali/`, quindi eseguire:
+Estrarre il progetto R della spedizione e avviare R nella sua cartella principale, che contiene `R/` e `dati/`:
 
 ```r
 source("R/P11_figure.R")
 ```
 
-Le dipendenze comuni e i dati restano nella cartella `materiali/`; scaricare l’intero repository prima di eseguire gli script.
-
+Lo script ricostruisce figure e valori del caso ed è la soluzione ragionata della spedizione sul sito; i frammenti delle slide sono nella cartella `Codice/`.
 
 ## Tracciabilità
 
-La numerazione coincide con il fascicolo R6. `modulo.json` raccoglie il contenuto destinato alla navigazione web e viene rigenerato dai sorgenti del corso.
+`modulo.json` raccoglie titolo e collocazione della spedizione nel percorso. La presentazione a tappe è in `content/lezioni/P11.json`, generata dai sorgenti in `lezioni/P11_Stazioni/`.

@@ -37,7 +37,8 @@ for (const [file, expected] of moduleGuides())
 const { archiveMembersCompared: members } = JSON.parse(
   execFileSync('python3', ['scripts/labs/package-downloads.py', '--check'], { encoding: 'utf8' }),
 );
-const originalGuides = read('content/course-solutions.json'),
+const lessonConfig = read('lezioni/lezioni.json'),
+  originalGuides = read('content/course-solutions.json'),
   preparedGuides = read('content/course-solutions-prepared.json');
 assert.deepEqual(Object.keys(originalGuides), Object.keys(preparedGuides), 'Course solution membership');
 for (const [id, g] of Object.entries(preparedGuides)) {
@@ -57,7 +58,7 @@ for (const [id, g] of Object.entries(preparedGuides)) {
   assert.equal(
     next,
     fs
-      .readFileSync('materiali/R/' + id + '_figure.R', 'utf8')
+      .readFileSync(lessonConfig[id].source + '/R/' + id + '_figure.R', 'utf8')
       .trimEnd()
       .split('\n').length + 1,
     'Source coverage: ' + id,

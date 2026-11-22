@@ -194,7 +194,12 @@
     }
   }
   function journal(main) {
-    const entries = records().sort((a, b) => activity(a.id).page - activity(b.id).page);
+    // Course order: module, then the tappa of the lesson that opens the experiment (lesson overview last).
+    const order = id => {
+      const a = activity(id);
+      return a.module + String(a.page ?? 999).padStart(3, '0');
+    };
+    const entries = records().sort((a, b) => order(a.id).localeCompare(order(b.id)));
     main.innerHTML = html`<div class="wrap narrative-journal">${root.GeoPaths?.tabs('course') || ''}<p class="eyebrow">CORSO / PELAGO / TACCUINO SCIENTIFICO</p><h1>Le tracce dell’indagine.</h1><p class="lead">Ritrova le configurazioni che hai scelto di conservare dopo il calcolo in R, insieme alle osservazioni annotate e agli eventuali scenari di confronto. Una registrazione documenta il lavoro svolto; la sua interpretazione rimane da argomentare.</p><p class="narrative-prerequisites">Conservato in questo browser. L’esportazione permette di custodirne una copia; la visita di una pagina non aggiunge registrazioni.</p><div class="actions"><a class="button" href="#modulo-M05">Riprendi l’indagine su Pelago →</a><button class="button secondary" id="journal-export" ${entries.length ? '' : 'disabled'}>Esporta il taccuino</button></div><p role="status">${entries.length} ${entries.length === 1 ? 'attività documentata' : 'attività documentate'} su 9.</p><div class="journal-entries">${
       entries.length
         ? html`${entries.map(e => {

@@ -1,4 +1,4 @@
-/* Lessons of the planetary systems: one tappa per slide on the main planet, exercises on a companion world. */
+/* Lessons of the planetary systems and of the expeditions: one tappa per slide, exercises on a companion world. */
 (function (root) {
   'use strict';
   const { html } = root.GeoHTML,
@@ -488,12 +488,17 @@
   }
   // Systems take the name of their star, as in the galaxy view.
   const system = id => root.GeoAstro?.generate(id, 0)?.name || id;
+  // Expeditions (P01-P11) have no planetary system: their lesson belongs to the mission page.
+  const expedition = id => /^P\d{2}$/.test(id);
   function crumbs(L, extra) {
-    return html`<div class="breadcrumb"><a href="#indice">Galassia</a><span>/</span><a href="#sistema-${L.id}">Sistema ${system(L.id)}</a><span>/</span><a href="#lezione-${L.id}">${L.planet} · Lezione ${L.id}</a>${extra ? html`<span>/</span><span>${extra}</span>` : ''}</div>`;
+    const parent = expedition(L.id)
+      ? html`<a href="#progetti">Spedizioni</a><span>/</span><a href="#modulo-${L.id}">${L.planet}</a><span>/</span><a href="#lezione-${L.id}">Presentazione a tappe</a>`
+      : html`<a href="#sistema-${L.id}">Sistema ${system(L.id)}</a><span>/</span><a href="#lezione-${L.id}">${L.planet} · Lezione ${L.id}</a>`;
+    return html`<div class="breadcrumb"><a href="#indice">Galassia</a><span>/</span>${parent}${extra ? html`<span>/</span><span>${extra}</span>` : ''}</div>`;
   }
   function overview(main, L) {
     const done = new Set(load().done);
-    main.innerHTML = html`<div class="wrap lesson-overview">${crumbs(L)}<header class="module-head lesson-head"><p class="eyebrow">${L.id} · PIANETA ${L.planet.toUpperCase()} · LEZIONE</p><h1>${L.title}</h1><div class="lesson-intro">${blocks(L.intro)}</div><div class="lab-actions"><a class="button" href="#lezione-${L.id}/2">Inizia dalla tappa 2 →</a><a class="button secondary" href="${L.pdf}" target="_blank" rel="noopener">PDF della lezione con i codici di tappa ↗</a><a class="button secondary" href="${L.download}" download>Progetto R: codice e dati</a>${L.exercises ? html`<a class="button secondary" href="#esercizi-${L.id}">Quaderno degli esercizi →</a>` : ''}</div></header><section class="lesson-regions" aria-label="Regioni del pianeta">${L.sections
+    main.innerHTML = html`<div class="wrap lesson-overview">${crumbs(L)}<header class="module-head lesson-head"><p class="eyebrow">${expedition(L.id) ? L.planet.toUpperCase() + ' · PRESENTAZIONE A TAPPE' : L.id + ' · PIANETA ' + L.planet.toUpperCase() + ' · LEZIONE'}</p><h1>${L.title}</h1><div class="lesson-intro">${blocks(L.intro)}</div><div class="lab-actions"><a class="button" href="#lezione-${L.id}/2">Inizia dalla tappa 2 →</a><a class="button secondary" href="${L.pdf}" target="_blank" rel="noopener">PDF della lezione con i codici di tappa ↗</a><a class="button secondary" href="${L.download}" download>Progetto R: codice e dati</a>${L.exercises ? html`<a class="button secondary" href="#esercizi-${L.id}">Quaderno degli esercizi →</a>` : ''}</div></header><section class="lesson-regions" aria-label="Regioni del pianeta">${L.sections
       .filter(sec => !L.slides.slice(sec.first - 1, sec.last).every(s => s.lines || s.question))
       .map(sec => {
         const tappe = L.slides.slice(sec.first - 1, sec.last);
@@ -542,7 +547,9 @@
         ? html`<a href="#lezione-${L.id}/${next.page}">${next.page} · ${next.title} →</a>`
         : L.exercises
           ? html`<a href="#esercizi-${L.id}">Quaderno degli esercizi →</a>`
-          : html`<a href="#sistema-${L.id}">Sistema ${system(L.id)} →</a>`
+          : expedition(L.id)
+            ? html`<a href="#modulo-${L.id}">${L.planet} →</a>`
+            : html`<a href="#sistema-${L.id}">Sistema ${system(L.id)} →</a>`
     }</nav><div class="study-actions"><button id="lesson-done" class="button small secondary${state.done.includes(doneKey) ? ' done' : ''}" aria-pressed="${state.done.includes(doneKey)}">${state.done.includes(doneKey) ? '✓ Tappa studiata' : 'Segna la tappa come studiata'}</button><p>Il progresso resta soltanto in questo browser.</p></div></div></div></div>`;
     main
       .querySelectorAll('[data-step]')

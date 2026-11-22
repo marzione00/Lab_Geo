@@ -8,7 +8,7 @@
       .toLowerCase();
   // Lessons: one tappa per slide on the main planet; exercises on the companion world.
   function lessonRoute(key, modules, lessons) {
-    const m = /^(lezione|esercizi)-(T00|M\d{2})(?:\/([1-9]\d{0,2}))?$/.exec(key);
+    const m = /^(lezione|esercizi)-(T00|M\d{2}|P\d{2})(?:\/([1-9]\d{0,2}))?$/.exec(key);
     if (!m) return null;
     const l = Object.hasOwn(lessons, m[2]) ? lessons[m[2]] : null,
       n = m[3] === undefined ? null : Number(m[3]);
@@ -62,9 +62,10 @@
     if (match[2] === 'codici') return match[3] ? { type: 'notfound' } : { type: 'code', id: mod.id };
     const page = Number(match[3] || 3);
     if (!Number.isInteger(page) || page < 1) return { type: 'notfound' };
-    // A module with a lesson has no slides of its own: old addresses open the tappe of the lesson.
-    if (Object.hasOwn(lessons, mod.id)) return { type: 'lesson', id: mod.id, page: null, legacy: true };
-    return page <= mod.pages ? { type: 'slide', id: mod.id, page } : { type: 'notfound' };
+    // Modules have no slides of their own: old slide addresses open the tappe of the lesson.
+    return Object.hasOwn(lessons, mod.id)
+      ? { type: 'lesson', id: mod.id, page: null, legacy: true }
+      : { type: 'notfound' };
   }
   function filterModules(modules, query = '', category = 'tutti') {
     const terms = clean(query).split(/\s+/).filter(Boolean);
@@ -77,30 +78,6 @@
           ),
         ),
     );
-  }
-  function loadProgress(storage) {
-    try {
-      const raw = storage.getItem('geostat-r6-progress') || '{}';
-      if (raw.length > 200000) return { done: [], last: null };
-      const p = JSON.parse(raw);
-      if (!p || typeof p !== 'object' || Array.isArray(p)) return { done: [], last: null };
-      return {
-        done: Array.isArray(p.done)
-          ? [...new Set(p.done.slice(0, 2000).filter(x => /^(T00|M\d{2}|P\d{2}):\d+$/.test(x)))]
-          : [],
-        last: typeof p.last === 'string' && p.last.length < 200 ? p.last : null,
-      };
-    } catch {
-      return { done: [], last: null };
-    }
-  }
-  function saveProgress(storage, p) {
-    try {
-      storage.setItem('geostat-r6-progress', JSON.stringify(p));
-      return true;
-    } catch {
-      return false;
-    }
   }
   // Software rasterisers (SwiftShader, llvmpipe) expose WebGL but draw on the CPU; the canvas renderers are lighter there.
   let softwareGL;
@@ -149,8 +126,6 @@
     clean,
     parseRoute,
     filterModules,
-    loadProgress,
-    saveProgress,
     softwareRendering,
     frameWatch,
   });

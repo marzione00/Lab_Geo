@@ -3,10 +3,10 @@
 | Componente | Versione o fonte | Avviso incluso |
 |---|---|---|
 | MathJax | 3.2.2 · https://github.com/mathjax/MathJax | [Apache 2.0](vendor/mathjax/LICENSE) |
-| Nimbus Sans | Caratteri conservati nel template del corso | [Licenza Nimbus](materiali/sorgenti/font/LICENZA_Nimbus.txt) |
-| Latin Modern | Carattere monospaziato e componenti matematiche del corso | [Licenza Latin Modern](materiali/sorgenti/font/LICENZA_LatinModern.txt) |
+| Nimbus Sans | Caratteri conservati nel template del corso | [Licenza Nimbus](lezioni/Font/LICENZA_Nimbus.txt) |
+| Latin Modern | Carattere monospaziato e componenti matematiche del corso | [Licenza Latin Modern](lezioni/Font/LICENZA_LatinModern.txt) |
 
-I PDF e gli SVG derivano dai materiali R6. L’immagine topografica della copertina è una composizione illustrativa e non rappresenta una superficie osservata.
+I PDF e gli SVG derivano dai materiali del corso. L’immagine topografica della copertina è una composizione illustrativa e non rappresenta una superficie osservata.
 
 Il repository [QuantumLab_Public](https://github.com/marzione00/QuantumLab_Public), esaminato al commit `275b07805da69af75ba6c2f64ea0ba99ae4144ea`, è il riferimento organizzativo. Il suo motore di simulazione e i suoi contenuti non sono incorporati in GeoStat Lab.
 

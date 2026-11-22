@@ -7,48 +7,53 @@ Dati immutati, funzioni, controlli numerici e storia delle modifiche.
 
 Ricostruisci un’analisi verificabile, rendendo espliciti dati, dipendenze, criteri numerici e piano casuale.
 
-Le tre fasi collegano esperimenti preparatori con dati sintetici. Il caso applicativo e i suoi dati rimangono nei materiali R6 descritti sotto.
+Le tre fasi collegano esperimenti preparatori con dati sintetici. Il caso applicativo, con dati e codice, è nella presentazione a tappe descritta sotto.
 
 ### Controllare i dati
 
-- **Collegare tabelle senza moltiplicare le misure** — Verificare la cardinalità di un collegamento mediante una chiave. [Programma R](../../R/experiments/m02-join.R); rotta del sito: `#laboratorio/m02-join`.
-- **Verificare una tabella analitica** — Controllare righe, chiavi e unità prima dell’analisi. [Programma R](../../R/experiments/m02-tabella.R); rotta del sito: `#laboratorio/m02-tabella`.
+- **Collegare tabelle senza moltiplicare le misure**: Verificare la cardinalità di un collegamento mediante una chiave. [Programma R](../../R/experiments/m02-join.R); rotta del sito: `#laboratorio/m02-join`.
+- **Verificare una tabella analitica**: Controllare righe, chiavi e unità prima dell’analisi. [Programma R](../../R/experiments/m02-tabella.R); rotta del sito: `#laboratorio/m02-tabella`.
 
 ### Verificare le funzioni
 
-- **Verificare una funzione prima dell’uso** — Sottoporre una funzione a casi validi e invalidi. [Programma R](../../R/experiments/m15-contratti.R); rotta del sito: `#laboratorio/m15-contratti`.
-- **Identità e confronto numerico** — Scegliere una tolleranza coerente con la scala del problema. [Programma R](../../R/experiments/m15-tolleranze.R); rotta del sito: `#laboratorio/m15-tolleranze`.
+- **Verificare una funzione prima dell’uso**: Sottoporre una funzione a casi validi e invalidi. [Programma R](../../R/experiments/m15-contratti.R); rotta del sito: `#laboratorio/m15-contratti`.
+- **Identità e confronto numerico**: Scegliere una tolleranza coerente con la scala del problema. [Programma R](../../R/experiments/m15-tolleranze.R); rotta del sito: `#laboratorio/m15-tolleranze`.
 
 ### Conservare la provenienza
 
-- **Integrità dei file e identità dei dati** — Confrontare contenuto numerico, rappresentazione testuale e impronta di un file. [Programma R](../../R/experiments/m15-integrita.R); rotta del sito: `#laboratorio/m15-integrita`.
-- **Parametri, versioni e sensibilità** — Confrontare risultati prodotti da scelte analitiche tracciate. [Programma R](../../R/experiments/m15-provenienza.R); rotta del sito: `#laboratorio/m15-provenienza`.
+- **Integrità dei file e identità dei dati**: Confrontare contenuto numerico, rappresentazione testuale e impronta di un file. [Programma R](../../R/experiments/m15-integrita.R); rotta del sito: `#laboratorio/m15-integrita`.
+- **Parametri, versioni e sensibilità**: Confrontare risultati prodotti da scelte analitiche tracciate. [Programma R](../../R/experiments/m15-provenienza.R); rotta del sito: `#laboratorio/m15-provenienza`.
 
 
-Ogni attività esplicita formula, simboli, ipotesi e limiti del procedimento. Il materiale seguente conserva la numerazione delle slide e dei laboratori originali R6.
+Ogni attività esplicita formula, simboli, ipotesi e limiti del procedimento. Il materiale seguente descrive la presentazione a tappe della spedizione.
 <!-- END INTERACTIVE GUIDE -->
 
-**16 slide · 3 figure · 5 diagrammi TikZ · 0 laboratori.**
+**Spedizione P10: 26 tappe.**
 
-[PDF del modulo](../../materiali/pdf/P10_R6.pdf) · [Codice R delle figure](../../materiali/R/P10_figure.R) · [Sorgente LaTeX](../../materiali/sorgenti/P10_R6.tex) · [Indice del repository](../../README.md)
+[Presentazione PDF](../../assets/lezioni/P10/P10_Ricostruibile.pdf) · [Progetto R della spedizione](../../assets/lezioni/P10/Spedizione_P10_progetto_R.zip) · [Sorgenti della presentazione](../../lezioni/P10_Ricostruibile/) · [Indice del repository](../../README.md)
 
 ## Percorso
 
-- Pagina 3: Dati e trasformazioni dichiarate.
-- Pagina 8: Prove del codice e integrità dei file.
-- Pagina 13: Piani casuali, versioni e consegna.
+Ogni slide della presentazione è una tappa del sito (`#lezione-P10`).
+
+- Tappa 3: Il caso guida.
+- Tappe 4–8: Dati e trasformazioni dichiarate.
+- Tappe 9–13: Prove del codice e integrità dei file.
+- Tappe 14–17: Piani casuali, versioni e consegna.
+- Tappe 18–24: Laboratori della spedizione.
+- Tappa 25: Sintesi.
+- Tappa 26: Riferimenti.
 
 ## Esecuzione
 
-Aprire `materiali/Corso_Geologia.Rproj`, oppure avviare R nella cartella `materiali/`, quindi eseguire:
+Estrarre il progetto R della spedizione e avviare R nella sua cartella principale, che contiene `R/` e `dati/`:
 
 ```r
 source("R/P10_figure.R")
 ```
 
-Le dipendenze comuni e i dati restano nella cartella `materiali/`; scaricare l’intero repository prima di eseguire gli script.
-
+Lo script ricostruisce figure e valori del caso ed è la soluzione ragionata della spedizione sul sito; i frammenti delle slide sono nella cartella `Codice/`.
 
 ## Tracciabilità
 
-La numerazione coincide con il fascicolo R6. `modulo.json` raccoglie il contenuto destinato alla navigazione web e viene rigenerato dai sorgenti del corso.
+`modulo.json` raccoglie titolo e collocazione della spedizione nel percorso. La presentazione a tappe è in `content/lezioni/P10.json`, generata dai sorgenti in `lezioni/P10_Ricostruibile/`.

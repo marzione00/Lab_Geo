@@ -3,7 +3,7 @@
 **Laboratori interattivi di statistica e coding R per le scienze della Terra**
 **Autore: Marzio De Corato** · Modulo didattico di [Topological Manifolds](https://marzione00.github.io/Personal_web_page/) ([repository del sito principale](https://github.com/marzione00/Personal_web_page)).
 
-Versione applicativa **4.2.0** · 17 lezioni a tappe · lingua italiana · materiali [CC BY-NC-SA 4.0](LICENSE.md), codice [PolyForm Noncommercial 1.0.0](LICENSE-CODE.md)
+Versione applicativa **4.2.0** · 28 lezioni a tappe · lingua italiana · materiali [CC BY-NC-SA 4.0](LICENSE.md), codice [PolyForm Noncommercial 1.0.0](LICENSE-CODE.md)
 
 GeoStat Lab accompagna lo studio dei metodi statistici attraverso 139 esperimenti nei quali, modificando parametri e ipotesi, si osservano le conseguenze sui dati simulati, sulle figure e sulle conclusioni. Ogni attività collega il problema scientifico al formalismo matematico e al programma R che ne produce i risultati. L’atlante di 17 pianeti rotanti organizza il percorso; le 11 spedizioni applicative riuniscono i metodi necessari ad affrontare un’indagine più articolata.
 
@@ -13,15 +13,15 @@ Il progetto è un sito statico: l’interprete R opera nel browser mediante webR
 
 ## Lezioni a tappe: pianeta principale e pianeta degli esercizi
 
-Le diciassette presentazioni della nuova edizione (T00 e M01-M16) sono lezioni a tappe. Ogni sistema planetario ha un pianeta principale che ospita la lezione: ogni slide è una tappa del sito (`#lezione-<modulo>/N`), e il piè di pagina del PDF distribuito riporta il codice «Sul sito: <pianeta> · N» con il collegamento alla tappa. La tappa ricompone la slide in un pannello del sito, con i riquadri nelle colonne originali, le formule composte da MathJax, le figure ricavate dal sorgente TikZ o dai grafici vettoriali della presentazione e il «Da ricordare»; la copertina è ricomposta come testo e le figure usano lo sfondo, la palette e i grigi del pannello; seguono, in pannelli dello stesso tipo, il codice modificabile ed eseguibile in R nel browser con l’uscita attesa e i laboratori aperti con i parametri del codice o dello scenario della slide. La pagina corrispondente del PDF resta a un clic. Le sezioni della lezione sono le regioni del pianeta, e nell’indice di ogni presentazione i titoli dei capitoli portano alle tappe.
+Le ventotto presentazioni del corso sono lezioni a tappe: diciassette moduli (T00 e M01-M16) e undici spedizioni (P01-P11). Ogni sistema planetario ha un pianeta principale che ospita la lezione, mentre la presentazione di una spedizione si apre dalla pagina della missione: ogni slide è una tappa del sito (`#lezione-<modulo>/N`), e il piè di pagina del PDF distribuito riporta il codice «Sul sito: <pianeta> · N» con il collegamento alla tappa. La tappa ricompone la slide in un pannello del sito, con i riquadri nelle colonne originali, le formule composte da MathJax, le figure ricavate dal sorgente TikZ o dai grafici vettoriali della presentazione e il «Da ricordare»; la copertina è ricomposta come testo e le figure usano lo sfondo, la palette e i grigi del pannello; seguono, in pannelli dello stesso tipo, il codice modificabile ed eseguibile in R nel browser con l’uscita attesa e i laboratori aperti con i parametri del codice o dello scenario della slide. La pagina corrispondente del PDF resta a un clic. Le sezioni della lezione sono le regioni del pianeta, e nell’indice di ogni presentazione i titoli dei capitoli portano alle tappe.
 
-Le tappe sono 1487, con 1165 figure e 864 file di codice. Le uscite attese di 833 frammenti R sono registrate eseguendo il codice in webR, nello stesso ambiente del sito (`scripts/lessons/verify_webr.py`); 25 frammenti richiedono pacchetti che il browser non carica (terra, sf, tseries) e riportano l’uscita di R sul computer; i sei esempi Python di Basalto (T00) si eseguono con Python 3 dall’archivio della lezione. In tutte le diciassette lezioni, da Basalto (T00) a Prisma (M16), le tappe dalla seconda all'ultima hanno anche la spiegazione estesa, in prosa continua nello stesso riquadro del testo della slide.
+Le tappe sono 1805, con 1381 figure e 886 file di codice. Le uscite attese di 833 frammenti R sono registrate eseguendo il codice in webR, nello stesso ambiente del sito (`scripts/lessons/verify_webr.py`); 25 frammenti richiedono pacchetti che il browser non carica (terra, sf, tseries) e riportano l’uscita di R sul computer; i sei esempi Python di Basalto (T00) si eseguono con Python 3 dall’archivio della lezione; i 22 frammenti delle spedizioni riportano per ora l’uscita di R 4.3.3 sul computer. In tutte le diciassette lezioni, da Basalto (T00) a Prisma (M16), le tappe dalla seconda all'ultima hanno anche la spiegazione estesa, in prosa continua nello stesso riquadro del testo della slide.
 
 Il pianeta compagno di ogni sistema (`#esercizi-<modulo>`, il pianeta c) ospita il lavoro autonomo. Pelago, Tellus, Iride e Aurea hanno i quaderni di esercizi, con scenari A e B nel laboratorio, script dell’esercizio eseguibile e verifica degli indicatori, senza pubblicare i valori attesi né le soluzioni del docente; il quaderno di Gemina non indica valori attesi e propone la tabella del confronto da compilare. I 240 notebook svolti di M01-M12, in R Markdown con codice, uscite e grafici, si aprono dalle pagine dei pianeti compagni e, nelle lezioni M10-M12, dalle tappe che li citano; per ogni lezione un archivio raccoglie i sorgenti `.Rmd`, le funzioni comuni e i dati. Sorgenti in `lezioni/Notebook_M01-M12`; `python3 -I scripts/lessons/import_notebooks.py` aggiorna l’elenco e gli archivi.
 
-Sorgenti in `lezioni/<modulo>_<pianeta>`, configurazione in `lezioni/lezioni.json`. `python3 -I scripts/lessons/import_lesson.py <modulo>` rigenera tappe, figure, PDF marcato e archivio del progetto R (richiede R, XeLaTeX, Poppler, qpdf, pypdf e Pillow); dopo `npm run build`, `python3 -I scripts/lessons/verify_webr.py` registra le uscite in webR (Playwright con Chromium) e una nuova importazione con `--no-r` le adotta. Le presentazioni M01-M12 hanno un file di codice per slide, T00 e M13-M16 script autonomi per capitolo. Le spiegazioni estese sono in `content/lezioni/<modulo>.md`, i valori che citano in `content/lezioni/<modulo>-valori.R`, che si esegue con `Rscript` dalla radice del repository.
+Sorgenti in `lezioni/<modulo>_<pianeta>`, configurazione in `lezioni/lezioni.json`. `python3 -I scripts/lessons/import_lesson.py <modulo>` rigenera tappe, figure, PDF marcato e archivio del progetto R (richiede R, XeLaTeX, Poppler, qpdf, pypdf e Pillow); dopo `npm run build`, `python3 -I scripts/lessons/verify_webr.py` registra le uscite in webR (Playwright con Chromium) e una nuova importazione con `--no-r` le adotta. Le presentazioni M01-M12 hanno un file di codice per slide, T00, M13-M16 e le spedizioni script autonomi. Le copertine delle spedizioni sono scene costruite da `lezioni/Edizione_P01-P11/copertine.py`, rese con Blender Cycles. Le spiegazioni estese sono in `content/lezioni/<modulo>.md`, i valori che citano in `content/lezioni/<modulo>-valori.R`, che si esegue con `Rscript` dalla radice del repository.
 
-Le figure delle tappe sono SVG portati sul pannello scuro da `scripts/lessons/figure_tone.py`, applicato dall’importatore a ogni figura. I colori della palette comune alle presentazioni passano ai token del sito con lo stesso ruolo; testo e tratti restano chiari con la loro tinta, le campiture si invertono in modo monotono in OKLab (una scala di colori resta ordinata, rovesciata come la sua legenda), le intestazioni di tabella e le etichette su fondo scuro restano superfici scure con testo chiaro. Le 27 figure con scale continue o superfici ombreggiate (M11, M12) cambiano soltanto sfondo, grigi e palette; i raster incorporati restano intatti. La stessa trasformazione, in `src/lessons.js`, si applica ai grafici prodotti dal codice eseguito nelle tappe, mentre il file scaricato conserva l’SVG scritto da R; `tests/figure-tone.test.mjs` confronta le due implementazioni su casi comuni (`python3 scripts/lessons/figure_tone.py --fixture tests/figure-tone.fixture.json`). La slide 3 di M01-M04 e M06, assente dal sorgente LaTeX, è trascritta in `lezioni/lezioni.json` (`fromPdf`) con i riquadri, il codice della slide e il diagramma TikZ.
+Le figure delle tappe sono SVG portati sul pannello scuro da `scripts/lessons/figure_tone.py`, applicato dall’importatore a ogni figura. I colori della palette comune alle presentazioni passano ai token del sito con lo stesso ruolo; testo e tratti restano chiari con la loro tinta, le campiture si invertono in modo monotono in OKLab (una scala di colori resta ordinata, rovesciata come la sua legenda), le intestazioni di tabella e le etichette su fondo scuro restano superfici scure con testo chiaro. Le 27 figure con scale continue o superfici ombreggiate (M11, M12) cambiano soltanto sfondo, grigi e palette; i raster incorporati restano intatti. La stessa trasformazione, in `src/lessons.js`, si applica ai grafici prodotti dal codice eseguito nelle tappe, mentre il file scaricato conserva l’SVG scritto da R; `tests/figure-tone.test.mjs` confronta le due implementazioni su casi comuni (`python3 scripts/lessons/figure_tone.py --fixture tests/figure-tone.fixture.json`). La slide 3 di M01-M06, prima assente dai sorgenti LaTeX, è ricostruita nei file `.tex` con i riquadri, il codice della slide e il diagramma TikZ; il campo `fromPdf` di `lezioni/lezioni.json` resta disponibile per i riquadri presenti soltanto nel PDF.
 
 ## Narrazione e taccuino scientifico
 
@@ -51,7 +51,7 @@ Tutti i progetti attualmente disponibili hanno un terminale con tre accessi: **S
 
 Le cinque missioni su dati reali comprendono **23 passaggi eseguibili in R nel browser**. Ogni comando ricostruisce il prefisso del programma a partire dal campione verificato e dal seme: non mantiene una sessione nascosta fra due passaggi. I risultati intermedi possono contenere soltanto tabelle e statistiche. La soluzione completa produce figure, metriche e una lettura riferita ai parametri correnti. Modificando il codice si entra in una variante esplicita: il commento del modello originale rimane separato e il programma modificato è scaricabile. I pacchetti delle missioni includono `SOLUZIONE.txt`.
 
-Le undici spedizioni P01–P11 comprendono **44 passaggi spiegati**, con sorgenti completi formattati, commentati e scaricabili. Si eseguono in **R/RStudio locale**, estraendo l’archivio del corso e salvando lo script nella cartella `materiali`: producono file e P10 usa anche Git. Le istruzioni R dei derivati vengono confrontate con quelle degli originali; template, dati e presentazioni non cambiano.
+Le undici spedizioni P01–P11 comprendono **44 passaggi spiegati**, con sorgenti completi formattati, commentati e scaricabili. Si eseguono in **R/RStudio locale**, estraendo il progetto R della spedizione e salvando lo script nella sua cartella principale: producono file e P10 usa anche Git. Le istruzioni R dei derivati vengono confrontate con quelle degli originali; template, dati e presentazioni non cambiano.
 
 I 68 mondi complementari condividono ancora le cinque missioni del rispettivo livello. La presenza del terminale in ogni destinazione non equivale a 68 progetti differenti.
 
@@ -72,7 +72,7 @@ npm test
 |---|---|
 | Esperimenti interattivi | 139 attività distribuite nei 17 moduli |
 | Percorso applicativo | 11 spedizioni, ciascuna articolata in tre fasi |
-| Materiali del corso | 17 lezioni a tappe con presentazione PDF e progetto R; 11 fascicoli dei macroprogetti con 208 slide |
+| Materiali del corso | 28 lezioni a tappe con presentazione PDF e progetto R: 17 moduli e 11 spedizioni |
 | Programmi originali | 340 laboratori R e 20 laboratori Python |
 | Esperimenti riproducibili | 139 programmi R autonomi, parametri e seme casuale espliciti |
 | Esplorazione | Parametri modificabili, confronto fra due scenari, tabella dei risultati |
@@ -196,9 +196,9 @@ I CSV esportati neutralizzano le celle testuali che potrebbero essere interpreta
 | `content/experiments.json` | Catalogo scientifico, codice e controlli dei 139 esperimenti |
 | `content/catalogue.json` | Indice delle unità e dei materiali |
 | `moduli/` | Scheda e contenuto strutturato di ciascuna unità |
-| `materiali/` | Laboratori R e Python, dati, funzioni comuni e fascicoli dei macroprogetti |
+| `materiali/` | Laboratori R e Python, dati e funzioni comuni |
 | `R/` | Codice riproducibile dei nuovi esperimenti e tema grafico |
-| `assets/` | Presentazioni e figure delle lezioni, slide dei macroprogetti, texture e archivi scaricabili |
+| `assets/` | Presentazioni e figure delle lezioni, texture e archivi scaricabili |
 | `vendor/` | Distribuzioni locali di MathJax, webR e 23 pacchetti R, con licenze |
 | `config/` | Configurazione del sito e politica di sicurezza della pagina |
 | `security/` | Impronte delle dipendenze distribuite e requisiti Python con hash |
@@ -265,7 +265,7 @@ Dependabot propone aggiornamenti settimanali. Ogni modifica a webR, ai pacchetti
 
 ## Moduli e spedizioni
 
-| Codice | Unità didattica | Slide o tappe | Materiali |
+| Codice | Unità didattica | Tappe | Materiali |
 |---|---|---:|---|
 | T00 | [Dal codice al calcolo scientifico](moduli/T00/README.md) | 66 tappe | [PDF](assets/lezioni/T00/T00_Basalto.pdf) · [Progetto R](assets/lezioni/T00/Basalto_T00_progetto_R.zip) |
 | M01 | [Pensare con i dati](moduli/M01/README.md) | 84 tappe | [PDF](assets/lezioni/M01/R_analisi_dati_completa.pdf) · [Progetto R](assets/lezioni/M01/Terra_M01_progetto_R.zip) |
@@ -284,17 +284,17 @@ Dependabot propone aggiornamenti settimanali. Ogni modifica a webR, ai pacchetti
 | M14 | [Estremi, pericolosità e rischio](moduli/M14/README.md) | 66 tappe | [PDF](assets/lezioni/M14/M14_Ignis.pdf) · [Progetto R](assets/lezioni/M14/Ignis_M14_progetto_R.zip) |
 | M15 | [Riproducibilità e progetto di analisi](moduli/M15/README.md) | 58 tappe | [PDF](assets/lezioni/M15/M15_Argenta.pdf) · [Progetto R](assets/lezioni/M15/Argenta_M15_progetto_R.zip) |
 | M16 | [Classificazione e validazione](moduli/M16/README.md) | 62 tappe | [PDF](assets/lezioni/M16/M16_Prisma.pdf) · [Progetto R](assets/lezioni/M16/Prisma_M16_progetto_R.zip) |
-| P01 | [Geometria dei pori e permeabilità](moduli/P01/README.md) | 21 | [PDF](materiali/pdf/P01_R6.pdf) · [R](materiali/R/P01_figure.R) |
-| P02 | [Foraminiferi, coppe e campagne](moduli/P02/README.md) | 22 | [PDF](materiali/pdf/P02_R6.pdf) · [R](materiali/R/P02_figure.R) |
-| P03 | [Il Nilo: livelli e dipendenza temporale](moduli/P03/README.md) | 21 | [PDF](materiali/pdf/P03_R6.pdf) · [R](materiali/R/P03_figure.R) |
-| P04 | [Un geyser: associazione e previsione](moduli/P04/README.md) | 21 | [PDF](materiali/pdf/P04_R6.pdf) · [R](materiali/R/P04_figure.R) |
-| P05 | [CO₂: tendenza e calendario stagionale](moduli/P05/README.md) | 22 | [PDF](materiali/pdf/P05_R6.pdf) · [R](materiali/R/P05_figure.R) |
-| P06 | [Dai campioni alla validazione spaziale](moduli/P06/README.md) | 17 | [PDF](materiali/pdf/P06_R6.pdf) · [R](materiali/R/P06_figure.R) |
-| P07 | [Terreno, pendenze e sintesi territoriali](moduli/P07/README.md) | 17 | [PDF](materiali/pdf/P07_R6.pdf) · [R](materiali/R/P07_figure.R) |
-| P08 | [Collocare nel tempo il massimo di un proxy](moduli/P08/README.md) | 18 | [PDF](materiali/pdf/P08_R6.pdf) · [R](materiali/R/P08_figure.R) |
-| P09 | [Un livello raro e la sua incertezza](moduli/P09/README.md) | 16 | [PDF](materiali/pdf/P09_R6.pdf) · [R](materiali/R/P09_figure.R) |
-| P10 | [Un’analisi ricostruibile e verificabile](moduli/P10/README.md) | 16 | [PDF](materiali/pdf/P10_R6.pdf) · [R](materiali/R/P10_figure.R) |
-| P11 | [Classificare nuove stazioni sintetiche](moduli/P11/README.md) | 17 | [PDF](materiali/pdf/P11_R6.pdf) · [R](materiali/R/P11_figure.R) |
+| P01 | [Geometria dei pori e permeabilità](moduli/P01/README.md) | 31 tappe | [PDF](assets/lezioni/P01/P01_Pori.pdf) · [Progetto R](assets/lezioni/P01/Spedizione_P01_progetto_R.zip) |
+| P02 | [Foraminiferi, coppe e campagne](moduli/P02/README.md) | 32 tappe | [PDF](assets/lezioni/P02/P02_Foraminiferi.pdf) · [Progetto R](assets/lezioni/P02/Spedizione_P02_progetto_R.zip) |
+| P03 | [Il Nilo: livelli e dipendenza temporale](moduli/P03/README.md) | 31 tappe | [PDF](assets/lezioni/P03/P03_Nilo.pdf) · [Progetto R](assets/lezioni/P03/Spedizione_P03_progetto_R.zip) |
+| P04 | [Un geyser: associazione e previsione](moduli/P04/README.md) | 31 tappe | [PDF](assets/lezioni/P04/P04_Geyser.pdf) · [Progetto R](assets/lezioni/P04/Spedizione_P04_progetto_R.zip) |
+| P05 | [CO₂: tendenza e calendario stagionale](moduli/P05/README.md) | 32 tappe | [PDF](assets/lezioni/P05/P05_CO2.pdf) · [Progetto R](assets/lezioni/P05/Spedizione_P05_progetto_R.zip) |
+| P06 | [Dai campioni alla validazione spaziale](moduli/P06/README.md) | 27 tappe | [PDF](assets/lezioni/P06/P06_Validazione.pdf) · [Progetto R](assets/lezioni/P06/Spedizione_P06_progetto_R.zip) |
+| P07 | [Terreno, pendenze e sintesi territoriali](moduli/P07/README.md) | 27 tappe | [PDF](assets/lezioni/P07/P07_Terreno.pdf) · [Progetto R](assets/lezioni/P07/Spedizione_P07_progetto_R.zip) |
+| P08 | [Collocare nel tempo il massimo di un proxy](moduli/P08/README.md) | 28 tappe | [PDF](assets/lezioni/P08/P08_Proxy.pdf) · [Progetto R](assets/lezioni/P08/Spedizione_P08_progetto_R.zip) |
+| P09 | [Un livello raro e la sua incertezza](moduli/P09/README.md) | 26 tappe | [PDF](assets/lezioni/P09/P09_Livelli.pdf) · [Progetto R](assets/lezioni/P09/Spedizione_P09_progetto_R.zip) |
+| P10 | [Un’analisi ricostruibile e verificabile](moduli/P10/README.md) | 26 tappe | [PDF](assets/lezioni/P10/P10_Ricostruibile.pdf) · [Progetto R](assets/lezioni/P10/Spedizione_P10_progetto_R.zip) |
+| P11 | [Classificare nuove stazioni sintetiche](moduli/P11/README.md) | 27 tappe | [PDF](assets/lezioni/P11/P11_Stazioni.pdf) · [Progetto R](assets/lezioni/P11/Spedizione_P11_progetto_R.zip) |
 
 ## Documentazione
 

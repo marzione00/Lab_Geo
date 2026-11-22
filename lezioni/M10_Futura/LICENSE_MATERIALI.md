@@ -6,7 +6,7 @@ La presentazione e le illustrazioni originali del modulo M10 mantengono la licen
 
 <https://creativecommons.org/licenses/by-nc-sa/4.0/>
 
-Attribuzione obbligatoria; utilizzi non commerciali; adattamenti condivisi secondo gli stessi termini. Indicare le modifiche effettuate. L’edizione amplia le 33 pagine M10 R6 del sito in 110 slide e sviluppa i 20 laboratori in notebook svolti; fonti e modifiche sono documentate nel pacchetto.
+Attribuzione obbligatoria; utilizzi non commerciali; adattamenti condivisi secondo gli stessi termini. Indicare le modifiche effettuate. L’edizione sviluppa il modulo M10 del sito in 110 slide e i 20 laboratori in notebook svolti; fonti e modifiche sono documentate nel pacchetto.
 
 Dataset, font, software e altre componenti di terzi conservano le proprie condizioni. Non vengono automaticamente rilicenziati sotto Creative Commons. Il software del corso mantiene le proprie condizioni, coerentemente con la licenza dell’archivio precedente.
 

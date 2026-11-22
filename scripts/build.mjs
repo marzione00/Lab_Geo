@@ -29,11 +29,6 @@ for (const key of ['siteUrl', 'mainSiteUrl', 'repositoryUrl']) {
 }
 fs.rmSync(out, { recursive: true, force: true });
 fs.mkdirSync(path.join(out, 'assets/content'), { recursive: true });
-const sharedDiagramPanels = new Set();
-for (const m of catalogue.modules)
-  for (const s of read('moduli/' + m.id + '/modulo.json').slides || [])
-    if (s.diagram && !s.figure)
-      sharedDiagramPanels.add('visuals/' + m.id + '/' + String(s.page).padStart(3, '0') + '.svg');
 for (const dir of ['assets', 'vendor', 'R'])
   fs.cpSync(path.join(root, dir), path.join(out, dir), {
     recursive: true,
@@ -43,8 +38,6 @@ for (const dir of ['assets', 'vendor', 'R'])
         throw Error('Collegamento simbolico non consentito nella distribuzione: ' + p);
       if (/\.(?:key|p12|pfx)$/i.test(p)) return false;
       if (p.split(path.sep).includes('__pycache__')) return false;
-      if (dir === 'assets' && sharedDiagramPanels.has(path.relative(path.join(root, dir), p).split(path.sep).join('/')))
-        return false;
       // Original provider responses remain available inside each downloadable project.zip.
       // The runtime reads only data.csv; avoid publishing a second uncompressed copy.
       if (
@@ -58,6 +51,8 @@ for (const dir of ['assets', 'vendor', 'R'])
       return true;
     },
   });
+// Caratteri del sito e dei sorgenti LaTeX, con le rispettive licenze.
+fs.cpSync(path.join(root, 'lezioni/Font'), path.join(out, 'assets/fonts'), { recursive: true });
 execFileSync('python3', [path.join(root, 'scripts/public_materials.py'), '--output', path.join(out, 'materiali')], {
   stdio: 'inherit',
 });
@@ -137,7 +132,6 @@ fs.writeFileSync(path.join(out, 'assets/catalogue.js'), 'window.GEO_CATALOG=' + 
 fs.writeFileSync(path.join(out, 'assets/site-config.js'), 'window.GEO_CONFIG=' + safe(config) + ';\n');
 for (const m of catalogue.modules) {
   const data = read('moduli/' + m.id + '/modulo.json');
-  for (const slide of data.slides || []) delete slide.review;
   fs.writeFileSync(
     path.join(out, 'assets/content', m.id + '.js'),
     'window.GEO_MODULES=window.GEO_MODULES||{};window.GEO_MODULES.' + m.id + '=' + safe(data) + ';\n',
@@ -284,16 +278,17 @@ function staticPage(file, title, summary, body) {
   );
 }
 for (const m of catalogue.modules) {
-  // A module with a lesson lists its tappe; a macroproject lists its slides.
-  const lesson = lessons[m.id] ? read('content/lezioni/' + m.id + '.json') : null,
-    pdf = lesson ? lesson.pdf : m.pdf,
+  // Every module and expedition lists the tappe of its lesson.
+  if (!lessons[m.id]) throw Error('Lezione assente per ' + m.id);
+  const lesson = read('content/lezioni/' + m.id + '.json'),
+    pdf = lesson.pdf,
     sections = [];
-  for (const s of lesson ? lesson.slides : read('moduli/' + m.id + '/modulo.json').slides) {
-    const title = lesson ? lesson.sections.find(x => s.page >= x.first && s.page <= x.last).title : s.section;
+  for (const s of lesson.slides) {
+    const title = lesson.sections.find(x => s.page >= x.first && s.page <= x.last).title;
     if (sections.at(-1)?.title !== title) sections.push({ title, slides: [] });
     sections.at(-1).slides.push(s);
   }
-  const route = s => (lesson ? '#lezione-' + m.id + '/' + s.page : '#modulo-' + m.id + '/slide/' + s.page);
+  const route = s => '#lezione-' + m.id + '/' + s.page;
   const labs = experiments.activities.filter(a => a.module === m.id);
   staticPage(
     m.id + '.html',
@@ -308,7 +303,9 @@ for (const m of catalogue.modules) {
       '</p><p class="actions"><a href="../#modulo-' +
       text(m.id) +
       '">Apri nell’atlante interattivo</a>' +
-      (pdf ? '<a href="../' + text(pdf) + '">' + (lesson ? 'Presentazione PDF' : 'Fascicolo PDF') + '</a>' : '') +
+      '<a href="../' +
+      text(pdf) +
+      '">Presentazione PDF</a>' +
       '</p>' +
       (labs.length
         ? '<h2>Esperimenti</h2><ul>' +
@@ -320,7 +317,7 @@ for (const m of catalogue.modules) {
             .join('') +
           '</ul>'
         : '') +
-      (lesson ? '<h2>Tappe della lezione</h2>' : '<h2>Slide</h2>') +
+      '<h2>Tappe della lezione</h2>' +
       sections
         .map(
           section =>
@@ -378,7 +375,7 @@ for (const f of ['THIRD_PARTY_NOTICES.md', 'LICENSE.md', 'LICENSE-CODE.md'])
 // Compact generated SVG markup without changing coordinates, colours or precision.
 // Keep the editable course assets untouched.
 let svgBytesSaved = 0;
-for (const dir of ['assets/slides', 'assets/visuals', 'assets/lezioni']) {
+for (const dir of ['assets/lezioni']) {
   for (const entry of fs.readdirSync(path.join(out, dir), { recursive: true })) {
     if (!entry.endsWith('.svg')) continue;
     const file = path.join(out, dir, entry),
@@ -412,6 +409,5 @@ console.log(
     Object.values(lessons).reduce((n, l) => n + l.pages, 0) +
     ' tappe, ' +
     Object.values(lessons).reduce((n, l) => n + l.explained.length, 0) +
-    ' commentate)' +
-    '; materiali originali conservati.',
+    ' commentate).',
 );

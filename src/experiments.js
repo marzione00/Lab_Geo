@@ -86,9 +86,11 @@
     main.querySelector('#filter-experiments').addEventListener('change', fill);
     fill();
   }
+  // Every module and expedition has a lesson: PDF, tappe and R project; the course laboratories have their code page.
   function materials(m) {
     const lesson = root.GEO_LESSON_INDEX?.[m.id];
-    return html`<details class="lab-module-materials"><summary>Materiali di consultazione e riferimenti</summary><p>Presentazione originale, sorgenti e laboratori del corso accompagnano gli esperimenti. Le fonti del corso permettono di approfondire il ragionamento e ricostruire i calcoli.</p><div class="actions">${link(lesson?.pdf || m.pdf, 'Presentazione PDF ↗', 'button secondary')}${link('#modulo-' + m.id + '/codici', 'Codici del corso ↗', 'button secondary')}${link(lesson ? '#lezione-' + m.id : '#modulo-' + m.id + '/slide/3', 'Lettura del fascicolo ↗', 'button secondary')}</div></details>`;
+    if (!lesson) return '';
+    return html`<details class="lab-module-materials"><summary>Materiali di consultazione e riferimenti</summary><p>La presentazione, le sue tappe e il progetto R accompagnano gli esperimenti. Le fonti del corso permettono di approfondire il ragionamento e ricostruire i calcoli.</p><div class="actions">${link(lesson.pdf, 'Presentazione PDF ↗', 'button secondary')}${link('#lezione-' + m.id, 'Tappe della presentazione ↗', 'button secondary')}${lesson.download ? link(lesson.download, 'Progetto R: codice e dati ↓', 'button secondary') : ''}${m.laboratories?.length ? link('#modulo-' + m.id + '/codici', 'Codici dei laboratori ↗', 'button secondary') : ''}</div></details>`;
   }
   function module(main, m) {
     cleanup();
@@ -218,7 +220,7 @@
   function mission(main, m) {
     cleanup();
     const mission = missions[m.id];
-    main.innerHTML = html`<div class="wrap"><div class="breadcrumb">${link('#progetti', 'Spedizioni')}<span>/</span>${m.id}</div><header class="lab-module-header">${planet(m.id, 'module-planet')}<p class="eyebrow">SPEDIZIONE ${m.id}</p><h1>${m.title}</h1><p class="lead">${mission.intro}</p><p class="lab-footer-note">Gli esperimenti preparatori impiegano dati sintetici dichiarati. I dati e la consegna del caso applicativo sono disponibili nei materiali originali.</p></header><h2 class="sr-only">Fasi della spedizione</h2><div class="mission-stages">${mission.steps.map(
+    main.innerHTML = html`<div class="wrap"><div class="breadcrumb">${link('#progetti', 'Spedizioni')}<span>/</span>${m.id}</div><header class="lab-module-header">${planet(m.id, 'module-planet')}<p class="eyebrow">SPEDIZIONE ${m.id}</p><h1>${m.title}</h1><p class="lead">${mission.intro}</p><p class="lab-footer-note">Gli esperimenti preparatori impiegano dati sintetici dichiarati. Dati, codice e consegna del caso applicativo sono nella presentazione a tappe e nel suo progetto R.</p></header><h2 class="sr-only">Fasi della spedizione</h2><div class="mission-stages">${mission.steps.map(
       ([title, ...ids]) =>
         html`<section class="mission-stage"><div><h3>${title}</h3>${ids.map(id => {
           const a = byId.get(id);
@@ -228,6 +230,11 @@
     const solution = root.GeoSolutions.mountCourse(main.querySelector('.course-solution'), m.id);
     dispose = () => solution.destroy();
   }
+  // The tappa of the lesson that opens the experiment, or the lesson overview.
+  const lessonLink = a =>
+    a.page
+      ? link('#lezione-' + a.module + '/' + a.page, 'Tappa ' + a.page + ' della lezione ↗')
+      : link('#lezione-' + a.module, 'Lezione del modulo ↗');
   function validate(a, input) {
     return S.parameters(a, input);
   }
@@ -297,7 +304,7 @@
       narrated
         ? html`<div class="narrative-journal-actions"><button type="button" id="save-fieldbook" class="button secondary" disabled>Conserva nel taccuino</button><a href="#taccuino">Rileggi il taccuino →</a><p id="fieldbook-status" role="status">Esegui il modello originale in R per documentare la configurazione.</p></div>`
         : ''
-    }</div></section><section class="lab-reading" id="lab-theory"><h2>Modello e formalismo</h2><div class="math">\\[${a.formula}\\]</div><p class="lab-math-definitions">${a.symbols}</p>${a.prose.map(p => html`<p>${p}</p>`)}<p>${link('#modulo-' + a.module + '/slide/' + a.page, 'Approfondimento nel materiale del corso ↗')}</p></section><section class="lab-code-panel" id="lab-code-panel" hidden><h2>Ricostruire il calcolo in R</h2><p>Il codice seguente è quello eseguito dall’esperimento. <code>p</code> contiene i parametri del pannello; le funzioni grafiche comuni sono incluse nello script autonomo scaricabile. Puoi modificare il corpo del calcolo e rieseguirlo. Esegui soltanto codice di cui conosci la provenienza: il browser non costituisce un ambiente adatto ad analizzare programmi ostili.</p><pre class="lab-code-output" id="lab-params-code"></pre><label class="sr-only" for="lab-code-editor">Codice R dell’esperimento</label><textarea class="lab-editor" id="lab-code-editor" maxlength="100000" spellcheck="false">${a.code}</textarea><div class="lab-actions">${button('lab-run-code', 'Esegui codice modificato')}${button('lab-download-r', 'Scarica script R completo', true)}${button('lab-reset-code', 'Ripristina codice', true)}</div><p class="lab-footer-note">Il codice deve produrre <code>data</code> (tabella), <code>metrics</code> (riepilogo) e <code>plots</code> (lista di grafici ggplot). Un calcolo lungo può essere interrotto riavviando il motore.</p></section><div class="lab-actions" id="lab-quick-r">${button('lab-download-r-quick', 'Scarica lo script R della configurazione', true)}</div><p class="lab-footer-note">Dati sintetici · formule e ipotesi dichiarate · figure prodotte con ggplot2. ${
+    }</div></section><section class="lab-reading" id="lab-theory"><h2>Modello e formalismo</h2><div class="math">\\[${a.formula}\\]</div><p class="lab-math-definitions">${a.symbols}</p>${a.prose.map(p => html`<p>${p}</p>`)}<p>${lessonLink(a)}</p></section><section class="lab-code-panel" id="lab-code-panel" hidden><h2>Ricostruire il calcolo in R</h2><p>Il codice seguente è quello eseguito dall’esperimento. <code>p</code> contiene i parametri del pannello; le funzioni grafiche comuni sono incluse nello script autonomo scaricabile. Puoi modificare il corpo del calcolo e rieseguirlo. Esegui soltanto codice di cui conosci la provenienza: il browser non costituisce un ambiente adatto ad analizzare programmi ostili.</p><pre class="lab-code-output" id="lab-params-code"></pre><label class="sr-only" for="lab-code-editor">Codice R dell’esperimento</label><textarea class="lab-editor" id="lab-code-editor" maxlength="100000" spellcheck="false">${a.code}</textarea><div class="lab-actions">${button('lab-run-code', 'Esegui codice modificato')}${button('lab-download-r', 'Scarica script R completo', true)}${button('lab-reset-code', 'Ripristina codice', true)}</div><p class="lab-footer-note">Il codice deve produrre <code>data</code> (tabella), <code>metrics</code> (riepilogo) e <code>plots</code> (lista di grafici ggplot). Un calcolo lungo può essere interrotto riavviando il motore.</p></section><div class="lab-actions" id="lab-quick-r">${button('lab-download-r-quick', 'Scarica lo script R della configurazione', true)}</div><p class="lab-footer-note">Dati sintetici · formule e ipotesi dichiarate · figure prodotte con ggplot2. ${
       narrated
         ? 'Le figure vengono prodotte dopo l’esecuzione del calcolo in R.'
         : 'La figura iniziale proviene dal collaudo R; ogni modifica viene ricalcolata dall’interprete.'

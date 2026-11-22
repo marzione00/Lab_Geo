@@ -26,10 +26,10 @@ for (const [id, cfg] of Object.entries(config)) {
       assert.ok(s.title && s.section);
       assert.ok(!s.image, 'nessuna pagina come immagine: slide ' + s.page);
     });
-    // Copertina ricomposta come testo: pianeta, modulo, titolo, sottotitoli, autore, licenza.
+    // Copertina ricomposta come testo: pianeta o spedizione, modulo, titolo, sottotitoli, autore, licenza.
     const cover = L.slides[0].lines;
     assert.ok(
-      cover.length >= 6 && /^MODULO /.test(cover[1]) && /CC BY-NC-SA 4\.0/.test(cover.at(-1)),
+      cover.length >= 6 && /^(MODULO|MACROPROGETTO) /.test(cover[1]) && /CC BY-NC-SA 4\.0/.test(cover.at(-1)),
       cover.join(' | '),
     );
     assert.ok(!fs.readdirSync(path.join(root, 'assets/lezioni', id)).some(f => /^\d{3}\./.test(f)), 'pagina raster');
@@ -58,7 +58,7 @@ for (const [id, cfg] of Object.entries(config)) {
 
   test(id + ': ogni file di codice appartiene alla sua slide e dipende solo da slide precedenti', () => {
     if (cfg.standalone) {
-      // T00, M13-M16: script autonomi per capitolo, collegati alla prima slide che li cita.
+      // T00, M13-M16 e spedizioni: script autonomi, collegati alla prima slide che li cita.
       const cited = L.slides.flatMap(s => s.items.filter(x => x.t === 'code').map(x => [x.file, s.page]));
       assert.deepEqual(Object.keys(L.code).sort(), [...new Set(cited.map(c => c[0]))].sort());
       for (const [file, page] of cited) {
