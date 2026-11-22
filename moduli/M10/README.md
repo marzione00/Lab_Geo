@@ -17,33 +17,25 @@ Modelli temporali, valutazione e argomentazione scientifica.
 | **Valutazione a origine mobile** · `#laboratorio/m10-copertura` | Valutare ripetutamente una previsione usando solo il passato. | [R](../../R/experiments/m10-copertura.R) |
 | **Contributo predittivo di una seconda serie** · `#laboratorio/m10-multivariato` | Confrontare un modello autoregressivo con uno che include un predittore ritardato. | [R](../../R/experiments/m10-multivariato.R) |
 
-Ogni attività esplicita formula, simboli, ipotesi e limiti del procedimento. Il materiale seguente conserva la numerazione delle slide e dei laboratori originali R6.
+Ogni attività esplicita formula, simboli, ipotesi e limiti del procedimento. Il materiale seguente descrive la lezione a tappe e i laboratori del modulo.
 <!-- END INTERACTIVE GUIDE -->
 
-**33 slide · 10 figure · 10 diagrammi TikZ · 20 laboratori.**
+**Lezione Futura: 110 tappe · 20 laboratori.**
 
-[PDF del modulo](../../materiali/pdf/M10_R6.pdf) · [Codice R delle figure](../../materiali/R/M10_figure.R) · [Sorgente LaTeX](../../materiali/sorgenti/M10_R6.tex) · [Indice del repository](../../README.md)
+[Presentazione PDF](../../assets/lezioni/M10/Futura_M10_previsione_progetto.pdf) · [Progetto R della lezione](../../assets/lezioni/M10/Futura_M10_progetto_R.zip) · [Sorgenti della lezione](../../lezioni/M10_Futura/) · [Indice del repository](../../README.md)
 
 ## Percorso
 
-- Pagina 3: Il compito previsionale.
-- Pagina 6: Riferimenti e valutazione temporale.
-- Pagina 10: Memoria autoregressiva e innovazioni.
-- Pagina 15: Modelli ARIMA e struttura stagionale.
-- Pagina 18: Diagnostica delle innovazioni stimate.
-- Pagina 22: Previsioni, errori e copertura.
-- Pagina 27: Sistemi multivariati e contributo predittivo.
-- Pagina 31: Progetto integrato e riferimenti.
+Ogni slide della presentazione è una tappa del sito (`#lezione-M10`).
 
-## Esecuzione
-
-Aprire `materiali/Corso_Geologia.Rproj`, oppure avviare R nella cartella `materiali/`, quindi eseguire:
-
-```r
-source("R/M10_figure.R")
-```
-
-Le dipendenze comuni e i dati restano nella cartella `materiali/`; scaricare l’intero repository prima di eseguire gli script.
+- Tappe 11–22: II · Riferimenti.
+- Tappe 23–39: III · Memoria e innovazioni.
+- Tappe 40–57: IV · ARIMA e stagione.
+- Tappe 58–69: V · Diagnostica.
+- Tappe 70–82: VI · Validazione temporale.
+- Tappe 83–93: VII · Errori e intervalli.
+- Tappe 94–101: VIII · Sistemi multivariati.
+- Tappe 102–110: IX · Progetto statistico.
 
 ## Laboratori
 
@@ -72,4 +64,4 @@ Le dipendenze comuni e i dati restano nella cartella `materiali/`; scaricare l�
 
 ## Tracciabilità
 
-La numerazione coincide con il fascicolo R6. Il registro completo della rilettura si trova in [audit](../../materiali/audit/Registro_slide_R6.html). `modulo.json` raccoglie il contenuto destinato alla navigazione web e viene rigenerato dai sorgenti del corso.
+`modulo.json` raccoglie titolo, collocazione nel percorso e laboratori del modulo. La lezione a tappe è in `content/lezioni/M10.json`, generata dai sorgenti in `lezioni/M10_Futura/`; la spiegazione estesa delle tappe è in `content/lezioni/M10.md`.

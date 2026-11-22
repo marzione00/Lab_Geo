@@ -186,6 +186,8 @@ def _inline(tex):
 
 SITE = 'https://marzione00.github.io/Lab_Geo/'
 REPO = re.compile(r'https://github\.com/marzione00/Lab_Geo/blob/[0-9a-f]{7,40}/(materiali/[\w./-]+)$')
+# Lo script delle figure citato dal PDF viaggia con la lezione: la copia in assets/lezioni/<ID>/R/.
+FIGURE_SCRIPT = re.compile(r'materiali/R/((?:T00|M\d{2})_figure\.R)')
 
 
 def bare(t):
@@ -200,7 +202,10 @@ def site_url(url):
     if url.startswith(SITE):
         return url[len(SITE):] or '#indice'
     m = REPO.match(url)
-    return m.group(1) if m else url
+    if not m:
+        return url
+    f = FIGURE_SCRIPT.fullmatch(m.group(1))
+    return 'assets/lezioni/%s/R/%s' % (f.group(1)[:3], f.group(1)) if f else m.group(1)
 
 
 def text_of(nodes):
@@ -1186,6 +1191,11 @@ def main():
             shutil.copyfile(src / cfg['workbookPdf'], assets / cfg['workbookPdf'])
         lesson['download'] = 'assets/lezioni/%s/%s' % (o.lesson, cfg['zip']['name'])
         project_zip(src, assets / cfg['zip']['name'], cfg)
+        figure_script = src / 'R' / ('%s_figure.R' % o.lesson)
+        if figure_script.exists():
+            (assets / 'R').mkdir(exist_ok=True)
+            for f in (figure_script, src / 'R' / 'stile.R'):
+                shutil.copyfile(f, assets / 'R' / f.name)
         nfig = figures(tex, slides, cfg, src, pdf, assets / 'figure', o.lesson, work)
         # La copertina è ricomposta come testo del pannello: nessuna immagine della pagina.
         for old in assets.glob('[0-9][0-9][0-9].*'):

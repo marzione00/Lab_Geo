@@ -16,30 +16,25 @@ Dati, funzioni, controlli numerici e storia delle decisioni.
 | **Seme casuale e stato del generatore** · `#laboratorio/m15-casualita` | Riprodurre una sequenza dichiarando il piano casuale. | [R](../../R/experiments/m15-casualita.R) |
 | **Parametri, versioni e sensibilità** · `#laboratorio/m15-provenienza` | Confrontare risultati prodotti da scelte analitiche tracciate. | [R](../../R/experiments/m15-provenienza.R) |
 
-Ogni attività esplicita formula, simboli, ipotesi e limiti del procedimento. Il materiale seguente conserva la numerazione delle slide e dei laboratori originali R6.
+Ogni attività esplicita formula, simboli, ipotesi e limiti del procedimento. Il materiale seguente descrive la lezione a tappe e i laboratori del modulo.
 <!-- END INTERACTIVE GUIDE -->
 
-**27 slide · 5 figure · 10 diagrammi TikZ · 20 laboratori.**
+**Lezione Argenta: 58 tappe · 20 laboratori.**
 
-[PDF del modulo](../../materiali/pdf/M15_R6.pdf) · [Codice R delle figure](../../materiali/R/M15_figure.R) · [Sorgente LaTeX](../../materiali/sorgenti/M15_R6.tex) · [Indice del repository](../../README.md)
+[Presentazione PDF](../../assets/lezioni/M15/M15_Argenta.pdf) · [Progetto R della lezione](../../assets/lezioni/M15/Argenta_M15_progetto_R.zip) · [Sorgenti della lezione](../../lezioni/M15_Argenta/) · [Indice del repository](../../README.md)
 
 ## Percorso
 
-- Pagina 3: Dati e dipendenze dell’analisi.
-- Pagina 7: Identità e confronto numerico.
-- Pagina 12: Funzioni e contratti di validità.
-- Pagina 17: Casualità e ambiente di esecuzione.
-- Pagina 21: Parametri, versioni e provenienza.
+Ogni slide della presentazione è una tappa del sito (`#lezione-M15`).
 
-## Esecuzione
-
-Aprire `materiali/Corso_Geologia.Rproj`, oppure avviare R nella cartella `materiali/`, quindi eseguire:
-
-```r
-source("R/M15_figure.R")
-```
-
-Le dipendenze comuni e i dati restano nella cartella `materiali/`; scaricare l’intero repository prima di eseguire gli script.
+- Tappa 3: Il caso guida.
+- Tappe 4–11: Dati e dipendenze dell’analisi.
+- Tappe 12–23: Identità e confronto numerico.
+- Tappe 24–34: Funzioni e contratti di validità.
+- Tappe 35–43: Casualità e ambiente di esecuzione.
+- Tappe 44–56: Parametri, versioni e provenienza.
+- Tappa 57: Sintesi.
+- Tappa 58: Riferimenti.
 
 ## Laboratori
 
@@ -68,4 +63,4 @@ Le dipendenze comuni e i dati restano nella cartella `materiali/`; scaricare l�
 
 ## Tracciabilità
 
-La numerazione coincide con il fascicolo R6. Il registro completo della rilettura si trova in [audit](../../materiali/audit/Registro_slide_R6.html). `modulo.json` raccoglie il contenuto destinato alla navigazione web e viene rigenerato dai sorgenti del corso.
+`modulo.json` raccoglie titolo, collocazione nel percorso e laboratori del modulo. La lezione a tappe è in `content/lezioni/M15.json`, generata dai sorgenti in `lezioni/M15_Argenta/`; la spiegazione estesa delle tappe è in `content/lezioni/M15.md`.

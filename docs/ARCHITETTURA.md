@@ -1,13 +1,13 @@
 # Architettura e manutenzione
 
-GeoStat Lab è un’applicazione statica nella quale il browser esegue programmi R mediante webR. L’unità principale di navigazione è l’esperimento: i 17 moduli ne organizzano 139, mentre le 11 spedizioni collegano attività preparatorie a casi applicativi. Le 861 slide R6 costituiscono il materiale di approfondimento.
+GeoStat Lab è un’applicazione statica nella quale il browser esegue programmi R mediante webR. L’unità principale di navigazione è l’esperimento: i 17 moduli ne organizzano 139, mentre le 11 spedizioni collegano attività preparatorie a casi applicativi. Ogni modulo ha una lezione a tappe, una per slide della propria presentazione; le spedizioni conservano i propri fascicoli di slide.
 
 ## Sorgenti e prodotti generati
 
 | Sorgente canonica | Prodotti e utilizzo |
 |---|---|
-| `materiali/` | PDF, sorgenti, dati e programmi originali R6, preservati dalle conversioni dei fine riga |
-| `scripts/import-course.py` | Importa R6 in `content/catalogue.json`, `moduli/*/modulo.json` e nelle schede dei moduli; con `--render` ricava gli SVG dai PDF |
+| `lezioni/`, `scripts/lessons/import_lesson.py` | Sorgenti LaTeX, R e figure delle diciassette presentazioni; l’importatore genera `content/lezioni/*.json` e `assets/lezioni/` |
+| `materiali/` | Laboratori R e Python, dati e funzioni comuni; fascicoli, sorgenti e figure delle spedizioni P01–P11 |
 | `scripts/labs/build_catalogue.py` | Definisce algoritmi R, parametri, formalismo e raccordo con le sezioni; genera il catalogo degli esperimenti e gli script autonomi |
 | `content/prose-*.json` | Spiegazioni, simboli e limiti specifici: ogni attività appartiene a un solo file editoriale |
 | `content/research-*.json`, `assets/research/*/provenance.json` | Cinque missioni osservate, codici, campioni congelati e provenienza |
@@ -25,7 +25,7 @@ GeoStat Lab è un’applicazione statica nella quale il browser esegue programmi
 | `scripts/update-module-guides.mjs` | Allinea le 28 schede README al catalogo e alle spedizioni effettivamente utilizzati dal sito |
 | `scripts/labs/package-downloads.py` | Rigenera entrambi gli archivi scaricabili e la mappa CSV; `--check` ne verifica membri e contenuti |
 
-`package.json` identifica la versione applicativa, ripresa dal catalogo degli esperimenti e dalla consegna ZIP. Il campo `version` di `content/catalogue.json` identifica invece il formato del catalogo R6; il formato JSON delle configurazioni importabili ha una propria versione, verificata da `src/security.js`.
+`package.json` identifica la versione applicativa, ripresa dal catalogo degli esperimenti e dalla consegna ZIP. Il campo `version` di `content/catalogue.json` identifica invece il formato del catalogo; il formato JSON delle configurazioni importabili ha una propria versione, verificata da `src/security.js`.
 
 ## Flusso dell’applicazione
 
@@ -55,7 +55,7 @@ I percorsi degli asset sono relativi alla radice del sito e supportano sottocart
 
 ## Aggiornamenti riproducibili
 
-Per correggere le slide, aggiornare e ricollaudare le fonti in `materiali/`, verificare i PDF e soltanto dopo aggiornare il manifesto approvato. `python3 scripts/import-course.py --render` richiede Poppler e riallinea il contenuto web; la compilazione originaria richiede anche l’ambiente R, Python e XeLaTeX del corso.
+Per correggere una lezione, modificare i sorgenti in `lezioni/`, ricompilare la presentazione e rieseguire `scripts/lessons/import_lesson.py`; la build genera le tappe da `content/lezioni/`. Le slide delle spedizioni restano in `materiali/` e in `moduli/P*/modulo.json`; dopo una modifica ai materiali aggiornare il manifesto approvato.
 
 Per gli esperimenti, modificare il generatore e il file editoriale dell’attività, quindi seguire la [sequenza di rigenerazione](LABORATORI_INTERATTIVI.md#struttura-dei-sorgenti). Quando cambia un algoritmo o un parametro occorre rigenerare e ricollaudare anche le basi numeriche e le figure. Le sole correzioni editoriali devono preservare codice R e parametri approvati.
 

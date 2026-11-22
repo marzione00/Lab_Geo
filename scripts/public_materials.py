@@ -2,7 +2,6 @@
 from pathlib import Path
 import argparse
 import hashlib
-import re
 
 ROOT = Path(__file__).resolve().parents[1]
 TRANSIENT = {'.aux', '.log', '.nav', '.snm', '.toc', '.out', '.pyc'}
@@ -25,20 +24,7 @@ def public_bytes(relative):
     path = ROOT / 'materiali' / relative
     if path.is_symlink():
         raise ValueError(f'Symbolic link in publication: {path}')
-    data = path.read_bytes()
-    if str(relative) == 'Indice_corso.html':
-        text = data.decode()
-        text, count = re.subn(r'<p><a href="audit/Rapporto_revisione_R6\.pdf">.*?</p>', '', text)
-        if count != 1:
-            raise ValueError('The original index changed: review its public projection')
-        return text.replace('Revisione R6', 'Edizione R6').encode()
-    if str(relative) == 'LEGGIMI.txt':
-        text = data.decode()
-        if text.count('\nRILETTURA R6\n') != 1:
-            raise ValueError('The original guide changed: review its public projection')
-        text = text.split('\nRILETTURA R6\n')[0]
-        return text.replace('REVISIONE R6', 'EDIZIONE R6').replace('struttura, revisione e ricostruzione', 'struttura e ricostruzione').encode()
-    return data
+    return path.read_bytes()
 
 
 def checksum_manifest(files):

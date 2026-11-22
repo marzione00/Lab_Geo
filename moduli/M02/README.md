@@ -20,36 +20,32 @@ Dall’importazione alla tabella analitica verificabile.
 | **Contratti di validità di una funzione** · `#laboratorio/m02-funzioni` | Verificare precondizioni prima di eseguire un calcolo. | [R](../../R/experiments/m02-funzioni.R) |
 | **Verificare una tabella analitica** · `#laboratorio/m02-tabella` | Controllare righe, chiavi e unità prima dell’analisi. | [R](../../R/experiments/m02-tabella.R) |
 
-Ogni attività esplicita formula, simboli, ipotesi e limiti del procedimento. Il materiale seguente conserva la numerazione delle slide e dei laboratori originali R6.
+Ogni attività esplicita formula, simboli, ipotesi e limiti del procedimento. Il materiale seguente descrive la lezione a tappe e i laboratori del modulo.
 <!-- END INTERACTIVE GUIDE -->
 
-**43 slide · 10 figure · 10 diagrammi TikZ · 20 laboratori.**
+**Lezione Tellus: 82 tappe · 20 laboratori.**
 
-[PDF del modulo](../../materiali/pdf/M02_R6.pdf) · [Codice R delle figure](../../materiali/R/M02_figure.R) · [Sorgente LaTeX](../../materiali/sorgenti/M02_R6.tex) · [Indice del repository](../../README.md)
+[Presentazione PDF](../../assets/lezioni/M02/Tellus_M02_gestione_dati.pdf) · [Progetto R della lezione](../../assets/lezioni/M02/Tellus_M02_progetto_R.zip) · [Sorgenti della lezione](../../lezioni/M02_Tellus/) · [Indice del repository](../../README.md)
 
 ## Percorso
 
-- Pagina 3: Progetto e stato della sessione.
-- Pagina 7: Vettori, tipi e selezioni.
-- Pagina 11: Importazione e conversioni.
-- Pagina 15: Trasformazioni e aggregazioni.
-- Pagina 19: Chiavi e relazioni fra tabelle.
-- Pagina 23: Mancanti e censura.
-- Pagina 27: Coerenza fisica e registro delle decisioni.
-- Pagina 31: Variabili derivate e composizione chimica.
-- Pagina 35: Funzioni, parametri e controlli.
-- Pagina 39: Tabella analitica e consegna.
-- Pagina 43: Fonti e laboratori.
+Ogni slide della presentazione è una tappa del sito (`#lezione-M02`).
 
-## Esecuzione
-
-Aprire `materiali/Corso_Geologia.Rproj`, oppure avviare R nella cartella `materiali/`, quindi eseguire:
-
-```r
-source("R/M02_figure.R")
-```
-
-Le dipendenze comuni e i dati restano nella cartella `materiali/`; scaricare l’intero repository prima di eseguire gli script.
+- Tappa 3: Progetto e dati.
+- Tappe 4–7: Progetto e riproducibilità.
+- Tappa 8: Laboratorio · progetto.
+- Tappe 9–14: Vettori e selezioni.
+- Tappa 15: Laboratorio · selezioni.
+- Tappe 16–24: Importazione e conversioni.
+- Tappa 25: Laboratorio · importazione.
+- Tappe 26–32: Trasformazioni e aggregazioni.
+- Tappa 33: Laboratorio · aggregazioni.
+- Tappe 34–42: Chiavi e relazioni.
+- Tappe 43–50: Mancanti e censura.
+- Tappe 51–58: Controlli dei dati.
+- Tappe 59–68: Derivate e composizioni.
+- Tappe 69–75: Funzioni e controlli.
+- Tappe 76–82: Tabella analitica.
 
 ## Laboratori
 
@@ -78,4 +74,4 @@ Le dipendenze comuni e i dati restano nella cartella `materiali/`; scaricare l�
 
 ## Tracciabilità
 
-La numerazione coincide con il fascicolo R6. Il registro completo della rilettura si trova in [audit](../../materiali/audit/Registro_slide_R6.html). `modulo.json` raccoglie il contenuto destinato alla navigazione web e viene rigenerato dai sorgenti del corso.
+`modulo.json` raccoglie titolo, collocazione nel percorso e laboratori del modulo. La lezione a tappe è in `content/lezioni/M02.json`, generata dai sorgenti in `lezioni/M02_Tellus/`; la spiegazione estesa delle tappe è in `content/lezioni/M02.md`.

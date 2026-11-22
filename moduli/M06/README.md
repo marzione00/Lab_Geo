@@ -21,35 +21,26 @@ Contrasti, distribuzioni di riferimento e interpretazione dell’evidenza.
 | **Confrontare più medie** · `#laboratorio/m06-anova` | Valutare un’ipotesi globale su quattro gruppi con dispersioni controllate. | [R](../../R/experiments/m06-anova.R) |
 | **Effetto, intervallo ed evidenza** · `#laboratorio/m06-relazione` | Ricostruire una conclusione quantitativa completa. | [R](../../R/experiments/m06-relazione.R) |
 
-Ogni attività esplicita formula, simboli, ipotesi e limiti del procedimento. Il materiale seguente conserva la numerazione delle slide e dei laboratori originali R6.
+Ogni attività esplicita formula, simboli, ipotesi e limiti del procedimento. Il materiale seguente descrive la lezione a tappe e i laboratori del modulo.
 <!-- END INTERACTIVE GUIDE -->
 
-**35 slide · 8 figure · 10 diagrammi TikZ · 20 laboratori.**
+**Lezione Gemina: 93 tappe · 20 laboratori.**
 
-[PDF del modulo](../../materiali/pdf/M06_R6.pdf) · [Codice R delle figure](../../materiali/R/M06_figure.R) · [Sorgente LaTeX](../../materiali/sorgenti/M06_R6.tex) · [Indice del repository](../../README.md)
+[Presentazione PDF](../../assets/lezioni/M06/Gemina_M06_confronti_ipotesi.pdf) · [Progetto R della lezione](../../assets/lezioni/M06/Gemina_M06_progetto_R.zip) · [Sorgenti della lezione](../../lezioni/M06_Gemina/) · [Indice del repository](../../README.md)
 
 ## Percorso
 
-- Pagina 3: Disegno, contrasto e ipotesi.
-- Pagina 6: Permutazione e scambiabilità.
-- Pagina 9: P-value e contenuto dell’evidenza.
-- Pagina 12: Errori, potenza e pianificazione.
-- Pagina 16: Due medie indipendenti: Welch.
-- Pagina 19: Confronti appaiati.
-- Pagina 22: Ranghi e ipotesi sulla distribuzione.
-- Pagina 26: Conteggi e associazione fra categorie.
-- Pagina 29: Più gruppi e confronti multipli.
-- Pagina 34: Relazione e verifica del confronto.
+Ogni slide della presentazione è una tappa del sito (`#lezione-M06`).
 
-## Esecuzione
-
-Aprire `materiali/Corso_Geologia.Rproj`, oppure avviare R nella cartella `materiali/`, quindi eseguire:
-
-```r
-source("R/M06_figure.R")
-```
-
-Le dipendenze comuni e i dati restano nella cartella `materiali/`; scaricare l’intero repository prima di eseguire gli script.
+- Tappe 3–19: I · Definire il confronto.
+- Tappe 20–36: II · Interpretare l’evidenza.
+- Tappe 37–46: III · Confrontare due gruppi.
+- Tappe 47–53: Coppie e differenze.
+- Tappe 54–59: Confronti basati sui ranghi.
+- Tappe 60–64: Conteggi e associazione.
+- Tappe 65–69: Più gruppi.
+- Tappe 70–77: Famiglie di confronti.
+- Tappe 78–93: V · Applicazioni e verifica.
 
 ## Laboratori
 
@@ -78,4 +69,4 @@ Le dipendenze comuni e i dati restano nella cartella `materiali/`; scaricare l�
 
 ## Tracciabilità
 
-La numerazione coincide con il fascicolo R6. Il registro completo della rilettura si trova in [audit](../../materiali/audit/Registro_slide_R6.html). `modulo.json` raccoglie il contenuto destinato alla navigazione web e viene rigenerato dai sorgenti del corso.
+`modulo.json` raccoglie titolo, collocazione nel percorso e laboratori del modulo. La lezione a tappe è in `content/lezioni/M06.json`, generata dai sorgenti in `lezioni/M06_Gemina/`; la spiegazione estesa delle tappe è in `content/lezioni/M06.md`.

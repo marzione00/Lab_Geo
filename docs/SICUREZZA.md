@@ -52,7 +52,7 @@ I controlli della struttura sono applicati prima del rendering. I limiti sull’
 
 `config/security.json` contiene la CSP del documento. Non ammette JavaScript inline, gestori di eventi inline o `unsafe-eval`; consente la compilazione WebAssembly. Gli stili inline sono mantenuti per compatibilità con MathJax e con proprietà grafiche calcolate. Script e stili caricati dall’HTML sono accompagnati da SRI SHA-384; gli script dei moduli e MathJax caricati dinamicamente ricevono le impronte dal manifesto generato durante la build.
 
-Le quattro pagine HTML accessorie ricevono anch’esse una CSP nella copia web. Il filtro del registro delle slide, che usa uno script inline nei materiali originali, è autorizzato con l’hash SHA-256 del solo script incluso; i sorgenti R6 rimangono invariati.
+Le pagine HTML accessorie ricevono anch’esse una CSP nella copia web; un eventuale script inline è autorizzato soltanto con l’hash SHA-256 del suo contenuto.
 
 Gli hash rendono rilevabile una modifica della risorsa rispetto al documento o al manifesto atteso. Non proteggono quando un attaccante può modificare e pubblicare contemporaneamente documento, manifesto e risorsa; per questo contano anche revisione del codice e protezione dell’account.
 

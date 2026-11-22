@@ -17,33 +17,24 @@ Calendario, dipendenza, trasformazioni e stazionarietà.
 | **Trasformazione e differenziazione** · `#laboratorio/m09-differenze` | Valutare la rimozione di un trend e i suoi effetti sulla dipendenza. | [R](../../R/experiments/m09-differenze.R) |
 | **Diagnosi ADF e KPSS mediante simulazione** · `#laboratorio/m09-diagnosi` | Confrontare due statistiche con ipotesi nulle differenti. | [R](../../R/experiments/m09-diagnosi.R) |
 
-Ogni attività esplicita formula, simboli, ipotesi e limiti del procedimento. Il materiale seguente conserva la numerazione delle slide e dei laboratori originali R6.
+Ogni attività esplicita formula, simboli, ipotesi e limiti del procedimento. Il materiale seguente descrive la lezione a tappe e i laboratori del modulo.
 <!-- END INTERACTIVE GUIDE -->
 
-**33 slide · 10 figure · 9 diagrammi TikZ · 20 laboratori.**
+**Lezione Borealis: 106 tappe · 20 laboratori.**
 
-[PDF del modulo](../../materiali/pdf/M09_R6.pdf) · [Codice R delle figure](../../materiali/R/M09_figure.R) · [Sorgente LaTeX](../../materiali/sorgenti/M09_R6.tex) · [Indice del repository](../../README.md)
+[Presentazione PDF](../../assets/lezioni/M09/Borealis_M09_serie_temporali.pdf) · [Progetto R della lezione](../../assets/lezioni/M09/Borealis_M09_progetto_R.zip) · [Sorgenti della lezione](../../lezioni/M09_Borealis/) · [Indice del repository](../../README.md)
 
 ## Percorso
 
-- Pagina 3: Tempo e provenienza delle osservazioni.
-- Pagina 7: Aggregazione, copertura e risoluzione.
-- Pagina 10: Componenti, smoothing e riferimenti.
-- Pagina 16: Ritardi e autocorrelazione.
-- Pagina 19: Processi e stazionarietà.
-- Pagina 24: Trend, differenze e trasformazioni.
-- Pagina 29: Diagnosi con ADF e KPSS.
-- Pagina 32: Laboratorio e riferimenti.
+Ogni slide della presentazione è una tappa del sito (`#lezione-M09`).
 
-## Esecuzione
-
-Aprire `materiali/Corso_Geologia.Rproj`, oppure avviare R nella cartella `materiali/`, quindi eseguire:
-
-```r
-source("R/M09_figure.R")
-```
-
-Le dipendenze comuni e i dati restano nella cartella `materiali/`; scaricare l’intero repository prima di eseguire gli script.
+- Tappe 15–25: II · Aggregazione e risoluzione.
+- Tappe 26–39: III · Trend, stagione e smoothing.
+- Tappe 40–53: IV · Ritardi e autocorrelazione.
+- Tappe 54–67: V · Processi e stazionarietà.
+- Tappe 68–83: VI · Trend e trasformazioni.
+- Tappe 84–96: VII · Diagnosi con ADF e KPSS.
+- Tappe 97–106: VIII · Analisi della co₂.
 
 ## Laboratori
 
@@ -72,4 +63,4 @@ Le dipendenze comuni e i dati restano nella cartella `materiali/`; scaricare l�
 
 ## Tracciabilità
 
-La numerazione coincide con il fascicolo R6. Il registro completo della rilettura si trova in [audit](../../materiali/audit/Registro_slide_R6.html). `modulo.json` raccoglie il contenuto destinato alla navigazione web e viene rigenerato dai sorgenti del corso.
+`modulo.json` raccoglie titolo, collocazione nel percorso e laboratori del modulo. La lezione a tappe è in `content/lezioni/M09.json`, generata dai sorgenti in `lezioni/M09_Borealis/`; la spiegazione estesa delle tappe è in `content/lezioni/M09.md`.

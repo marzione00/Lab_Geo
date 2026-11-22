@@ -52,4 +52,4 @@ Le dipendenze comuni e i dati restano nella cartella `materiali/`; scaricare l‚Ä
 
 ## Tracciabilit√†
 
-La numerazione coincide con il fascicolo R6. Il registro completo della rilettura si trova in [audit](../../materiali/audit/Registro_slide_R6.html). `modulo.json` raccoglie il contenuto destinato alla navigazione web e viene rigenerato dai sorgenti del corso.
+La numerazione coincide con il fascicolo R6. `modulo.json` raccoglie il contenuto destinato alla navigazione web e viene rigenerato dai sorgenti del corso.

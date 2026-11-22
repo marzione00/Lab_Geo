@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'scripts'))
 from public_materials import public_path, public_bytes, checksum_manifest
 OUT = ROOT / 'assets/downloads'
-R6_DIRS = ('R', 'dati', 'documentazione', 'estratti', 'laboratori',
+MATERIAL_DIRS = ('R', 'dati', 'documentazione', 'estratti', 'laboratori',
            'laboratori_python', 'sorgenti', 'strumenti', 'tikz')
 
 
@@ -23,7 +23,7 @@ def payloads():
         writer.writerow([item.get('module'), item.get('section'),
                          item.get('title', item.get('sectionTitle', '')),
                          item['role'], ';'.join(item['activities'])])
-    source = [p for directory in R6_DIRS for p in (ROOT / 'materiali' / directory).rglob('*')]
+    source = [p for directory in MATERIAL_DIRS for p in (ROOT / 'materiali' / directory).rglob('*')]
     source += list((ROOT / 'materiali').iterdir())
     r6 = {str(p.relative_to(ROOT)): public_bytes(p.relative_to(ROOT / 'materiali').as_posix()) for p in source
           if p.is_file() and public_path(p.relative_to(ROOT / 'materiali'))
@@ -49,7 +49,7 @@ def payloads():
     for name in ('LICENSE.md', 'LICENSE-CODE.md'):
         labs[name] = (ROOT / name).read_bytes()
         r6[name] = (ROOT / name).read_bytes()
-    return {'GeoStatLab_codice_dati_R6.zip': r6, 'GeoStatLab_esperimenti_R.zip': labs}, stream.getvalue().encode('utf-8-sig')
+    return {'GeoStatLab_codice_dati.zip': r6, 'GeoStatLab_esperimenti_R.zip': labs}, stream.getvalue().encode('utf-8-sig')
 
 
 def verify_archive(file, expected):

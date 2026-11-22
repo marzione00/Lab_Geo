@@ -14,13 +14,21 @@ const c = ctx.window.GEO_CATALOG;
 let pages = 0,
   visuals = 0,
   labs = 0;
+vm.runInContext(fs.readFileSync(path.join(dist, 'assets/lesson-index.js'), 'utf8'), ctx);
+const lessonIndex = ctx.window.GEO_LESSON_INDEX;
 for (const m of c.modules) {
-  exists(m.pdf);
-  exists(m.script);
   vm.runInContext(fs.readFileSync(path.join(dist, 'assets/content', m.id + '.js'), 'utf8'), ctx);
   const d = ctx.window.GEO_MODULES[m.id];
-  if (d.slides.length !== m.pages) throw Error(m.id);
-  for (const s of d.slides) {
+  if (lessonIndex[m.id]) {
+    if (m.pdf || m.pages || d.slides || fs.existsSync(path.join(dist, 'assets/slides', m.id)))
+      throw Error('Slide precedenti pubblicate per una lezione: ' + m.id);
+    exists(lessonIndex[m.id].pdf);
+  } else {
+    exists(m.pdf);
+    exists(m.script);
+    if (d.slides.length !== m.pages) throw Error(m.id);
+  }
+  for (const s of d.slides || []) {
     if ('review' in s) throw Error('Nota editoriale pubblicata: ' + m.id);
     pages++;
     exists(s.image);
@@ -41,11 +49,12 @@ for (const f of [
   'assets/lab.css',
   'assets/app.js',
   'vendor/mathjax/tex-svg.js',
-  'materiali/Guida_corso_R6.pdf',
 ])
   exists(f);
 for (const f of [
   'materiali/audit',
+  'materiali/Guida_corso_R6.pdf',
+  'materiali/Indice_corso.html',
   'materiali/Rapporto_revisione_R6.pdf',
   'materiali/sorgenti/Rapporto_revisione_R6.tex',
   'materiali/sorgenti/revisione_R6.json',
@@ -54,7 +63,7 @@ for (const f of [
 ]) {
   if (fs.existsSync(path.join(dist, f))) throw Error('Documento editoriale pubblicato: ' + f);
 }
-for (const f of ['index.html', 'assets/app.js', 'materiali/Indice_corso.html', 'materiali/LEGGIMI.txt']) {
+for (const f of ['index.html', 'assets/app.js', 'materiali/LEGGIMI.txt']) {
   if (
     /audit\/|Rapporto_revisione_R6|Registro_slide_R6|Nota della rilettura|Revisione delle slide|Rilettura delle slide/.test(
       fs.readFileSync(path.join(dist, f), 'utf8'),
@@ -80,7 +89,14 @@ const actual = fs
   .filter(name => name !== 'MANIFEST_SHA256.txt' && fs.statSync(path.join(materials, name)).isFile());
 if (actual.length !== listed.size || actual.some(name => !listed.has(name)))
   throw Error('Manifesto pubblico incompleto');
-if (c.modules.length !== 28 || pages !== 861 || visuals !== 494 || labs !== 360) throw Error('Copertura incompleta.');
+if (
+  c.modules.length !== 28 ||
+  Object.keys(lessonIndex).length !== 17 ||
+  pages !== 208 ||
+  visuals !== 128 ||
+  labs !== 360
+)
+  throw Error('Copertura incompleta.');
 const source = fs.readFileSync(path.join(dist, 'index.html'), 'utf8');
 if (source.includes('{{')) throw Error('Segnaposto non risolto.');
 for (const match of source.matchAll(/(?:src|href)="([^"#]+)"/g)) {
@@ -97,7 +113,11 @@ for (const f of textPages) {
 }
 for (const f of ['assets/social-card.jpg', 'assets/static.css']) exists(f);
 console.log(
-  'Distribuzione verificata: 28 fascicoli, 861 slide vettoriali, 494 pannelli visuali, 360 laboratori R/Python, ' +
+  'Distribuzione verificata: 17 lezioni a tappe, 11 fascicoli dei macroprogetti con ' +
+    pages +
+    ' slide e ' +
+    visuals +
+    ' pannelli, 360 laboratori R/Python, ' +
     textPages.length +
     ' pagine testuali.',
 );

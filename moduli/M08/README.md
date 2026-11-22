@@ -18,34 +18,25 @@ Geometria della PCA, partizioni e interpretazione geologica.
 | **Gerarchie e criterio di Ward** · `#laboratorio/m08-ward` | Esaminare fusioni successive e taglio della gerarchia. | [R](../../R/experiments/m08-ward.R) |
 | **Sensibilità di una partizione** · `#laboratorio/m08-robustezza` | Valutare la stabilità rispetto a perturbazioni dei dati. | [R](../../R/experiments/m08-robustezza.R) |
 
-Ogni attività esplicita formula, simboli, ipotesi e limiti del procedimento. Il materiale seguente conserva la numerazione delle slide e dei laboratori originali R6.
+Ogni attività esplicita formula, simboli, ipotesi e limiti del procedimento. Il materiale seguente descrive la lezione a tappe e i laboratori del modulo.
 <!-- END INTERACTIVE GUIDE -->
 
-**33 slide · 9 figure · 11 diagrammi TikZ · 20 laboratori.**
+**Lezione Polychroma: 108 tappe · 20 laboratori.**
 
-[PDF del modulo](../../materiali/pdf/M08_R6.pdf) · [Codice R delle figure](../../materiali/R/M08_figure.R) · [Sorgente LaTeX](../../materiali/sorgenti/M08_R6.tex) · [Indice del repository](../../README.md)
+[Presentazione PDF](../../assets/lezioni/M08/Polychroma_M08_multivariata.pdf) · [Progetto R della lezione](../../assets/lezioni/M08/Polychroma_M08_progetto_R.zip) · [Sorgenti della lezione](../../lezioni/M08_Polychroma/) · [Indice del repository](../../README.md)
 
 ## Percorso
 
-- Pagina 3: Campioni, variabili e scale.
-- Pagina 7: Ridondanza e composizioni.
-- Pagina 10: Geometria delle componenti principali.
-- Pagina 16: Interpretazione e calcolo della PCA.
-- Pagina 19: Partizioni mediante K-means.
-- Pagina 23: Numero dei gruppi e silhouette.
-- Pagina 26: Gerarchie e criterio di Ward.
-- Pagina 29: Robustezza e significato geologico.
-- Pagina 32: Laboratorio e riferimenti.
+Ogni slide della presentazione è una tappa del sito (`#lezione-M08`).
 
-## Esecuzione
-
-Aprire `materiali/Corso_Geologia.Rproj`, oppure avviare R nella cartella `materiali/`, quindi eseguire:
-
-```r
-source("R/M08_figure.R")
-```
-
-Le dipendenze comuni e i dati restano nella cartella `materiali/`; scaricare l’intero repository prima di eseguire gli script.
+- Tappe 15–26: II · Ridondanza e composizioni.
+- Tappe 27–44: III · Geometria della PCA.
+- Tappe 45–57: IV · Interpretare le componenti.
+- Tappe 58–72: VI · K-means.
+- Tappe 73–82: VII · Numero dei gruppi.
+- Tappe 83–93: VIII · Gerarchie di Ward.
+- Tappe 94–103: VIII · Stabilità e interpretazione.
+- Tappe 104–108: IX · Un’analisi completa.
 
 ## Laboratori
 
@@ -74,4 +65,4 @@ Le dipendenze comuni e i dati restano nella cartella `materiali/`; scaricare l�
 
 ## Tracciabilità
 
-La numerazione coincide con il fascicolo R6. Il registro completo della rilettura si trova in [audit](../../materiali/audit/Registro_slide_R6.html). `modulo.json` raccoglie il contenuto destinato alla navigazione web e viene rigenerato dai sorgenti del corso.
+`modulo.json` raccoglie titolo, collocazione nel percorso e laboratori del modulo. La lezione a tappe è in `content/lezioni/M08.json`, generata dai sorgenti in `lezioni/M08_Polychroma/`; la spiegazione estesa delle tappe è in `content/lezioni/M08.md`.

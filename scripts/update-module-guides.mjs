@@ -55,7 +55,10 @@ export function moduleGuides() {
           ') |\n';
     }
     body +=
-      '\nOgni attività esplicita formula, simboli, ipotesi e limiti del procedimento. Il materiale seguente conserva la numerazione delle slide e dei laboratori originali R6.\n';
+      '\nOgni attività esplicita formula, simboli, ipotesi e limiti del procedimento. ' +
+      (fs.existsSync('content/lezioni/' + m.id + '.json')
+        ? 'Il materiale seguente descrive la lezione a tappe e i laboratori del modulo.\n'
+        : 'Il materiale seguente conserva la numerazione delle slide e dei laboratori originali R6.\n');
     const file = 'moduli/' + m.id + '/README.md',
       original = fs.readFileSync(file, 'utf8');
     const clean = original.replace(new RegExp(begin + '[\\s\\S]*?' + end + '\\n*'), '');

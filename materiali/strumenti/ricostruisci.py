@@ -18,10 +18,10 @@ for action in (['figure','slide','laboratori','estratti','python'] if args.azion
  if action=='figure':
   q=subprocess.run(rrun("source('R/controlla_ambiente.R')"),check=True)
   # Ogni processo produce file soltanto nella cartella del proprio modulo.
-  batch(action,[(m,rrun(f"source('R/{m}_figure.R')"),f'R/{m}_figure.R') for m in mods])
+  batch(action,[(m,rrun(f"source('R/{m}_figure.R')"),f'R/{m}_figure.R') for m in mods if (P/f'R/{m}_figure.R').exists()])
  elif action=='slide':
   if not shutil.which('xelatex'):raise RuntimeError('Installare XeLaTeX con Beamer, TikZ, fontspec, listings e bookmark.')
-  for m in mods:
+  for m in [m for m in mods if (P/f'sorgenti/{m}.py').exists()]:
    subprocess.run([sys.executable,f'sorgenti/{m}.py'],check=True)
    subprocess.run([sys.executable,'sorgenti/compila.py',m],check=True)
  elif action in ['laboratori','estratti']:
