@@ -876,12 +876,12 @@ def exercises(cfg, src, acts, workdir, prefix):
                 continue
             fields.append({'scenario': c['scenario'], 'key': c['parametro'], 'label': labels[c['parametro']],
                            'value': c['valore'], 'tol': tolerance(c['valore'])})
-        if 'domande' in e:
+        if 'parametri_iniziali' in e:
             text = {'goal': e['obiettivo'], 'start': e['parametri_iniziali'], 'steps': e['passi'],
-                    'questions': e['domande'], 'deliver': e['consegna'], 'limits': e['limiti']}
-        else:  # quaderno con previsione, tabella da compilare, domanda e limite (M06)
+                    'deliver': e['consegna'], 'limits': e['limiti']}
+        else:  # quaderno con tabella da compilare e limite (M06)
             text = {'goal': e['obiettivo'], 'start': e['parametri'], 'steps': e['passi'],
-                    'questions': [e['previsione'], e['domanda']], 'table': e['tabella'], 'limits': e['limite']}
+                    'table': e['tabella'], 'limits': e['limite']}
         cards.append({'n': n, 'id': lab, 'title': e['titolo'], **text, 'scenarios': scen, 'fields': fields,
                       'script': {'file': 'Esercizi/' + script[0].name,
                                  'code': script[0].read_text(encoding='utf-8').rstrip('\n')}})

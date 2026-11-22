@@ -86,11 +86,9 @@ test('Optional annotations require explicit saving, preserve course storage and 
   assert.equal(w.GeoExplorations.records().length, 0);
   main.querySelector('#exploration-save').click();
   assert.equal(w.GeoExplorations.records().length, 1);
-  assert.equal(w.GeoExplorations.records()[0].completed, false);
-  main.querySelector('#exploration-complete').checked = true;
-  assert.equal(w.GeoExplorations.records()[0].completed, false);
-  main.querySelector('#exploration-save').click();
-  assert.equal(w.GeoExplorations.records()[0].completed, true);
+  // The fieldbook keeps notes only: no completion flag and no self-assessment.
+  assert.equal(main.querySelectorAll('#exploration-complete, input[type="checkbox"]').length, 0);
+  assert.equal('completed' in w.GeoExplorations.records()[0], false);
   assert.equal(w.localStorage.getItem('geostat-fieldbook-v1'), course);
   assert.equal(w.localStorage.getItem('geostat-lessons-v1'), progress);
   w.GeoExplorations.journal(main);
@@ -102,7 +100,6 @@ test('Optional annotations require explicit saving, preserve course storage and 
   for (const invalid of [
     { ...record, notes: ' ' },
     { ...record, notes: 'x'.repeat(6001) },
-    { ...record, completed: 'yes' },
     { ...record, date: 'invalid' },
     { ...record, variant: -1 },
     { ...record, id: s.target.id },

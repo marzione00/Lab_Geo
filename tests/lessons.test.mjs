@@ -2,7 +2,6 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
 import { explanations, inline } from '../scripts/lessons/build-lessons.mjs';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -155,12 +154,13 @@ for (const [id, cfg] of Object.entries(config)) {
     assert.equal(styleIssues('Il richiamo riassume la regola.\nUna stima, e non una misura.').length, 2);
   });
 
-  test(id + ': schede del quaderno con scenari validi e controlli numerici', { skip: !E }, () => {
+  test(id + ': schede del quaderno con scenari validi, senza domande né controlli', { skip: !E }, () => {
     assert.ok(E.cards.length >= 9);
     for (const c of E.cards) {
       assert.ok(labs.has(c.id));
       assert.deepEqual(Object.keys(c.scenarios).sort(), ['A', 'B']);
-      // Quaderni con valori attesi: indicatori da verificare; senza (M06): la tabella del confronto.
+      // Quaderni con valori attesi: gli indicatori danno le colonne della tabella; senza (M06): la tabella del quaderno.
+      assert.ok(!('questions' in c), c.id);
       assert.ok(cfg.expected ? c.fields.length >= 1 : c.fields.length === 0 && c.table.length >= 2, c.id);
       assert.ok(fs.existsSync(path.join(root, cfg.source, c.script.file)), c.script.file);
       for (const f of c.fields) {
@@ -212,22 +212,4 @@ test('Notebook svolti: venti per lezione M01-M12, pagine e tappe esistenti, arch
       if (['M10', 'M11', 'M12'].includes(id)) assert.ok(n.pages.length > 0, n.id);
     }
   }
-});
-
-test('Verifica numerica delle schede: virgola, tolleranza e testo non numerico', () => {
-  const ctx = vm.createContext({
-    GeoHTML: { html: () => '' },
-    GeoSecurity: { limits: { notes: 20000, code: 100000 } },
-  });
-  vm.runInContext(read('src/lessons.js'), ctx);
-  const { check, parse } = ctx.GeoLessons;
-  const se = { value: 0.258198889747161, tol: 0.0005 },
-    exact = { value: -1, tol: 0 };
-  assert.ok(check(se, '0,258'));
-  assert.ok(check(se, ' 0.2582 '));
-  assert.ok(!check(se, '0.26'));
-  assert.ok(check(exact, '-1'));
-  assert.ok(!check(exact, '-1.001'));
-  assert.ok(Number.isNaN(parse('1,2,3')));
-  assert.ok(Number.isNaN(parse('abc')));
 });

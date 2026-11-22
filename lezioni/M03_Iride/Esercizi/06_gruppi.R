@@ -3,7 +3,6 @@
 # Laboratorio: https://marzione00.github.io/Lab_Geo/#laboratorio/m03-gruppi
 # Aprire Iride_M03.Rproj prima di eseguire questo file.
 # Eseguire a righe oppure con source(..., echo = TRUE).
-# Scrivere una previsione prima di leggere gli indicatori.
 
 source("setup.R", encoding = "UTF-8")
 rA <- lab_gruppi(delta = 1, ratio = 1, seed = 17)

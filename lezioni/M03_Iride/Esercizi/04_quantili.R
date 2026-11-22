@@ -3,7 +3,6 @@
 # Laboratorio: https://marzione00.github.io/Lab_Geo/#laboratorio/m03-quantili
 # Aprire Iride_M03.Rproj prima di eseguire questo file.
 # Eseguire a righe oppure con source(..., echo = TRUE).
-# Scrivere una previsione prima di leggere gli indicatori.
 
 source("setup.R", encoding = "UTF-8")
 rA <- lab_quantili(noise = 1, n = 60, seed = 17)

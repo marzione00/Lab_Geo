@@ -3,7 +3,6 @@
 # Laboratorio: https://marzione00.github.io/Lab_Geo/#laboratorio/m03-posizione
 # Aprire Iride_M03.Rproj prima di eseguire questo file.
 # Eseguire a righe oppure con source(..., echo = TRUE).
-# Scrivere una previsione prima di leggere gli indicatori.
 
 source("setup.R", encoding = "UTF-8")
 rA <- lab_posizione(outlier = 15, seed = 17)
