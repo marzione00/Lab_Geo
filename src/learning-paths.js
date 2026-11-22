@@ -170,63 +170,27 @@
           '. Il confronto dei parametri prepara una lettura critica delle misure e delle ipotesi impiegate nel modulo.',
     };
   }
-  const esc = root.GeoHTML.escape;
+  const { html } = root.GeoHTML;
   const icon = (track, symbol) =>
-    '<span class="path-symbol path-symbol-' +
-    track +
-    '" aria-hidden="true">' +
-    esc(symbol || (track === 'course' ? '◎' : '◇')) +
-    '</span>';
+    html`<span class="path-symbol path-symbol-${track}" aria-hidden="true">${symbol || (track === 'course' ? '◎' : '◇')}</span>`;
   function badge(meta) {
-    return (
-      '<span class="path-badge path-' + meta.track + '">' + icon(meta.track, meta.symbol) + esc(meta.label) + '</span>'
-    );
+    return html`<span class="path-badge path-${meta.track}">${icon(meta.track, meta.symbol)}${meta.label}</span>`;
   }
   function prerequisites(meta) {
-    return (
-      '<div class="path-prerequisites"><strong>Preparazione consigliata</strong><p>' +
-      esc(meta.preparation) +
-      '</p>' +
-      (meta.prerequisites.length
-        ? '<div>' +
-          meta.prerequisites
-            .map(
-              id =>
-                '<a href="#modulo-' +
-                id +
-                '">' +
-                id +
-                ' · ' +
-                esc(root.GEO_CATALOG.modules.find(m => m.id === id)?.title || id) +
-                '</a>',
-            )
-            .join('') +
-          '</div>'
-        : '') +
-      '</div>'
-    );
+    return html`<div class="path-prerequisites"><strong>Preparazione consigliata</strong><p>${meta.preparation}</p>${
+      meta.prerequisites.length
+        ? html`<div>${meta.prerequisites.map(
+            id =>
+              html`<a href="#modulo-${id}">${id} · ${root.GEO_CATALOG.modules.find(m => m.id === id)?.title || id}</a>`,
+          )}</div>`
+        : ''
+    }</div>`;
   }
   function legend() {
-    return (
-      '<div class="path-legend" aria-label="Legenda dei percorsi"><span>' +
-      icon('course') +
-      '<strong>Corso</strong> · modulo principale</span><span>' +
-      icon('exploration') +
-      '<strong>Esplorazioni</strong> · approfondimenti facoltativi</span><small>L1–L5 · dall’ambiente accogliente alla ricerca estrema. L’ospitalità è una metafora didattica. Tutti i mondi sono accessibili.</small></div>'
-    );
+    return html`<div class="path-legend" aria-label="Legenda dei percorsi"><span>${icon('course')}<strong>Corso</strong> · modulo principale</span><span>${icon('exploration')}<strong>Esplorazioni</strong> · approfondimenti facoltativi</span><small>L1–L5 · dall’ambiente accogliente alla ricerca estrema. L’ospitalità è una metafora didattica. Tutti i mondi sono accessibili.</small></div>`;
   }
   function tabs(active) {
-    return (
-      '<nav class="journal-paths" aria-label="Percorsi del taccuino"><a class="path-course" href="#taccuino"' +
-      (active === 'course' ? ' aria-current="page"' : '') +
-      '>' +
-      icon('course') +
-      'Corso</a><a class="path-exploration" href="#taccuino-esplorazioni"' +
-      (active === 'exploration' ? ' aria-current="page"' : '') +
-      '>' +
-      icon('exploration') +
-      'Esplorazioni</a></nav>'
-    );
+    return html`<nav class="journal-paths" aria-label="Percorsi del taccuino"><a class="path-course" href="#taccuino"${active === 'course' ? html` aria-current="page"` : ''}>${icon('course')}Corso</a><a class="path-exploration" href="#taccuino-esplorazioni"${active === 'exploration' ? html` aria-current="page"` : ''}>${icon('exploration')}Esplorazioni</a></nav>`;
   }
   root.GeoPaths = Object.freeze({ moduleInfo, forPlanet, links, badge, prerequisites, legend, tabs });
 })(globalThis);

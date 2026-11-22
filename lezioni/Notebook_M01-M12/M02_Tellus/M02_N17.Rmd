@@ -1,0 +1,128 @@
+---
+title: "Microsonda: totale e qualit\u00e0 analitica"
+subtitle: "M02_N17 \u00b7 Tellus"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come controlliamo la somma degli ossidi e rendiamo visibile una soglia di qualità senza trasformarla in una classificazione mineralogica?
+
+## Obiettivi
+
+- Ricalcolare un totale a partire da colonne dichiarate.
+- Applicare e documentare un criterio analitico con soglie inclusive.
+
+**Prima di iniziare.** Saper eseguire una cella R e riconoscere vettori, assegnamenti e nomi di colonne.
+
+**Dati e unità.** Il file microsonda_simulata.csv contiene 75 analisi sintetiche, generate per tre fasi indicate da ol, cpx e spl. Sei ossidi sono espressi in percentuale in massa; il totale è la loro somma.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M02_N17/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M02_N17")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(2017)
+```
+
+## 1. Scegliere gli ossidi del totale
+
+Dichiariamo i sei nomi utilizzati nella somma. Questo evita di includere per errore totale_wt o mg_num fra gli addendi. Controlliamo tipo, finitezza e segno prima di calcolare un totale che sarà usato per selezionare analisi.
+
+```{r passo_01}
+m <- carica_dati("microsonda_simulata.csv", stringsAsFactors = FALSE)
+ossidi <- c("SiO2", "MgO", "FeO", "CaO", "Al2O3", "Cr2O3")
+stopifnot(nrow(m) == 75L, !anyDuplicated(m$id), all(ossidi %in% names(m)))
+stopifnot(all(vapply(m[ossidi], is.numeric, logical(1))))
+matrice <- as.matrix(m[ossidi])
+stopifnot(all(is.finite(matrice)), all(matrice >= 0))
+print(head(m[c("id", ossidi)], 3))
+```
+
+**Lettura del risultato.** La somma riguarda gli ossidi disponibili in questo dataset didattico. In un'analisi reale il significato del totale dipenderebbe anche dagli elementi misurati, dalle specie considerate e dal protocollo analitico; la colonna da sola non certifica l'analisi.
+
+## 2. Ricalcolare e confrontare
+
+rowSums somma le colonne riga per riga. Manteniamo il totale originale e aggiungiamo quello ricalcolato, poi controlliamo la differenza con una tolleranza compatibile con l'arrotondamento dei valori nel CSV.
+
+```{r passo_02}
+m$totale_calcolato <- rowSums(matrice)
+m$scarto_totale <- m$totale_calcolato - m$totale_wt
+print(summary(m$scarto_totale))
+stopifnot(max(abs(m$scarto_totale)) < 1e-5)
+soglia_bassa <- 98
+soglia_alta <- 102
+m$QC_ok <- m$totale_calcolato >= soglia_bassa & m$totale_calcolato <= soglia_alta
+print(table(m$QC_ok))
+```
+
+**Lettura del risultato.** Il controllo dell'accordo verifica la coerenza del file e del calcolo. L'intervallo da 98 a 102 è un criterio esplicito dell'esercitazione, con estremi inclusi; non è presentato come soglia universale valida per ogni materiale e strumento.
+
+## 3. Visualizzare e conservare gli esiti
+
+Mostriamo tutti i totali e coloriamo i casi che non soddisfano il criterio. Affianchiamo un conteggio per fase generatrice per capire se la selezione modifica la composizione del dataset, mantenendo disponibili anche le analisi segnalate.
+
+```{r passo_03}
+plot(seq_len(nrow(m)), m$totale_calcolato, pch = 19,
+     col = ifelse(m$QC_ok, "steelblue", "firebrick"),
+     xlab = "Analisi nel file", ylab = "Totale ossidi (% in massa)")
+abline(h = c(soglia_bassa, soglia_alta), lty = 2)
+print(table(fase = m$fase_generatrice, ammissibile = m$QC_ok))
+print(m[!m$QC_ok, c("id", "fase_generatrice", "totale_calcolato")])
+write.csv(m, percorso_risultati("microsonda_controllo_totali.csv"), row.names = FALSE)
+```
+
+**Lettura del risultato.** La fase generatrice è un'etichetta nota dalla simulazione e non viene dedotta dal totale. Un totale fuori soglia richiede un controllo della qualità o della completezza analitica; non identifica automaticamente una fase mineralogica errata.
+
+## Variante svolta
+
+Inserire un ossido mancante e verificare perché non si debba sommare ignorandolo.
+
+```{r variante}
+prova <- m[1, ossidi, drop = FALSE]
+prova$MgO <- NA_real_
+totale_completo <- rowSums(prova)
+somma_disponibile <- rowSums(prova, na.rm = TRUE)
+print(c(totale_richiesto = totale_completo, somma_parziale = somma_disponibile))
+stopifnot(is.na(totale_completo), is.finite(somma_disponibile))
+```
+
+La somma dei valori disponibili è calcolabile, ma non è il totale degli ossidi richiesti. Usare na.rm = TRUE senza cambiare nome e significato della variabile potrebbe far passare una somma incompleta per un controllo analitico completo.
+
+## Errore da riconoscere
+
+Rinormalizzare subito tutti i totali a cento può nascondere il segnale che il controllo intendeva osservare. Conservare totali originali e ricalcolati prima di qualsiasi normalizzazione mantiene verificabile la decisione.
+
+## Risposta alla domanda
+
+Il controllo produce un totale verificato e una selezione esplicita, conservando le analisi segnalate. Le soglie descrivono una scelta analitica dell'esercizio e devono essere valutate nel contesto prima di un uso reale.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M02_N17` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M02/M02_N17.R).

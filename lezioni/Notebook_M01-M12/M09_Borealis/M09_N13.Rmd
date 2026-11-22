@@ -1,0 +1,127 @@
+---
+title: "Differenziare e ricostruire un random walk"
+subtitle: "M09_N13 \u00b7 Borealis"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Che cosa conserviamo quando passiamo dai livelli agli incrementi?
+
+## Obiettivi
+
+- Allineare differenze e tempi.
+- Verificare gli incrementi di un random walk.
+- Ricostruire i livelli con cumsum.
+
+**Prima di iniziare.** Lettura di CSV, vettori, indicizzazione e funzioni di base in R. I blocchi vanno eseguiti nell’ordine all’interno del singolo notebook.
+
+**Dati e unità.** Tre realizzazioni sintetiche di 300 passi, senza unità fisica. L’AR(1) del CSV ha coefficiente 0,65 e valore iniziale fissato a zero: all’inizio presenta un transitorio. Nel random walk il primo valore registrato è già diverso da zero: la prima riga non va confusa con un’eventuale condizione iniziale precedente. Le colonne x_VAR e y_VAR appartengono a un altro approfondimento e qui non vengono usate.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Borealis oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M09_Borealis` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M09_Borealis/Risultati/M09_N13/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M09_Borealis"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M09_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M09_Borealis o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M09_N13")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(9013)
+```
+
+## 1. Calcolare gli incrementi
+
+La differenza ordinaria è $\Delta X_t=X_t-X_{t-1}$. Il suo tempo di riferimento è quello del valore corrente, cioè il secondo elemento di ogni coppia.
+
+```{r passo_01}
+p <- carica_dati("processi_simulati.csv")
+stopifnot(nrow(p)==300L, !anyNA(p))
+nomi <- c("rumore_bianco", "ar1", "random_walk")
+x <- p$random_walk
+delta <- diff(x)
+data.frame(passo=p$passo[-1],incremento=delta)[1:6,]
+c(livelli=length(x),incrementi=length(delta))
+```
+
+**Lettura del risultato.** Da 300 livelli otteniamo 299 incrementi. La prima differenza è associata al secondo passo e non al primo.
+
+## 2. Controllare la struttura degli incrementi
+
+Nel generatore gli incrementi del random walk sono le innovazioni indipendenti. Questo risultato dipende dal modello del caso simulato, non da una proprietà universale di diff.
+
+```{r passo_02}
+par(mfrow=c(2,1),mar=c(4.1,4.5,3.3,1.2))
+plot(p$passo[-1],delta,type="l",col="#087C74",
+ xlab="Passo",ylab="Incremento")
+acf(delta,lag.max=24,main="ACF degli incrementi")
+c(incrementi=length(delta),media=mean(delta),SD=sd(delta))
+```
+
+**Lettura del risultato.** Gli incrementi sono le innovazioni implicite di questa traiettoria del random walk. Non coincidono con la colonna rumore_bianco del file. L’ACF descrive la dipendenza campionaria e la sua forma da sola non dimostra indipendenza.
+
+## 3. Ricostruire con il valore iniziale
+
+Dagli incrementi si torna ai livelli con $X_t=X_1+\sum_{j=2}^t\Delta X_j$. Il valore iniziale è necessario perché la differenza elimina un’informazione di livello.
+
+```{r passo_03}
+ricostruita <- c(x[1],x[1]+cumsum(delta))
+max(abs(ricostruita-x))
+stopifnot(max(abs(ricostruita-x))<1e-8)
+write.csv(data.frame(passo=p$passo,livello=x,ricostruito=ricostruita),
+ percorso_risultati("ricostruzione_random_walk.csv"),row.names=FALSE)
+```
+
+**Lettura del risultato.** La ricostruzione coincide con la traiettoria. Gli incrementi da soli non distinguono fra due traiettorie che differiscono per una costante.
+
+## Variante svolta
+
+Aggiungere 100 ai livelli e confrontare le differenze.
+
+```{r variante}
+c(scarto_differenze=max(abs(diff(x+100)-delta)),
+ scarto_livelli=mean((x+100)-x))
+```
+
+Le differenze rimangono uguali entro l’arrotondamento, mentre il livello cambia di 100. Questa invarianza spiega la necessità di conservare il valore iniziale.
+
+## Errore da riconoscere
+
+Etichettare la prima differenza con il primo tempo o interpretare gli incrementi come se fossero ancora i livelli originari.
+
+## Risposta alla domanda
+
+Differenziare cambia la risposta e riduce la lunghezza. La ricostruzione richiede incrementi, calendario e una condizione iniziale.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M09_N13` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M09/M09_N13.R).

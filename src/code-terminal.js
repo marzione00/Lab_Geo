@@ -157,7 +157,7 @@
     stopifnot: 'Interrompe il calcolo se una delle condizioni richieste non è soddisfatta.',
     suppressWarnings: 'Sopprime la visualizzazione degli avvisi generati dall’espressione interna.',
   };
-  const esc = root.GeoHTML.escape;
+  const { html } = root.GeoHTML;
   function tokens(text) {
     return (
       text.match(
@@ -167,25 +167,23 @@
   }
   function highlight(text) {
     const t = tokens(text);
-    return t
-      .map((v, i) => {
-        const cls =
-          v[0] === '#'
-            ? 'comment'
-            : /^['"`]/.test(v)
-              ? 'string'
-              : /^\d|^\.\d/.test(v)
-                ? 'number'
-                : /^(?:if|else|for|function|return|TRUE|FALSE|NA|NULL)$/.test(v)
-                  ? 'keyword'
-                  : t.slice(i + 1).find(x => !/^\s+$/.test(x)) === '(' && /^[A-Za-z_.]/.test(v)
-                    ? 'function'
-                    : v === '<-'
-                      ? 'operator'
-                      : '';
-        return cls ? '<span class="r-' + cls + '">' + esc(v) + '</span>' : esc(v);
-      })
-      .join('');
+    return html`${t.map((v, i) => {
+      const cls =
+        v[0] === '#'
+          ? 'comment'
+          : /^['"`]/.test(v)
+            ? 'string'
+            : /^\d|^\.\d/.test(v)
+              ? 'number'
+              : /^(?:if|else|for|function|return|TRUE|FALSE|NA|NULL)$/.test(v)
+                ? 'keyword'
+                : t.slice(i + 1).find(x => !/^\s+$/.test(x)) === '(' && /^[A-Za-z_.]/.test(v)
+                  ? 'function'
+                  : v === '<-'
+                    ? 'operator'
+                    : '';
+      return cls ? html`<span class="r-${cls}">${v}</span>` : html`${v}`;
+    })}`;
   }
   function calls(source) {
     const clean = tokens(source)
@@ -280,10 +278,7 @@
       active = true;
     host.classList.add('r-terminal');
     host.setAttribute('aria-label', 'Terminale didattico R');
-    host.innerHTML =
-      '<header class="r-terminal-head"><span class="r-terminal-mark" aria-hidden="true">R</span><div><h2>Il codice dell’esperimento</h2><p>' +
-      esc(a.id) +
-      '.R</p></div></header><div class="r-terminal-tools"><button type="button" data-r="comments" aria-pressed="true">Commenti</button><button type="button" data-r="focus" aria-pressed="false">Lettura per passi</button><button type="button" data-r="edit">Modifica</button></div><p class="r-terminal-state" role="status">Modello originale · parametri del pannello</p><details class="r-parameters" open><summary>Parametri della configurazione</summary><pre tabindex="0" role="region" aria-label="Parametri della configurazione"><code></code></pre></details><div class="r-code-scroll" role="region" aria-label="Sorgente R commentato" tabindex="0"><ol class="r-code-blocks"></ol></div><div class="r-step-tools"><button type="button" data-r="previous" aria-label="Passaggio precedente">←</button><span class="r-step-count" aria-live="polite"></span><button type="button" data-r="next" aria-label="Passaggio successivo">→</button></div><p class="r-step-reading" aria-live="polite"></p><footer><button type="button" data-r="download">Scarica R completo</button><span>Lettura guidata del sorgente</span></footer>';
+    host.innerHTML = html`<header class="r-terminal-head"><span class="r-terminal-mark" aria-hidden="true">R</span><div><h2>Il codice dell’esperimento</h2><p>${a.id}.R</p></div></header><div class="r-terminal-tools"><button type="button" data-r="comments" aria-pressed="true">Commenti</button><button type="button" data-r="focus" aria-pressed="false">Lettura per passi</button><button type="button" data-r="edit">Modifica</button></div><p class="r-terminal-state" role="status">Modello originale · parametri del pannello</p><details class="r-parameters" open><summary>Parametri della configurazione</summary><pre tabindex="0" role="region" aria-label="Parametri della configurazione"><code></code></pre></details><div class="r-code-scroll" role="region" aria-label="Sorgente R commentato" tabindex="0"><ol class="r-code-blocks"></ol></div><div class="r-step-tools"><button type="button" data-r="previous" aria-label="Passaggio precedente">←</button><span class="r-step-count" aria-live="polite"></span><button type="button" data-r="next" aria-label="Passaggio successivo">→</button></div><p class="r-step-reading" aria-live="polite"></p><footer><button type="button" data-r="download">Scarica R completo</button><span>Lettura guidata del sorgente</span></footer>`;
     const $ = s => host.querySelector(s),
       list = $('.r-code-blocks');
     // The solution terminal owns stage navigation and downloads when embedded.
@@ -300,31 +295,15 @@
     if (options.local) $('.r-parameters').hidden = true;
     function display() {
       if (!active) return;
-      list.innerHTML = steps
-        .map(
-          (b, i) =>
-            '<li class="r-code-block"' +
-            (i === selected ? ' data-current="true"' : '') +
-            (focused && i !== selected ? ' hidden' : '') +
-            '><p class="r-code-comment"' +
-            (!comments ? ' hidden' : '') +
-            '># ' +
-            esc(b.comment) +
-            '</p><pre><code>' +
-            b.source
-              .split('\n')
-              .map(
-                (line, j) =>
-                  '<span class="r-source-line"><span class="r-line-number" aria-hidden="true">' +
-                  String(b.start + j).padStart(2, '0') +
-                  '</span><span>' +
-                  highlight(line) +
-                  '</span></span>',
-              )
-              .join('') +
-            '</code></pre></li>',
-        )
-        .join('');
+      list.innerHTML = html`${steps.map(
+        (b, i) =>
+          html`<li class="r-code-block"${i === selected ? html` data-current="true"` : ''}${focused && i !== selected ? ' hidden' : ''}><p class="r-code-comment"${!comments ? ' hidden' : ''}># ${b.comment}</p><pre><code>${b.source
+            .split('\n')
+            .map(
+              (line, j) =>
+                html`<span class="r-source-line"><span class="r-line-number" aria-hidden="true">${String(b.start + j).padStart(2, '0')}</span><span>${highlight(line)}</span></span>`,
+            )}</code></pre></li>`,
+      )}`;
       $('[data-r="previous"]').disabled = selected === 0;
       $('[data-r="next"]').disabled = selected >= steps.length - 1;
       $('.r-step-count').textContent = steps.length
@@ -348,7 +327,7 @@
         selected = 0;
         display();
       }
-      $('.r-parameters code').innerHTML = highlight(parameterScript(a, params));
+      $('.r-parameters code').innerHTML = html`${highlight(parameterScript(a, params))}`;
       $('.r-terminal-state').textContent =
         body === a.code
           ? options.local

@@ -1,0 +1,140 @@
+---
+title: "Verificare una ricostruzione mensile"
+subtitle: "M09_N03 \u00b7 Borealis"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+La media che abbiamo ricostruito coincide con il CSV mensile distribuito dal corso?
+
+## Obiettivi
+
+- Controllare una trasformazione dai dati originari.
+- Allineare le tabelle mediante una chiave.
+- Definire una tolleranza numerica motivata.
+
+**Prima di iniziare.** Lettura di CSV, vettori, indicizzazione e funzioni di base in R. I blocchi vanno eseguiti nell’ordine all’interno del singolo notebook.
+
+**Dati e unità.** Archivio storico CO₂ 1958–2001, copia del dataset settimanale statsmodels attribuito a Keeling, Whorf e CDIAC. Le concentrazioni sono espresse in ppm. Le medie mensili del corso derivano dai valori settimanali assegnati al mese della data e differiscono per definizione da una serie mensile ufficiale.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Borealis oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M09_Borealis` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M09_Borealis/Risultati/M09_N03/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M09_Borealis"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M09_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M09_Borealis o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M09_N03")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(9003)
+```
+
+## 1. Ricostruire senza copiare il risultato
+
+Ripartiamo dal file settimanale e ripetiamo la definizione dell’aggregato. Questo controllo verifica che dati e procedura siano coerenti fra loro.
+
+```{r passo_01}
+w <- carica_dati("co2_settimanale_storica.csv")
+w$data <- as.Date(w$data)
+w <- w[order(w$data), ]
+# La data di riferimento assegna ciascuna settimana a un mese.
+gruppi <- split(w$co2, format(w$data, "%Y-%m"))
+m <- do.call(rbind, lapply(names(gruppi), function(k) {
+  z <- gruppi[[k]]
+  n <- sum(!is.na(z))
+  data.frame(data=as.Date(paste0(k, "-01")),
+    co2_ppm=if (n > 0) mean(z, na.rm=TRUE) else NA_real_,
+    n_settimane=n)
+}))
+rownames(m) <- NULL
+riferimento <- carica_dati("co2_mensile_derivata.csv")
+riferimento$data <- as.Date(riferimento$data)
+c(mesi_calcolo=nrow(m), mesi_riferimento=nrow(riferimento))
+```
+
+**Lettura del risultato.** I due archivi contengono lo stesso numero di mesi. La sola uguaglianza delle lunghezze non garantisce ancora l’allineamento temporale.
+
+## 2. Unire mediante la data
+
+La data è la chiave del confronto. Un’unione completa rende visibili eventuali mesi presenti soltanto in uno dei file, evitando sottrazioni fra righe non corrispondenti.
+
+```{r passo_02}
+confronto <- merge(m, riferimento, by="data", all=TRUE,
+ suffixes=c("_calcolo","_corso"))
+stopifnot(nrow(confronto)==nrow(m), nrow(confronto)==nrow(riferimento),
+ identical(is.na(confronto$co2_ppm_calcolo),is.na(confronto$co2_ppm_corso)),
+ all(confronto$n_settimane_calcolo==confronto$n_settimane_corso))
+head(confronto, 4)
+```
+
+**Lettura del risultato.** Le stesse date hanno lo stesso schema di assenze e gli stessi conteggi. Questi controlli sono distinti dal confronto dei valori numerici.
+
+## 3. Ammettere soltanto l’arrotondamento atteso
+
+Il CSV riporta sei cifre decimali. Confrontiamo le medie mediante una tolleranza coerente con tale esportazione, senza richiedere l’identità esatta della rappresentazione binaria.
+
+```{r passo_03}
+confronto$scarto <- confronto$co2_ppm_calcolo-confronto$co2_ppm_corso
+massimo <- max(abs(confronto$scarto), na.rm=TRUE)
+stopifnot(massimo<1e-5)
+massimo
+plot(confronto$data, confronto$scarto, type="h", col="#087C74",
+ xlab="Data", ylab="Scarto (ppm)")
+abline(h=0, col="grey60")
+```
+
+**Lettura del risultato.** Lo scarto massimo è circa 3,33 × 10⁻⁷ ppm, compatibile con la scrittura a sei decimali. Non è un segnale ambientale e non costituisce un errore di aggregazione.
+
+## Variante svolta
+
+Riordinare il riferimento in senso inverso e ripetere l’unione per data.
+
+```{r variante}
+rovesciato <- riferimento[nrow(riferimento):1, ]
+controllo <- merge(m, rovesciato, by="data", suffixes=c("_a","_b"))
+max(abs(controllo$co2_ppm_a-controllo$co2_ppm_b),na.rm=TRUE)
+```
+
+Il risultato non cambia: la chiave temporale prevale sulla posizione delle righe.
+
+## Errore da riconoscere
+
+Sottrarre direttamente le colonne di due tabelle prima di controllare che date e ordinamento coincidano.
+
+## Risposta alla domanda
+
+La ricostruzione riproduce il file del corso entro l’arrotondamento del CSV, con identici conteggi e identiche assenze.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M09_N03` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M09/M09_N03.R).

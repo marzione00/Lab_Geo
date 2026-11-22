@@ -1,0 +1,6 @@
+q <- sf::st_transform(p,32632)
+xy <- sf::st_coordinates(q)
+risultato <- data.frame(id=d$id,est_UTM32N_m=xy[,1],nord_UTM32N_m=xy[,2])
+head(risultato,6)
+data.frame(EPSG=sf::st_crs(q)$epsg,unita=sf::st_crs(q)$units_gdal)
+stopifnot(!sf::st_is_longlat(q),sf::st_crs(q)$epsg==32632)

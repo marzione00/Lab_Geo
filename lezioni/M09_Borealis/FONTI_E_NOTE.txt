@@ -1,0 +1,103 @@
+BOREALIS — M09: SERIE TEMPORALI AMBIENTALI
+Marzio De Corato · GeoStat Lab · 19 novembre 2026
+
+FONTI DEL MODULO
+Il modulo amplia il materiale originale del corso:
+https://github.com/marzione00/Lab_Geo/blob/main/moduli/M09/modulo.json
+https://github.com/marzione00/Lab_Geo/blob/main/moduli/M09/README.md
+Le copie originali e le impronte sono in Fonti_originali e Provenienza_fonti.json.
+Le 20 esercitazioni mantengono la corrispondenza M09_N01–M09_N20.
+
+DATI E LORO SIGNIFICATO
+co2_settimanale_storica.csv: copia dell'archivio storico distribuito con
+statsmodels. 2.284 date settimanali, dal 29 marzo 1958 al 29 dicembre 2001.
+2.225 valori osservati e 59 mancanti. La concentrazione è espressa in ppm.
+Fonte primaria dell'archivio distribuito e attribuzioni:
+https://www.statsmodels.org/stable/datasets/generated/co2.html
+Attribuzione originale: Keeling, C. D. e Whorf, T. P. (2004), CDIAC.
+La documentazione statsmodels indica questi dati come public domain.
+
+co2_mensile_derivata.csv: 526 mesi, di cui cinque senza valori.
+La media usa le osservazioni settimanali disponibili assegnate al mese
+della data. Questa convenzione locale differisce da quella di una serie
+mensile ufficiale. La colonna n_settimane conserva la copertura.
+co2_1985_2001.csv: 204 mesi completi, gennaio 1985–dicembre 2001.
+Ogni mese ha almeno tre osservazioni settimanali.
+
+temperatura_simulata.csv: 240 mesi, gennaio 2000–dicembre 2019, in gradi
+Celsius. Trend, stagione e resto del generatore sono conservati nel file.
+Il tempo t=0 delle formule corrisponde a gennaio 2000.
+La base 2000–2004 delle anomalie è un riferimento didattico di cinque anni.
+
+processi_simulati.csv: 300 passi, con rumore, AR(1), random walk e due
+coordinate VAR. Il modulo usa le prime tre serie. L'AR(1) ha coefficiente
+0,65 e parte da zero alla prima riga: l'inizializzazione finita genera un
+transitorio. Il random walk non condivide le innovazioni della colonna
+rumore_bianco. Le simulazioni con X0=0 nelle slide sono esempi distinti.
+
+DOCUMENTAZIONE R
+R stats: ts, filter, acf, pacf, ARMAacf, arima.sim, diff, loess, stl, runmed.
+https://stat.ethz.ch/R-manual/R-devel/library/stats/html/ts.html
+https://stat.ethz.ch/R-manual/R-devel/library/stats/html/filter.html
+https://stat.ethz.ch/R-manual/R-devel/library/stats/html/acf.html
+https://stat.ethz.ch/R-manual/R-devel/library/stats/html/loess.html
+https://stat.ethz.ch/R-manual/R-devel/library/stats/html/stl.html
+https://stat.ethz.ch/R-manual/R-devel/library/stats/html/ARMAacf.html
+https://stat.ethz.ch/R-manual/R-devel/library/stats/html/runmed.html
+Pacchetto tseries, versione usata 0.10-63:
+https://cran.r-project.org/web/packages/tseries/tseries.pdf
+
+SPECIFICAZIONI DELLE FIGURE E DEI TEST
+I grafici quantitativi leggono Dati e Calcoli. R/rigenera_calcoli.R
+riproduce i CSV di Calcoli. I diagrammi teorici o illustrativi sono
+identificati nelle didascalie e rimangono modificabili in TikZ.
+STL nelle figure usa s.window="periodic" e robust=TRUE.
+La media mobile centrata usa 3 o 13 valori, quella causale 13.
+LOESS usa span=0.20 e 0.60. Le anomalie usano la base 2000–2004.
+L'ACF campionaria coincide con la centratura e il denominatore di stats::acf.
+Le bande usuali sono puntuali e riferite al caso IID con momenti adeguati,
+per esempio rumore gaussiano. La sola incorrelazione non basta.
+
+ADF è eseguito da tseries::adf.test con k=4, costante e trend lineare.
+KPSS è eseguito con null="Level" e null="Trend", lshort=TRUE.
+I limiti tabulati dei p-value vengono conservati come disuguaglianze.
+Gli avvisi numerici sono registrati e non vengono trattati come fallimenti.
+
+Nel segmento CO2, il livello dà ADF p<0,01, KPSS Level p<0,01 e KPSS
+Trend p>0,10. Questa combinazione richiede di distinguere livello
+costante e stazionarietà degli scarti da un trend. Non giustifica una
+differenziazione automatica. Nessun test prova l'indipendenza.
+
+ESPERIMENTI INTERATTIVI DEL SITO
+https://marzione00.github.io/Lab_Geo/#laboratorio/m09-calendario
+https://marzione00.github.io/Lab_Geo/#laboratorio/m09-aggregazione
+https://marzione00.github.io/Lab_Geo/#laboratorio/m09-smoothing
+https://marzione00.github.io/Lab_Geo/#laboratorio/m09-autocorrelazione
+https://marzione00.github.io/Lab_Geo/#laboratorio/m09-stazionarieta
+https://marzione00.github.io/Lab_Geo/#laboratorio/m09-differenze
+https://marzione00.github.io/Lab_Geo/#laboratorio/m09-diagnosi
+L'ADF del simulatore usa costante e una differenza ritardata, senza trend.
+La coda Monte Carlo del KPSS usa un riferimento IID. Non è la calibrazione
+generale del test per ogni processo stazionario dipendente.
+Le routine del sito e quelle tseries hanno specificazioni distinte.
+
+RIFERIMENTI TEORICI
+Said, S. E. e Dickey, D. A. (1984). Testing for Unit Roots in
+Autoregressive-Moving Average Models of Unknown Order. Biometrika 71(3).
+https://doi.org/10.1093/biomet/71.3.599
+Kwiatkowski, D., Phillips, P. C. B., Schmidt, P. e Shin, Y. (1992).
+Testing the Null Hypothesis of Stationarity Against the Alternative
+of a Unit Root. Journal of Econometrics 54.
+https://doi.org/10.1016/0304-4076(92)90104-Y
+Cleveland, R. B., Cleveland, W. S., McRae, J. E. e Terpenning, I. (1990).
+STL: A Seasonal-Trend Decomposition Procedure Based on Loess.
+Journal of Official Statistics 6(1), 3–73.
+I riferimenti sono riportati anche nelle documentazioni ufficiali di R.
+
+COPERTINA
+Borealis è un pianeta immaginario. La copertina deriva da una scena
+tridimensionale Blender/Cycles con geometria e materiali procedurali.
+Master nativo 7680×4800 RGB16, senza denoising o ingrandimento mediante IA.
+La scena, gli script e il master sono nel pacchetto di produzione 3D separato.
+Il JPEG incluso nelle slide misura 3840×2400. I testi restano in LaTeX.
+

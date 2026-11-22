@@ -1,0 +1,133 @@
+---
+title: "Scatterplot: due misure dello stesso individuo"
+subtitle: "M03_N16 \u00b7 Iride"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come descrivere la relazione fra diametro totale e interno senza perdere l'abbinamento degli individui?
+
+## Obiettivi
+
+- Costruire un grafico di coppie con gruppi riconoscibili.
+- Usare una linea di riferimento fisica e distinguere associazione da causa.
+
+**Prima di iniziare.** Data frame, selezione di colonne e scatterplot.
+
+**Dati e unità.** Archivio didattico sintetico: 160 fossili, 80 Rounded e 80 Spiky. Diametri e spessori sono espressi in micrometri; ogni riga identifica un individuo.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M03_N16/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M03_N16")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(3016)
+```
+
+## 1. Controllare le coppie
+
+Ogni riga contiene due diametri dello stesso fossile. Conserviamo insieme identificativo e misure; ordinare separatamente le due colonne distruggerebbe le coppie e potrebbe creare una relazione artificiale.
+
+```{r passo_01}
+f <- carica_dati("fossili_simulati.csv")
+# Manteniamo le misure nelle righe originali, insieme al loro identificativo.
+coppie <- f[c("id", "morfotipo", "diametro_tot_um", "diametro_int_um")]
+complete <- complete.cases(coppie)
+print(table(complete))
+stopifnot(all(complete), !anyDuplicated(coppie$id))
+differenza <- coppie$diametro_tot_um - coppie$diametro_int_um
+print(range(differenza))
+stopifnot(all(differenza > 0))
+```
+
+**Lettura del risultato.** Il controllo conferma che il diametro interno è minore del totale nel file. Un rapporto coerente non basta comunque a certificare l'accuratezza delle misure: due errori concordi potrebbero rispettare la stessa disuguaglianza.
+
+## 2. Disegnare su scale confrontabili
+
+Usiamo lo stesso intervallo sui due assi e un rapporto grafico unitario. La retta y uguale x indica uguaglianza dei diametri; non è una regressione stimata e non viene adattata ai punti.
+
+```{r passo_02}
+gruppo <- factor(coppie$morfotipo)
+colori <- c("#1D7890", "#C57E42")
+simboli <- c(16, 17)
+limiti <- range(c(coppie$diametro_tot_um, coppie$diametro_int_um))
+plot(coppie$diametro_tot_um, coppie$diametro_int_um, xlim = limiti, ylim = limiti,
+     asp = 1, col = colori[gruppo], pch = simboli[gruppo],
+     xlab = "Diametro totale (um)", ylab = "Diametro interno (um)")
+# La diagonale e il riferimento fisico y = x; non e una retta stimata dai punti.
+abline(a = 0, b = 1, lty = 2, col = "gray40")
+legend("topleft", levels(gruppo), col = colori, pch = simboli, bty = "n")
+```
+
+**Lettura del risultato.** Punti sotto la diagonale hanno un diametro interno più piccolo del totale. Colori e simboli separano i morfotipi anche se la figura viene stampata senza colori; non attribuiscono un ordine numerico alle categorie.
+
+## 3. Descrivere il rapporto entro gruppo
+
+Il rapporto interno su totale confronta proporzioni geometriche ed è privo di unità. Lo affianchiamo al grafico per capire se differenze assolute di dimensione corrispondono anche a differenze relative.
+
+```{r passo_03}
+# Numeratore e denominatore hanno la stessa unita, quindi il rapporto e adimensionale.
+rapporto <- coppie$diametro_int_um / coppie$diametro_tot_um
+print(tapply(rapporto, gruppo, summary))
+correlazioni <- tapply(seq_len(nrow(coppie)), gruppo, function(i)
+  cor(coppie$diametro_tot_um[i], coppie$diametro_int_um[i]))
+print(correlazioni)
+stopifnot(all(rapporto > 0 & rapporto < 1))
+print(c(correlazione_totale = cor(coppie$diametro_tot_um, coppie$diametro_int_um)))
+```
+
+**Lettura del risultato.** La correlazione totale e quelle entro gruppo possono differire perché il mescolamento dei morfotipi contribuisce alla nube complessiva. Questi coefficienti descrivono associazioni lineari e non dimostrano un meccanismo causale.
+
+## Variante svolta
+
+Convertire entrambi i diametri in millimetri e controllare quali riassunti restano invariati.
+
+```{r variante}
+totale_mm <- coppie$diametro_tot_um / 1000
+interno_mm <- coppie$diametro_int_um / 1000
+print(c(cor_um = cor(coppie$diametro_tot_um, coppie$diametro_int_um),
+        cor_mm = cor(totale_mm, interno_mm)))
+stopifnot(max(abs(interno_mm / totale_mm - rapporto)) < 1e-12)
+print(range(totale_mm - interno_mm))
+```
+
+Rapporto e correlazione restano invariati sotto la stessa conversione positiva, mentre le differenze cambiano unità. Il grafico deve comunque riportare le nuove unità sugli assi.
+
+## Errore da riconoscere
+
+Non ordinare le due colonne separatamente prima del grafico. Non scambiare la linea di uguaglianza con un modello e non interpretare correlazione come causalità.
+
+## Risposta alla domanda
+
+Lo scatterplot conserva coppie individuali, unità e appartenenza ai gruppi. La linea fisica e i rapporti aiutano a leggere la geometria; una relazione quantitativa predittiva richiederebbe un modello e controlli ulteriori.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M03_N16` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M03/M03_N16.R).

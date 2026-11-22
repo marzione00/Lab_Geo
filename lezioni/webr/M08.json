@@ -1,0 +1,716 @@
+{
+ "R": "R version 4.6.0 (2026-04-24)",
+ "fragments": {
+  "003_dati.R": {
+   "status": "ok",
+   "output": "> # Aprire il progetto Polychroma_M08.\n> source(\"setup.R\", encoding = \"UTF-8\")\n> dim(d)\n[1] 90 11\n> head(d[, c(\"id\", \"SiO2\", \"densita\")])\n    id    SiO2 densita\n1 R001 46.5383 2.94771\n2 R002 53.5257 3.10125\n3 R003 52.1015 3.01822\n4 R004 47.0133 2.85115\n5 R005 55.2746 2.99967\n6 R006 48.8404 2.90596\n> # Un identificativo per campione.\n> stopifnot(!anyDuplicated(d$id))",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "16663cfc1db2f62c81d7",
+   "seconds": 18.6
+  },
+  "006_etichette.R": {
+   "status": "ok",
+   "output": "> # Colonne con ruoli diversi.\n> id <- d$id\n> etichette <- d$litologia_generatrice\n> X <- as.matrix(d[v])\n> stopifnot(!\"id\" %in% colnames(X),\n+   !\"litologia_generatrice\" %in%\n+     colnames(X))",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "db103e99cdd0695b6d8f",
+   "seconds": 0.0
+  },
+  "007_matrice.R": {
+   "status": "ok",
+   "output": "> # Evitare selezioni per posizione.\n> v <- c(\"SiO2\", \"CaO\", \"MgO\", \"FeO\",\n+        \"densita\", \"grana_mm\",\n+        \"colore\", \"fossili\")\n> X <- as.matrix(d[v])\n> stopifnot(all(is.finite(X)),\n+   all(apply(X, 2, sd) > 0))\n> dim(X)\n[1] 90  8",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "98af0ffdd89047d3f1dd",
+   "seconds": 0.0
+  },
+  "008_unita.R": {
+   "status": "ok",
+   "output": "> # Stessa granulometria: mm oppure um.\n> a <- X[, c(\"SiO2\", \"grana_mm\")]\n> b <- a\n> b[, \"grana_mm\"] <- 1000 * b[, \"grana_mm\"]\n> c(mm = as.numeric(dist(a))[1],\n+   um = as.numeric(dist(b))[1])\n      mm       um \n 6.98742 19.43306 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "f48af0bd109629134414",
+   "seconds": 0.0
+  },
+  "009_distanza.R": {
+   "status": "ok",
+   "output": "> # Due righe della matrice originale.\n> scarti <- X[1, ] - X[2, ]\n> sqrt(sum(scarti^2))\n[1] 14.3801\n> # Stesso valore nella matrice distanze.\n> as.matrix(dist(X))[1, 2]\n[1] 14.3801",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "b011194efba5a784c1b2",
+   "seconds": 0.0
+  },
+  "011_standardizzazione.R": {
+   "status": "ok",
+   "output": "> Z <- scale(X, center = TRUE,\n+            scale = TRUE)\n> medie <- attr(Z, \"scaled:center\")\n> devstd <- attr(Z, \"scaled:scale\")\n> # Verificare la trasformazione.\n> round(colMeans(Z), 10)\n    SiO2      CaO      MgO      FeO  densita grana_mm   colore  fossili \n       0        0        0        0        0        0        0        0 \n> apply(Z, 2, sd)\n    SiO2      CaO      MgO      FeO  densita grana_mm   colore  fossili \n       1        1        1        1        1        1        1        1 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "00299d36c3a413f5c566",
+   "seconds": 0.0
+  },
+  "012_nuovo_campione.R": {
+   "status": "ok",
+   "output": "> # Esempio di applicazione ai primi casi.\n> # Non sono dati nuovi indipendenti.\n> nuovi <- X[1:3, , drop = FALSE]\n> Znuovi <- scale(nuovi,\n+   center = medie, scale = devstd)\n> max(abs(Znuovi - Z[1:3, ]))\n[1] 0",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "4a2dc0441c39a420b641",
+   "seconds": 0.1
+  },
+  "013_controlli.R": {
+   "status": "ok",
+   "output": "> data.frame(variabile = colnames(X),\n+   mancanti = colSums(is.na(X)),\n+   deviazione = apply(X, 2, sd))\n         variabile mancanti deviazione\nSiO2          SiO2        0  26.294255\nCaO            CaO        0  20.895104\nMgO            MgO        0   3.636268\nFeO            FeO        0   4.212920\ndensita    densita        0   0.193629\ngrana_mm  grana_mm        0   0.425471\ncolore      colore        0  27.571647\nfossili    fossili        0  30.833481\n> # Un valore NA non significa zero.\n> # Una colonna costante non ammette z-score.",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "fb52b3e4234763981fd0",
+   "seconds": 0.0
+  },
+  "014_correlazioni.R": {
+   "status": "ok",
+   "output": "> # Stesse relazioni, nuove unità.\n> max(abs(cor(X) - cor(Z)))\n[1] 2.22045e-16\n> round(cor(Z)[1:4, 1:4], 2)\n      SiO2   CaO   MgO   FeO\nSiO2  1.00 -0.95  0.09  0.28\nCaO  -0.95  1.00 -0.29 -0.47\nMgO   0.09 -0.29  1.00  0.88\nFeO   0.28 -0.47  0.88  1.00\n> # Zero è atteso entro l'errore numerico.",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "e179bd90f0978ecb3585",
+   "seconds": 0.0
+  },
+  "015_duplicazione.R": {
+   "status": "ok",
+   "output": "> # Ripetere SiO2 cambia la distanza.\n> Zd <- cbind(Z, SiO2_copia = Z[, \"SiO2\"])\n> c(prima = as.matrix(dist(Z))[1, 2],\n+   dopo = as.matrix(dist(Zd))[1, 2])\n  prima    dopo \n1.74854 1.76862 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "a7c0cdec4ed0995a92c4",
+   "seconds": 0.0
+  },
+  "016_pesi.R": {
+   "status": "ok",
+   "output": "> # Esempio: dimezzare il peso di SiO2.\n> pesi <- rep(1, ncol(Z))\n> pesi[1] <- 0.5\n> Zw <- sweep(Z, 2, sqrt(pesi), \"*\")\n> as.matrix(dist(Zw))[1:3, 1:3]\n        1       2       3\n1 0.00000 1.73842 1.06843\n2 1.73842 0.00000 1.35284\n3 1.06843 1.35284 0.00000",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "3019e23c571c3a74ae2a",
+   "seconds": 0.0
+  },
+  "017_ridondanza.R": {
+   "status": "ok",
+   "output": "> # Esaminare la struttura, non una soglia sola.\n> R <- cor(Z)\n> round(R, 2)\n          SiO2   CaO   MgO   FeO densita grana_mm colore fossili\nSiO2      1.00 -0.95  0.09  0.28    0.04     0.51   0.36   -0.84\nCaO      -0.95  1.00 -0.29 -0.47   -0.21    -0.41  -0.52    0.90\nMgO       0.09 -0.29  1.00  0.88    0.79    -0.35   0.83   -0.42\nFeO       0.28 -0.47  0.88  1.00    0.75    -0.23   0.87   -0.56\ndensita   0.04 -0.21  0.79  0.75    1.00    -0.35   0.71   -0.36\ngrana_mm  0.51 -0.41 -0.35 -0.23   -0.35     1.00  -0.19   -0.31\ncolore    0.36 -0.52  0.83  0.87    0.71    -0.19   1.00   -0.61\nfossili  -0.84  0.90 -0.42 -0.56   -0.36    -0.31  -0.61    1.00\n> # Gli ossidi sono una parte di una\n> # composizione: la chiusura conta.",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "e9d64cde1eceae8b8091",
+   "seconds": 0.0
+  },
+  "018_fossili.R": {
+   "status": "ok",
+   "output": "> f <- read.csv(\"Dati/fossili_simulati.csv\")\n> M <- as.matrix(f[c(\"diametro_tot_um\",\n+   \"diametro_int_um\", \"spessore_um\")])\n> max(abs(M[, 1] - M[, 2] - 2*M[, 3]))\n[1] 1e-08\n> prcomp(M, scale. = TRUE)$sdev\n[1] 1.40274e+00 1.01603e+00 5.36325e-09",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "020c495e1bafb0a73740",
+   "seconds": 0.0
+  },
+  "019_rango.R": {
+   "status": "ok",
+   "output": "> sv_f <- svd(scale(M))$d\n> sv_f / max(sv_f)\n[1] 1.00000e+00 7.24321e-01 3.82341e-09\n> # La terza direzione è trascurabile\n> # alla precisione dei dati forniti.\n> sum(sv_f > max(sv_f) * 1e-7)\n[1] 2",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "71ab0efd043bd9e45ebf",
+   "seconds": 0.0
+  },
+  "020_chiusura.R": {
+   "status": "ok",
+   "output": "> parti <- c(\"SiO2\", \"CaO\", \"MgO\",\n+            \"FeO\", \"resto_wt\")\n> comp <- as.matrix(d[parti])\n> range(rowSums(comp))\n[1] 100 100\n> max(abs(rowSums(comp) - 100))\n[1] 1e-08",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "f2d754ae40f866c44bbd",
+   "seconds": 0.0
+  },
+  "021_correlazione_chiusura.R": {
+   "status": "ok",
+   "output": "> set.seed(17)\n> assolute <- matrix(rlnorm(450), ncol = 3)\n> frazioni <- assolute / rowSums(assolute)\n> c(prima = cor(assolute)[1, 2],\n+   dopo = cor(frazioni)[1, 2])\n     prima       dopo \n-0.0811292 -0.5766285 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "bcbbe704050506cc620f",
+   "seconds": 0.0
+  },
+  "022_rapporti.R": {
+   "status": "ok",
+   "output": "> # Il totale si semplifica nel rapporto.\n> lr_prima <- log(assolute[, 1] /\n+                 assolute[, 2])\n> lr_dopo <- log(frazioni[, 1] /\n+                frazioni[, 2])\n> max(abs(lr_prima - lr_dopo))\n[1] 8.88178e-16",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "1f731c5ae62f747605b4",
+   "seconds": 0.0
+  },
+  "023_clr.R": {
+   "status": "ok",
+   "output": "> # Solo le cinque parti chimiche.\n> stopifnot(all(comp > 0))\n> log_comp <- log(comp)\n> clr <- log_comp - rowMeans(log_comp)\n> head(clr, 3)\n        SiO2       CaO       MgO       FeO  resto_wt\n[1,] 1.12280 -0.443799 -0.509069 -0.772049  0.602113\n[2,] 1.23344 -0.514378 -0.433737 -0.171328 -0.113999\n[3,] 1.24288 -0.628792 -0.462518 -0.499639  0.348070\n> max(abs(rowSums(clr)))\n[1] 1.11022e-15",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "b2df736f5e601922218a",
+   "seconds": 0.0
+  },
+  "024_pca_clr.R": {
+   "status": "ok",
+   "output": "> # PCA nella geometria CLR dichiarata.\n> pc_clr <- prcomp(clr, center = TRUE,\n+                  scale. = FALSE)\n> pc_clr$sdev\n[1] 1.80270e+00 1.04950e+00 7.32423e-01 4.21915e-01 2.82661e-16\n> # Ultima SD circa zero: vincolo noto.",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "b866c8b0b138d0f31a92",
+   "seconds": 0.0
+  },
+  "028_prodotto_scalare.R": {
+   "status": "ok",
+   "output": "> z_es <- c(2, 1)\n> v_es <- c(0.8, 0.6)\n> sum(v_es^2)  # norma unitaria\n[1] 1\n> t_es <- sum(z_es * v_es)\n> t_es\n[1] 2.2",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "0fee9b0f2bf7438e28c7",
+   "seconds": 0.0
+  },
+  "029_proiezione.R": {
+   "status": "ok",
+   "output": "> z_hat <- t_es * v_es\n> res_es <- z_es - z_hat\n> z_hat\n[1] 1.76 1.32\n> # Proiezione e residuo sono ortogonali.\n> sum(res_es * v_es)\n[1] -1.94289e-16",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "8eb02c0e144c62852cce",
+   "seconds": 0.0
+  },
+  "031_covarianza.R": {
+   "status": "ok",
+   "output": "> S <- crossprod(Z) / (nrow(Z) - 1)\n> max(abs(S - cov(Z)))\n[1] 6.66134e-16\n> # Su colonne standardizzate, S è\n> # anche la matrice di correlazione.\n> max(abs(S - cor(X)))\n[1] 6.66134e-16",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "d9d09bc80420de91d152",
+   "seconds": 0.0
+  },
+  "034_ortogonali.R": {
+   "status": "ok",
+   "output": "> v2_es <- c(-0.6, 0.8)\n> sum(v_es * v2_es)\n[1] 0\n> sum(v2_es^2)\n[1] 1\n> # Due direzioni per descrivere il piano.",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "01b70f13dc3c8ed0da2b",
+   "seconds": 0.1
+  },
+  "036_svd.R": {
+   "status": "ok",
+   "output": "> # d contiene i valori singolari.\n> sv <- svd(Z)\n> lambda_svd <- sv$d^2 / (nrow(Z) - 1)\n> lambda_svd\n[1] 4.4055763 2.5212380 0.4325844 0.2685236 0.1386937 0.1152396 0.0956656 0.0224789\n> max(abs(crossprod(sv$v) - diag(8)))\n[1] 1.11022e-15",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "8ef590f61fd94d3890ab",
+   "seconds": 0.0
+  },
+  "038_prcomp.R": {
+   "status": "ok",
+   "output": "> pc <- prcomp(X, center = TRUE,\n+              scale. = TRUE)\n> head(pc$x[, 1:2])  # scores\n          PC1      PC2\n[1,] -2.35080 1.005934\n[2,] -3.23353 1.507371\n[3,] -2.69600 0.664284\n[4,] -2.57540 0.852963\n[5,] -2.90841 1.157001\n[6,] -2.16874 0.578840\n> pc$rotation[, 1:2] # direzioni\n                 PC1       PC2\nSiO2     -0.29343728 -0.471316\nCaO       0.36379307  0.380915\nMgO      -0.38046894  0.317994\nFeO      -0.42227978  0.209610\ndensita  -0.33961508  0.330452\ngrana_mm  0.00278357 -0.521801\ncolore   -0.43005546  0.156656\nfossili   0.39771661  0.285819\n> pc$center          # medie\n     SiO2       CaO       MgO       FeO   densita  grana_mm    colore   fossili \n42.711556 20.844306  3.970834  4.208174  2.728354  0.562501 44.121605 25.161377 \n> pc$scale           # deviazioni standard\n     SiO2       CaO       MgO       FeO   densita  grana_mm    colore   fossili \n26.294255 20.895104  3.636268  4.212920  0.193629  0.425471 27.571647 30.833481 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "cc5baf6a2f9e0f9d2716",
+   "seconds": 0.0
+  },
+  "039_autovalori.R": {
+   "status": "ok",
+   "output": "> lam <- pc$sdev^2\n> lam\n[1] 4.4055763 2.5212380 0.4325844 0.2685236 0.1386937 0.1152396 0.0956656 0.0224789\n> sum(lam) # otto colonne di varianza 1\n[1] 8\n> max(abs(lam - lambda_svd))\n[1] 8.88178e-16\n> # Il confronto controlla la convenzione n-1.",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "19b4444a8a33e5464ea4",
+   "seconds": 0.0
+  },
+  "040_scores_covarianza.R": {
+   "status": "ok",
+   "output": "> T <- pc$x\n> cov_T <- cov(T)\n> max(abs(cov_T - diag(lam)))\n[1] 1.74316e-15\n> # Le piccole differenze sono numeriche.",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "5fe53c6e26b86a7193cd",
+   "seconds": 0.0
+  },
+  "041_dipendenza_curva.R": {
+   "status": "ok",
+   "output": "> # Relazione deterministica non lineare.\n> u <- seq(-2, 2, length.out = 41)\n> y_curva <- u^2\n> cor(u, y_curva)\n[1] 1.77611e-16\n> plot(u, y_curva, pch = 19,\n+   xlab = \"x\", ylab = \"x^2\")",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "31585d62a6a8c53c1e9c",
+   "seconds": 0.0
+  },
+  "042_segno.R": {
+   "status": "ok",
+   "output": "> # Ricostruzione della sola PC1.\n> R1 <- pc$x[, 1] %o% pc$rotation[, 1]\n> R1_opposta <- (-pc$x[, 1]) %o%\n+               (-pc$rotation[, 1])\n> max(abs(R1 - R1_opposta))\n[1] 0",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "2a0badeebd2b247c6e82",
+   "seconds": 0.0
+  },
+  "045_quote.R": {
+   "status": "ok",
+   "output": "> quota <- pc$sdev^2 / sum(pc$sdev^2)\n> data.frame(PC = 1:8,\n+   quota = quota, cumulata = cumsum(quota))\n  PC      quota cumulata\n1  1 0.55069703 0.550697\n2  2 0.31515475 0.865852\n3  3 0.05407305 0.919925\n4  4 0.03356545 0.953490\n5  5 0.01733671 0.970827\n6  6 0.01440495 0.985232\n7  7 0.01195820 0.997190\n8  8 0.00280986 1.000000",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "c6027afd35e66521e1f9",
+   "seconds": 0.0
+  },
+  "046_cumulata.R": {
+   "status": "ok",
+   "output": "> barplot(100 * quota, names.arg = 1:8,\n+   xlab = \"Componente\",\n+   ylab = \"Varianza (%)\")\n> cumsum(quota)\n[1] 0.550697 0.865852 0.919925 0.953490 0.970827 0.985232 0.997190 1.000000",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "e7139a44c3e0a8bc120f",
+   "seconds": 0.1
+  },
+  "047_distanze_proiezione.R": {
+   "status": "ok",
+   "output": "> DT <- as.matrix(dist(pc$x))\n> D2 <- as.matrix(dist(pc$x[, 1:2]))\n> max(D2 - DT)\n[1] 0\n> # Differenza non positiva, salvo\n> # arrotondamenti numerici.",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "4951c39bdf8c2ca8c559",
+   "seconds": 0.0
+  },
+  "048_loadings.R": {
+   "status": "ok",
+   "output": "> pc$rotation[, 1]\n       SiO2         CaO         MgO         FeO     densita    grana_mm      colore \n-0.29343728  0.36379307 -0.38046894 -0.42227978 -0.33961508  0.00278357 -0.43005546 \n    fossili \n 0.39771661 \n> # Contributi della prima riga allo score.\n> a48 <- pc$rotation[, 1]\n> contributi_riga <- Z[1, ] * a48\n> sum(contributi_riga)\n[1] -2.3508\n> pc$x[1, 1]\n    PC1 \n-2.3508 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "26c3aa95fdf2f0842587",
+   "seconds": 0.1
+  },
+  "049_correlazioni_pc.R": {
+   "status": "ok",
+   "output": "> cor_PC <- sweep(pc$rotation, 2,\n+                 pc$sdev, \"*\")\n> round(cor_PC[, 1:2], 3)\n            PC1    PC2\nSiO2     -0.616 -0.748\nCaO       0.764  0.605\nMgO      -0.799  0.505\nFeO      -0.886  0.333\ndensita  -0.713  0.525\ngrana_mm  0.006 -0.829\ncolore   -0.903  0.249\nfossili   0.835  0.454\n> max(abs(cor_PC - cor(Z, pc$x)))\n[1] 6.77236e-15",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "881c03327092dde7832f",
+   "seconds": 0.0
+  },
+  "051_qualita.R": {
+   "status": "ok",
+   "output": "> peso_PC1 <- pc$rotation[, 1]^2\n> qualita2 <- rowSums(cor_PC[, 1:2]^2)\n> data.frame(variabile = v,\n+   peso_PC1 = peso_PC1,\n+   rappresentata_2PC = qualita2)\n         variabile    peso_PC1 rappresentata_2PC\nSiO2          SiO2 8.61054e-02          0.939408\nCaO            CaO 1.32345e-01          0.948880\nMgO            MgO 1.44757e-01          0.892684\nFeO            FeO 1.78320e-01          0.896378\ndensita    densita 1.15338e-01          0.783447\ngrana_mm  grana_mm 7.74826e-06          0.686508\ncolore      colore 1.84948e-01          0.876675\nfossili    fossili 1.58178e-01          0.902834",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "a5b67b23ceee6aa30819",
+   "seconds": 0.0
+  },
+  "053_ricostruzione.R": {
+   "status": "ok",
+   "output": "> Z2 <- pc$x[, 1:2, drop = FALSE] %*%\n+   t(pc$rotation[, 1:2, drop = FALSE])\n> sqrt(mean((Z - Z2)^2))\n[1] 0.364222\n> # RMSE nelle unità standardizzate.",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "37c83cf7b73068a15a3b",
+   "seconds": 0.0
+  },
+  "054_errore_ricostruzione.R": {
+   "status": "ok",
+   "output": "> errore <- sum((Z - Z2)^2)\n> teoria <- (nrow(Z)-1) * sum(lam[3:8])\n> c(calcolato = errore, teoria = teoria)\ncalcolato    teoria \n  95.5135   95.5135 \n> errore / sum(Z^2)\n[1] 0.134148",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "90cbc3149983197363ec",
+   "seconds": 0.0
+  },
+  "055_unita_originali.R": {
+   "status": "ok",
+   "output": "> X2 <- sweep(Z2, 2, pc$scale, \"*\")\n> X2 <- sweep(X2, 2, pc$center, \"+\")\n> head(cbind(originale = X[, \"densita\"],\n+   ricostruita = X2[, \"densita\"]))\n     originale ricostruita\n[1,]   2.94771     2.94731\n[2,]   3.10125     3.03744\n[3,]   3.01822     2.94815\n[4,]   2.85115     2.95229\n[5,]   2.99967     2.99364\n[6,]   2.90596     2.90801",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "c869a96ea4b975f3b63f",
+   "seconds": 0.0
+  },
+  "056_dimensioni.R": {
+   "status": "ok",
+   "output": "> # Perdita relativa per q = 1,...,8.\n> data.frame(q = 1:8,\n+   conservata = cumsum(quota),\n+   persa = 1 - cumsum(quota))\n  q conservata      persa\n1 1   0.550697 0.44930297\n2 2   0.865852 0.13414822\n3 3   0.919925 0.08007516\n4 4   0.953490 0.04650972\n5 5   0.970827 0.02917301\n6 6   0.985232 0.01476806\n7 7   0.997190 0.00280986\n8 8   1.000000 0.00000000",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "afb1ef742331170d2158",
+   "seconds": 0.0
+  },
+  "057_predict_pca.R": {
+   "status": "ok",
+   "output": "> # Esempio su righe già presenti:\n> # verifica della trasformazione.\n> scores_nuovi <- predict(pc, X[1:3, ])\n> max(abs(scores_nuovi - pc$x[1:3, ]))\n[1] 0\n> # Per veri nuovi campioni mantenere\n> # nomi, unità e ordine delle variabili.",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "a85a51c5636bbc518a64",
+   "seconds": 0.0
+  },
+  "059_obiettivo.R": {
+   "status": "ok",
+   "output": "> # Sei punti illustrativi, due gruppi.\n> u59 <- rbind(c(1,1), c(1.2,2.1),\n+  c(2.2,1.35), c(5.3,2.4),\n+  c(6.7,2.9), c(6,1.6))\n> g59 <- rep(1:2, each = 3)\n> cent59 <- rowsum(u59, g59) / 3\n> # Somma dei quadrati delle distanze.\n> sum((u59 - cent59[g59, ])^2)\n[1] 3.29833",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "9dbb79574a03a6166344",
+   "seconds": 0.0
+  },
+  "060_centroide.R": {
+   "status": "ok",
+   "output": "> # Tre osservazioni di un gruppo.\n> A60 <- rbind(c(0,0), c(2,0),\n+              c(1,3))\n> mu60 <- colMeans(A60)\n> mu60  # Il centroide e' (1, 1).\n[1] 1 1\n> w60 <- function(candidato) {\n+  sum(sweep(A60, 2, candidato)^2)\n+ }\n> c(centroide = w60(mu60),\n+   alternativa = w60(c(1,2)))\n  centroide alternativa \n          8          11 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "24f1e226c281dee79cea",
+   "seconds": 0.0
+  },
+  "061_assegnazione.R": {
+   "status": "ok",
+   "output": "> # Centri provvisori dello schema.\n> cent61 <- rbind(c(1,1), c(6,3))\n> dist261 <- sapply(1:2, function(g) {\n+  rowSums(sweep(u59, 2,\n+                cent61[g, ])^2)\n+ })\n> # Righe: punti. Colonne: centri.\n> round(dist261, 2)\n      [,1]  [,2]\n[1,]  0.00 29.00\n[2,]  1.25 23.85\n[3,]  1.56 17.16\n[4,] 20.45  0.85\n[5,] 36.10  0.50\n[6,] 25.36  1.96\n> max.col(-dist261,\n+         ties.method = \"first\")\n[1] 1 1 1 2 2 2",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "a384739dfc7b1d1e10e8",
+   "seconds": 0.0
+  },
+  "062_aggiornamento.R": {
+   "status": "ok",
+   "output": "> # Manteniamo i gruppi appena trovati.\n> g62 <- max.col(-dist261,\n+               ties.method = \"first\")\n> cent62 <- rowsum(u59, g62) /\n+  as.vector(table(g62))\n> cent62\n     [,1]    [,2]\n1 1.46667 1.48333\n2 6.00000 2.30000\n> # Controllo prima e dopo le medie.\n> c(prima = sum((u59-\n+                cent61[g62, ])^2),\n+   dopo = sum((u59-\n+               cent62[g62, ])^2))\n  prima    dopo \n6.12250 3.29833 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "7d152c99cdbc0138a127",
+   "seconds": 0.0
+  },
+  "063_iterazioni.R": {
+   "status": "ok",
+   "output": "> # Lloyd: una dimostrazione esplicita.\n> cent63 <- cent61\n> W63 <- numeric(5)\n> for (passo in 1:5) {\n+  dd <- sapply(1:2, function(g)\n+   rowSums(sweep(u59,2,cent63[g,])^2))\n+  lab <- max.col(-dd,\n+                 ties.method=\"first\")\n+  cent63 <- rowsum(u59,lab) /\n+    as.vector(table(lab))\n+  scarti63 <- u59-cent63[lab,]\n+  W63[passo] <- sum(scarti63^2)\n+ }\n> W63\n[1] 3.29833 3.29833 3.29833 3.29833 3.29833",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "70e13dca6703d641b5d2",
+   "seconds": 0.0
+  },
+  "064_avvii.R": {
+   "status": "ok",
+   "output": "> # Stessa matrice, singoli avvii.\n> set.seed(818)\n> W64 <- replicate(20,\n+  kmeans(Z, centers=3, nstart=1,\n+         iter.max=100)$tot.withinss)\n> range(W64)\n[1] 129.498 372.260\n> # Ora molte inizializzazioni.\n> set.seed(816)\n> km <- kmeans(Z, 3, nstart=50,\n+              iter.max=100)\n> km$tot.withinss\n[1] 129.498",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "eaae9eb28f1f9c1384d6",
+   "seconds": 0.1
+  },
+  "065_kmeans.R": {
+   "status": "ok",
+   "output": "> # Otto colonne standardizzate in Z.\n> set.seed(816)\n> km <- kmeans(Z, centers = 3,\n+              nstart = 50,\n+              iter.max = 100)\n> km$size\n[1] 30 30 30\n> round(km$centers, 2)\n   SiO2   CaO   MgO   FeO densita grana_mm colore fossili\n1 -1.32  1.38 -0.52 -0.77   -0.39    -0.51  -0.84    1.29\n2  1.03 -0.81 -0.78 -0.57   -0.75     0.93  -0.43   -0.55\n3  0.29 -0.58  1.30  1.33    1.15    -0.42   1.27   -0.75\n> c(WSS = km$tot.withinss,\n+   totale = km$totss)\n    WSS  totale \n129.498 712.000 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "0da0942dc44ef672e253",
+   "seconds": 0.1
+  },
+  "066_controllo_wss.R": {
+   "status": "ok",
+   "output": "> # Un centroide per ciascuna riga.\n> centri66 <- km$centers[\n+  km$cluster, , drop = FALSE]\n> dist266 <- rowSums((Z-centri66)^2)\n> c(manuale = sum(dist266),\n+   kmeans = km$tot.withinss)\nmanuale  kmeans \n129.498 129.498 \n> stopifnot(abs(sum(dist266)-\n+  km$tot.withinss) < 1e-8)",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "4a82b6518911f60f44ba",
+   "seconds": 0.1
+  },
+  "067_scomposizione.R": {
+   "status": "ok",
+   "output": "> # Variabilita' totale, entro e fra.\n> T67 <- sum(scale(Z,scale=FALSE)^2)\n> W67 <- km$tot.withinss\n> B67 <- sum(km$size *\n+              rowSums(km$centers^2))\n> c(T = T67, W = W67, B = B67)\n      T       W       B \n712.000 129.498 582.502 \n> stopifnot(abs(T67-W67-B67)<1e-8)",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "25ae4f7cc9d3104ec6d6",
+   "seconds": 0.1
+  },
+  "068_profili.R": {
+   "status": "ok",
+   "output": "> # Le medie nelle unita' originali.\n> prof68 <- aggregate(d[v],\n+  list(cluster=km$cluster), mean)\n> prof68\n  cluster     SiO2      CaO     MgO      FeO densita grana_mm  colore  fossili\n1       1  8.02369 49.74498 2.08221 0.967319 2.65221 0.345744 20.9248 65.06902\n2       2 69.67599  3.96667 1.14446 1.826872 2.58277 0.959919 32.1886  8.26626\n3       3 50.43498  8.82127 8.68583 9.830332 2.95008 0.381841 79.2514  2.14885\n> # Oppure si inverte la scala di Z.\n> mu68 <- sweep(km$centers, 2,\n+  attr(Z,\"scaled:scale\"), \"*\")\n> mu68 <- sweep(mu68, 2,\n+  attr(Z,\"scaled:center\"), \"+\")\n> round(mu68[,c(\"SiO2\",\"densita\")],2)\n   SiO2 densita\n1  8.02    2.65\n2 69.68    2.58\n3 50.43    2.95",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "3b6ee70c00041dc8d802",
+   "seconds": 0.1
+  },
+  "069_piano_pca.R": {
+   "status": "ok",
+   "output": "> # La PCA serve qui alla figura.\n> pc <- prcomp(Z, center=FALSE,\n+              scale.=FALSE)\n> q69 <- pc$sdev^2 / sum(pc$sdev^2)\n> plot(pc$x[,1:2], pch=19,asp=1,\n+      col=km$cluster,\n+      xlab=\"PC1\", ylab=\"PC2\")\n> sum(q69[1:2])\n[1] 0.865852",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "f119259f9207af175f5e",
+   "seconds": 0.1
+  },
+  "070_distanze_pc.R": {
+   "status": "ok",
+   "output": "> # Tutte le PC: rotazione ortogonale.\n> D70 <- as.matrix(dist(Z))\n> T70 <- as.matrix(dist(pc$x))\n> max(abs(D70-T70))\n[1] 2.66454e-15\n> # Due PC: le distanze si contraggono.\n> Q70 <- as.matrix(dist(pc$x[,1:2]))\n> stopifnot(max(Q70-D70)<1e-8)",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "da123db928897339bedb",
+   "seconds": 0.1
+  },
+  "071_variabili.R": {
+   "status": "ok",
+   "output": "> # Una diversa domanda di somiglianza.\n> chim71 <- c(\"SiO2\",\"CaO\",\"MgO\",\"FeO\")\n> Z71 <- scale(d[chim71])\n> set.seed(819)\n> km71 <- kmeans(Z71,3,nstart=50)\n> # Tabella, senza confrontare i nomi.\n> table(tutte=km$cluster,\n+       chimica=km71$cluster)\n     chimica\ntutte  1  2  3\n    1  0  0 30\n    2 30  0  0\n    3  0 30  0",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "6ffee3926450b62d4892",
+   "seconds": 0.1
+  },
+  "074_suddivisione.R": {
+   "status": "ok",
+   "output": "> # Una suddivisione di un gruppo.\n> g74a <- rep(1, nrow(u59))\n> g74b <- rep(1:2, each=3)\n> w74 <- function(lab) {\n+  cent <- rowsum(u59,lab) /\n+    as.vector(table(lab))\n+  sum((u59-cent[lab,,drop=FALSE])^2)\n+ }\n> c(un_gruppo=w74(g74a),\n+   due_gruppi=w74(g74b))\n un_gruppo due_gruppi \n  35.12542    3.29833 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "1d16e9f3ec245deeacf8",
+   "seconds": 0.0
+  },
+  "075_confronto_k.R": {
+   "status": "ok",
+   "output": "> # Stessa geometria per tutti i k.\n> set.seed(817)\n> ks <- 2:7\n> fits <- lapply(ks, function(k)\n+  kmeans(Z, k, nstart=50,\n+         iter.max=100))\n> W75 <- vapply(fits, function(m)\n+  m$tot.withinss, numeric(1))\n> data.frame(k=ks, WSS=W75)\n  k      WSS\n1 2 372.1793\n2 3 129.4978\n3 4 100.9551\n4 5  90.2612\n5 6  81.9135\n6 7  76.2525\n> plot(ks,W75,type=\"b\",pch=19,\n+      xlab=\"k\",ylab=\"WSS\")",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "b7f5278e7ad72802e4d2",
+   "seconds": 0.1
+  },
+  "076_coesione_separazione.R": {
+   "status": "ok",
+   "output": "> # Un campione e il proprio gruppo.\n> D <- dist(Z)\n> DD76 <- as.matrix(D)\n> i76 <- 1\n> g76 <- km$cluster\n> stessi76 <- which(g76==g76[i76] &\n+           seq_along(g76)!=i76)\n> a76 <- mean(DD76[i76,stessi76])\n> altri76 <- setdiff(unique(g76),\n+                    g76[i76])\n> b76 <- min(sapply(altri76,function(g)\n+  mean(DD76[i76,g76==g])))\n> c(a=a76,b=b76)\n      a       b \n1.20881 4.26188 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "f03ca1923dd01beb8507",
+   "seconds": 0.1
+  },
+  "077_silhouette.R": {
+   "status": "ok",
+   "output": "> # Formula per il campione R001.\n> s77 <- (b76-a76)/max(a76,b76)\n> s77\n[1] 0.716367\n> # Funzione fornita nel file\n> # R/funzioni_analisi.R.\n> sil <- silhouette_base(km$cluster,D)\n> stopifnot(abs(s77-sil[i76])<1e-8)\n> summary(sil)\n   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. \n  0.345   0.597   0.647   0.626   0.687   0.763 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "14f337a17432ce48852f",
+   "seconds": 0.1
+  },
+  "078_silhouette_grafico.R": {
+   "status": "ok",
+   "output": "> # Distribuzione delle 90 silhouette.\n> ord78 <- order(km$cluster,sil)\n> barplot(sil[ord78], space=0,\n+  col=km$cluster[ord78], border=NA,\n+  ylab=\"Silhouette\",xlab=\"Campioni\")\n> abline(h=0,lty=2)\n> c(media=mean(sil),minimo=min(sil),\n+   massimo=max(sil))\n   media   minimo  massimo \n0.625823 0.344644 0.762866 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "ef3f376e50938e7c0a1f",
+   "seconds": 0.1
+  },
+  "079_silhouette_k.R": {
+   "status": "ok",
+   "output": "> # Le soluzioni di k = 2,...,7.\n> S79 <- vapply(fits, function(m)\n+  mean(silhouette_base(m$cluster,D)),\n+  numeric(1))\n> indici <- data.frame(k=ks,WSS=W75,\n+                       silhouette=S79)\n> indici\n  k      WSS silhouette\n1 2 372.1793   0.471586\n2 3 129.4978   0.625823\n3 4 100.9551   0.543914\n4 5  90.2612   0.414873\n5 6  81.9135   0.274585\n6 7  76.2525   0.231713\n> plot(ks,S79,type=\"b\",pch=19,\n+  xlab=\"k\",ylab=\"Silhouette media\")",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 2,
+   "same": true,
+   "hash": "704c78599b9db5b7d6a6",
+   "seconds": 0.3
+  },
+  "080_quattro_gruppi.R": {
+   "status": "ok",
+   "output": "> # Un'alternativa esplicita: k = 4.\n> set.seed(1601)\n> km4 <- kmeans(Z,4,nstart=50,\n+               iter.max=100)\n> km4$size\n[1] 18 12 30 30\n> table(k3=km$cluster,k4=km4$cluster)\n   k4\nk3   1  2  3  4\n  1  0  0  0 30\n  2 18 12  0  0\n  3  0  0 30  0\n> aggregate(d[v],\n+  list(cluster=km4$cluster),mean)\n  cluster     SiO2      CaO     MgO      FeO densita grana_mm  colore  fossili\n1       1 69.91277  3.52195 1.19733 1.823175 2.56949 1.296914 31.6158  9.26574\n2       2 69.32082  4.63376 1.06516 1.832417 2.60269 0.454427 33.0477  6.76704\n3       3 50.43498  8.82127 8.68583 9.830332 2.95008 0.381841 79.2514  2.14885\n4       4  8.02369 49.74498 2.08221 0.967319 2.65221 0.345744 20.9248 65.06902",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "7f2b4ef8cb1bf5e029d4",
+   "seconds": 0.1
+  },
+  "081_riepilogo.R": {
+   "status": "ok",
+   "output": "> # Indici per le stesse soluzioni.\n> data.frame(k=ks,\n+  WSS=round(W75,2),\n+  silhouette=round(S79,3),\n+  minimo_gruppo=vapply(fits,\n+   function(m)min(m$size),numeric(1)))\n  k    WSS silhouette minimo_gruppo\n1 2 372.18      0.472            30\n2 3 129.50      0.626            30\n3 4 100.96      0.544            12\n4 5  90.26      0.415            11\n5 6  81.91      0.275            11\n6 7  76.25      0.232             7\n> # La scelta non legge la litologia.\n> ks[which.max(S79)]\n[1] 3",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 2,
+   "same": true,
+   "hash": "4658c2b032408a21e775",
+   "seconds": 0.4
+  },
+  "085_costo_fusione.R": {
+   "status": "ok",
+   "output": "> # Due gruppi, una sola coordinata.\n> A85 <- c(0,2)\n> B85 <- c(5,7)\n> w85 <- function(x) sum((x-mean(x))^2)\n> delta85 <- w85(c(A85,B85))-\n+            w85(A85)-w85(B85)\n> f85 <- length(A85)*length(B85) /\n+  (length(A85)+length(B85)) *\n+  (mean(A85)-mean(B85))^2\n> c(incremento=delta85,formula=f85)\nincremento    formula \n        25         25 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "a2521d56d6757465249a",
+   "seconds": 0.0
+  },
+  "086_ward.R": {
+   "status": "ok",
+   "output": "> # Distanze euclidee ordinarie.\n> D <- dist(Z, method=\"euclidean\")\n> h <- hclust(D, method=\"ward.D2\")\n> plot(h,labels=FALSE,\n+      xlab=\"Campioni\",sub=\"Ward.D2\",\n+      ylab=\"Altezza\")\n> tail(h$height,3)\n[1]  7.23729 22.03096 26.06993",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "da22e81ae16d93f5497d",
+   "seconds": 0.1
+  },
+  "087_altezza.R": {
+   "status": "ok",
+   "output": "> # Prima fusione: due campioni.\n> f87 <- -h$merge[1, ]\n> delta87 <- sum((Z[f87[1], ]-\n+                 Z[f87[2], ])^2)/2\n> c(deltaW=delta87,\n+   altezza2_su_2=h$height[1]^2/2)\n       deltaW altezza2_su_2 \n    0.0703238     0.0703238 \n> stopifnot(abs(delta87-\n+              h$height[1]^2/2)<1e-8)",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "11db773a048beff73600",
+   "seconds": 0.1
+  },
+  "088_taglio.R": {
+   "status": "ok",
+   "output": "> # Taglio della stessa gerarchia.\n> ward <- cutree(h, k=3)\n> table(ward)\nward\n 1  2  3 \n30 30 30 \n> plot(h,labels=FALSE,sub=\"Ward.D2\")\n> rect.hclust(h,k=3,border=1:3)\n> # L'albero resta lo stesso.\n> ward4 <- cutree(h,k=4)\n> table(tre=ward,quattro=ward4)\n   quattro\ntre  1  2  3  4\n  1 30  0  0  0\n  2  0 21  9  0\n  3  0  0  0 30",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 2,
+   "same": true,
+   "hash": "2387ace37efba506cdc0",
+   "seconds": 0.1
+  },
+  "090_confronto_ward.R": {
+   "status": "ok",
+   "output": "> # Stessi campioni, stessa scala, k=3.\n> tab90 <- table(Kmeans=km$cluster,\n+                Ward=ward)\n> tab90\n      Ward\nKmeans  1  2  3\n     1  0  0 30\n     2  0 30  0\n     3 30  0  0\n> # I numeri dei gruppi non sono nomi\n> # geologici ne' ordini di grandezza.",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 2,
+   "same": true,
+   "hash": "bb700cfedefadbfa7d1f",
+   "seconds": 0.1
+  },
+  "091_coappartenenza.R": {
+   "status": "ok",
+   "output": "> # Confronto senza nomi dei gruppi.\n> A91 <- outer(km$cluster,\n+               km$cluster,\"==\")\n> B91 <- outer(ward,ward,\"==\")\n> sopra91 <- upper.tri(A91)\n> mean(A91[sopra91]==B91[sopra91])\n[1] 1\n> # Confronto non sensibile ai nomi.\n> all(A91==B91)\n[1] TRUE",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 2,
+   "same": true,
+   "hash": "a5a5987af14b88c43a7a",
+   "seconds": 0.1
+  },
+  "092_wss_ward.R": {
+   "status": "ok",
+   "output": "> # WSS della partizione di Ward.\n> mu92 <- rowsum(Z,ward) /\n+          as.vector(table(ward))\n> W92 <- sum((Z-mu92[ward,])^2)\n> c(Kmeans=km$tot.withinss,Ward=W92)\n Kmeans    Ward \n129.498 129.498 \n> # Nello stesso spazio, confrontiamo\n> # la stessa quantita' geometrica.",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 2,
+   "same": true,
+   "hash": "43699cd1dc09aa830a88",
+   "seconds": 0.1
+  },
+  "095_avvii.R": {
+   "status": "ok",
+   "output": "> set.seed(818)\n> W_avvii <- replicate(30, {\n+   m <- kmeans(Z, 3, nstart = 1,\n+               iter.max = 100)\n+   m$tot.withinss\n+ })\n> range(W_avvii)\n[1] 129.498 374.017",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "683da5f75ec68b726ad3",
+   "seconds": 0.0
+  },
+  "096_perturbazione.R": {
+   "status": "ok",
+   "output": "> # Una perturbazione nelle unità di Z.\n> set.seed(819)\n> Zp <- Z + matrix(rnorm(length(Z),\n+   sd = 0.4), nrow(Z))\n> kp <- kmeans(Zp, 3, nstart = 50,\n+              iter.max = 100)\n> accordo_coppie(km$cluster, kp$cluster)\n[1] 1",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "4ed883cd3406263909a9",
+   "seconds": 0.1
+  },
+  "097_coappartenenza.R": {
+   "status": "ok",
+   "output": "> a <- c(1, 1, 2, 2, 3, 3)\n> b <- c(3, 3, 1, 1, 2, 2)\n> # I numeri dei gruppi sono arbitrari.\n> mean(a == b)\n[1] 0\n> accordo_coppie(a, b)  # vale 1\n[1] 1\n> indice_rand_corretto(a, b)\n[1] 1",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "daf4ff221fa3afa10058",
+   "seconds": 0.0
+  },
+  "098_sottocampione.R": {
+   "status": "ok",
+   "output": "> # Una delle quaranta estrazioni.\n> set.seed(820)\n> idx <- sort(sample(1:nrow(Z), 72))\n> ks <- kmeans(Z[idx, ], 3, nstart = 30,\n+              iter.max = 100)\n> outer(ks$cluster, ks$cluster, \"==\")[1:4, 1:4]\n     [,1] [,2] [,3] [,4]\n[1,] TRUE TRUE TRUE TRUE\n[2,] TRUE TRUE TRUE TRUE\n[3,] TRUE TRUE TRUE TRUE\n[4,] TRUE TRUE TRUE TRUE",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "83941276939ab5912e36",
+   "seconds": 0.1
+  },
+  "099_variabili.R": {
+   "status": "ok",
+   "output": "> chim <- c(\"SiO2\", \"CaO\", \"MgO\", \"FeO\")\n> set.seed(819)\n> kc <- kmeans(scale(d[chim]), 3,\n+               nstart = 50)\n> accordo_coppie(km$cluster, kc$cluster)\n[1] 1",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "ae1e0040af340e8fa183",
+   "seconds": 0.1
+  },
+  "100_campioni_distanti.R": {
+   "status": "ok",
+   "output": "> delta <- Z - km$centers[km$cluster, ]\n> d2_centro <- rowSums(delta^2)\n> soglia <- quantile(d2_centro, .95)\n> segnala <- d2_centro > soglia\n> d[segnala, c(\"id\", v)]\n     id    SiO2      CaO     MgO     FeO densita grana_mm  colore  fossili\n31 R031 68.9621  3.61307 1.59352 1.32899 2.57643 2.099592 39.1518  5.27482\n49 R049 65.6152  1.84908 2.54045 2.80845 2.59443 0.030000 18.5139  9.74750\n59 R059 67.2029  6.81273 1.52592 2.72105 2.49124 1.792527 21.3818  1.75352\n67 R067 12.0934 57.81487 2.16505 1.45686 2.48151 0.030000 50.4372 96.47579\n88 R088 13.4146 52.92634 2.18990 0.05000 2.87234 0.802711 25.8293 22.52157",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "cc2c3e85d4f3f152c8c5",
+   "seconds": 0.1
+  },
+  "101_profili_originali.R": {
+   "status": "ok",
+   "output": "> profili <- aggregate(d[v],\n+   list(gruppo = km$cluster), mean)\n> profili[, c(\"gruppo\", \"SiO2\",\n+              \"densita\", \"grana_mm\")]\n  gruppo     SiO2 densita grana_mm\n1      1  8.02369 2.65221 0.345744\n2      2 69.67599 2.58277 0.959919\n3      3 50.43498 2.95008 0.381841\n> # Esaminare anche dispersione e casi.",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "6ea6eab68c710ceb8802",
+   "seconds": 0.1
+  },
+  "102_generatore.R": {
+   "status": "ok",
+   "output": "> # L'etichetta non e stata usata nella stima.\n> generatore <- d$litologia_generatrice\n> table(gruppo = km$cluster, generatore)\n      generatore\ngruppo Arenaria Basalto Calcare\n     1        0       0      30\n     2       30       0       0\n     3        0      30       0\n> indice_rand_corretto(km$cluster, generatore)\n[1] 1",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "6857b1fa20dcfd6c867b",
+   "seconds": 0.1
+  },
+  "105_quattro_gruppi.R": {
+   "status": "ok",
+   "output": "> set.seed(1601)\n> km4 <- kmeans(Z, 4, nstart = 50)\n> table(k3 = km$cluster, k4 = km4$cluster)\n   k4\nk3   1  2  3  4\n  1  0  0  0 30\n  2 18 12  0  0\n  3  0  0 30  0\n> mean(silhouette_base(km4$cluster, dist(Z)))\n[1] 0.543914\n> aggregate(d[v], list(gruppo = km4$cluster), mean)\n  gruppo     SiO2      CaO     MgO      FeO densita grana_mm  colore  fossili\n1      1 69.91277  3.52195 1.19733 1.823175 2.56949 1.296914 31.6158  9.26574\n2      2 69.32082  4.63376 1.06516 1.832417 2.60269 0.454427 33.0477  6.76704\n3      3 50.43498  8.82127 8.68583 9.830332 2.95008 0.381841 79.2514  2.14885\n4      4  8.02369 49.74498 2.08221 0.967319 2.65221 0.345744 20.9248 65.06902",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "9ceeeb31e91edf754a25",
+   "seconds": 0.1
+  },
+  "106_equivalenza.R": {
+   "status": "ok",
+   "output": "> pa <- prcomp(X, center = TRUE,\n+              scale. = TRUE)\n> pb <- prcomp(scale(X), center = FALSE,\n+              scale. = FALSE)\n> max(abs(pa$sdev - pb$sdev))\n[1] 0\n> max(abs(pa$x - pb$x))\n[1] 0",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "5ff82cb7ff45922ca420",
+   "seconds": 0.0
+  },
+  "107_tabella_finale.R": {
+   "status": "ok",
+   "output": "> sil <- silhouette_base(km$cluster, dist(Z))\n> risultati <- data.frame(id = d$id,\n+   pc$x[, 1:2], kmeans = km$cluster,\n+   ward = cutree(h, k = 3), silhouette = sil)\n> write.csv(risultati, \"Risultati/campioni.csv\",\n+           row.names = FALSE)",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 2,
+   "same": true,
+   "hash": "5db943083ca999bcaea9",
+   "seconds": 0.2
+  }
+ }
+}

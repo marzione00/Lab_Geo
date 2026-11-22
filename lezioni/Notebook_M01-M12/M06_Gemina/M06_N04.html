@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Molte permutazioni e p-value Monte Carlo</title><style>
+:root{--navy:#15283e;--teal:#087c74;--ink:#253344;--muted:#536373;--paper:#f8f6f1;--line:#dbe3e6}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.65 system-ui,-apple-system,"Segoe UI",sans-serif}a{color:#06685f;text-underline-offset:3px}a:hover{color:#14354c}main{max-width:1000px;margin:auto;padding:38px 44px 70px;background:#fff;min-height:100vh}nav{font-size:14px;display:flex;gap:18px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:35px}.eyebrow{font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--teal);font-weight:750;margin:0 0 12px}h1,h2,h3{color:var(--navy);line-height:1.2;letter-spacing:-.02em}h1{font-size:39px;margin:0 0 20px}h2{font-size:27px;margin:44px 0 17px;padding-bottom:10px;border-bottom:1px solid var(--line)}h3{font-size:21px;margin:28px 0 12px}p{margin:13px 0}ul,ol{padding-left:25px}li{margin:7px 0}strong{font-weight:700}.question{font-size:21px;line-height:1.5;border-left:4px solid var(--teal);padding:14px 20px;background:#edf6f3;margin:25px 0}.meta{color:var(--muted);font-size:15px}.callout{border:1px solid #cbdad8;border-left:4px solid var(--teal);padding:14px 20px;border-radius:5px;background:#f7faf9;margin:22px 0}.pitfall{border-left-color:#a2632a;background:#fffaf3}pre{white-space:pre;overflow:auto;tab-size:2;font:14px/1.6 "DejaVu Sans Mono",Consolas,monospace;margin:0;padding:18px 20px;color:#182d44}code{font-family:"DejaVu Sans Mono",Consolas,monospace;font-size:.88em}p code,li code,td code{background:#eef3f4;border-radius:3px;padding:2px 5px;overflow-wrap:anywhere}.codebox{border:1px solid #cbd8df;border-radius:7px;overflow:hidden;margin:18px 0 8px;background:#f2f6fa}.code-label{background:#e6edf3;color:#2a4660;font:700 12px/1.4 system-ui,sans-serif;padding:9px 17px;letter-spacing:.05em;text-transform:uppercase}.output{border:1px solid #dee4e7;border-radius:6px;background:#fbfcfc;margin:8px 0 18px}.output .code-label{background:#f0f3f4;color:#536373}.output pre{font-size:13px;color:#344550;max-height:580px}.sourceCode .co{color:#4d6a58;font-style:italic}.sourceCode .st,.sourceCode .ch{color:#9b392e}.sourceCode .dv,.sourceCode .fl,.sourceCode .bn{color:#7946a0}.sourceCode .kw,.sourceCode .cf{color:#075f85;font-weight:650}.sourceCode .fu{color:#075f85}.sourceCode .op{color:#495b70}figure{margin:22px 0 26px}figure img{width:100%;height:auto;display:block;border:1px solid #e2e7e9;border-radius:5px}figcaption{color:var(--muted);font-size:13px;margin-top:6px}.result-label{color:var(--teal);font-weight:750;font-size:14px;margin-top:22px}.module-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.card{border:1px solid var(--line);border-top:4px solid var(--teal);border-radius:7px;padding:20px}.card h2{margin:0 0 9px;padding:0;border:0;font-size:25px}.card p{margin:7px 0}.toc{padding:17px 22px;background:#f6f8f8;border:1px solid var(--line);border-radius:6px;margin:24px 0}.toc p{margin:0 0 6px}.toc ol{margin:5px 0}table{border-collapse:collapse;width:100%;font-size:15px;margin:24px 0}th,td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{background:#eff4f5;color:var(--navy)}footer{margin-top:45px;padding-top:20px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}math{font-size:1.08em}math[display="block"]{overflow:auto;display:block;padding:12px 0}details{border:1px solid var(--line);border-radius:6px;padding:12px 18px;margin:22px 0}summary{cursor:pointer;color:var(--navy);font-weight:650}small{font-size:13px}.tag{font-size:12px;color:#506573;background:#eef3f4;border-radius:4px;padding:3px 7px}.file-links{display:flex;gap:14px;flex-wrap:wrap;margin:14px 0 20px}
+@media(max-width:640px){body{font-size:16px}main{padding:24px 19px 50px}h1{font-size:31px}h2{font-size:24px}.module-grid{grid-template-columns:1fr}.question{font-size:19px;padding:13px}pre{font-size:12.5px;padding:14px}.output pre{font-size:12px}th,td{padding:8px 5px}nav{gap:12px}}
+@media print{body{background:#fff;font-size:11pt}main{max-width:none;padding:0}nav,.file-links{display:none}pre{white-space:pre-wrap;font-size:9pt}.output pre{max-height:none}h2,h3{break-after:avoid}.codebox,figure,.callout{break-inside:avoid}a{color:inherit;text-decoration:none}}
+</style></head><body><main><nav><a href="../index.html">Tutti i moduli</a><a href="index.html">Indice Gemina</a><a href="M06_N03.html">← M06_N03</a><a href="M06_N05.html">M06_N05 →</a></nav><p class="eyebrow">GeoStat Lab · Esercitazioni svolte</p><h1>Molte permutazioni e p-value Monte Carlo</h1><p class="meta">M06_N04 · Gemina · soluzione eseguita e commentata</p><div class="question"><p>Come stimiamo un p-value quando non possiamo enumerare tutte le
+assegnazioni dei fossili ai gruppi?</p>
+</div><div class="file-links"><a href="M06_N04.Rmd" download>Sorgente R Markdown</a><a href="../LEGGIMI_NOTEBOOK.txt">Come eseguire il notebook</a></div><h2>Prima di iniziare</h2><ul><li><p>Simulare contrasti sotto riassegnazione delle etichette.</p>
+</li><li><p>Usare una correzione Monte Carlo e distinguere B da n.</p>
+</li></ul><p><strong>Prerequisiti.</strong> Vettori, indicizzazione, media, varianza e grafici di base in R.</p><p><strong>Dati e unità.</strong> Centosessanta diametri sintetici in micrometri, ottanta per
+morfotipo. La permutazione non studentizzata usa come riferimento la
+scambiabilità dei valori sotto la nulla.</p><div class="toc"><p><strong>Percorso dello svolgimento</strong></p><ol><li><a href="#passo-1">Preparare il contrasto osservato</a></li><li><a href="#passo-2">Simulare assegnazioni con numerosità fisse</a></li><li><a href="#passo-3">Contare le code e calcolare il p-value</a></li></ol><a href="#variante">Variante svolta</a> · <a href="#risposta">Risposta alla domanda</a></div><details><summary>Preparazione del progetto e seme casuale</summary><p>Aprire il progetto <code>GeoStat_Lab_Notebooks.Rproj</code> e poi il file Rmd. Questo blocco trova le cartelle dei dati e dei risultati senza usare percorsi personali.</p><div class="codebox"><div class="code-label">R · codice commentato</div><div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Trova il progetto risalendo le cartelle: nessun percorso personale.</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>.gs_radice <span class="ot">&lt;-</span> <span class="fu">normalizePath</span>(<span class="fu">getwd</span>(), <span class="at">winslash=</span><span class="st">&quot;/&quot;</span>, <span class="at">mustWork=</span><span class="cn">TRUE</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="cf">while</span> (<span class="sc">!</span><span class="fu">file.exists</span>(<span class="fu">file.path</span>(.gs_radice, <span class="st">&quot;GeoStat_Lab_Notebooks.Rproj&quot;</span>))) {</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  .gs_padre <span class="ot">&lt;-</span> <span class="fu">dirname</span>(.gs_radice)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (.gs_padre <span class="sc">==</span> .gs_radice) {</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">&quot;Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.&quot;</span>)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  .gs_radice <span class="ot">&lt;-</span> .gs_padre</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="co"># I dati restano separati dai risultati scritti dall&#39;esercitazione.</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(<span class="fu">file.path</span>(.gs_radice, <span class="st">&quot;R&quot;</span>, <span class="st">&quot;funzioni_notebook.R&quot;</span>), <span class="at">local=</span><span class="cn">TRUE</span>)</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>.gs_funzioni <span class="ot">&lt;-</span> <span class="fu">.gs_prepara_notebook</span>(.gs_radice, <span class="st">&quot;M06_N04&quot;</span>)</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>carica_dati <span class="ot">&lt;-</span> .gs_funzioni<span class="sc">$</span>carica_dati</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>percorso_dati <span class="ot">&lt;-</span> .gs_funzioni<span class="sc">$</span>percorso_dati</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>percorso_risultati <span class="ot">&lt;-</span> .gs_funzioni<span class="sc">$</span>percorso_risultati</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="at">width=</span><span class="dv">88</span>, <span class="at">digits=</span><span class="dv">6</span>)</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Il seme consente di ripetere le estrazioni casuali di questo notebook.</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">6004</span>)</span></code></pre></div>
+</div></details><section id="passo-1"><h2>1. Preparare il contrasto osservato</h2><p>Manteniamo il verso Spiky meno Rounded e la numerosità originale di
+ciascun gruppo. La distribuzione nulla per permutazione viene costruita
+dai valori uniti. Il suo uso richiede una nulla che renda le etichette
+scambiabili; la sola uguaglianza delle medie non basta in generale.</p>
+<div class="codebox"><div class="code-label">R · codice commentato</div><div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>dati <span class="ot">&lt;-</span> <span class="fu">carica_dati</span>(<span class="st">&quot;fossili_simulati.csv&quot;</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>a <span class="ot">&lt;-</span> dati<span class="sc">$</span>diametro_tot_um[dati<span class="sc">$</span>morfotipo <span class="sc">==</span> <span class="st">&quot;Rounded&quot;</span>]</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>b <span class="ot">&lt;-</span> dati<span class="sc">$</span>diametro_tot_um[dati<span class="sc">$</span>morfotipo <span class="sc">==</span> <span class="st">&quot;Spiky&quot;</span>]</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">c</span>(a, b)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>nA <span class="ot">&lt;-</span> <span class="fu">length</span>(a)</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>nB <span class="ot">&lt;-</span> <span class="fu">length</span>(b)</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>osservato <span class="ot">&lt;-</span> <span class="fu">mean</span>(b) <span class="sc">-</span> <span class="fu">mean</span>(a)</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="fu">is.finite</span>(x)))</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">c</span>(<span class="at">nA =</span> nA, <span class="at">nB =</span> nB, <span class="at">differenza_um =</span> osservato))</span></code></pre></div>
+</div><div class="output"><div class="code-label">Risultato dell’esecuzione</div><pre>nA            nB differenza_um 
+    80.000000     80.000000      0.582028</pre></div><p class="result-label">Lettura del risultato</p><p>Le numerosità indicano quante unità sperimentali osserviamo. Non sono
+il numero di permutazioni e non cambieranno quando aumenteremo la
+precisione del calcolo.</p>
+</section><section id="passo-2"><h2>2. Simulare assegnazioni con numerosità fisse</h2><p>In ogni replica una selezione senza reinserimento determina il gruppo
+Rounded sotto la nulla. Tutti gli altri valori formano Spiky. Le
+permutazioni possono ripetersi fra repliche, mentre ogni assegnazione
+usa ciascun valore una sola volta.</p>
+<div class="codebox"><div class="code-label">R · codice commentato</div><div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">604</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>B <span class="ot">&lt;-</span> <span class="dv">2000</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>nulli <span class="ot">&lt;-</span> <span class="fu">replicate</span>(B, {</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  iA <span class="ot">&lt;-</span> <span class="fu">sample.int</span>(<span class="fu">length</span>(x), nA, <span class="at">replace =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mean</span>(x[<span class="sc">-</span>iA]) <span class="sc">-</span> <span class="fu">mean</span>(x[iA])</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">c</span>(<span class="at">B =</span> B, <span class="at">media_nulla =</span> <span class="fu">mean</span>(nulli), <span class="at">SD_nulla =</span> <span class="fu">sd</span>(nulli)))</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">quantile</span>(nulli, <span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.5</span>, <span class="fl">0.975</span>)))</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">length</span>(nulli) <span class="sc">==</span> B)</span></code></pre></div>
+</div><div class="output"><div class="code-label">Risultato dell’esecuzione</div><pre>B media_nulla    SD_nulla 
+2.00000e+03 6.95158e-04 1.55659e-01 
+       2.5%         50%       97.5% 
+-0.30691866  0.00385894  0.29670477</pre></div><p class="result-label">Lettura del risultato</p><p>Il centro è vicino a zero sotto riassegnazione casuale. La
+distribuzione simulata serve a valutare estremi sotto il riferimento
+nullo, non a costruire direttamente un intervallo del contrasto
+osservato.</p>
+</section><section id="passo-3"><h2>3. Contare le code e calcolare il p-value</h2><p>Per un confronto bilaterale contiamo i contrasti il cui valore
+assoluto è almeno quello osservato. Usiamo (k+1)/(B+1), che include il
+contributo dell’osservazione e impedisce di dichiarare p uguale a zero
+quando nessuna replica simulata supera la soglia.</p>
+<div class="codebox"><div class="code-label">R · codice commentato</div><div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>k <span class="ot">&lt;-</span> <span class="fu">sum</span>(<span class="fu">abs</span>(nulli) <span class="sc">&gt;=</span> <span class="fu">abs</span>(osservato))</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>p_mc <span class="ot">&lt;-</span> (k <span class="sc">+</span> <span class="dv">1</span>) <span class="sc">/</span> (B <span class="sc">+</span> <span class="dv">1</span>)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>minimo <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">/</span> (B <span class="sc">+</span> <span class="dv">1</span>)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>coda_binomiale <span class="ot">&lt;-</span> <span class="fu">binom.test</span>(k, B)<span class="sc">$</span>conf.int</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">c</span>(<span class="at">estremi =</span> k, <span class="at">B =</span> B, <span class="at">p_MC =</span> p_mc, <span class="at">minimo_risolubile =</span> minimo))</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(coda_binomiale)</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(p_mc <span class="sc">&gt;=</span> minimo, p_mc <span class="sc">&lt;=</span> <span class="dv">1</span>)</span></code></pre></div>
+</div><div class="output"><div class="code-label">Risultato dell’esecuzione</div><pre>estremi                 B              p_MC minimo_risolubile 
+       0.0000e+00        2.0000e+03        4.9975e-04        4.9975e-04 
+[1] 0.00000000 0.00184274
+attr(,&quot;conf.level&quot;)
+[1] 0.95</pre></div><p class="result-label">Lettura del risultato</p><p>L’intervallo binomiale riguarda la probabilità di coda della
+simulazione, non il parametro biologico. Un p-value piccolo esprime
+incompatibilità con il riferimento nullo, senza misurare la dimensione
+dell’effetto.</p>
+</section><section id="variante"><h2>Variante svolta</h2><p>Ripetere con tremila permutazioni e un seme diverso, conservando lo
+stesso campione.</p>
+<div class="codebox"><div class="code-label">R · codice commentato</div><div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1604</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>B2 <span class="ot">&lt;-</span> <span class="dv">3000</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>nulli2 <span class="ot">&lt;-</span> <span class="fu">replicate</span>(B2, {</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  iA <span class="ot">&lt;-</span> <span class="fu">sample.int</span>(<span class="fu">length</span>(x), nA, <span class="cn">FALSE</span>)</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mean</span>(x[<span class="sc">-</span>iA]) <span class="sc">-</span> <span class="fu">mean</span>(x[iA])</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>k2 <span class="ot">&lt;-</span> <span class="fu">sum</span>(<span class="fu">abs</span>(nulli2) <span class="sc">&gt;=</span> <span class="fu">abs</span>(osservato))</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">data.frame</span>(<span class="at">B =</span> <span class="fu">c</span>(B, B2), <span class="at">estremi =</span> <span class="fu">c</span>(k, k2),</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">p_MC =</span> <span class="fu">c</span>(p_mc, (k2 <span class="sc">+</span> <span class="dv">1</span>) <span class="sc">/</span> (B2 <span class="sc">+</span> <span class="dv">1</span>))))</span></code></pre></div>
+</div><div class="output"><div class="code-label">Risultato dell’esecuzione</div><pre>B estremi        p_MC
+1 2000       0 0.000499750
+2 3000       1 0.000666445</pre></div><p>La differenza fra i risultati riflette errore Monte Carlo e
+risoluzione. Non è richiesto che il p-value diminuisca quando aumenta B,
+né che i due valori coincidano.</p>
+</section><div class="callout pitfall"><strong>Errore da riconoscere</strong><p>Non interpretare zero superamenti come impossibilità dell’evento
+sotto la nulla. Registrare k e B e usare una formula adatta al
+campionamento delle permutazioni.</p>
+</div><section id="risposta"><h2>Risposta alla domanda</h2><p>Il p-value Monte Carlo richiede ipotesi di scambiabilità, statistica
+e regola di coda esplicite. Più permutazioni stabilizzano il calcolo
+senza aggiungere osservazioni.</p>
+</section><footer><p>Svolgimento del laboratorio M06_N04 del percorso <a href="https://marzione00.github.io/Lab_Geo/#esperimenti">GeoStat Lab</a>. <a href="https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M06/M06_N04.R">Codice originale del corso</a>.</p><p>Risultati calcolati con R 4.6.0 tramite WebR 0.6.1. Ogni notebook è stato eseguito in un ambiente separato; il codice usa R base. Questa copia HTML si legge anche senza connessione.</p></footer></main></body></html>

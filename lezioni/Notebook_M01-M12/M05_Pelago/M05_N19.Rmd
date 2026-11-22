@@ -1,0 +1,129 @@
+---
+title: "Reinserimento e bootstrap enumerato"
+subtitle: "M05_N19 \u00b7 Pelago"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Possiamo elencare tutte le repliche bootstrap di quattro dati e verificarne esattamente la distribuzione?
+
+## Obiettivi
+
+- Enumerare sequenze con reinserimento.
+- Distinguere distribuzione bootstrap e semplice permutazione.
+
+**Prima di iniziare.** Vettori, indicizzazione, media, varianza e grafici di base in R.
+
+**Dati e unità.** Quattro valori didattici, 2, 4, 8 e 10, in unità convenzionali. Le 4⁴ sequenze ordinate hanno la stessa probabilità.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M05_N19/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M05_N19")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(5019)
+```
+
+## 1. Enumerare le sequenze di indici
+
+Ogni posizione della replica può contenere uno dei quattro indici originali. Il prodotto cartesiano delle scelte genera tutte le sequenze ordinate; alcune producono gli stessi conteggi e la stessa media, ma devono mantenere la loro molteplicità probabilistica.
+
+```{r passo_01}
+x <- c(2, 4, 8, 10)
+n <- length(x)
+sequenze <- as.matrix(expand.grid(rep(list(seq_len(n)), n)))
+medie <- apply(sequenze, 1, function(i) mean(x[i]))
+stopifnot(nrow(sequenze) == n^n)
+print(c(sequenze = nrow(sequenze), medie_distinte = length(unique(medie))))
+print(head(data.frame(sequenze, media = medie)))
+```
+
+**Lettura del risultato.** Le 256 righe non sono 256 nuovi campioni di campo. Sono tutti i possibili ricampionamenti condizionati ai quattro valori osservati.
+
+## 2. Calcolare media e varianza della distribuzione esatta
+
+La distribuzione enumerata è completa, quindi la sua varianza usa la media degli scarti quadratici e non la correzione di var. Per la media bootstrap il valore teorico è (n−1)s²/n², con s² calcolata sui dati originali.
+
+```{r passo_02}
+centro <- mean(medie)
+var_esatta <- mean((medie - centro)^2)
+var_formula <- (n - 1) * var(x) / n^2
+stopifnot(isTRUE(all.equal(centro, mean(x))))
+stopifnot(isTRUE(all.equal(var_esatta, var_formula)))
+distribuzione <- prop.table(table(medie))
+print(data.frame(media = as.numeric(names(distribuzione)),
+                 probabilita = as.numeric(distribuzione)))
+print(c(media_boot = centro, varianza_boot = var_esatta))
+```
+
+**Lettura del risultato.** Le medie più frequenti ricevono probabilità maggiore perché molte sequenze le producono. Eliminare le medie duplicate prima di calcolare la varianza altererebbe la distribuzione.
+
+## 3. Confrontare enumerazione e Monte Carlo
+
+La simulazione sceglie soltanto una parte delle sequenze, ammettendo ripetizioni anche fra repliche. Possiamo confrontarne i risultati con il riferimento enumerato: ogni differenza in questo confronto è numerica, non un dubbio su quale distribuzione stiamo calcolando.
+
+```{r passo_03}
+set.seed(519)
+B <- 2000
+simulate <- replicate(B, mean(sample(x, n, replace = TRUE)))
+print(data.frame(metodo = c("Enumerato", "Monte Carlo"),
+  media = c(centro, mean(simulate)),
+  SD = c(sqrt(var_esatta), sd(simulate))))
+barplot(distribuzione, col = "#95BDD0", border = NA,
+        xlab = "Media della replica (u.c.)", ylab = "Probabilita",
+        main = "Distribuzione bootstrap esatta")
+```
+
+**Lettura del risultato.** Aumentare B migliora l'approssimazione della distribuzione enumerata. Non rende più rappresentativi i quattro valori iniziali e non assicura la copertura di un intervallo sulla popolazione.
+
+## Variante svolta
+
+Ripetere l'estrazione di tutti i dati senza reinserimento e verificare la varianza delle medie.
+
+```{r variante}
+senza <- replicate(B, mean(sample(x, n, replace = FALSE)))
+print(c(media_senza = mean(senza), SD_senza = sd(senza)))
+stopifnot(all(senza == mean(x)))
+print(quantile(medie, c(0.025, 0.975)))
+```
+
+Senza reinserimento si permutano sempre gli stessi quattro valori: la media non varia. L'intervallo percentile della distribuzione bootstrap è invece ottenuto da selezioni con reinserimento.
+
+## Errore da riconoscere
+
+Non trattare le combinazioni non ordinate come equiprobabili: una composizione con valori distinti può essere generata da più sequenze di una composizione con quattro valori uguali.
+
+## Risposta alla domanda
+
+Il piccolo esempio rende controllabili le probabilità del bootstrap. L'enumerazione elimina l'errore Monte Carlo ma resta condizionata al campione osservato.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M05_N19` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M05/M05_N19.R).

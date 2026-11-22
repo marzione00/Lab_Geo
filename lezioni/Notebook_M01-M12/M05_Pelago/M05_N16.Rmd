@@ -1,0 +1,131 @@
+---
+title: "Provini e medie di stazione"
+subtitle: "M05_N16 \u00b7 Pelago"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come cambia la stima di precisione quando l'unità indipendente è la stazione invece del singolo provino?
+
+## Obiettivi
+
+- Riconoscere la struttura annidata dei dati.
+- Ricampionare medie di stazione per un bersaglio che pesa le stazioni allo stesso modo.
+
+**Prima di iniziare.** Vettori, indicizzazione, media, varianza e grafici di base in R.
+
+**Dati e unità.** Ventiquattro provini sintetici in sei stazioni, quattro per stazione. Densità ricavata da massa in grammi e volume in cm³; le stazioni sono trattate come unità indipendenti di una popolazione mista.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M05_N16/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M05_N16")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(5016)
+```
+
+## 1. Ricostruire la struttura dei dati
+
+La tabella contiene righe di provini, ma il numero di righe non descrive da solo il disegno. Calcoliamo la densità e contiamo i provini per stazione. Il bersaglio scelto qui attribuisce uguale peso alle stazioni; non mantiene quote separate degli affioramenti.
+
+```{r passo_01}
+dati <- carica_dati("campioni_modulo1.csv")
+stopifnot(all(is.finite(dati$massa_g)), all(dati$volume_cm3 > 0))
+dati$densita <- dati$massa_g / dati$volume_cm3
+medie_stazione <- tapply(dati$densita, dati$stazione, mean)
+conteggi <- table(dati$stazione)
+G <- length(medie_stazione)
+print(data.frame(stazione = names(medie_stazione), n = as.integer(conteggi),
+                 densita_media = as.numeric(medie_stazione)))
+```
+
+**Lettura del risultato.** Tutte le stazioni contengono quattro provini. In questo caso bilanciato, la media delle medie di stazione coincide con la media delle righe; l'incertezza può comunque essere diversa.
+
+## 2. Calcolare il riferimento basato sulle stazioni
+
+Se le stazioni sono indipendenti e rappresentative del bersaglio dichiarato, la dispersione delle loro medie informa la precisione della media generale. Il denominatore contiene la radice di sei, non quella di ventiquattro. La variabilità interna alle stazioni è già incorporata nelle medie osservate.
+
+```{r passo_02}
+stima <- mean(medie_stazione)
+se_stazioni <- sd(medie_stazione) / sqrt(G)
+se_righe <- sd(dati$densita) / sqrt(nrow(dati))
+stopifnot(isTRUE(all.equal(stima, mean(dati$densita))))
+print(c(stima_g_cm3 = stima, stazioni_indipendenti = G,
+        SE_stazioni = se_stazioni, SE_righe = se_righe))
+dotchart(as.numeric(medie_stazione), labels = names(medie_stazione),
+         xlab = "Densita media (g/cm3)",
+         main = "Sei stazioni, non ventiquattro repliche")
+```
+
+**Lettura del risultato.** La coincidenza della stima centrale non giustifica la coincidenza degli errori standard. L'indipendenza delle stazioni resta un'ipotesi: vicinanza spaziale o campionamento selettivo possono comprometterla.
+
+## 3. Ricampionare l'unità corretta
+
+Ogni replica seleziona sei stazioni con reinserimento e ne media le medie. Con numerosità interne uguali questo equivale a selezionare interi blocchi di quattro provini. Un bootstrap delle righe viene calcolato soltanto per rendere visibile la differenza fra i due schemi.
+
+```{r passo_03}
+set.seed(516)
+B <- 2000
+boot_stazioni <- replicate(B, mean(sample(medie_stazione, G, TRUE)))
+boot_righe <- replicate(B, mean(sample(dati$densita, nrow(dati), TRUE)))
+print(data.frame(schema = c("Stazioni", "Provini"),
+  SE_boot = c(sd(boot_stazioni), sd(boot_righe)),
+  n_unita = c(G, nrow(dati))))
+print(quantile(boot_stazioni, c(0.025, 0.975)))
+```
+
+**Lettura del risultato.** Sei stazioni forniscono poco supporto alla distribuzione empirica dei gruppi. L'intervallo è didattico e può essere instabile; aumentare B non risolve la scarsità di stazioni.
+
+## Variante svolta
+
+Verificare in una replica l'equivalenza tra medie ricampionate e blocchi completi.
+
+```{r variante}
+estratte <- sample(names(medie_stazione), G, replace = TRUE)
+blocchi <- lapply(estratte, function(s) dati$densita[dati$stazione == s])
+media_blocchi <- mean(unlist(blocchi))
+media_medie <- mean(medie_stazione[estratte])
+print(data.frame(posizione = seq_len(G), stazione_estratta = estratte))
+stopifnot(isTRUE(all.equal(media_blocchi, media_medie)))
+```
+
+L'equivalenza usa il fatto che tutti i blocchi hanno la stessa numerosità. Con stazioni di dimensione diversa, media dei provini e media delle stazioni definiscono pesi differenti.
+
+## Errore da riconoscere
+
+Non chiamare bootstrap a blocchi il ricampionamento indipendente di ogni riga. Il blocco deve essere selezionato come unità con tutte le relazioni interne.
+
+## Risposta alla domanda
+
+Il numero di stazioni limita l'informazione indipendente disponibile. Per quote di affioramento fissate dal disegno occorre inoltre ricampionare le stazioni separatamente entro affioramento.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M05_N16` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M05/M05_N16.R).

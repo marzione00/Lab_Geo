@@ -1,0 +1,140 @@
+---
+title: "Statistiche zonali e nuovo livello della tabella"
+subtitle: "M12_N15 · Tessera"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Dopo una statistica zonale, che cosa rappresenta una riga della tabella?
+
+## Obiettivi
+
+- Conservare media, dispersione e numero di celle per unità.
+- Verificare la media globale con i pesi corretti.
+- Distinguere dispersione e incertezza della media.
+
+**Prima di iniziare.** Sono richiesti vettori, matrici, tabelle e funzioni R di base. Eseguire i blocchi in ordine; ogni notebook è autonomo rispetto agli altri. I calcoli usano R base e i pacchetti standard.
+
+**Dati e unità.** Il raster è interamente sintetico: 24 righe × 30 colonne, 720 celle quadrate di lato 30 m. Nel CSV riga e colonna partono da zero; x_m = 30 × colonna e y_m = 30 × riga indicano i centri nel piano locale. La riga 0 è a Sud; la riga 23 è a Nord. Le quote sono in metri sintetici. I dati non descrivono un rilievo reale.
+
+**Relazione usata.** $\overline z_{\mathrm{celle}}=\sum_k n_k\overline z_k/\sum_k n_k.$
+
+## Preparazione
+
+Aprire il progetto autonomo di Tessera o quello generale dei notebook. I file originali restano invariati. Gli output vanno in `Risultati/M12_N15/`. Nessun download o installazione avviene nei blocchi.
+
+```{r preparazione}
+# Trova il modulo dal progetto autonomo o da quello generale dei notebook.
+.gs_cerca <- normalizePath(getwd(),winslash="/",mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca,file.path(.gs_cerca,"M12_Tessera"),
+    file.path(.gs_cerca,"03_Notebook_svolti","M12_Tessera"),
+    file.path(.gs_cerca,"M12","03_Notebook_svolti","M12_Tessera"))
+  .gs_ok <- file.exists(file.path(.gs_candidati,"M12_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati,"R","funzioni_notebook.R"))
+  if(any(.gs_ok)) { .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]];break }
+  .gs_padre <- dirname(.gs_cerca)
+  if(.gs_padre==.gs_cerca) stop("Aprire il progetto M12_Tessera o quello generale dei notebook.")
+  .gs_cerca <- .gs_padre
+}
+source(file.path(.gs_modulo,"R","funzioni_notebook.R"),local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo,"M12_N15")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88,digits=6)
+if(requireNamespace("knitr",quietly=TRUE)) {
+  knitr::opts_chunk$set(echo=TRUE,error=FALSE,warning=TRUE,message=TRUE,
+    fig.width=8,fig.height=5,dpi=150,fig.align="center")
+}
+set.seed(20261104)
+```
+
+## 1. Le celle vengono riassunte per unità
+
+Ogni riga della nuova tabella descrive la classe A o B, non una cella.
+
+```{r passo_01}
+d <- carica_dati("raster_v3.csv")
+audit_raster(d)
+d <- d[order(d$riga,d$colonna),]
+Z <- matrice_quote(d)
+ gruppi <- split(d$quota_m,d$unita)
+ risultato <- do.call(rbind,lapply(names(gruppi),function(u) data.frame(unita=u,
+   media=mean(gruppi[[u]]),sd=sd(gruppi[[u]]),n=length(gruppi[[u]]))))
+ rownames(risultato) <- NULL
+ risultato
+ stopifnot(sum(risultato$n)==720L)
+```
+
+**Lettura del risultato.** La deviazione standard descrive la dispersione delle quote nelle celle della zona. Non è un errore standard della media e non presume indipendenza spaziale.
+
+## 2. Ricostruire la media delle celle richiede i conteggi
+
+La media delle medie zonali può differire dalla media delle 720 celle se le zone hanno estensione diversa.
+
+```{r passo_02}
+controllo <- data.frame(media_celle=mean(d$quota_m),media_zone=mean(risultato$media),
+  media_zone_pesata=weighted.mean(risultato$media,risultato$n))
+controllo
+stopifnot(abs(controllo$media_celle-controllo$media_zone_pesata)<1e-10)
+```
+
+**Lettura del risultato.** Con celle della stessa area, il numero di celle è il peso planimetrico. La media semplice delle zone risponde invece a una domanda che attribuisce lo stesso peso a ogni zona.
+
+## 3. Mostrare la distribuzione prima di ridurla a una media
+
+Il boxplot descrive mediana e dispersione; il rombo indica la media zonale calcolata.
+
+```{r passo_03}
+stile_grafico()
+boxplot(quota_m~unita,data=d,col=palette_geo[1:2],xlab="Unita sintetica",ylab="Quota (m)",
+  main="Distribuzione delle quote per zona")
+points(seq_len(nrow(risultato)),risultato$media,pch=18,cex=1.3,col="#15283E")
+legend("topleft","Rombo: media zonale",pch=18,col="#15283E",bty="n",cex=.8)
+write.csv(risultato,percorso_risultati("statistiche_zonali.csv"),row.names=FALSE)
+write.csv(controllo,percorso_risultati("controllo_pesi_zonali.csv"),row.names=FALSE)
+```
+
+**Lettura del risultato.** Questa figura non è un test tra campioni indipendenti. Le distribuzioni riguardano due porzioni del campo sintetico.
+
+## Variante svolta
+
+**La copertura si controlla per zona.** Mascherare le prime 20 celle di A in memoria e riportare la copertura delle due zone.
+
+```{r variante}
+copia <- d;ii <- which(copia$unita=="A")[1:20];copia$quota_m[ii] <- NA_real_
+do.call(rbind,lapply(split(copia$quota_m,copia$unita),function(v)
+  data.frame(totali=length(v),disponibili=sum(is.finite(v)),copertura=mean(is.finite(v)),
+    media_disponibili=mean(v,na.rm=TRUE))))
+```
+
+Una copertura globale può nascondere perdite concentrate in una zona. Il numero di celle disponibili deve accompagnare ogni statistica.
+
+## Errore da riconoscere
+
+Mescolare righe di celle e righe di zone, omettere i conteggi o usare sd/√n senza un modello della dipendenza.
+
+## Risposta alla domanda
+
+Una sintesi zonale cambia il livello della tabella. Unità, numero di celle, copertura e dispersione consentono di interpretare la media e scegliere pesi coerenti con la domanda.
+
+## Raccordo con le slide
+
+[Slide 91–94 della lezione Tessera](../../02_PDF/M12_Tessera/Tessera_M12_raster_telerilevamento_morfometria.pdf#page=91). La [mappa dei notebook e delle slide](MAPPA_SLIDE.csv) conserva il raccordo puntuale con la lezione estesa.
+
+## Riferimenti e provenienza
+
+Questo svolgimento sviluppa `M12_N15` del [modulo M12 del corso](https://marzione00.github.io/Lab_Geo/#modulo-M12). Il [codice originale](https://github.com/marzione00/Lab_Geo/blob/649f7cc577b96bd1044d81e78a2f530813e4f96b/materiali/laboratori/M12/M12_N15.R) è conservato immutato in `R/Originali_corso/`. Dati e originali hanno SHA-256 e SHA-1 Git verificati; gli ampliamenti sono dichiarati nella [mappa degli originali](MAPPA_ORIGINALI.csv).
+
+Documentazione primaria delle operazioni: [R, matrix](https://stat.ethz.ch/R-manual/R-devel/library/base/html/matrix.html), [R, image](https://stat.ethz.ch/R-manual/R-devel/library/graphics/html/image.html), [R, quantile](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/quantile.html). Le ipotesi e le convenzioni specifiche sono esplicitate nello svolgimento.

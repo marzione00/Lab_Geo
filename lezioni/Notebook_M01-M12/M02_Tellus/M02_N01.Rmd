@@ -1,0 +1,132 @@
+---
+title: "Una tabella ben importata non \u00e8 scontata"
+subtitle: "M02_N01 \u00b7 Tellus"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come possiamo verificare separatore e struttura di un CSV che contiene decimali scritti con convenzioni differenti?
+
+## Obiettivi
+
+- Ispezionare il testo prima dell'importazione.
+- Importare senza perdere codici mancanti e forme originali dei valori.
+
+**Prima di iniziare.** Saper eseguire una cella R e riconoscere vettori, assegnamenti e nomi di colonne.
+
+**Dati e unità.** Il file sintetico fossili_da_controllare.csv ha 25 righe di dati e cinque colonne, separate da punto e virgola. Include decimali con virgola e punto, codici ND, campi vuoti e anomalie intenzionali.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M02_N01/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M02_N01")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(2001)
+```
+
+## 1. Guardare il file prima di interpretarlo
+
+Il suffisso CSV non garantisce un unico separatore. Leggiamo alcune righe come testo, conservando punteggiatura e intestazione. In questo caso la virgola compare anche dentro valori numerici: usarla come separatore cambierebbe la struttura della tabella.
+
+```{r passo_01}
+file_csv <- percorso_dati("fossili_da_controllare.csv")
+prime_righe <- readLines(file_csv, n = 5, warn = FALSE)
+cat(paste(prime_righe, collapse = "
+"), "
+")
+intestazione <- strsplit(prime_righe[1], ";", fixed = TRUE)[[1]]
+print(intestazione)
+stopifnot(length(intestazione) == 5L)
+```
+
+**Lettura del risultato.** L'intestazione fornisce un primo controllo sulle colonne attese. La lettura del testo non decide ancora quali stringhe siano numeri o mancanti; serve a riconoscere il formato prima di applicare conversioni automatiche.
+
+## 2. Importare tutte le colonne come testo
+
+Dichiariamo separatore, tipo delle colonne e assenza di codici NA automatici. Questa scelta conserva il testo ricevuto, così possiamo distinguere un campo vuoto da ND e documentare in seguito le regole usate per interpretarli.
+
+```{r passo_02}
+# Conservare anche stringhe vuote e codici testuali prima di interpretarli.
+raw <- carica_dati("fossili_da_controllare.csv", sep = ";",
+                   colClasses = "character", na.strings = character(),
+                   stringsAsFactors = FALSE)
+stopifnot(nrow(raw) == 25L)
+
+print(dim(raw))
+print(head(raw, 6))
+str(raw)
+classi <- vapply(raw, is.character, logical(1))
+stopifnot(all(classi), identical(names(raw), intestazione))
+```
+
+**Lettura del risultato.** Tutte le misure sono ancora stringhe, quindi non vanno usate direttamente in una divisione. L'importazione conservativa preserva l'informazione originaria; il prossimo passaggio sarà una conversione controllata, non una modifica silenziosa del file.
+
+## 3. Contare indizi del formato
+
+Contiamo alcuni segnali che richiederanno regole esplicite: virgole decimali, codici ND e campi vuoti. Il conteggio riguarda la rappresentazione testuale e aiuta a progettare i controlli, senza assimilare tutte le anomalie alla stessa categoria.
+
+```{r passo_03}
+testi <- unlist(raw[c("diametro_tot_um", "diametro_int_um", "diaframma_um")], use.names = FALSE)
+indizi <- c(con_virgola = sum(grepl(",", testi, fixed = TRUE)),
+             codice_ND = sum(trimws(testi) == "ND"),
+             vuoti = sum(trimws(testi) == ""))
+print(indizi)
+righe_ND <- which(trimws(raw$diametro_tot_um) == "ND")
+print(raw[righe_ND, , drop = FALSE])
+stopifnot(nrow(raw) == 25L, ncol(raw) == 5L)
+```
+
+**Lettura del risultato.** I contatori descrivono quante celle corrispondono alle regole cercate; non contano necessariamente provini distinti. La stampa delle righe interessate mantiene il collegamento con ID e altre misure, necessario per un controllo successivo.
+
+## Variante svolta
+
+Salvare una copia conservativa e verificare che la rilettura mantenga le stringhe.
+
+```{r variante}
+file_copia <- percorso_risultati("importazione_conservativa.csv")
+write.csv(raw, file_copia, row.names = FALSE, na = "")
+copia <- read.csv(file_copia, colClasses = "character", na.strings = character())
+stopifnot(identical(raw, copia))
+print(copia[1, ])
+```
+
+Il file esportato usa il separatore standard di write.csv e protegge le virgole interne con virgolette. La verifica dimostra la conservazione delle celle; non implica che il testo esportato sia identico byte per byte al sorgente.
+
+## Errore da riconoscere
+
+Impostare dec = ',' non risolve automaticamente una colonna che mescola virgola e punto. Prima si preservano le stringhe, poi si applica una regola dichiarata e si controllano i valori non convertibili.
+
+## Risposta alla domanda
+
+L'importazione produce una tabella fedele alle celle originali e uno schema verificato. I problemi di conversione e quelli geometrici restano distinguibili e saranno affrontati senza sovrascrivere il testo ricevuto.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M02_N01` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M02/M02_N01.R).

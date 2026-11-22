@@ -1,0 +1,131 @@
+---
+title: "Contrasto fra affioramenti"
+subtitle: "M05_N17 \u00b7 Pelago"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come stimiamo il contrasto B meno A rispettando le stazioni annidate nei due affioramenti?
+
+## Obiettivi
+
+- Definire un contrasto fra medie di stazione.
+- Mantenere distinti affioramenti e unità indipendenti nel bootstrap.
+
+**Prima di iniziare.** Vettori, indicizzazione, media, varianza e grafici di base in R.
+
+**Dati e unità.** Ventiquattro provini sintetici, tre stazioni per affioramento e quattro provini per stazione. La densità è in g/cm³.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M05_N17/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M05_N17")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(5017)
+```
+
+## 1. Aggregare all'unità del disegno
+
+Il confronto riguarda la media delle stazioni dell'affioramento B meno quella delle stazioni di A. Prima del ricampionamento calcoliamo una densità media per ogni stazione. Il numero di repliche indipendenti disponibili è tre per gruppo nell'ipotesi didattica di stazioni indipendenti.
+
+```{r passo_01}
+dati <- carica_dati("campioni_modulo1.csv")
+stopifnot(all(dati$volume_cm3 > 0), all(is.finite(dati$massa_g)))
+dati$densita <- dati$massa_g / dati$volume_cm3
+stazioni <- aggregate(densita ~ affioramento + stazione, data = dati, FUN = mean)
+a <- stazioni$densita[stazioni$affioramento == "A"]
+b <- stazioni$densita[stazioni$affioramento == "B"]
+delta <- mean(b) - mean(a)
+print(stazioni)
+print(c(stazioni_A = length(a), stazioni_B = length(b), differenza_B_A = delta))
+```
+
+**Lettura del risultato.** Un contrasto negativo indica densità media minore nelle stazioni B. Il segno viene fissato nella domanda e mantenuto nei calcoli, nei grafici e nella conclusione.
+
+## 2. Ricampionare stazioni entro affioramento
+
+Ciascuna replica conserva tre stazioni estratte da A e tre da B, con reinserimento entro gruppo. Gli indici di A e B vengono estratti separatamente. Non imponiamo coppie fra stazioni che non sono state osservate come coppie nel disegno.
+
+```{r passo_02}
+set.seed(517)
+B <- 2000
+contrasti <- replicate(B,
+  mean(sample(b, length(b), TRUE)) - mean(sample(a, length(a), TRUE)))
+intervallo <- quantile(contrasti, c(0.025, 0.975), names = FALSE)
+print(c(stima = delta, SE_boot = sd(contrasti),
+        inferiore = intervallo[1], superiore = intervallo[2]))
+hist(contrasti, breaks = 20, col = "#95BDD0", border = "white", ylab = "Frequenza",
+     xlab = "Differenza B - A (g/cm3)", main = "Stazioni ricampionate entro gruppo")
+abline(v = c(0, delta), col = c("#777777", "#A33B31"), lty = c(2, 1))
+```
+
+**Lettura del risultato.** Il grafico può mostrare un supporto discreto perché ci sono soltanto tre valori per gruppo. Le repliche non aggiungono nuove stazioni e non garantiscono una buona copertura dell'intervallo.
+
+## 3. Enumerare la distribuzione condizionale possibile
+
+Con tre stazioni esistono solo ventisette sequenze ordinate di ricampionamento per gruppo. Enumerarle permette di separare la discrezione dei dati dall'errore Monte Carlo. Combinando i due elenchi otteniamo tutti i contrasti condizionali equiprobabili.
+
+```{r passo_03}
+indici <- as.matrix(expand.grid(rep(list(seq_along(a)), length(a))))
+medieA <- apply(indici, 1, function(i) mean(a[i]))
+medieB <- apply(indici, 1, function(i) mean(b[i]))
+esatti <- as.vector(outer(medieB, medieA, "-"))
+print(c(sequenze_per_gruppo = nrow(indici), combinazioni = length(esatti)))
+print(rbind(simulati = quantile(contrasti, c(0.025, 0.5, 0.975)),
+            enumerati = quantile(esatti, c(0.025, 0.5, 0.975))))
+```
+
+**Lettura del risultato.** L'enumerazione è esatta rispetto alle sei medie osservate e allo schema scelto. Non rende esatta l'inferenza sulla popolazione delle stazioni, che resta basata su pochi gruppi.
+
+## Variante svolta
+
+Invertire il contrasto e controllare il corrispondente intervallo.
+
+```{r variante}
+opposti <- -contrasti
+intervallo_opposto <- quantile(opposti, c(0.025, 0.975), names = FALSE)
+print(c(differenza_A_B = -delta, inferiore = intervallo_opposto[1],
+        superiore = intervallo_opposto[2]))
+stopifnot(isTRUE(all.equal(intervallo_opposto, -rev(intervallo))))
+```
+
+Cambiare il verso cambia il segno della stima e scambia gli estremi con segno opposto. La quantità di informazione e la precisione non cambiano.
+
+## Errore da riconoscere
+
+Ricampionare dodici provini per affioramento come se fossero indipendenti trascura il raggruppamento in stazioni. Tre stazioni non diventano dodici repliche indipendenti.
+
+## Risposta alla domanda
+
+Il contrasto B meno A è interpretabile soltanto con un bersaglio e un disegno espliciti. Il limite principale di questo esempio è la scarsità delle stazioni disponibili.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M05_N17` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M05/M05_N17.R).

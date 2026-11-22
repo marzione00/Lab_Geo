@@ -1,0 +1,527 @@
+stdout 
+stdout SLIDE 008
+stdout 
+stdout > z_perm <- z[order(casuali$u[1:n])]
+stdout 
+stdout > stopifnot(identical(sort(z),
+stdout +                     sort(z_perm)))
+stdout 
+stdout SLIDE 013
+stdout 
+stdout > stopifnot(!anyDuplicated(d$id))
+stdout 
+stdout > rownames(xy) <- d$id
+stdout 
+stdout > dimnames(D) <- list(d$id,d$id)
+stdout 
+stdout > stopifnot(identical(rownames(D),
+stdout +                     d$id))
+stdout 
+stdout SLIDE 014
+stdout 
+stdout > stopifnot(nrow(d)==64L,
+stdout +  all(is.finite(xy)),
+stdout +  all(is.finite(z)),
+stdout +  !anyDuplicated(d$id))
+stdout 
+stdout > sapply(d[c("x_m","y_m")],range)
+stdout       x_m  y_m
+stdout [1,]    0    0
+stdout [2,] 1750 1750
+stdout 
+stdout SLIDE 018
+stdout 
+stdout > ok_limiti <- function(lon,lat) {
+stdout +  all(abs(lon)<=180 & abs(lat)<=90)
+stdout + }
+stdout 
+stdout > c(corretti=ok_limiti(d$lon,d$lat),
+stdout +  invertiti=ok_limiti(d$lat,d$lon))
+stdout  corretti invertiti 
+stdout      TRUE      TRUE 
+stdout 
+stdout SLIDE 019
+stdout 
+stdout > D <- as.matrix(dist(xy))
+stdout 
+stdout > stopifnot(all(diag(D)==0),
+stdout +  isTRUE(all.equal(D,t(D))),
+stdout +  all(D>=0))
+stdout 
+stdout SLIDE 020
+stdout 
+stdout > shift <- sweep(xy,2,c(200,-300),"+")
+stdout 
+stdout > stopifnot(isTRUE(all.equal(
+stdout +  as.matrix(dist(shift)),D)))
+stdout 
+stdout > stopifnot(isTRUE(all.equal(
+stdout +  as.matrix(dist(xy/1000)),D/1000)))
+stdout 
+stdout SLIDE 023
+stdout 
+stdout > h <- haversine(d$lon[1],d$lat[1],
+stdout +                d$lon[2],d$lat[2])
+stdout 
+stdout > stopifnot(is.finite(h),h>0)
+stdout 
+stdout > haversine(0,0,1,0) # arco di 1 grado
+stdout [1] 111194.9
+stdout 
+stdout SLIDE 026
+stdout 
+stdout > geo <- sf::st_as_sf(d,
+stdout +  coords=c("lon","lat"),
+stdout +  crs="OGC:CRS84",remove=FALSE)
+stdout 
+stdout > stopifnot(nrow(geo)==64L)
+stdout 
+stdout > sf::st_crs(geo)$input
+stdout [1] "OGC:CRS84"
+stdout 
+stdout SLIDE 027
+stdout 
+stdout > utm <- sf::st_transform(geo,32632)
+stdout 
+stdout > head(sf::st_coordinates(utm))
+stdout             X       Y
+stdout [1,] 500000.0 4982950
+stdout [2,] 500250.3 4982950
+stdout [3,] 500500.6 4982950
+stdout [4,] 500751.0 4982950
+stdout [5,] 501001.3 4982950
+stdout [6,] 501251.6 4982951
+stdout 
+stdout > stopifnot(!sf::st_is_longlat(utm))
+stdout 
+stdout SLIDE 028
+stdout 
+stdout > rt <- sf::st_transform(utm,"OGC:CRS84")
+stdout 
+stdout > cr0 <- sf::st_coordinates(geo)
+stdout 
+stdout > cr1 <- sf::st_coordinates(rt)
+stdout 
+stdout > err <- max(abs(cr1-cr0))
+stdout 
+stdout > stopifnot(err<1e-7); err
+stdout [1] 1.421085e-14
+stdout 
+stdout SLIDE 029
+stdout 
+stdout > bad_crs <- suppressWarnings(
+stdout +  sf::st_set_crs(geo,32632))
+stdout 
+stdout > stopifnot(identical(
+stdout +  sf::st_coordinates(bad_crs),
+stdout +  sf::st_coordinates(geo)))
+stdout 
+stdout SLIDE 030
+stdout 
+stdout > u_xy <- sf::st_coordinates(utm)
+stdout 
+stdout > d_utm <- as.matrix(dist(u_xy))
+stdout 
+stdout > c(locale=D[1,2],UTM=d_utm[1,2],
+stdout +  sfera=haversine(d$lon[1],d$lat[1],
+stdout +                 d$lon[2],d$lat[2]))
+stdout   locale      UTM    sfera 
+stdout 250.0000 250.3181 249.7191 
+stdout 
+stdout SLIDE 033
+stdout 
+stdout > plot(d$x_m,d$y_m,asp=1,
+stdout +  xlab="x locale (m)",
+stdout +  ylab="y locale (m)",pch=19)
+stdout 
+stdout > stopifnot(all(is.finite(xy)))
+stdout 
+stdout SLIDE 034
+stdout 
+stdout > ovest <- d$x_m<1000
+stdout 
+stdout > aggregate(concentrazione~area,
+stdout +  data=d,FUN=mean)
+stdout    area concentrazione
+stdout 1   Est       19.32336
+stdout 2 Ovest       15.05731
+stdout 
+stdout > table(d$area)
+stdout 
+stdout   Est Ovest 
+stdout    32    32 
+stdout 
+stdout > stopifnot(sum(ovest)==32L)
+stdout 
+stdout SLIDE 036
+stdout 
+stdout > ov <- d$x_m<1000
+stdout 
+stdout > es <- !ov
+stdout 
+stdout > stopifnot(!any(ov & es),
+stdout +           all(ov | es))
+stdout 
+stdout > c(Ovest=sum(ov),Est=sum(es))
+stdout Ovest   Est 
+stdout    32    32 
+stdout 
+stdout SLIDE 038
+stdout 
+stdout > a <- d$id[d$x_m<=1250]
+stdout 
+stdout > b <- d$id[d$x_m>=750]
+stdout 
+stdout > freq <- table(c(a,b))
+stdout 
+stdout > c(siti=length(freq),
+stdout +   relazioni=sum(freq),
+stdout +   multipli=sum(freq>1))
+stdout      siti relazioni  multipli 
+stdout        64        88        24 
+stdout 
+stdout SLIDE 039
+stdout 
+stdout > dist0 <- sqrt((d$x_m-750)^2+
+stdout +               (d$y_m-750)^2)
+stdout 
+stdout > raggi <- c(300,600,900)
+stdout 
+stdout > sapply(raggi,function(r)
+stdout +  sum(dist0<=r))
+stdout [1]  5 21 37
+stdout 
+stdout SLIDE 040
+stdout 
+stdout > data.frame(raggio=raggi,
+stdout +  n=sapply(raggi,function(r)
+stdout +    sum(dist0<=r)),
+stdout +  media=sapply(raggi,function(r)
+stdout +    mean(z[dist0<=r])))
+stdout   raggio  n    media
+stdout 1    300  5 16.78578
+stdout 2    600 21 16.44862
+stdout 3    900 37 16.53486
+stdout 
+stdout SLIDE 045
+stdout 
+stdout > A <- 1*(D>0 & D<=260)
+stdout 
+stdout > stopifnot(all(diag(A)==0),
+stdout +           identical(A,t(A)))
+stdout 
+stdout > c(archi=sum(A)/2,S0=sum(A))
+stdout archi    S0 
+stdout   112   224 
+stdout 
+stdout SLIDE 046
+stdout 
+stdout > D_nn <- D
+stdout 
+stdout > diag(D_nn) <- Inf
+stdout 
+stdout > j_nn <- apply(D_nn,1,which.min)
+stdout 
+stdout > stopifnot(all(j_nn!=seq_len(n)))
+stdout 
+stdout > head(d$id[j_nn])
+stdout [1] "S02" "S01" "S02" "S03" "S04" "S05"
+stdout 
+stdout SLIDE 047
+stdout 
+stdout > grado <- rowSums(A)
+stdout 
+stdout > table(grado)
+stdout grado
+stdout  2  3  4 
+stdout  4 24 36 
+stdout 
+stdout > stopifnot(sum(grado)==224,
+stdout +           sum(A)/2==112)
+stdout 
+stdout SLIDE 048
+stdout 
+stdout > stopifnot(all(grado>0))
+stdout 
+stdout > W <- A/grado
+stdout 
+stdout > stopifnot(max(abs(rowSums(W)-1))
+stdout +           <1e-12)
+stdout 
+stdout SLIDE 049
+stdout 
+stdout > c(simmetrica_A=isSymmetric(A),
+stdout +   simmetrica_W=isSymmetric(W))
+stdout simmetrica_A simmetrica_W 
+stdout         TRUE        FALSE 
+stdout 
+stdout > range(rowSums(W))
+stdout [1] 1 1
+stdout 
+stdout SLIDE 050
+stdout 
+stdout > A_200 <- 1*(D>0 & D<=200)
+stdout 
+stdout > isolati <- rowSums(A_200)==0
+stdout 
+stdout > stopifnot(sum(isolati)==64L)
+stdout 
+stdout > sum(isolati)
+stdout [1] 64
+stdout 
+stdout SLIDE 051
+stdout 
+stdout > lag_z <- drop(W%*%z)
+stdout 
+stdout > stopifnot(max(abs(W%*%rep(1,n)-1))
+stdout +           <1e-12)
+stdout 
+stdout > head(data.frame(id=d$id,z,lag_z))
+stdout      id        z    lag_z
+stdout S01 S01 12.66535 11.58815
+stdout S02 S02 10.88355 13.58734
+stdout S03 S03 14.28246 14.14232
+stdout S04 S04 15.04282 15.22889
+stdout S05 S05 16.11519 16.15276
+stdout S06 S06 16.57977 16.80885
+stdout 
+stdout SLIDE 052
+stdout 
+stdout > ii <- rev(seq_len(n))
+stdout 
+stdout > stopifnot(isTRUE(all.equal(
+stdout +  drop(W[ii,ii]%*%z[ii]),
+stdout +  lag_z[ii],check.attributes=FALSE)))
+stdout 
+stdout SLIDE 058
+stdout 
+stdout > v <- z-mean(z)
+stdout 
+stdout > I_A <- n/sum(A)*sum(A*outer(v,v))/
+stdout +        sum(v^2)
+stdout 
+stdout > I_W <- drop(t(v)%*%W%*%v)/sum(v^2)
+stdout 
+stdout > c(binaria=I_A,riga=I_W)
+stdout   binaria      riga 
+stdout 0.7195277 0.7975650 
+stdout 
+stdout SLIDE 060
+stdout 
+stdout > lag_v <- drop(W%*%v)
+stdout 
+stdout > beta_scatter <- unname(coef(
+stdout +  lm(lag_v~v))[2])
+stdout 
+stdout > stopifnot(abs(beta_scatter-I_W)
+stdout +           <1e-12)
+stdout 
+stdout SLIDE 062
+stdout 
+stdout > stopifnot(abs(moran_I(100+2*z,A)-
+stdout +               moran_I(z,A))<1e-12)
+stdout 
+stdout > stopifnot(abs(moran_I(-z,A)-
+stdout +               moran_I(z,A))<1e-12)
+stdout 
+stdout SLIDE 065
+stdout 
+stdout > u <- casuali$u
+stdout 
+stdout > I_null <- sapply(1:100,function(b) {
+stdout +  ii <- ((b-1)*n+1):(b*n)
+stdout +  moran_I(z[order(u[ii])],A)
+stdout + })
+stdout 
+stdout > p_MC <- (1+sum(I_null>=I_A))/101
+stdout 
+stdout SLIDE 066
+stdout 
+stdout > set.seed(20261109)
+stdout 
+stdout > I_999 <- replicate(999,
+stdout +  moran_I(sample(z),A))
+stdout 
+stdout > c(p_100=p_MC,
+stdout +  p_999=(1+sum(I_999>=I_A))/1000)
+stdout      p_100      p_999 
+stdout 0.00990099 0.00100000 
+stdout 
+stdout SLIDE 068
+stdout 
+stdout > trend <- lm(concentrazione~x_m+y_m,
+stdout +             data=d)
+stdout 
+stdout > e_trend <- residuals(trend)
+stdout 
+stdout > c(dati=moran_I(z,A),
+stdout +   residui=moran_I(e_trend,A))
+stdout        dati     residui 
+stdout  0.71952773 -0.03957848 
+stdout 
+stdout SLIDE 072
+stdout 
+stdout > G <- 0.5*outer(z,z,"-")^2
+stdout 
+stdout > upper <- upper.tri(D)
+stdout 
+stdout > h_pair <- D[upper]
+stdout 
+stdout > g_pair <- G[upper]
+stdout 
+stdout > stopifnot(length(h_pair)==2016L)
+stdout 
+stdout SLIDE 073
+stdout 
+stdout > classe <- cut(h_pair,
+stdout +  breaks=c(0,300,600,1000,2500))
+stdout 
+stdout > aggregate(cbind(h=h_pair,gamma=g_pair),
+stdout +           list(classe=classe),mean)
+stdout            classe         h     gamma
+stdout 1         (0,300]  250.0000  1.793521
+stdout 2       (300,600]  487.7433  2.905847
+stdout 3     (600,1e+03]  827.2226  5.230196
+stdout 4 (1e+03,2.5e+03] 1425.4767 13.602161
+stdout 
+stdout SLIDE 083
+stdout 
+stdout > strada <- d$y_m<=250
+stdout 
+stdout > c(n_strada=sum(strada),
+stdout +  media_strada=mean(z[strada]),
+stdout +  media_griglia=mean(z),
+stdout +  media_altrove=mean(z[!strada]))
+stdout      n_strada  media_strada media_griglia media_altrove 
+stdout      16.00000      15.86751      17.19033      17.63128 
+stdout 
+stdout SLIDE 086
+stdout 
+stdout > blocco <- interaction(d$x_m>=1000,
+stdout +                       d$y_m>=1000)
+stdout 
+stdout > nb <- table(blocco)
+stdout 
+stdout > mb <- tapply(z,blocco,mean)
+stdout 
+stdout > c(siti=mean(z),blocchi=mean(mb))
+stdout     siti  blocchi 
+stdout 17.19033 17.19033 
+stdout 
+stdout SLIDE 087
+stdout 
+stdout > n_b <- c(2,8)
+stdout 
+stdout > media_b <- c(10,20)
+stdout 
+stdout > c(siti=weighted.mean(media_b,n_b),
+stdout +   blocchi=mean(media_b))
+stdout    siti blocchi 
+stdout      18      15 
+stdout 
+stdout SLIDE 093
+stdout 
+stdout > w0 <- idw_weights(xy,c(900,900),p=2)
+stdout 
+stdout > stopifnot(all(w0>=0),
+stdout +           abs(sum(w0)-1)<1e-12)
+stdout 
+stdout > c(stima=sum(w0*z),min=min(z),max=max(z))
+stdout    stima      min      max 
+stdout 17.62562 10.88355 23.77489 
+stdout 
+stdout SLIDE 094
+stdout 
+stdout > sapply(1:3,function(p)
+stdout +  idw_pred(xy,z,
+stdout +           matrix(c(900,900),nrow=1),
+stdout +           p=p))
+stdout [1] 17.37215 17.62562 17.86966
+stdout 
+stdout SLIDE 096
+stdout 
+stdout > train <- d[d$x_m<1250,]
+stdout 
+stdout > test <- d[d$x_m>=1250,]
+stdout 
+stdout > stopifnot(nrow(train)==40L,
+stdout +           nrow(test)==24L,
+stdout +  !any(train$id %in% test$id))
+stdout 
+stdout SLIDE 098
+stdout 
+stdout > pred <- idw_pred(xy[train_idx,],
+stdout +  z[train_idx],xy[test_idx,],p=2)
+stdout 
+stdout > e <- z[test_idx]-pred
+stdout 
+stdout > c(MAE=mean(abs(e)),
+stdout +  RMSE=sqrt(mean(e^2)),bias=mean(e))
+stdout      MAE     RMSE     bias 
+stdout 3.257099 3.807826 3.175309 
+stdout 
+stdout SLIDE 101
+stdout 
+stdout > s <- c(0,500,1000); s0 <- 250
+stdout 
+stdout > C <- 4*exp(-(outer(s,s,"-")/800)^2)
+stdout 
+stdout > c0 <- 4*exp(-((s-s0)/800)^2)
+stdout 
+stdout > K <- rbind(cbind(C,1),c(1,1,1,0))
+stdout 
+stdout > sol <- solve(K,c(c0,1))
+stdout 
+stdout > stopifnot(abs(sum(sol[1:3])-1)<1e-12)
+stdout 
+stdout SLIDE 102
+stdout 
+stdout > lambda <- sol[1:3]
+stdout 
+stdout > z_toy <- c(10,15,12)
+stdout 
+stdout > c(lambda,previsione=sum(lambda*z_toy))
+stdout                                  previsione 
+stdout  0.4651253  0.6918785 -0.1570038 13.1453850 
+stdout 
+stdout > stopifnot(any(lambda<0))
+stdout 
+stdout SLIDE 103
+stdout 
+stdout > varK <- 4-2*sum(lambda*c0)+
+stdout +  drop(t(lambda)%*%C%*%lambda)
+stdout 
+stdout > stopifnot(abs(varK-
+stdout +  (4-sum(lambda*c0)-sol[4]))<1e-10,
+stdout +  varK>=0)
+stdout 
+stdout > varK
+stdout [1] 0.03696075
+stdout 
+stdout SLIDE 107
+stdout 
+stdout > file_geo <- "Risultati/siti.geojson"
+stdout 
+stdout > sf::st_write(geo,file_geo,
+stdout +  driver="GeoJSON",delete_dsn=TRUE,
+stdout +  layer_options=c("RFC7946=YES",
+stdout +  "COORDINATE_PRECISION=10"),quiet=TRUE)
+stdout 
+stdout > geo_read <- sf::st_read(file_geo,
+stdout +                         quiet=TRUE)
+stdout 
+stdout SLIDE 108
+stdout 
+stdout > j <- match(d$id,geo_read$id)
+stdout 
+stdout > stopifnot(!anyNA(j),
+stdout +  !anyDuplicated(geo_read$id),
+stdout +  nrow(geo_read)==nrow(d))
+stdout 
+stdout > stopifnot(max(abs(
+stdout +  geo_read$concentrazione[j]-z))<1e-8)
+stdout 
+stdout > sf::sf_extSoftVersion()
+stdout           GEOS           GDAL         proj.4 GDAL_with_GEOS     USE_PROJ_H           PROJ 
+stdout       "3.11.2"        "3.8.1"        "9.2.0"         "true"         "true"        "9.2.0" 
+stdout Tutti i frammenti delle slide sono stati eseguiti.

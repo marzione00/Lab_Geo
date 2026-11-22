@@ -1,0 +1,142 @@
+---
+title: "K-means: centroidi e variabilit\u00e0 interna"
+subtitle: "M08_N11 \u00b7 Polychroma"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Quale quantità minimizza k-means e come si verifica il risultato con un calcolo diretto?
+
+## Obiettivi
+
+- Scrivere l’obiettivo di k-means.
+- Controllare centroidi e WSS.
+- Proiettare i centri nello stesso spazio grafico dei campioni.
+
+**Prima di iniziare.** Lettura di un CSV, vettori, matrici, indicizzazione e funzioni di base in R.
+
+**Dati e unità.** Novanta rocce sintetiche del corso. SiO2, CaO, MgO e FeO sono percentuali in massa; densita è espressa in g/cm³ e grana_mm in millimetri. colore e fossili sono indici numerici convenzionali del simulatore, non misure mineralogiche o conteggi reali. La colonna litologia_generatrice descrive il gruppo usato nella simulazione e viene esclusa dalle stime.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Polychroma oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M08_Polychroma` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M08_Polychroma/Risultati/M08_N11/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M08_Polychroma"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M08_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M08_Polychroma o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M08_N11")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(8011)
+```
+
+## 1. Tre centroidi nella matrice standardizzata
+
+Per un numero fissato di gruppi, k-means cerca una partizione con piccola somma degli scarti quadratici interni: $W=\sum_g\sum_{i\in C_g}\|z_i-\mu_g\|^2$. Il risultato dipende anche dagli avvii; qui confrontiamo 50 avvii con lo stesso seme.
+
+```{r passo_01}
+# Seleziona le misure per nome: ID ed etichetta non entrano nella matrice.
+r <- carica_dati("rocce_simulate.csv")
+v <- c("SiO2", "CaO", "MgO", "FeO", "densita", "grana_mm", "colore", "fossili")
+X <- as.matrix(r[v])
+stopifnot(nrow(X)==90L, ncol(X)==8L, !anyDuplicated(r$id),
+          all(is.finite(X)), all(apply(X,2,sd)>0))
+Z <- scale(X)
+D <- dist(Z)
+# Gli avvii multipli confrontano soluzioni locali sullo stesso spazio.
+set.seed(816)
+km <- kmeans(Z, centers=3, nstart=50, iter.max=100)
+km$size
+round(km$centers,3)
+c(WSS=km$tot.withinss,TSS=km$totss,quota_interna=km$tot.withinss/km$totss)
+```
+
+**Lettura del risultato.** I tre gruppi hanno 30 casi ciascuno e WSS circa 129,498 su una variabilità totale di 712. Le coordinate dei centroidi sono espresse in deviazioni standard, non nelle unità originarie.
+
+## 2. Verificare centroidi e obiettivo
+
+Il centro di ogni gruppo è la media delle sue righe. Associamo a ciascun campione il proprio centro e sommiamo le distanze quadratiche; questa verifica rende esplicito l’obiettivo dell’algoritmo.
+
+```{r passo_02}
+centri_manual <- do.call(rbind,lapply(1:3,function(g) colMeans(Z[km$cluster==g,,drop=FALSE])))
+scarti <- Z-km$centers[km$cluster,,drop=FALSE]
+distanza2 <- rowSums(scarti^2)
+c(errore_centri=max(abs(centri_manual-km$centers)),
+  WSS_diretta=sum(distanza2),WSS_R=km$tot.withinss)
+stopifnot(abs(sum(distanza2)-km$tot.withinss)<1e-9)
+```
+
+**Lettura del risultato.** Il calcolo diretto riproduce la WSS. Un campione lontano dal centro contribuisce molto perché lo scarto viene elevato al quadrato; per questo k-means è sensibile ai valori estremi.
+
+## 3. Centroidi nel piano di visualizzazione
+
+Proiettiamo nello stesso piano sia i campioni sia i centroidi, usando la rotazione della PCA. Il raggruppamento è stato calcolato nello spazio completo delle otto misure.
+
+```{r passo_03}
+# La PCA conserva medie, scale e rotazione per eventuali nuovi campioni.
+pc <- prcomp(X, center=TRUE, scale.=TRUE)
+lambda <- pc$sdev^2
+quota <- lambda/sum(lambda)
+colori <- c("#087C74", "#C57E42", "#7363AA", "#1D7890", "#A17B19", "#657180", "#B55353")
+centri_pc <- km$centers %*% pc$rotation
+plot(pc$x[,1:2],col=colori[km$cluster],pch=19,asp=1,
+ xlab="PC1",ylab="PC2")
+points(centri_pc[,1:2],pch=4,cex=2.5,lwd=3)
+text(centri_pc[,1:2],labels=paste("Centro",1:3),pos=3,cex=.8)
+```
+
+**Lettura del risultato.** Le croci indicano le medie proiettate. Le distanze visibili in due componenti possono essere inferiori a quelle usate realmente da k-means, perché il piano omette le componenti successive.
+
+## Variante svolta
+
+Confrontare un solo avvio con i 50 avvii della soluzione di riferimento.
+
+```{r variante}
+set.seed(818)
+uno <- kmeans(Z,3,nstart=1,iter.max=100)
+c(WSS_un_avvio=uno$tot.withinss,WSS_50_avvii=km$tot.withinss,
+  ARI=indice_rand_corretto(uno$cluster,km$cluster))
+```
+
+Un avvio può coincidere con la soluzione migliore o fermarsi in un altro minimo locale. L’esperimento con molti semi del notebook 17 quantifica questa variabilità; un singolo confronto non basta.
+
+## Errore da riconoscere
+
+Interpretare il numero del cluster come un ordine o come una classe geologica già identificata. I numeri sono etichette arbitrarie.
+
+## Risposta alla domanda
+
+Centroidi e WSS definiscono una soluzione geometrica nella scala scelta. Le unità e l’interpretazione geologica verranno recuperate dopo la stima.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M08_N11` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M08/M08_N11.R).

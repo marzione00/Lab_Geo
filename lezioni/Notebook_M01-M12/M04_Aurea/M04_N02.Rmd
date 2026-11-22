@@ -1,0 +1,132 @@
+---
+title: "Eventi complementari e soglie"
+subtitle: "M04_N02 \u00b7 Aurea"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come tradurre 'almeno tre', 'più di tre' e 'al massimo tre' in eventi numerici senza errori sui bordi?
+
+## Obiettivi
+
+- Scrivere eventi tramite condizioni logiche.
+- Usare il complemento corretto per probabilità di soglia.
+
+**Prima di iniziare.** Operatori >=, >, <=, == e significato di probabilità.
+
+**Dati e unità.** Conteggio simulato secondo una binomiale con cinque prove indipendenti e probabilità di successo 0,40; tutti gli esiti possibili sono gli interi da zero a cinque.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M04_N02/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M04_N02")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(4002)
+```
+
+## 1. Elencare gli esiti
+
+Per una variabile discreta la soglia può avere probabilità positiva. Elenchiamo tutti i conteggi e rendiamo visibili le quattro condizioni: il linguaggio della consegna deve corrispondere esattamente all'operatore utilizzato.
+
+```{r passo_01}
+n <- 5
+p <- .4
+k <- 0:n
+# Gli operatori traducono esattamente inclusione ed esclusione del valore tre.
+eventi <- data.frame(k = k, almeno_tre = k >= 3,
+                     piu_di_tre = k > 3, al_massimo_tre = k <= 3,
+                     esattamente_tre = k == 3)
+print(eventi)
+probabilita <- dbinom(k, size = n, prob = p)
+print(data.frame(k = k, probabilita = probabilita))
+```
+
+**Lettura del risultato.** Almeno tre include il valore tre, più di tre lo esclude. La differenza fra queste due probabilità è proprio la probabilità di osservare tre successi, non un dettaglio trascurabile di notazione.
+
+## 2. Sommare gli esiti compatibili
+
+Sommiamo le probabilità delle righe che soddisfano ciascuna condizione. Gli eventi sono formati da esiti disgiunti, quindi la probabilità dell'unione si ottiene sommando senza correzioni per sovrapposizioni.
+
+```{r passo_02}
+# La selezione logica sceglie gli esiti compatibili prima di sommarne le probabilita.
+almeno3 <- sum(probabilita[k >= 3])
+oltre3 <- sum(probabilita[k > 3])
+massimo3 <- sum(probabilita[k <= 3])
+esatto3 <- sum(probabilita[k == 3])
+print(c(almeno3 = almeno3, oltre3 = oltre3, massimo3 = massimo3, esatto3 = esatto3))
+stopifnot(abs(almeno3 - oltre3 - esatto3) < 1e-12)
+stopifnot(abs(sum(probabilita) - 1) < 1e-12)
+```
+
+**Lettura del risultato.** L'elenco completo rende verificabile la traduzione. Per conteggi con molti esiti possibili la somma esplicita è meno comoda, ma resta un controllo utile su formule cumulative e complementi.
+
+## 3. Usare il complemento giusto
+
+Il complemento di almeno tre è al massimo due. pbinom(q) restituisce la probabilità di un conteggio minore o uguale a q; lower.tail = FALSE restituisce invece la probabilità di superarlo strettamente.
+
+```{r passo_03}
+tramite_complemento <- 1 - pbinom(2, size = n, prob = p)
+# La coda strettamente sopra due comprende tre, quattro e cinque.
+coda_diretta <- pbinom(2, size = n, prob = p, lower.tail = FALSE)
+print(c(somma = almeno3, complemento = tramite_complemento, coda = coda_diretta))
+stopifnot(abs(almeno3 - coda_diretta) < 1e-12)
+stopifnot(abs(massimo3 + oltre3 - 1) < 1e-12)
+barplot(probabilita, names.arg = k, col = ifelse(k >= 3, "#C57E42", "#1D7890"),
+        xlab = "Successi (k)", ylab = "Probabilita", main = "Evento: almeno tre successi")
+```
+
+**Lettura del risultato.** La somma delle due regioni complementari è uno. Per code estremamente piccole conviene chiedere direttamente lower.tail = FALSE, evitando la perdita di precisione che può derivare da uno meno un numero quasi uguale a uno.
+
+## Variante svolta
+
+Calcolare la probabilità di un conteggio compreso fra due e quattro, estremi inclusi.
+
+```{r variante}
+intervallo <- sum(probabilita[k >= 2 & k <= 4])
+differenza_cumulative <- pbinom(4, n, p) - pbinom(1, n, p)
+fuori <- sum(probabilita[k < 2 | k > 4])
+print(c(intervallo = intervallo, cumulative = differenza_cumulative, complemento = 1 - fuori))
+stopifnot(abs(intervallo - differenza_cumulative) < 1e-12)
+stopifnot(abs(intervallo + fuori - 1) < 1e-12)
+```
+
+Per includere il bordo inferiore due bisogna sottrarre la cumulativa fino a uno. Sottrarre la cumulativa fino a due eliminerebbe proprio la probabilità del bordo che la consegna vuole includere.
+
+## Errore da riconoscere
+
+Non scrivere 1 - pbinom(3, ...) per 'almeno tre': quel comando calcola più di tre. Controllare il caso di uguaglianza prima di usare la scorciatoia del complemento.
+
+## Risposta alla domanda
+
+Le soglie discrete richiedono attenzione ai bordi. Una tabella degli esiti chiarisce gli eventi; somme, cumulative e complementi devono produrre lo stesso risultato quando la traduzione logica è coerente.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M04_N02` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M04/M04_N02.R).

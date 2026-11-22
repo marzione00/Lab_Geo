@@ -20,3 +20,7 @@ Le incertezze dei diametri sono conservate nel CSV quando disponibili, ma il con
 Una correlazione interna al catalogo può riflettere selezione osservativa e metodi di stima condivisi.
 
 Il mondo dell’atlante è immaginario; il dataset contiene osservazioni reali documentate. Il campione non si aggiorna automaticamente.
+
+Codice: PolyForm Noncommercial 1.0.0, https://polyformproject.org/licenses/noncommercial/1.0.0
+Required Notice: Copyright 2026 Marzio De Corato (https://github.com/marzione00/Lab_Geo)
+Dati: condizioni del fornitore in provenance.json.

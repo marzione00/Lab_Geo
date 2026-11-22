@@ -1,0 +1,5 @@
+set.seed(1601)
+km4 <- kmeans(Z, 4, nstart = 50)
+table(k3 = km$cluster, k4 = km4$cluster)
+mean(silhouette_base(km4$cluster, dist(Z)))
+aggregate(d[v], list(gruppo = km4$cluster), mean)

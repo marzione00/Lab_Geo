@@ -1,0 +1,134 @@
+---
+title: "Anomalie e periodo di riferimento"
+subtitle: "M09_N08 \u00b7 Borealis"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Rispetto a quale temperatura attesa definiamo un’anomalia mensile?
+
+## Obiettivi
+
+- Calcolare una climatologia mensile didattica.
+- Allineare riferimenti e osservazioni.
+- Documentare l’effetto della base.
+
+**Prima di iniziare.** Lettura di CSV, vettori, indicizzazione e funzioni di base in R. I blocchi vanno eseguiti nell’ordine all’interno del singolo notebook.
+
+**Dati e unità.** Temperatura sintetica del corso, in gradi Celsius, dal gennaio 2000 al dicembre 2019. Trend, stagione e residuo sono componenti note del generatore. La base delle anomalie deve essere dichiarata in ogni calcolo.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Borealis oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M09_Borealis` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M09_Borealis/Risultati/M09_N08/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M09_Borealis"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M09_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M09_Borealis o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M09_N08")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(9008)
+```
+
+## 1. Costruire dodici riferimenti
+
+Per ogni mese del calendario calcoliamo la media nel periodo 2000–2004. L’anomalia è $a_t=x_t-c_{m(t)}$. Questa base di cinque anni è una scelta didattica dichiarata e non una normale climatologica ufficiale.
+
+```{r passo_01}
+t <- carica_dati("temperatura_simulata.csv")
+t$data <- as.Date(t$data)
+t$mese <- as.integer(format(t$data, "%m"))
+u <- t$temperatura_C
+base <- t$data>=as.Date("2000-01-01") & t$data<=as.Date("2004-12-01")
+clima <- tapply(u[base],t$mese[base],mean)
+data.frame(mese=1:12,riferimento_C=as.numeric(clima),
+ valori_per_mese=as.integer(table(t$mese[base])))
+```
+
+**Lettura del risultato.** Ogni riferimento usa cinque valori simulati, uno per anno. Le dodici medie conservano il profilo stagionale del periodo scelto.
+
+## 2. Sottrarre il mese corrispondente
+
+Il riferimento deve corrispondere al mese dell’osservazione. L’indicizzazione mediante il numero del mese evita di sottrarre la media di gennaio a una misura di luglio.
+
+```{r passo_02}
+t$riferimento_C <- as.numeric(clima[as.character(t$mese)])
+t$anomalia_C <- u-t$riferimento_C
+stopifnot(!anyNA(t$anomalia_C))
+plot(t$data,t$anomalia_C,type="l",col="#087C74",
+ xlab="Data",ylab="Anomalia (gradi C)")
+abline(h=0,lty=3)
+tapply(t$anomalia_C[base],t$mese[base],mean)
+```
+
+**Lettura del risultato.** Le medie mensili delle anomalie nella base sono nulle per costruzione, entro l’arrotondamento. Fuori dalla base possono emergere il trend simulato e le fluttuazioni residue.
+
+## 3. Conservare dato, riferimento e scarto
+
+Salvare soltanto l’anomalia rende più difficile ricostruirne il significato. La tabella esportata mantiene il valore originario, il riferimento e la base usata.
+
+```{r passo_03}
+uscita <- data.frame(data=t$data,temperatura_C=u,
+ riferimento_C=t$riferimento_C,anomalia_C=t$anomalia_C,
+ base="2000-2004: cinque anni simulati")
+stopifnot(max(abs(uscita$temperatura_C-uscita$riferimento_C-uscita$anomalia_C))<1e-12)
+write.csv(uscita,percorso_risultati("anomalie_con_riferimento.csv"),row.names=FALSE)
+head(uscita,4)
+```
+
+**Lettura del risultato.** Dato e riferimento permettono di verificare l’anomalia e di confrontarla con una definizione alternativa. Zero significa coincidenza con il riferimento mensile scelto.
+
+## Variante svolta
+
+Ripetere con la base 2000–2009 dei primi 120 mesi, usata nel laboratorio originale.
+
+```{r variante}
+base10 <- t$data<as.Date("2010-01-01")
+clima10 <- tapply(u[base10],t$mese[base10],mean)
+anomalia10 <- u-as.numeric(clima10[as.character(t$mese)])
+data.frame(mese=1:12,base5=as.numeric(clima),base10=as.numeric(clima10),
+ differenza_riferimenti=as.numeric(clima10-clima))
+```
+
+Cambiare base sposta le anomalie di una quantità che può dipendere dal mese. I valori originari rimangono invariati. La variante rende esplicita la differenza rispetto alla base decennale del laboratorio originale.
+
+## Errore da riconoscere
+
+Confrontare anomalie calcolate rispetto a basi diverse senza riportare i riferimenti, oppure interpretare anomalia zero come assenza di temperatura.
+
+## Risposta alla domanda
+
+Un’anomalia è uno scarto rispetto a un riferimento esplicito. La base e il mese di calendario fanno parte della definizione del valore.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M09_N08` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M09/M09_N08.R).

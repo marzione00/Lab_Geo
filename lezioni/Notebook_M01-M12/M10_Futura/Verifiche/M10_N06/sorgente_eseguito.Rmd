@@ -1,0 +1,134 @@
+---
+title: "Previsione e intervallo condizionale"
+subtitle: "M10_N06 · Futura"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Quale incertezza descrive la fascia attorno alla previsione?
+
+## Obiettivi
+
+- Calcolare previsione e errore standard per 36 passi.
+- Costruire intervalli gaussiani puntuali.
+- Dichiarare quale incertezza resta esclusa.
+
+**Prima di iniziare.** Sono richiesti vettori, tabelle e funzioni R di base. I blocchi vanno eseguiti in ordine. Il notebook è autonomo rispetto agli altri.
+
+**Dati e unità.** CO₂ storica: 204 mesi da gennaio 1985 a dicembre 2001, concentrazione in ppm. Le medie derivano dalle osservazioni settimanali attribuite al mese della data, secondo la convenzione del corso. Sono dati storici, distinti da una serie mensile ufficiale e da una misura attuale. Il protocollo usa 168 mesi per l’adattamento (1985–1998) e 36 per il test (1999–2001).
+
+## Preparazione
+
+Aprire il progetto autonomo di Futura o quello generale del corso. I calcoli usano R base e stats. Gli output del notebook vanno in `Risultati/M10_N06/`; i CSV originali restano invariati.
+
+```{r preparazione}
+# Trova la cartella M10 dal progetto autonomo o dal progetto generale.
+.gs_cerca <- normalizePath(getwd(),winslash="/",mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca,
+    file.path(.gs_cerca,"M10_Futura"),
+    file.path(.gs_cerca,"03_Notebook_svolti","M10_Futura"),
+    file.path(.gs_cerca,"M10","03_Notebook_svolti","M10_Futura"))
+  .gs_ok <- file.exists(file.path(.gs_candidati,"M10_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati,"R","funzioni_notebook.R"))
+  if(any(.gs_ok)) { .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]; break }
+  .gs_padre <- dirname(.gs_cerca)
+  if(.gs_padre==.gs_cerca) stop("Aprire il progetto M10_Futura o quello generale dei notebook.")
+  .gs_cerca <- .gs_padre
+}
+source(file.path(.gs_modulo,"R","funzioni_notebook.R"),local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo,"M10_N06")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88,digits=6)
+if(requireNamespace("knitr",quietly=TRUE)) {
+  knitr::opts_chunk$set(echo=TRUE,error=FALSE,warning=TRUE,message=TRUE,
+    fig.width=8,fig.height=5,dpi=150,fig.align="center")
+}
+set.seed(10006)
+```
+
+## 1. Il modello produce media ed errore standard
+
+La specifica resta SARIMA$(0,1,1)(0,1,1)_{12}$ stimata sui livelli del solo train.
+
+```{r passo_01}
+c2 <- prepara_co2(carica_dati("co2_1985_2001.csv"))
+train <- c2$train; test <- c2$test; h <- c2$h
+fit <- stima_sarima(train)
+ fc <- predict(fit,n.ahead=h)
+ previsione <- data.frame(data=c2$date_test,h=1:h,
+   media=as.numeric(fc$pred),se=as.numeric(fc$se))
+ head(previsione,6)
+ stopifnot(all(is.finite(previsione$se)),all(previsione$se>=0))
+```
+
+**Lettura del risultato.** L’errore standard dipende dall’orizzonte e dal modello. L’implementazione predict.Arima non include l’incertezza della stima dei parametri.
+
+## 2. Il livello nominale entra nel quantile
+
+Usiamo $\hat y_{T+h}\pm z_{0,975}\,\widehat{se}_h$. La lettura gaussiana è condizionata alla specifica stimata e alle sue ipotesi.
+
+```{r passo_02}
+previsione$inferiore95 <- previsione$media-qnorm(.975)*previsione$se
+previsione$superiore95 <- previsione$media+qnorm(.975)*previsione$se
+previsione$ampiezza95 <- previsione$superiore95-previsione$inferiore95
+previsione[c(1,12,24,36),]
+write.csv(previsione,percorso_risultati("previsione_condizionale.csv"),row.names=FALSE)
+```
+
+**Lettura del risultato.** La fascia è puntuale: 95% nominale per ciascun orizzonte sotto il modello. Non equivale a 95% di probabilità che l’intera traiettoria resti dentro tutte le bande.
+
+## 3. Il disegno mostra solo ciò che si prevede
+
+Il grafico conserva l’origine e i livelli del train. I valori osservati del test non sono necessari per costruire la previsione.
+
+```{r passo_03}
+stile_grafico()
+plot(c2$dati$data[1:168],as.numeric(train),type="l",col="grey45",
+  xlim=range(c2$dati$data),ylim=range(train,previsione$inferiore95,previsione$superiore95),
+  xlab="Data",ylab="CO2 (ppm)",main="Previsione a origine fissa")
+polygon(c(previsione$data,rev(previsione$data)),
+  c(previsione$inferiore95,rev(previsione$superiore95)),
+  col=adjustcolor(palette_geo[1],.18),border=NA)
+lines(previsione$data,previsione$media,col=palette_geo[1],lwd=2)
+abline(v=as.numeric(as.Date("1999-01-01")),lty=2)
+```
+
+**Lettura del risultato.** La previsione riguarda l’archivio storico e non la CO₂ attuale. Un cambiamento strutturale futuro non è automaticamente rappresentato da queste bande.
+
+## Variante svolta
+
+**Dal 95% all’80%.** Calcolare l’ampiezza nominale all’80% alle stesse date.
+
+```{r variante}
+previsione$ampiezza80 <- 2*qnorm(.9)*previsione$se
+previsione[c(1,12,36),c("h","ampiezza80","ampiezza95")]
+stopifnot(all(previsione$ampiezza80<=previsione$ampiezza95))
+```
+
+Un livello nominale più basso restringe la fascia senza migliorare il modello. Copertura e ampiezza vanno valutate congiuntamente.
+
+## Errore da riconoscere
+
+Presentare l’intervallo come garanzia universale, o interpretarlo come intervallo di confidenza di una costante senza distinguere il valore futuro.
+
+## Risposta alla domanda
+
+La fascia descrive l’incertezza predittiva condizionale del modello gaussiano stimato. Non comprende automaticamente stima dei parametri, scelta del modello, cambiamenti di regime o copertura simultanea della traiettoria.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M10_N06` di [GeoStat Lab M10](https://marzione00.github.io/Lab_Geo/#indice). Il [codice originale del laboratorio](https://github.com/marzione00/Lab_Geo/blob/649f7cc577b96bd1044d81e78a2f530813e4f96b/materiali/laboratori/M10/M10_N06.R) è conservato anche in `R/Originali_corso`. Gli ampliamenti e le varianti sono identificati nella mappa allegata.
+
+Documentazione dei metodi: [R stats, arima](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/arima.html), [predict.Arima](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/predict.arima.html), [Box.test](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/box.test.html) e [p.adjust](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/p.adjust.html).

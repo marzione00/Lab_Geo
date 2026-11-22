@@ -1,0 +1,131 @@
+---
+title: "Media di individui o media di gruppi?"
+subtitle: "M03_N09 \u00b7 Iride"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Quando la media delle medie coincide con la media di tutti gli individui, e quando servono i pesi?
+
+## Obiettivi
+
+- Distinguere un individuo scelto a caso da un gruppo scelto a caso.
+- Ricostruire la media complessiva dai riassunti di gruppi disgiunti.
+
+**Prima di iniziare.** Media, somme e vettori della stessa lunghezza.
+
+**Dati e unità.** Esempio sintetico con due gruppi di densità media 2,5 e 2,8 g/cm³ e numerosità 10 e 30. Il secondo controllo usa i fossili simulati.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M03_N09/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M03_N09")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(3009)
+```
+
+## 1. Dichiarare l'unità del confronto
+
+Se ogni individuo deve pesare allo stesso modo, un gruppo di trenta individui contribuisce tre volte quanto un gruppo di dieci. Se vogliamo descrivere il centro delle medie di gruppo, attribuiamo invece uguale peso ai gruppi.
+
+```{r passo_01}
+medie <- c(A = 2.5, B = 2.8)
+n <- c(A = 10, B = 30)
+stopifnot(identical(names(medie), names(n)), all(n > 0))
+media_gruppi <- mean(medie)
+# n * medie ricostruisce la somma delle misure di ciascun gruppo.
+media_individui <- sum(n * medie) / sum(n)
+print(c(media_dei_gruppi = media_gruppi, media_degli_individui = media_individui))
+print(n / sum(n))
+```
+
+**Lettura del risultato.** Il risultato ponderato è più vicino a 2,8 perché il secondo gruppo contiene più individui. La media non ponderata risponde a una domanda legittima, purché l'unità di interesse sia il gruppo e sia dichiarata.
+
+## 2. Verificare con individui costruiti
+
+Costruiamo dati individuali con le medie e le numerosità dichiarate. Introduciamo scarti simmetrici, così la verifica non dipende da osservazioni tutte identiche e mostra che conta la somma interna di ciascun gruppo.
+
+```{r passo_02}
+# Scarti simmetrici producono variabilita senza cambiare la media assegnata.
+a <- medie["A"] + seq(-.09, .09, length.out = n["A"])
+b <- medie["B"] + seq(-.12, .12, length.out = n["B"])
+tutti <- c(a, b)
+print(c(media_A = mean(a), media_B = mean(b), media_tutti = mean(tutti)))
+stopifnot(abs(mean(tutti) - media_individui) < 1e-12)
+stopifnot(abs(weighted.mean(medie, n) - media_individui) < 1e-12)
+print(c(somma_individui = sum(tutti), somma_ricostruita = sum(n * medie)))
+```
+
+**Lettura del risultato.** La formula funziona perché ogni media moltiplicata per la sua numerosità ricostruisce una somma di misure. La stessa scorciatoia non permette di ricostruire una mediana complessiva a partire dalle sole mediane di gruppo.
+
+## 3. Controllare il caso bilanciato
+
+Nel file dei fossili i due morfotipi hanno uguale numerosità. Le due medie coincidono in questo caso speciale. Verifichiamo il bilanciamento prima di dedurre che i pesi siano superflui.
+
+```{r passo_03}
+f <- carica_dati("fossili_simulati.csv")
+gruppi <- split(f$diametro_tot_um, f$morfotipo)
+m_f <- sapply(gruppi, mean)
+# I pesi sono i numeri di valori realmente inclusi nelle medie di gruppo.
+n_f <- lengths(gruppi)
+print(data.frame(n = n_f, media_um = m_f))
+print(c(non_ponderata = mean(m_f), ponderata = weighted.mean(m_f, n_f),
+        individuale = mean(f$diametro_tot_um)))
+stopifnot(abs(weighted.mean(m_f, n_f) - mean(f$diametro_tot_um)) < 1e-12)
+```
+
+**Lettura del risultato.** L'uguaglianza osservata dipende dai pesi uguali, non da una proprietà universale della media. Dopo un filtro o in presenza di misure mancanti, occorre usare le numerosità effettivamente impiegate in ciascuna media.
+
+## Variante svolta
+
+Invertire le numerosità dei due gruppi sintetici lasciandone fisse le medie.
+
+```{r variante}
+n_invertite <- c(A = 30, B = 10)
+nuova_media <- weighted.mean(medie, n_invertite)
+print(c(prima = media_individui, dopo = nuova_media, media_gruppi = mean(medie)))
+contributi <- medie * n_invertite / sum(n_invertite)
+print(contributi)
+stopifnot(abs(sum(contributi) - nuova_media) < 1e-12)
+```
+
+Il centro individuale si sposta verso il gruppo divenuto più numeroso, mentre il centro delle due medie resta uguale. Il cambiamento è interamente dovuto alla composizione del campione.
+
+## Errore da riconoscere
+
+Non usare come peso la numerosità iniziale se la media è stata calcolata su meno valori validi. Non confondere pesi di numerosità e pesi di precisione statistica.
+
+## Risposta alla domanda
+
+Per ricostruire la media degli individui servono medie e numerosità valide di gruppi disgiunti. La media non ponderata descrive invece gruppi con uguale peso: scegliere fra le due richiede definire l'unità di interesse.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M03_N09` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M03/M03_N09.R).

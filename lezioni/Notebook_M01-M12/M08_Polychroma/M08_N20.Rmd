@@ -1,0 +1,142 @@
+---
+title: "Laboratorio applicativo: PCA equivalente"
+subtitle: "M08_N20 \u00b7 Polychroma"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Quando la PCA su X e la PCA su Z rappresentano esattamente la stessa analisi?
+
+## Obiettivi
+
+- Verificare l’equivalenza di due istruzioni R.
+- Collegare PCA e SVD.
+- Proiettare nuovi casi con i parametri conservati.
+
+**Prima di iniziare.** Lettura di un CSV, vettori, matrici, indicizzazione e funzioni di base in R.
+
+**Dati e unità.** Novanta rocce sintetiche del corso. SiO2, CaO, MgO e FeO sono percentuali in massa; densita è espressa in g/cm³ e grana_mm in millimetri. colore e fossili sono indici numerici convenzionali del simulatore, non misure mineralogiche o conteggi reali. La colonna litologia_generatrice descrive il gruppo usato nella simulazione e viene esclusa dalle stime.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Polychroma oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M08_Polychroma` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M08_Polychroma/Risultati/M08_N20/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M08_Polychroma"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M08_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M08_Polychroma o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M08_N20")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(8020)
+```
+
+## 1. Due istruzioni, la stessa trasformazione
+
+La prima chiamata standardizza dentro prcomp; la seconda riceve una matrice già standardizzata. Non centrare e scalare nuovamente Z rende esplicita la trasformazione già applicata.
+
+```{r passo_01}
+# Seleziona le misure per nome: ID ed etichetta non entrano nella matrice.
+r <- carica_dati("rocce_simulate.csv")
+v <- c("SiO2", "CaO", "MgO", "FeO", "densita", "grana_mm", "colore", "fossili")
+X <- as.matrix(r[v])
+stopifnot(nrow(X)==90L, ncol(X)==8L, !anyDuplicated(r$id),
+          all(is.finite(X)), all(apply(X,2,sd)>0))
+Z <- scale(X)
+D <- dist(Z)
+pc_X <- prcomp(X,center=TRUE,scale.=TRUE)
+pc_Z <- prcomp(Z,center=FALSE,scale.=FALSE)
+c(errore_dev_standard=max(abs(pc_X$sdev-pc_Z$sdev)),
+ errore_rotation=max(abs(pc_X$rotation-pc_Z$rotation)),
+ errore_scores=max(abs(pc_X$x-pc_Z$x)))
+stopifnot(max(abs(pc_X$sdev-pc_Z$sdev))<1e-10,
+          max(abs(pc_X$x-pc_Z$x))<1e-10)
+```
+
+**Lettura del risultato.** Con lo stesso backend e questi dati, scores, rotazione e deviazioni standard coincidono. In confronti fra software o decomposizioni è comunque necessario considerare l’ambiguità del segno degli assi.
+
+## 2. Collegamento con la decomposizione SVD
+
+La decomposizione $Z=UDV^\top$ dà scores $T=UD$ e autovalori $\lambda_k=d_k^2/(n-1)$. La PCA di prcomp usa una decomposizione ai valori singolari; controlliamo la relazione senza confrontare segni arbitrari.
+
+```{r passo_02}
+sv <- svd(Z)
+autovalori_svd <- sv$d^2/(nrow(Z)-1)
+data.frame(PC=1:ncol(Z),lambda_PCA=pc_X$sdev^2,lambda_SVD=autovalori_svd)
+max(abs(Z-sv$u%*%diag(sv$d)%*%t(sv$v)))
+# Cambia contemporaneamente segno a scores e vettore di un asse.
+T2 <- pc_X$x; V2 <- pc_X$rotation
+T2[,1] <- -T2[,1]; V2[,1] <- -V2[,1]
+max(abs(pc_X$x%*%t(pc_X$rotation)-T2%*%t(V2)))
+```
+
+**Lettura del risultato.** Autovalori e ricostruzione non cambiano. Il segno di una componente non ha un significato geologico assoluto: conta la relazione coerente fra coefficienti e scores.
+
+## 3. Proiettare nuovi casi con la scala conservata
+
+La proiezione usa le medie e le deviazioni standard del fit: $t_{\mathrm{nuovo}}=[(x_{\mathrm{nuovo}}-\bar x)/s]V$. Ricalcolare la scala sul nuovo insieme cambierebbe il sistema di riferimento.
+
+```{r passo_03}
+# Tre righe vengono usate come esempio di input esterno, non come nuovo fit.
+nuovi <- as.data.frame(X[c(1,31,61),,drop=FALSE])
+previsti <- predict(pc_X,newdata=nuovi)
+Zn <- sweep(sweep(as.matrix(nuovi),2,pc_X$center,"-"),2,pc_X$scale,"/")
+manuali <- Zn%*%pc_X$rotation
+round(previsti[,1:2],4)
+max(abs(previsti-manuali))
+```
+
+**Lettura del risultato.** predict applica i parametri conservati nell’oggetto. L’oggetto stimato su Z con center=FALSE e scale.=FALSE richiede invece input già standardizzati nella medesima scala; i due oggetti non accettano indistintamente gli stessi dati grezzi.
+
+## Variante svolta
+
+Verificare che predict sul modello di Z funzioni quando i nuovi dati sono standardizzati con i parametri originali.
+
+```{r variante}
+previsti_Z <- predict(pc_Z,newdata=Zn)
+c(errore_equivalenza=max(abs(previsti-previsti_Z)))
+# Documenta i parametri necessari a ripetere la trasformazione.
+data.frame(variabile=v,centro=pc_X$center,scala=pc_X$scale)
+```
+
+L’equivalenza riguarda sia il fit sia l’applicazione coerente della trasformazione. Conservare ordine delle variabili, medie, scale e rotazione rende la proiezione riproducibile.
+
+## Errore da riconoscere
+
+Passare nuovi dati nelle unità originali al modello stimato su Z senza standardizzarli con le medie e le scale del fit originario.
+
+## Risposta alla domanda
+
+La PCA è una sequenza definita di trasformazioni. Oggetto del modello, colonne, scale, autovalori e rotazione devono rimanere coerenti dalla stima alla proiezione.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M08_N20` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M08/M08_N20.R).

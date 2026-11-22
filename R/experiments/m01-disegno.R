@@ -2,6 +2,8 @@
 # Valutare la copertura di una raccolta su un territorio sintetico.
 # Dati sintetici; parametri e ambiente dichiarati.
 # Dipendenze: install.packages(c("ggplot2", "jsonlite", "svglite"))
+# Codice: PolyForm Noncommercial 1.0.0, https://polyformproject.org/licenses/noncommercial/1.0.0
+# Required Notice: Copyright 2026 Marzio De Corato (https://github.com/marzione00/Lab_Geo)
 
 # GeoStat Lab — funzioni comuni. R >= 4.3; ggplot2 >= 3.4; jsonlite.
 suppressPackageStartupMessages(library(ggplot2))
@@ -60,8 +62,8 @@ grid$z <- 10 + 5 * grid$x + 3 * grid$y
 
 xy <- if (p$design == "grid") {
     k <- ceiling(sqrt(p$n))
-    as.matrix(expand.grid(seq(0, 1, length.out = k), seq(0, 1, length.out = k))[round(seq(1, 
-        k * k, length.out = p$n)), ])
+    as.matrix(expand.grid(seq(0, 1, length.out = k),
+        seq(0, 1, length.out = k))[round(seq(1, k * k, length.out = p$n)), ])
 } else cbind(runif(p$n), if (p$design == "road") runif(p$n, 0, 0.1) else runif(p$n))
 
 data <- data.frame(x = xy[, 1], y = xy[, 2])

@@ -1,0 +1,128 @@
+---
+title: "Una replica osservata negli indici"
+subtitle: "M05_N11 \u00b7 Pelago"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Che cosa viene scelto in una singola replica bootstrap e come possiamo controllarne il calcolo?
+
+## Obiettivi
+
+- Ricampionare indici con reinserimento.
+- Ricostruire la media usando le molteplicità delle osservazioni.
+
+**Prima di iniziare.** Vettori, indicizzazione, media, varianza e grafici di base in R.
+
+**Dati e unità.** Cinque misure costruite in unità convenzionali; gli identificativi distinguono due osservazioni che hanno lo stesso valore.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M05_N11/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M05_N11")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(5011)
+```
+
+## 1. Conservare identificativi e valori
+
+Una replica bootstrap estrae posizioni della tabella, così mantiene unita l'informazione relativa a ogni unità osservata. Due valori uguali non sono necessariamente la stessa osservazione. Per questo lavoriamo sugli indici e conserviamo gli identificativi anche in un esempio molto piccolo.
+
+```{r passo_01}
+dati <- data.frame(id = c("P1", "P2", "P3", "P4", "P5"),
+                   misura = c(2, 2, 4, 7, 10))
+n <- nrow(dati)
+stopifnot(!anyDuplicated(dati$id))
+media_originale <- mean(dati$misura)
+print(dati)
+print(c(n = n, media_originale = media_originale))
+```
+
+**Lettura del risultato.** P1 e P2 hanno la stessa misura ma rimangono unità diverse. Ciascuna posizione ha probabilità 1/n in ogni estrazione della replica.
+
+## 2. Osservare una sequenza di estrazioni
+
+Il reinserimento consente a un indice di essere selezionato più volte e a un altro di non comparire. La replica ha sempre n estrazioni, ma il numero di identificativi distinti può essere minore. La numerosità della replica non aumenta l'informazione originale.
+
+```{r passo_02}
+set.seed(511)
+indici <- sample.int(n, size = n, replace = TRUE)
+replica <- dati[indici, ]
+replica$estrazione <- seq_len(n)
+print(data.frame(estrazione = seq_len(n), indice_originale = indici))
+print(replica)
+print(c(estrazioni = nrow(replica), unita_distinte = length(unique(indici))))
+```
+
+**Lettura del risultato.** La sequenza documenta esattamente che cosa entra nella media bootstrap. Un'identità ripetuta segnala reinserimento, non una nuova misura dello stesso provino.
+
+## 3. Ricostruire la statistica con i pesi
+
+Contiamo quante volte compare ciascun indice, includendo gli zeri. La media della replica è uguale alla somma dei valori originali moltiplicati per le loro frequenze relative nella replica. Il controllo verifica l'intera corrispondenza fra selezione e calcolo.
+
+```{r passo_03}
+molteplicita <- tabulate(indici, nbins = n)
+pesi <- molteplicita / n
+media_replica <- mean(replica$misura)
+media_pesata <- sum(pesi * dati$misura)
+print(data.frame(id = dati$id, misura = dati$misura,
+                 frequenza = molteplicita, peso = pesi))
+stopifnot(sum(molteplicita) == n)
+stopifnot(isTRUE(all.equal(media_replica, media_pesata)))
+print(c(media_replica = media_replica, scarto = media_replica - media_originale))
+```
+
+**Lettura del risultato.** I pesi della replica sommano a uno ma differiscono dai pesi originali 1/n. Una sola replica illustra il meccanismo e non basta a stimare l'errore standard.
+
+## Variante svolta
+
+Estrarre tutti gli indici senza reinserimento e confrontare la media.
+
+```{r variante}
+permutazione <- sample.int(n, size = n, replace = FALSE)
+media_permutata <- mean(dati$misura[permutazione])
+print(data.frame(indice = permutazione, misura = dati$misura[permutazione]))
+print(c(media_originale = media_originale, media_permutata = media_permutata))
+stopifnot(isTRUE(all.equal(media_originale, media_permutata)))
+```
+
+Senza reinserimento, estrarre n elementi da n osservazioni cambia soltanto l'ordine. La media resta identica e una serie di tali permutazioni non stima la variabilità bootstrap della media.
+
+## Errore da riconoscere
+
+Ricampionare separatamente colonne che descrivono la stessa unità distrugge le associazioni. Selezionare una sola volta gli indici e applicarli all'intera riga.
+
+## Risposta alla domanda
+
+Una replica è un nuovo insieme di pesi sugli stessi dati osservati. Guardare gli indici rende visibile la differenza fra ricampionamento, duplicazione e permutazione.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M05_N11` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M05/M05_N11.R).

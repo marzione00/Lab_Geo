@@ -1,0 +1,137 @@
+---
+title: "Medie mensili e numero di osservazioni"
+subtitle: "M09_N02 \u00b7 Borealis"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Come si costruisce una media mensile senza perdere l’informazione sulla copertura?
+
+## Obiettivi
+
+- Aggregare con split e lapply.
+- Gestire i mesi privi di dati.
+- Confrontare pesi per osservazione e per periodo.
+
+**Prima di iniziare.** Lettura di CSV, vettori, indicizzazione e funzioni di base in R. I blocchi vanno eseguiti nell’ordine all’interno del singolo notebook.
+
+**Dati e unità.** Archivio storico CO₂ 1958–2001, copia del dataset settimanale statsmodels attribuito a Keeling, Whorf e CDIAC. Le concentrazioni sono espresse in ppm. Le medie mensili del corso derivano dai valori settimanali assegnati al mese della data e differiscono per definizione da una serie mensile ufficiale.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Borealis oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M09_Borealis` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M09_Borealis/Risultati/M09_N02/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M09_Borealis"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M09_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M09_Borealis o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M09_N02")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(9002)
+```
+
+## 1. Definire l’aggregazione
+
+Per ogni mese calcoliamo $\bar x_m=\sum_{i\in m}x_i/n_m$ sui valori disponibili. Se $n_m=0$, la media resta assente. La convenzione assegna ogni media settimanale al mese della sua data di riferimento.
+
+```{r passo_01}
+w <- carica_dati("co2_settimanale_storica.csv")
+w$data <- as.Date(w$data)
+w <- w[order(w$data), ]
+# La data di riferimento assegna ciascuna settimana a un mese.
+gruppi <- split(w$co2, format(w$data, "%Y-%m"))
+m <- do.call(rbind, lapply(names(gruppi), function(k) {
+  z <- gruppi[[k]]
+  n <- sum(!is.na(z))
+  data.frame(data=as.Date(paste0(k, "-01")),
+    co2_ppm=if (n > 0) mean(z, na.rm=TRUE) else NA_real_,
+    n_settimane=n)
+}))
+rownames(m) <- NULL
+head(m, 8)
+table(m$n_settimane)
+```
+
+**Lettura del risultato.** I mesi possono avere da zero a cinque valori disponibili. Il conteggio accompagna la media e impedisce di equiparare un mese ben coperto a uno rappresentato da una sola settimana.
+
+## 2. Mostrare copertura e concentrazione
+
+La media mensile riassume i valori disponibili. Se le assenze sono concentrate all’inizio o alla fine del mese, il conteggio da solo non descrive tutta la distribuzione temporale delle misure.
+
+```{r passo_02}
+par(mfrow=c(2,1), mar=c(4.1,4.5,1.8,1.2))
+plot(m$data, m$co2_ppm, type="l", col="#087C74",
+ xlab="", ylab="CO2 (ppm)")
+plot(m$data, m$n_settimane, type="h", col="#C57E42",
+ xlab="Data", ylab="Valori disponibili")
+sum(m$n_settimane==0L)
+```
+
+**Lettura del risultato.** I buchi della curva corrispondono ai mesi senza valori. La copertura riguarda i dati usati nell’aggregato, non una garanzia di rappresentatività dell’intero mese.
+
+## 3. Conservare una regola esplicita
+
+Una soglia minima è una decisione dell’analisi. Qui teniamo la media originale e aggiungiamo un indicatore che segnala almeno tre valori, senza sostituire i dati nella tabella.
+
+```{r passo_03}
+m$almeno_tre <- m$n_settimane>=3L
+m$co2_con_soglia <- ifelse(m$almeno_tre, m$co2_ppm, NA_real_)
+table(m$almeno_tre)
+write.csv(m, percorso_risultati("co2_mensile_con_copertura.csv"), row.names=FALSE)
+head(m[!m$almeno_tre, ], 8)
+```
+
+**Lettura del risultato.** Il flag permette di discutere la soglia e rifare l’analisi. Una regola diversa può cambiare i mesi disponibili e va dichiarata prima del confronto dei risultati.
+
+## Variante svolta
+
+Confrontare una media delle osservazioni con una media dei periodi.
+
+```{r variante}
+medie <- c(10,20); conteggi <- c(2,8)
+c(media_osservazioni=weighted.mean(medie,conteggi),
+ media_periodi=mean(medie))
+```
+
+La media ponderata è 18, quella dei due periodi è 15. La prima attribuisce uguale peso alle dieci osservazioni, la seconda ai due periodi.
+
+## Errore da riconoscere
+
+Calcolare mean(z, na.rm=TRUE) su un gruppo tutto NA e conservare NaN senza documentare l’assenza del mese.
+
+## Risposta alla domanda
+
+Ogni media deve viaggiare con il numero di valori disponibili e con la convenzione di aggregazione. Pesi diversi rispondono a domande diverse.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M09_N02` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M09/M09_N02.R).

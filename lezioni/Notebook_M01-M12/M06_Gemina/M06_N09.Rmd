@@ -1,0 +1,138 @@
+---
+title: "Confrontare i test senza mescolare le ipotesi"
+subtitle: "M06_N09 \u00b7 Gemina"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Perché Welch e una permutazione della differenza grezza possono dare risultati diversi senza che uno dei calcoli sia necessariamente sbagliato?
+
+## Obiettivi
+
+- Confrontare ipotesi e calibrazione dei metodi.
+- Evitare la scelta del metodo in base al p-value minore.
+
+**Prima di iniziare.** Vettori, indicizzazione, media, varianza e grafici di base in R.
+
+**Dati e unità.** Due gruppi sintetici indipendenti con numerosità dodici e quaranta, media generatrice uguale e deviazioni standard tre e uno.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M06_N09/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M06_N09")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(6009)
+```
+
+## 1. Costruire una nulla sulle medie con varianze diverse
+
+Il modello impone la stessa media ma distribuzioni diverse, perché le deviazioni standard sono differenti. Questo distingue una nulla sulle medie da una nulla che renda scambiabili tutte le osservazioni. Il campione osservato può avere una differenza media non nulla per puro campionamento.
+
+```{r passo_01}
+set.seed(609)
+a <- rnorm(12, mean = 5, sd = 3)
+b <- rnorm(40, mean = 5, sd = 1)
+osservato <- mean(b) - mean(a)
+print(data.frame(gruppo = c("A", "B"), n = c(length(a), length(b)),
+  media = c(mean(a), mean(b)), SD = c(sd(a), sd(b))))
+print(c(differenza_B_A = osservato))
+boxplot(list(A = a, B = b), col = c("#95BDD0", "#E7B977"),
+        ylab = "Misura (u.c.)", main = "Medie generatrici uguali, varianze diverse")
+```
+
+**Lettura del risultato.** L'uguaglianza delle medie generatrici è nota soltanto perché abbiamo costruito i dati. Le etichette non sono scambiabili: conoscere il gruppo informa sulla dispersione del valore.
+
+## 2. Applicare Welch al contrasto medio
+
+Welch usa separatamente le varianze dei gruppi e approssima i gradi di libertà. L'esempio rende appropriata la distinzione fra varianze, pur restando un singolo campione e non uno studio delle prestazioni del test.
+
+```{r passo_02}
+welch <- t.test(b, a, var.equal = FALSE)
+vA <- var(a) / length(a)
+vB <- var(b) / length(b)
+se_welch <- sqrt(vA + vB)
+print(c(SE_Welch = se_welch, p_Welch = welch$p.value,
+        df_Welch = unname(welch$parameter)))
+print(welch$conf.int)
+```
+
+**Lettura del risultato.** Il risultato riguarda una differenza fra medie sotto campioni indipendenti. Non dimostra che tutte le caratteristiche delle due distribuzioni siano uguali quando il test non rifiuta.
+
+## 3. Calcolare la permutazione grezza e dichiararne il limite
+
+Calcoliamo anche la permutazione della differenza non studentizzata per capire che cosa produce. Con varianze diverse e gruppi sbilanciati, la sola uguaglianza delle medie non giustifica questa calibrazione. La tabella deve quindi riportare le ipotesi insieme ai numeri.
+
+```{r passo_03}
+x <- c(a, b)
+B <- 2000
+nulli <- replicate(B, {
+  i <- sample.int(length(x), length(a), FALSE)
+  mean(x[-i]) - mean(x[i])
+})
+p_perm <- (1 + sum(abs(nulli) >= abs(osservato))) / (B + 1)
+confronto <- data.frame(metodo = c("Welch", "Permutazione grezza"),
+  p = c(welch$p.value, p_perm),
+  riferimento = c("Medie uguali, varianze separate", "Scambiabilita delle etichette"))
+print(confronto)
+```
+
+**Lettura del risultato.** La seconda riga è un calcolo illustrativo con riferimento non giustificato dalla sola nulla sulle medie in questo modello. La scelta fra metodi non si fa confrontando quale p-value è minore.
+
+## Variante svolta
+
+Rigenerare gruppi con uguale distribuzione sotto la nulla e ripetere i due calcoli.
+
+```{r variante}
+set.seed(1609)
+a2 <- rnorm(12, 5, 1)
+b2 <- rnorm(40, 5, 1)
+x2 <- c(a2, b2)
+t2 <- mean(b2) - mean(a2)
+nulli2 <- replicate(B, {
+  i <- sample.int(length(x2), length(a2), FALSE)
+  mean(x2[-i]) - mean(x2[i])
+})
+print(c(Welch = t.test(b2, a2)$p.value,
+  permutazione = (1 + sum(abs(nulli2) >= abs(t2))) / (B + 1)))
+```
+
+Ora la scambiabilità è coerente con il modello generatore. I p-value possono comunque differire per campione finito, metodo di calibrazione ed errore Monte Carlo; non occorre che coincidano.
+
+## Errore da riconoscere
+
+Non usare una sola simulazione per dichiarare un test universalmente migliore. Prima confrontare parametro, disegno e nulla, poi eventualmente studiare le prestazioni con repliche controllate.
+
+## Risposta alla domanda
+
+Metodi diversi possono rispondere a domande o ipotesi diverse. Un confronto responsabile mette queste differenze davanti al valore numerico del p-value.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M06_N09` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M06/M06_N09.R).

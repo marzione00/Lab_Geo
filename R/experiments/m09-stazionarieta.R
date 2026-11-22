@@ -2,6 +2,8 @@
 # Confrontare memoria e accumulo delle innovazioni.
 # Dati sintetici; parametri e ambiente dichiarati.
 # Dipendenze: install.packages(c("ggplot2", "jsonlite", "svglite"))
+# Codice: PolyForm Noncommercial 1.0.0, https://polyformproject.org/licenses/noncommercial/1.0.0
+# Required Notice: Copyright 2026 Marzio De Corato (https://github.com/marzione00/Lab_Geo)
 
 # GeoStat Lab — funzioni comuni. R >= 4.3; ggplot2 >= 3.4; jsonlite.
 suppressPackageStartupMessages(library(ggplot2))
@@ -62,8 +64,8 @@ data <- data.frame(x = rep(1:150, 6), y = as.vector(paths), traiettoria = factor
 plots <- list(line_plot(data, title = "Sei traiettorie indipendenti", xl = "Tempo", yl = "Valore", 
     group = "traiettoria"))
 
-metrics <- metric(`Varianza trasversale finale` = f(var(paths[150, ])), `Varianza trasversale iniziale` = f(var(paths[1, 
-    ])))
+metrics <- metric(`Varianza trasversale finale` = f(var(paths[150, ])),
+    `Varianza trasversale iniziale` = f(var(paths[1, ])))
 
 print(metrics, row.names = FALSE)
 if (!interactive()) grDevices::cairo_pdf("figure_esperimento.pdf", width=9, height=5.5)

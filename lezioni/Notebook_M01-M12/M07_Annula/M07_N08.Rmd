@@ -1,0 +1,132 @@
+---
+title: "Distribuzione dei residui e differenze fra gruppi"
+subtitle: "M07_N08 \u00b7 Annula"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Il morfotipo aiuta a spiegare una parte degli scarti della retta comune?
+
+## Obiettivi
+
+- Collegare la domanda al calcolo riportato.
+- Interpretare il risultato usando variabili e unità del problema.
+
+**Prima di iniziare.** Vettori, data frame, indicizzazione e funzioni di base in R.
+
+**Dati e unità.** Fossili simulati del corso: 160 individui, 80 Rounded e 80 Spiky. Diametri e spessori sono espressi in micrometri. Nel generatore, diametro interno = diametro totale − 2 × spessore. La relazione contiene quindi un vincolo geometrico noto.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Annula oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M07_Annula` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M07_Annula/Risultati/M07_N08/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M07_Annula"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M07_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M07_Annula o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M07_N08")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(7008)
+```
+
+## 1. Quantili dei residui
+
+Il QQ plot confronta quantili osservati e quantili gaussiani. Scostamenti sistematici nelle code segnalano una differenza di forma. Il grafico riguarda la distribuzione degli errori ipotizzata per l’inferenza.
+
+```{r passo_01}
+# Ogni riga identifica un fossile simulato.
+f <- carica_dati("fossili_simulati.csv")
+f$morfotipo <- factor(f$morfotipo, levels=c("Rounded", "Spiky"))
+x <- f$diametro_tot_um
+y <- f$diametro_int_um
+stopifnot(nrow(f)==160L, !anyDuplicated(f$id),
+          all(is.finite(x)), all(is.finite(y)))
+# La formula mette la risposta a sinistra della tilde.
+modello <- lm(diametro_int_um ~ diametro_tot_um, data=f)
+e <- residuals(modello)
+qqnorm(rstandard(modello),pch=19,col="#087C74",main="QQ plot dei residui standardizzati",
+ xlab="Quantili gaussiani",ylab="Residui standardizzati")
+qqline(rstandard(modello),col="#C57E42",lwd=2)
+```
+
+**Lettura del risultato.** Il QQ plot aiuta a valutare asimmetrie e code. Una nuvola vicina alla retta non dimostra indipendenza, omoschedasticità o correttezza della media.
+
+## 2. Residui distinti per morfotipo
+
+La retta comune usa solo il diametro totale. Se i gruppi presentano spessori diversi, i loro residui possono avere medie diverse anche a parità di diametro totale.
+
+```{r passo_02}
+aggregate(e,list(morfotipo=f$morfotipo),mean)
+boxplot(e~f$morfotipo,col=c("#B9DDD7","#E5C7A8"),
+ xlab="Morfotipo",ylab="Residuo della retta comune (micrometri)")
+abline(h=0,lty=2)
+```
+
+**Lettura del risultato.** Il confronto dei residui rende visibile informazione omessa dal modello. Per quantificarla introduciamo il morfotipo come predittore, specificando il livello di riferimento.
+
+## 3. Un indicatore aggiunto alla retta
+
+Con Rounded come riferimento, $E(Y\mid x,G)=\beta_0+\beta_1x+\beta_2G$. Il coefficiente del gruppo confronta Spiky con Rounded allo stesso diametro totale e assume pendenze parallele.
+
+```{r passo_03}
+m_gruppo <- lm(diametro_int_um~diametro_tot_um+morfotipo,data=f)
+coef(m_gruppo)
+c(SD_comune=summary(modello)$sigma,SD_con_gruppo=summary(m_gruppo)$sigma)
+aggregate(resid(m_gruppo),list(morfotipo=f$morfotipo),mean)
+```
+
+**Lettura del risultato.** La differenza di gruppo riguarda una media condizionata. La media residua di ciascun gruppo ora è zero per costruzione, dato che il modello include intercetta e indicatore. Non usarla come verifica indipendente del modello.
+
+## Variante svolta
+
+Aggiungere l’interazione e ricavare le pendenze dei due morfotipi.
+
+```{r variante}
+m_interazione <- lm(diametro_int_um~diametro_tot_um*morfotipo,data=f)
+b <- coef(m_interazione)
+c(pendenza_Rounded=b[2],pendenza_Spiky=b[2]+b[4],
+  differenza_a_7=b[3]+7*b[4])
+```
+
+Le pendenze stimate sono circa 0,998 e 0,982. Il contrasto Spiky−Rounded a 7 µm è circa −0,238 µm. L’interazione permette al contrasto di cambiare con x.
+
+## Errore da riconoscere
+
+Un miglior adattamento con più parametri richiede anche una motivazione e un controllo della prestazione fuori campione.
+
+## Risposta alla domanda
+
+La distribuzione residua e l’informazione di gruppo rispondono a domande diverse. La codifica del morfotipo rende esplicito quale confronto il modello stima.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M07_N08` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M07/M07_N08.R).

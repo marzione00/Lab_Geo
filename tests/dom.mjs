@@ -214,6 +214,93 @@ for (const a of w.GEO_LABS.activities) {
     labFormulas++;
   }
 }
+// Lessons: overview, a tappa with its code, the exercises world, and every formula of slides and explanations.
+w.location.hash = '#lezione-M05';
+await until(() => d.querySelectorAll('.lesson-region-card').length === 10);
+w.location.hash = '#lezione-M05/23';
+await until(() => d.querySelector('.page-counter')?.textContent === '23 / 109');
+assert.equal(d.querySelectorAll('.lesson-code textarea').length, 1);
+assert(d.querySelector('[data-output]').textContent.includes('mse_simulato'));
+assert.equal(d.querySelectorAll('.lesson-labs a').length, 4);
+assert.equal(d.querySelectorAll('.lesson-slide-panel .lesson-col').length, 2);
+assert.equal(d.querySelectorAll('.lesson-slide-panel .lesson-figure img').length, 1);
+assert(d.querySelector('.lesson-slide-code pre').textContent.includes('lab_selezione(n=300,bias=1)'));
+assert(d.querySelector('.lesson-panel-recall').textContent.startsWith('Da ricordare'));
+assert.equal(d.querySelectorAll('.lesson-notes :is(h1, h2, h3, h4, ul, ol)').length, 0);
+assert.equal(d.querySelectorAll('.lesson-notes > p').length, 5);
+assert.equal(d.querySelectorAll('.lesson-main > .lesson-panel').length, 4);
+w.location.hash = '#lezione-M05/110';
+await until(() => d.querySelector('.error h1')?.textContent === 'Pagina non trovata');
+w.location.hash = '#esplorazione/M05-c';
+await until(() => w.location.hash === '#esercizi-M05' && d.querySelectorAll('#verify-form input').length > 0);
+w.location.hash = '#esercizi-M05/2';
+await until(() => d.querySelectorAll('#verify-form input').length === 6);
+['-1', '0,258', '1.04', '-1', '0.129', '1'].forEach((v, i) => (d.querySelectorAll('#verify-form input')[i].value = v));
+d.querySelector('#verify-form').dispatchEvent(new w.Event('submit', { cancelable: true }));
+assert(d.getElementById('verify-status').textContent.startsWith('Tutti'));
+d.querySelectorAll('#verify-form input')[1].value = '0.26';
+d.querySelector('#verify-form').dispatchEvent(new w.Event('submit', { cancelable: true }));
+assert(d.getElementById('verify-status').textContent.startsWith('5 indicatori su 6'));
+// A workbook without expected values (M06) shows the comparison table of the workbook.
+w.location.hash = '#esercizi-M06/1';
+await until(() => d.querySelectorAll('#table-form input').length > 0);
+assert.equal(d.querySelectorAll('#verify-form').length, 0);
+assert.equal(
+  d.querySelectorAll('#table-form input').length,
+  2 * (w.GEO_LESSONS.M06.exercises.cards[0].table.length - 1),
+);
+// A companion world with notebooks only, and a tappa that cites a notebook in the slide footer.
+w.location.hash = '#esercizi-M01';
+await until(() => d.querySelectorAll('.lesson-notebook-list li').length === 20);
+w.location.hash = '#lezione-M10/10';
+await until(() => d.querySelector('.page-counter')?.textContent === '10 / 110');
+assert(d.querySelector('#lesson-nb-title + ul a').getAttribute('href').endsWith('M10_Futura/M10_N01.html'));
+// Every other lesson: each tappa renders its slide panel, and a lesson without a workbook has no exercises route.
+let lessonPages = 0,
+  lessonFormulas = 0;
+const lessonIds = Object.keys(w.GEO_LESSON_INDEX);
+for (const id of lessonIds) {
+  const pages = w.GEO_LESSON_INDEX[id].pages;
+  for (let p = 1; p <= pages; p++) {
+    w.location.hash = '#lezione-' + id + '/' + p;
+    await until(
+      () => d.querySelector('.page-counter')?.textContent === String(p).padStart(2, '0') + ' / ' + pages,
+    ).catch(e => {
+      throw new Error(id + '/' + p + ': ' + (d.querySelector('main')?.textContent.slice(0, 300) || ''), { cause: e });
+    });
+    assert.equal(d.querySelectorAll('.lesson-main > .lesson-slide-panel').length, 1, id + '/' + p);
+    assert(!/\bundefined\b/.test(d.querySelector('.lesson-main').textContent), 'testo indefinito in ' + id + '/' + p);
+    for (const a of d.querySelectorAll('.lesson-main a[href]'))
+      assert(!/undefined|NaN/.test(a.getAttribute('href')), 'collegamento indefinito in ' + id + '/' + p);
+    assert(d.querySelector('.breadcrumb').textContent.includes('Sistema ' + w.GeoAstro.generate(id, 0).name));
+    lessonPages++;
+  }
+  if (!w.GEO_LESSON_INDEX[id].cards && !w.GEO_LESSON_INDEX[id].notebooks) {
+    w.location.hash = '#esercizi-' + id;
+    await until(() => d.querySelector('.error h1')?.textContent === 'Pagina non trovata');
+  }
+}
+const texOf = list => list.flatMap(n => (typeof n === 'string' ? [] : n.t === 'm' ? [n.v] : n.c ? texOf(n.c) : []));
+for (const id of lessonIds) {
+  const L = w.GEO_LESSONS[id];
+  const lessonTex = [
+    ...L.slides.flatMap(s => [
+      ...texOf(s.recall || []),
+      ...s.items.flatMap(it =>
+        it.t === 'math' ? [it.v] : it.t === 'table' ? texOf([...it.head, ...it.rows].flat()) : it.c ? texOf(it.c) : [],
+      ),
+    ]),
+    ...Object.values(L.notes || {}).flatMap(bs =>
+      bs.flatMap(b => (b.t === 'math' ? [b.v] : b.t === 'ul' ? b.items.flatMap(texOf) : texOf(b.c))),
+    ),
+  ];
+  for (const tex of lessonTex) {
+    const node = await w.MathJax.tex2svgPromise(tex, { display: true });
+    const problem = node.querySelector('[data-mml-node="merror"]');
+    assert(!problem, 'Lezione ' + id + ': ' + tex + ' ' + problem?.textContent);
+    lessonFormulas++;
+  }
+}
 assert.deepEqual(errors, []);
 const result = {
   esito: 'superato',
@@ -222,10 +309,20 @@ const result = {
   laboratori_T00_R_e_Python: 40,
   formule_verificate: formulas,
   formule_esperimenti: labFormulas,
+  tappe_lezioni: lessonPages,
+  formule_lezioni: lessonFormulas,
   errori: errors,
 };
 fs.mkdirSync(path.join(root, 'qa'), { recursive: true });
 fs.writeFileSync(path.join(root, 'qa/dom.json'), JSON.stringify(result, null, 2));
 console.log(labFormulas + ' espressioni dei laboratori verificate.');
+console.log(
+  lessonIds.length +
+    ' lezioni: ' +
+    lessonPages +
+    ' tappe visualizzate e ' +
+    lessonFormulas +
+    ' espressioni verificate (slide e spiegazioni).',
+);
 console.log('DOM virtuale: 28 moduli e ' + formulas + ' espressioni matematiche verificati.');
 w.close();

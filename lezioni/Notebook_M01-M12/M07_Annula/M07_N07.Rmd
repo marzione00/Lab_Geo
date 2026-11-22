@@ -1,0 +1,138 @@
+---
+title: "Residui contro valori stimati"
+subtitle: "M07_N07 \u00b7 Annula"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Che cosa può mostrare il grafico dei residui dopo aver adattato una retta?
+
+## Obiettivi
+
+- Collegare la domanda al calcolo riportato.
+- Interpretare il risultato usando variabili e unità del problema.
+
+**Prima di iniziare.** Vettori, data frame, indicizzazione e funzioni di base in R.
+
+**Dati e unità.** Fossili simulati del corso: 160 individui, 80 Rounded e 80 Spiky. Diametri e spessori sono espressi in micrometri. Nel generatore, diametro interno = diametro totale − 2 × spessore. La relazione contiene quindi un vincolo geometrico noto.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Annula oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M07_Annula` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M07_Annula/Risultati/M07_N07/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M07_Annula"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M07_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M07_Annula o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M07_N07")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(7007)
+```
+
+## 1. Ricostruire gli scarti
+
+Il residuo osservato è $e_i=y_i-\hat y_i$. Contiene l’effetto congiunto della variabilità non spiegata, dell’eventuale forma errata della media e di altre caratteristiche dei dati.
+
+```{r passo_01}
+# Ogni riga identifica un fossile simulato.
+f <- carica_dati("fossili_simulati.csv")
+f$morfotipo <- factor(f$morfotipo, levels=c("Rounded", "Spiky"))
+x <- f$diametro_tot_um
+y <- f$diametro_int_um
+stopifnot(nrow(f)==160L, !anyDuplicated(f$id),
+          all(is.finite(x)), all(is.finite(y)))
+# La formula mette la risposta a sinistra della tilde.
+modello <- lm(diametro_int_um ~ diametro_tot_um, data=f)
+e <- residuals(modello)
+head(data.frame(id=f$id,osservato=y,stimato=fitted(modello),residuo=e))
+stopifnot(max(abs(e-(y-fitted(modello))))<1e-12)
+```
+
+**Lettura del risultato.** Un residuo di 0,30 µm indica che quel diametro interno supera di 0,30 µm la previsione della retta. Non è una misura diretta dell’errore strumentale.
+
+## 2. Andamento e dispersione
+
+Un andamento curvo dei residui suggerisce di rivedere la forma della media. Una dispersione che cambia con i valori stimati suggerisce varianza non costante. Questi sono indizi da collegare al problema.
+
+```{r passo_02}
+plot(fitted(modello),e,pch=19,col=adjustcolor("#087C74",.65),
+ xlab="Diametro interno stimato (micrometri)",ylab="Residuo (micrometri)")
+abline(h=0,lty=2,col="grey45")
+lines(lowess(fitted(modello),e),col="#C57E42",lwd=2)
+cor(fitted(modello),e)
+```
+
+**Lettura del risultato.** La correlazione lineare fra residui e valori adattati è praticamente zero per costruzione OLS con intercetta. La curva descrittiva cerca struttura non lineare che questo vincolo non esclude.
+
+## 3. Un esempio con curvatura nota
+
+Simuliamo una relazione quadratica e adattiamo intenzionalmente una retta. Poiché conosciamo il generatore, possiamo attribuire la forma dei residui al termine quadratico omesso.
+
+```{r passo_03}
+set.seed(707)
+u <- seq(-2,2,length.out=80)
+v <- 1+.6*u+.8*u^2+rnorm(80,sd=.25)
+fit_curva <- lm(v~u)
+plot(fitted(fit_curva),resid(fit_curva),pch=19,col="#5146A5",
+ xlab="Valore stimato dalla retta",ylab="Residuo")
+abline(h=0,lty=2)
+lines(lowess(fitted(fit_curva),resid(fit_curva)),col="#C57E42",lwd=2)
+```
+
+**Lettura del risultato.** La struttura a U rimane nei residui: una retta non rappresenta la media condizionata del generatore. Nei dati osservazionali la diagnosi richiede maggiore cautela perché il generatore è sconosciuto.
+
+## Variante svolta
+
+Aggiungere il termine quadratico all’esempio simulato e confrontare i residui.
+
+```{r variante}
+fit2 <- lm(v~u+I(u^2))
+c(RMSE_retta=sqrt(mean(resid(fit_curva)^2)),
+  RMSE_quadratico=sqrt(mean(resid(fit2)^2)))
+plot(fitted(fit2),resid(fit2),pch=19,col="#087C74",
+ xlab="Valore stimato dal modello quadratico",ylab="Residuo")
+abline(h=0,lty=2)
+```
+
+Il termine quadratico riduce la struttura sistematica. Il confronto dell’errore sullo stesso campione documenta l’adattamento, mentre la previsione richiederà una valutazione su dati separati.
+
+## Errore da riconoscere
+
+Residui con media nulla sono garantiti dall’intercetta: questa proprietà non dimostra che il modello della media sia corretto.
+
+## Risposta alla domanda
+
+Il grafico dei residui descrive ciò che il modello lascia nei dati. Una struttura visibile orienta una revisione motivata.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M07_N07` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M07/M07_N07.R).

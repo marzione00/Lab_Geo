@@ -1,0 +1,131 @@
+---
+title: "La prova della sessione pulita"
+subtitle: "M01_N18 \u00b7 Terra"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Il risultato può essere ricostruito a partire dal file originale senza oggetti creati in altri notebook?
+
+## Obiettivi
+
+- Rendere espliciti ingressi, trasformazioni e uscite di un'analisi.
+- Verificare che esecuzioni indipendenti restituiscano lo stesso risultato.
+
+**Prima di iniziare.** Saper eseguire una cella R e riconoscere vettori, assegnamenti e nomi di colonne.
+
+**Dati e unità.** L'analisi usa soltanto campioni_modulo1.csv e le funzioni di percorso fornite con il progetto. Non legge risultati prodotti da esercitazioni precedenti e genera autonomamente tutte le uscite necessarie.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M01_N18/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M01_N18")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(1018)
+```
+
+## 1. Racchiudere il procedimento in una funzione
+
+Una funzione con un ingresso esplicito riduce le dipendenze nascoste. Importiamo il file dentro la funzione, controlliamo misure e identificativi, calcoliamo la densità e restituiamo soltanto gli oggetti necessari per leggere il risultato.
+
+```{r passo_01}
+analizza <- function(file_csv) {
+  dati <- read.csv(file_csv, stringsAsFactors = FALSE)
+  stopifnot(!anyDuplicated(dati$id), all(is.finite(dati$massa_g)),
+            all(dati$massa_g > 0), all(is.finite(dati$volume_cm3)),
+            all(dati$volume_cm3 > 0))
+  dati$densita_g_cm3 <- dati$massa_g / dati$volume_cm3
+  medie <- aggregate(densita_g_cm3 ~ affioramento, dati, mean)
+  medie <- medie[order(medie$affioramento), , drop = FALSE]
+  list(individuali = dati, medie = medie)
+}
+file_ingresso <- percorso_dati("campioni_modulo1.csv")
+risultato_1 <- analizza(file_ingresso)
+print(risultato_1$medie)
+```
+
+**Lettura del risultato.** dati è un oggetto locale alla funzione: non viene recuperato da una precedente esercitazione. Il nome del file è l'ingresso documentato. Se un requisito non è soddisfatto, il controllo arresta il calcolo prima dell'esportazione.
+
+## 2. Ripetere a partire dall'ingresso
+
+Chiamiamo di nuovo la funzione e confrontiamo le uscite. Poiché non ci sono estrazioni casuali né dipendenze da oggetti modificati all'esterno, due esecuzioni sullo stesso file devono produrre gli stessi valori e lo stesso ordine.
+
+```{r passo_02}
+risultato_2 <- analizza(file_ingresso)
+stopifnot(identical(risultato_1, risultato_2))
+print(c(righe_individuali = nrow(risultato_2$individuali),
+        gruppi = nrow(risultato_2$medie)))
+identificativi <- risultato_2$individuali$id
+stopifnot(length(unique(identificativi)) == 24L)
+```
+
+**Lettura del risultato.** L'uguaglianza verifica la ripetibilità di questo procedimento deterministico. Non dimostra che la formula scelta risponda a ogni domanda geologica: riproducibilità e validità scientifica sono controlli collegati ma distinti.
+
+## 3. Verificare anche l'uscita su disco
+
+Salviamo un risultato creato da questa stessa esecuzione e lo rileggiamo. La prova comprende quindi il passaggio dal codice al file consegnabile, senza assumere che una cartella contenga già risultati prodotti altrove.
+
+```{r passo_03}
+file_uscita <- percorso_risultati("medie_riproducibili.csv")
+write.csv(risultato_1$medie, file_uscita, row.names = FALSE)
+verifica <- read.csv(file_uscita, stringsAsFactors = FALSE)
+stopifnot(identical(verifica$affioramento, risultato_1$medie$affioramento))
+stopifnot(isTRUE(all.equal(verifica$densita_g_cm3,
+                           risultato_1$medie$densita_g_cm3)))
+print(verifica)
+```
+
+**Lettura del risultato.** Il controllo delle chiavi e dei valori numerici rende concreta la verifica del file. La cartella dei risultati è un'uscita dell'analisi, mentre il file condiviso rimane l'ingresso da cui ogni esecuzione riparte.
+
+## Variante svolta
+
+Modificare una copia di un risultato e dimostrare che una nuova esecuzione non la eredita.
+
+```{r variante}
+copia_modificata <- risultato_1
+copia_modificata$individuali$massa_g[1] <- 0
+nuovo <- analizza(file_ingresso)
+stopifnot(identical(nuovo, risultato_2))
+print(nuovo$individuali[1, c("id", "massa_g", "densita_g_cm3")])
+```
+
+La modifica di una copia in memoria non cambia il file di partenza né il lavoro locale della funzione. Questo isolamento aiuta a riconoscere analisi che funzionano soltanto perché la sessione contiene oggetti dimenticati.
+
+## Errore da riconoscere
+
+Controllare soltanto l'esistenza di file creati da altri notebook non è una prova di autonomia. Il notebook deve ricostruire i propri risultati a partire dagli ingressi dichiarati.
+
+## Risposta alla domanda
+
+La procedura è ripetibile perché tutte le dipendenze informative sono esplicite. Per condividerla servono il file originale, il codice e l'ambiente di esecuzione documentato, non una copia della memoria della sessione.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M01_N18` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M01/M01_N18.R).

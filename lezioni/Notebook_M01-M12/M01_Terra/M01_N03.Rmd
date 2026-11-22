@@ -1,0 +1,123 @@
+---
+title: "Aprire il dataset senza modificarlo"
+subtitle: "M01_N03 \u00b7 Terra"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come possiamo verificare la struttura di una tabella prima di costruire nuove variabili?
+
+## Obiettivi
+
+- Controllare dimensioni, nomi e classi delle colonne.
+- Conservare una copia dei dati originali durante le trasformazioni.
+
+**Prima di iniziare.** Saper eseguire una cella R e riconoscere vettori, assegnamenti e nomi di colonne.
+
+**Dati e unità.** Il file campioni_modulo1.csv contiene 24 provini sintetici e sei colonne originali. Le unità sono indicate nei nomi massa_g e volume_cm3.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M01_N03/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M01_N03")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(1003)
+```
+
+## 1. Leggere e controllare lo schema
+
+L'importazione è un passaggio dell'analisi: un file leggibile può comunque avere colonne inattese. Verifichiamo forma e nomi prima di usare posizioni numeriche o formule che presuppongono una struttura specifica.
+
+```{r passo_01}
+originale <- carica_dati("campioni_modulo1.csv", stringsAsFactors = FALSE)
+schema <- c("id", "affioramento", "stazione", "massa_g", "volume_cm3", "alterazione")
+print(dim(originale))
+print(names(originale))
+stopifnot(nrow(originale) == 24L, ncol(originale) == 6L)
+stopifnot(identical(names(originale), schema))
+```
+
+**Lettura del risultato.** Le dimensioni contano righe e colonne; il confronto con schema controlla anche l'ordine. Questo controllo documenta le attese del caso didattico e rende esplicito quando una nuova versione del file richiederebbe una revisione.
+
+## 2. Ispezionare contenuto e tipi
+
+Usiamo poche righe per riconoscere le informazioni, poi controlliamo le classi dell'intera tabella. Un numero scritto come testo può apparire plausibile nella stampa ma impedire una divisione; un identificativo numerico non diventerebbe per questo una misura.
+
+```{r passo_02}
+print(head(originale, 4))
+str(originale)
+classi <- vapply(originale, function(x) class(x)[1], character(1))
+print(classi)
+stopifnot(is.numeric(originale$massa_g), is.numeric(originale$volume_cm3))
+print(colSums(is.na(originale)))
+```
+
+**Lettura del risultato.** Le classi descrivono la rappresentazione informatica; i nomi e il contesto spiegano il significato delle colonne. Il conteggio dei mancanti riguarda NA riconosciuti da R: eventuali codici testuali non dichiarati richiederebbero un controllo separato.
+
+## 3. Lavorare su una copia riconoscibile
+
+Aggiungiamo una densità a una copia e confrontiamo le due strutture. Separare originale e lavoro consente di verificare una trasformazione senza perdere il riferimento da cui siamo partiti o riscrivere il CSV distribuito.
+
+```{r passo_03}
+lavoro <- originale
+stopifnot(all(lavoro$volume_cm3 > 0))
+lavoro$densita_g_cm3 <- lavoro$massa_g / lavoro$volume_cm3
+print(names(lavoro))
+print(head(lavoro[c("id", "densita_g_cm3")], 4))
+stopifnot(!"densita_g_cm3" %in% names(originale))
+stopifnot(identical(originale, lavoro[schema]))
+```
+
+**Lettura del risultato.** La nuova colonna appartiene soltanto a lavoro. L'ultimo controllo verifica che le sei colonne preesistenti siano ancora identiche all'originale, compresi valori, tipi e ordine delle righe: una verifica più informativa del semplice conteggio delle righe.
+
+## Variante svolta
+
+Creare una copia ordinata per massa e controllare che gli identificativi siano conservati.
+
+```{r variante}
+ordinato <- lavoro[order(lavoro$massa_g), , drop = FALSE]
+print(head(ordinato[c("id", "massa_g")], 4))
+stopifnot(setequal(ordinato$id, originale$id))
+stopifnot(identical(originale$id, lavoro$id))
+```
+
+L'ordinamento cambia la posizione delle righe nella nuova copia. Gli identificativi consentono di riconoscere gli stessi provini; non conviene attribuire un significato permanente al numero di riga.
+
+## Errore da riconoscere
+
+Sovrascrivere subito l'oggetto originale rende difficile ricostruire una modifica accidentale. Usare nomi distinti e verificare le colonne conservate rende visibile il passaggio fra dati ricevuti e dati elaborati.
+
+## Risposta alla domanda
+
+La tabella è stata importata, descritta e trasformata mantenendo un riferimento intatto. Lo schema corretto è una condizione iniziale: i controlli fisici sulle misure vengono dopo.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M01_N03` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M01/M01_N03.R).

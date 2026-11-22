@@ -2,6 +2,8 @@
 # Distinguere giorni sopra soglia ed eventi temporali.
 # Dati sintetici; parametri e ambiente dichiarati.
 # Dipendenze: install.packages(c("ggplot2", "jsonlite", "svglite"))
+# Codice: PolyForm Noncommercial 1.0.0, https://polyformproject.org/licenses/noncommercial/1.0.0
+# Required Notice: Copyright 2026 Marzio De Corato (https://github.com/marzione00/Lab_Geo)
 
 # GeoStat Lab — funzioni comuni. R >= 4.3; ggplot2 >= 3.4; jsonlite.
 suppressPackageStartupMessages(library(ggplot2))
@@ -63,8 +65,8 @@ episode <- if (length(idx)) cumsum(c(1, diff(idx) > p$gap)) else integer()
 data <- data.frame(giorno = 1:200, valore = x, supera = x > p$threshold)
 
 plots <- list(line_plot(data, "giorno", "valore", "Superamenti della soglia", "Giorno", "Valore") + 
-    geom_hline(yintercept = p$threshold, colour = col_geo[2], linetype = 2) + geom_point(data = data[idx, 
-    , drop = FALSE], colour = col_geo[2], size = 2))
+    geom_hline(yintercept = p$threshold, colour = col_geo[2], linetype = 2) +
+        geom_point(data = data[idx, , drop = FALSE], colour = col_geo[2], size = 2))
 
 metrics <- metric(`Giorni sopra soglia` = length(idx), Episodi = if (length(idx)) max(episode) else 0, 
     `Separazione adottata` = p$gap)

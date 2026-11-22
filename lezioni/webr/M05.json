@@ -1,0 +1,934 @@
+{
+ "R": "R version 4.6.0 (2026-04-24)",
+ "fragments": {
+  "003_avvio.R": {
+   "status": "ok",
+   "output": "> # Aprire Pelago_M05.Rproj.\n> source(\"setup.R\", encoding=\"UTF-8\")\n> # Dati sintetici del corso\n> head(fossili)\n    id morfotipo diametro_tot_um diametro_int_um diaframma_um spessore_um\n1 F001   Rounded        7.234159        6.351843     3.360359   0.4411581\n2 F002   Rounded        5.810230        5.006650     2.749251   0.4017900\n3 F003   Rounded        6.637885        5.631578     2.585601   0.5031534\n4 F004   Rounded        4.305180        3.502563     1.995113   0.4013086\n5 F005   Rounded        6.364019        5.683653     2.845647   0.3401828\n6 F006   Rounded        6.937162        6.139933     3.136544   0.3986145\n  rapporto_int_tot\n1        0.8780347\n2        0.8616957\n3        0.8483995\n4        0.8135694\n5        0.8930918\n6        0.8850785\n> head(provini)\n   id affioramento stazione massa_g volume_cm3 alterazione densita\n1 C01            A       A1  107.20         40       bassa    2.68\n2 C02            A       A1  121.95         45       bassa    2.71\n3 C03            A       A1  132.50         50       media    2.65\n4 C04            A       A1  113.40         42       bassa    2.70\n5 C05            A       A2   99.56         38       media    2.62\n6 C06            A       A2  117.04         44       bassa    2.66\n> # Argomenti e documentazione\n> args(mean)\nfunction (x, ...) \nNULL\n> help(\"sample\")\nsample                  package:base                   R Documentation\n\nRandom Samples and Permutations\n\nDescription:\n\n     ‘sample’ takes a sample of the specified size from the elements of\n     ‘x’ using either with or without replacement.\n\nUsage:\n\n     sample(x, size, replace = FALSE, prob = NULL)\n     \n     sample.int(n, size = n, replace = FALSE, prob = NULL,\n                useHash = (n > 1e+07 && !replace && is.null(prob) && size <= n/2))\n     \nArguments:\n\n       x: either a vector of one or more elements from which to choose,\n          or a positive integer.  See ‘Details.’\n\n       n: a positive number, the number of items to choose from.  See\n          ‘Details.’\n\n    size: a non-negative integer giving the number of items to choose.\n\n replace: should sampling be with replacement?\n\n    prob: a vector of probability weights for obtaining the elements of\n          the vector being sampled.\n\n useHash: ‘logical’ indicating if the hash-version of the algorithm\n          should be used.  Can only be used for ‘replace = FALSE’,\n          ‘prob = NULL’, and ‘size <= n/2’, and really should be used\n          for large ‘n’, as ‘useHash=FALSE’ will use memory\n          proportional to ‘n’.\n\nDetails:\n\n     If ‘x’ has length 1, is numeric (in the sense of ‘is.numeric’) and\n     ‘x >= 1’, sampling _via_ ‘sample’ takes place from ‘1:x’.  _Note_\n     that this convenience feature may lead to undesired behaviour when\n     ‘x’ is of varying length in calls such as ‘sample(x)’.  See the\n     examples.\n\n     Otherwise ‘x’ can be any R object for which ‘length’ and\n     subsetting by integers make sense: S3 or S4 methods for these\n     operations will be dispatched as appropriate.\n\n     For ‘sample’ the default for ‘size’ is the number of items\n     inferred from the first argument, so that ‘sample(x)’ generates a\n     random permutation of the elements of ‘x’ (or ‘1:x’).\n\n     It is allowed to ask for ‘size = 0’ samples with ‘n = 0’ or a\n     length-zero ‘x’, but otherwise ‘n > 0’ or positive ‘length(x)’ is\n     required.\n\n     Non-integer positive numerical values of ‘n’ or ‘x’ will be\n     truncated to the next smallest integer, which has to be no larger\n     than ‘.Machine$integer.max’.\n\n     The optional ‘prob’ argument can be used to give a vector of\n     weights for obtaining the elements of the vector being sampled.\n     They need not sum to one, but they should be non-negative and not\n     all zero.  If ‘replace’ is true, Walker's alias method (Ripley\n     1987) is used when there are more than 200 reasonably probable\n     values: this gives results incompatible with those from R < 2.2.0.\n\n     If ‘replace’ is false, these probabilities are applied\n     sequentially, that is the probability of choosing the next item is\n     proportional to the weights amongst the remaining items.  The\n     number of nonzero weights must be at least ‘size’ in this case.\n\n     ‘sample.int’ is a bare interface in which both ‘n’ and ‘size’ must\n     be supplied as integers.\n\n     Argument ‘n’ can be larger than the largest integer of type\n     ‘integer’, up to the largest representable integer in type\n     ‘double’.  Only uniform sampling is supported.  Two random numbers\n     are used to ensure uniform sampling of large integers.\n\nValue:\n\n     For ‘sample’ a vector of length ‘size’ with elements drawn from\n     either ‘x’ or from the integers ‘1:x’.\n\n     For ‘sample.int’, an integer vector of length ‘size’ with elements\n     from ‘1:n’, or a double vector if n >= 2^31.\n\nReferences:\n\n     Becker RA, Chambers JM, Wilks AR (1988). _The New S Language_.\n     Chapman and Hall/CRC, London. ISBN 053409192X.\n\n     Ripley BD (1987). _Stochastic Simulation_. Wiley, New York, NY.\n     ISBN 0471818844.\n\nSee Also:\n\n     ‘RNGkind(sample.kind = ..)’ about random number generation,\n     notably the change of ‘sample()’ results with R version 3.6.0.\n\n     CRAN package ‘sampling’ for other methods of weighted sampling\n     without replacement.\n\nExamples:\n\n     x <- 1:12\n     # a random permutation\n     sample(x)\n     # bootstrap resampling -- only if length(x) > 1 !\n     sample(x, replace = TRUE)\n     \n     # 100 Bernoulli trials\n     sample(c(0,1), 100, replace = TRUE)\n     \n     ## More careful bootstrapping --  Consider this when using sample()\n     ## programmatically (i.e., in your function or simulation)!\n     \n     # sample()'s surprise -- example\n     x <- 1:10\n         sample(x[x >  8]) # length 2\n         sample(x[x >  9]) # oops -- length 10!\n         sample(x[x > 10]) # length 0\n     \n     ## safer version:\n     resample <- function(x, ...) x[sample.int(length(x), ...)]\n     resample(x[x >  8]) # length 2\n     resample(x[x >  9]) # length 1\n     resample(x[x > 10]) # length 0\n     \n     ## R 3.0.0 and later\n     sample.int(1e10, 12, replace = TRUE)\n     sample.int(1e10, 12) # not that there is much chance of duplicates\n     ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "dc0c44a9428670d4dd98",
+   "seconds": 18.5
+  },
+  "004_popolazione.R": {
+   "status": "ok",
+   "output": "> # Popolazione finita costruita\n> U04 <- data.frame(\n+   id=1:12,\n+   valore=seq(2.1,3.2,by=.1))\n> set.seed(17)\n> i04 <- sample(U04$id, size=4)\n> U04[i04, ]        # un campione\n  id valore\n2  2    2.2\n8  8    2.8\n1  1    2.1\n7  7    2.7\n> mean(U04$valore)  # media nota qui\n[1] 2.65",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "509ad89c46b31a5c2df9",
+   "seconds": 0.0
+  },
+  "005_unita.R": {
+   "status": "ok",
+   "output": "> # Tre stazioni con quattro misure\n> d05 <- data.frame(\n+  stazione=rep(c(\"A\",\"B\",\"C\"),each=4),\n+  misura=c(2.3,2.4,2.5,2.4,\n+           2.6,2.7,2.6,2.5,\n+           2.8,2.9,2.7,2.8))\n> G05 <- length(unique(d05$stazione))\n> c(righe=nrow(d05),stazioni=G05)\n   righe stazioni \n      12        3 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "263fea2fed48b5a64813",
+   "seconds": 0.0
+  },
+  "006_stimatore.R": {
+   "status": "ok",
+   "output": "> # Modello didattico con media nota\n> mu06 <- 10\n> set.seed(17)\n> x06 <- rnorm(6,mean=mu06,sd=2)\n> mean(x06)  # stima ottenuta dai dati\n[1] 9.487193\n> # La regola vale per ogni campione.\n> stimatore06 <- function(x) mean(x)\n> stimatore06(x06)\n[1] 9.487193",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "fd5c34f970a3ff3ac7bc",
+   "seconds": 0.0
+  },
+  "007_bersagli.R": {
+   "status": "ok",
+   "output": "> # Diametri costruiti, in micrometri\n> x07 <- c(4.2,5.1,6.4,7.0,7.3)\n> mean(x07)        # diametro medio\n[1] 6\n> mean(x07 > 6)    # quota sopra 6\n[1] 0.6\n> # Contrasto con ordine dichiarato\n> r07 <- c(4.8,5.2,5.6)\n> s07 <- c(6.1,6.5,7.2)\n> mean(s07)-mean(r07) # Spiky-Rounded\n[1] 1.4",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "9405144bb0d04328303d",
+   "seconds": 0.0
+  },
+  "008_pesi.R": {
+   "status": "ok",
+   "output": "> # Medie costruite di tre stazioni\n> m08 <- c(A=5,B=6,C=12)\n> w08 <- c(A=.2,B=.3,C=.5)\n> sum(w08)           # somma: 1\n[1] 1\n> sum(w08*m08)       # media pesata\n[1] 8.8\n> weighted.mean(m08,w08)\n[1] 8.8\n> # Ogni stazione conta 1/3.\n> mean(m08)\n[1] 7.666667",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "ee984fc4f1f982d56cd7",
+   "seconds": 0.0
+  },
+  "009_due_medie.R": {
+   "status": "ok",
+   "output": "> # Densita: g/cm^3, dati costruiti\n> n09 <- c(2,8)\n> m09 <- c(2.4,2.8)\n> weighted.mean(m09,n09) # 2.72\n[1] 2.72\n> mean(m09)             # 2.60\n[1] 2.6\n> c(peso_misure=n09[1]/sum(n09),\n+   peso_stazioni=1/length(n09))\n  peso_misure peso_stazioni \n          0.2           0.5 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "b5320c65d338d8c657f7",
+   "seconds": 0.0
+  },
+  "010_bilanciato.R": {
+   "status": "ok",
+   "output": "> # Riprendiamo i gruppi di slide 5.\n> m10 <- tapply(d05$misura,\n+   d05$stazione,mean)\n> c(righe=mean(d05$misura),\n+   stazioni=mean(m10))\n   righe stazioni \n     2.6      2.6 \n> table(d05$stazione)  # 4,4,4\n\nA B C \n4 4 4 \n> # L'uguaglianza deriva dai pesi.",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "d849185a58c56ad5b1e5",
+   "seconds": 0.0
+  },
+  "011_densita.R": {
+   "status": "ok",
+   "output": "> # Due provini costruiti\n> m11 <- c(96,168)   # massa: g\n> v11 <- c(40,60)    # volume: cm^3\n> rho11 <- m11/v11\n> mean(rho11)       # 2.60 g/cm^3\n[1] 2.6\n> sum(m11)/sum(v11) # 2.64 g/cm^3\n[1] 2.64\n> weighted.mean(rho11,v11)\n[1] 2.64",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "6572cc7ebc66d4ed0059",
+   "seconds": 0.0
+  },
+  "012_casuale_semplice.R": {
+   "status": "ok",
+   "output": "> # Tutti i campioni di 2 fra 6 unita\n> u12 <- c(2,4,5,7,8,10)\n> ind12 <- combn(seq_along(u12),2)\n> medie12 <- apply(ind12,2,\n+   function(i) mean(u12[i]))\n> length(medie12)       # 15 campioni\n[1] 15\n> c(pop=mean(u12),\n+   attesa=mean(medie12))\n   pop attesa \n     6      6 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "6234db252db5e488d235",
+   "seconds": 0.0
+  },
+  "013_strati.R": {
+   "status": "ok",
+   "output": "> # Quote note della popolazione\n> W13 <- c(.3,.7)\n> m13 <- c(5.2,8.4) # medie campionarie\n> n13 <- c(20,20)   # allocazione\n> sum(W13*m13)      # 7.44\n[1] 7.44\n> weighted.mean(m13,n13) # 6.80\n[1] 6.8\n> # I pesi W descrivono la popolazione.",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "591aa7f6fbb5dece616d",
+   "seconds": 0.0
+  },
+  "014_selezione_stazioni.R": {
+   "status": "ok",
+   "output": "> # Prima stazioni, poi le loro righe\n> ids14 <- unique(d05$stazione)\n> set.seed(17)\n> scelte14 <- sample(ids14,size=2)\n> d05[d05$stazione %in% scelte14, ]\n   stazione misura\n5         B    2.6\n6         B    2.7\n7         B    2.6\n8         B    2.5\n9         C    2.8\n10        C    2.9\n11        C    2.7\n12        C    2.8\n> # Le righe della stessa stazione\n> # restano insieme nella selezione.",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "530059e851b562f3777b",
+   "seconds": 0.0
+  },
+  "015_lab_estimandi.R": {
+   "status": "ok",
+   "output": "> # Stesso seme, diversa numerosita C\n> a15 <- lab_estimandi(nHigh=40)\n> b15 <- lab_estimandi(nHigh=10)\n> a15$indicatori\n  media_misure media_stazioni \n      9.982584       7.963128 \n> b15$indicatori\n  media_misure media_stazioni \n      8.014477       8.014477 \n> # Medie teoriche: A=5, B=6, C=12.",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "2366c1c5ece81b61416e",
+   "seconds": 0.0
+  },
+  "016_lista_incompleta.R": {
+   "status": "ok",
+   "output": "> # Lista incompleta: esempio costruito\n> u16 <- data.frame(\n+  valore=c(4,5,5,6,8,9,10,11),\n+  accessibile=c(rep(TRUE,4),\n+                rep(FALSE,4)))\n> mean(u16$valore)\n[1] 7.25\n> mean(u16$valore[u16$accessibile])\n[1] 5",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "8d24ad2962ea9107a074",
+   "seconds": 0.0
+  },
+  "017_bias.R": {
+   "status": "ok",
+   "output": "> # Simulazione diretta delle stime\n> n17 <- 60\n> set.seed(17)\n> t17 <- rnorm(200,mean=9,\n+              sd=2/sqrt(n17))\n> mean(t17)-10 # bias simulato\n[1] -1.01361\n> 9-10         # bias del modello\n[1] -1",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "e17ed053324f541ed3de",
+   "seconds": 0.0
+  },
+  "018_mse.R": {
+   "status": "ok",
+   "output": "> # Modello della slide precedente\n> n18 <- 60\n> bias18 <- -1\n> var18 <- 4/n18\n> mse18 <- var18+bias18^2\n> c(varianza=var18,bias=bias18,\n+   mse=mse18,rmse=sqrt(mse18))\n   varianza        bias         mse        rmse \n 0.06666667 -1.00000000  1.06666667  1.03279556 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "a52aef0f94e8d7a5724e",
+   "seconds": 0.0
+  },
+  "019_piu_osservazioni.R": {
+   "status": "ok",
+   "output": "> # Confronto teorico\n> n19 <- c(60,300)\n> data.frame(\n+  n=n19,\n+  se=2/sqrt(n19),\n+  bias=rep(-1,2),\n+  mse=4/n19+1)\n    n        se bias      mse\n1  60 0.2581989   -1 1.066667\n2 300 0.1154701   -1 1.013333",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "366c8ccc6f0860445913",
+   "seconds": 0.0
+  },
+  "020_confronto_procedure.R": {
+   "status": "ok",
+   "output": "> # Bersaglio comune theta=10\n> v20 <- c(casuale=4/60,\n+          selettiva=4/300)\n> b20 <- c(casuale=0,selettiva=-1)\n> data.frame(se=sqrt(v20),\n+  bias=b20,mse=v20+b20^2)\n                 se bias        mse\ncasuale   0.2581989    0 0.06666667\nselettiva 0.1154701   -1 1.01333333",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "400356d2bd0fdcfff483",
+   "seconds": 0.0
+  },
+  "021_dati_mancanti.R": {
+   "status": "ok",
+   "output": "> # Registrare ogni esito del prelievo\n> d21 <- data.frame(\n+  id=1:6,\n+  misura=c(2.4,NA,2.7,2.5,NA,2.8),\n+  esito=c(\"ok\",\"perso\",\"ok\",\"ok\",\n+          \"non accessibile\",\"ok\"))\n> table(d21$esito)\n\nnon accessibile              ok           perso \n              1               4               1 \n> mean(d21$misura,na.rm=TRUE)\n[1] 2.6",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "25334cc5cb134d659ad8",
+   "seconds": 0.0
+  },
+  "022_registro.R": {
+   "status": "ok",
+   "output": "> # Metadati: esempio costruito\n> registro22 <- data.frame(\n+  id=c(\"P01\",\"P02\",\"P03\"),\n+  stazione=c(\"A\",\"A\",\"B\"),\n+  strato=c(\"Nord\",\"Nord\",\"Sud\"),\n+  ordine=c(1,2,3),\n+  protocollo=rep(\"casuale\",3))\n> registro22\n   id stazione strato ordine protocollo\n1 P01        A   Nord      1    casuale\n2 P02        A   Nord      2    casuale\n3 P03        B    Sud      3    casuale",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "2ea6f9eaa7b4d90bea0f",
+   "seconds": 0.0
+  },
+  "023_lab_selezione.R": {
+   "status": "ok",
+   "output": "> # Il sito genera direttamente stime.\n> a23 <- lab_selezione(n=60,bias=1)\n> b23 <- lab_selezione(n=300,bias=1)\n> a23$indicatori\nbias_teorico   se_teorico mse_simulato \n  -1.0000000    0.2581989    1.0387532 \n> b23$indicatori\nbias_teorico   se_teorico mse_simulato \n  -1.0000000    0.1154701    1.0014182 \n> c23 <- lab_selezione(n=60,bias=0)\n> c23$indicatori\nbias_teorico   se_teorico mse_simulato \n  0.00000000   0.25819889   0.06436853 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "02f8941c9afb257b9e07",
+   "seconds": 0.0
+  },
+  "024_numerosita.R": {
+   "status": "ok",
+   "output": "> # Conteggi con significati diversi\n> G24 <- 6       # stazioni\n> m24 <- 4       # misure per stazione\n> n24 <- G24*m24 # osservazioni\n> B24 <- 2000    # repliche al computer\n> c(stazioni=G24,osservazioni=n24,\n+   repliche=B24)\n    stazioni osservazioni     repliche \n           6           24         2000 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "49d87afd2cf4f8408acd",
+   "seconds": 0.0
+  },
+  "025_ripetizioni.R": {
+   "status": "ok",
+   "output": "> # Ogni colonna e' un nuovo campione.\n> set.seed(17)\n> X25 <- replicate(5,\n+   rnorm(4,mean=10,sd=2))\n> round(X25,2)\n     [,1]  [,2]  [,3]  [,4]  [,5]\n[1,] 7.97 11.54 10.51 12.59 11.68\n[2,] 9.84  9.67 10.73 10.38 10.32\n[3,] 9.53 11.95 12.36 13.18 11.25\n[4,] 8.37 13.43 11.29  9.89 11.27\n> colMeans(X25) # una stima per campione\n[1]  8.92755 11.64794 11.22290 11.50963 11.12869\n> dim(X25)     # 4 misure x 5 campioni\n[1] 4 5",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "930e9d35fc16a7e0542b",
+   "seconds": 0.0
+  },
+  "026_campioni.R": {
+   "status": "ok",
+   "output": "> set.seed(17)\n> # Ogni colonna e' un campione.\n> c26 <- replicate(4, rexp(6))\n> round(c26, 2)\n     [,1] [,2] [,3] [,4]\n[1,] 1.63 1.94 0.05 3.20\n[2,] 0.28 0.69 0.42 0.60\n[3,] 0.08 0.66 0.61 1.17\n[4,] 2.04 0.42 0.06 0.13\n[5,] 1.88 0.74 0.15 1.87\n[6,] 0.56 0.29 0.15 0.60\n> m26 <- colMeans(c26)\n> round(m26, 2)  # Quattro medie\n[1] 1.08 0.79 0.24 1.26",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "892f250502903073bf1f",
+   "seconds": 0.0
+  },
+  "027_popolazioni.R": {
+   "status": "ok",
+   "output": "> # Due modelli con media e varianza 1\n> set.seed(17)\n> a27 <- rnorm(200, mean = 1, sd = 1)\n> b27 <- rexp(200, rate = 1)\n> c(mean(a27), var(a27))\n[1] 0.9472883 1.1989581\n> c(mean(b27), var(b27))\n[1] 1.035890 1.347472",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "04a9f63973ee873b3130",
+   "seconds": 0.0
+  },
+  "028_valore_atteso.R": {
+   "status": "ok",
+   "output": "> # Medie note, anche differenti\n> mu28 <- c(2, 4, 9)\n> mean(mu28)  # E della media: 5\n[1] 5\n> # Se tutte le medie valgono mu\n> mu28 <- rep(5, 3)\n> sum(mu28) / length(mu28)\n[1] 5",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "81a75fc46d5d2f988857",
+   "seconds": 0.0
+  },
+  "029_media_normale.R": {
+   "status": "ok",
+   "output": "> # Media di n osservazioni N(1,1)\n> n29 <- 60\n> se29 <- 1 / sqrt(n29)\n> # Probabilita' di media fra .8 e 1.2\n> pnorm(1.2, 1, se29) -\n+   pnorm(.8, 1, se29)\n[1] 0.8786647",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "dcd45781b6b6ef216dc4",
+   "seconds": 0.0
+  },
+  "030_medie_esponenziali.R": {
+   "status": "ok",
+   "output": "> set.seed(17)\n> # Una nuova media a ogni replica\n> m30 <- replicate(200,\n+   mean(rexp(60, rate = 1)))\n> hist(m30, main = \"200 medie\",\n+      xlab = \"Media campionaria\")\n> sd(m30)\n[1] 0.1247833\n> 1 / sqrt(60)  # SE teorico\n[1] 0.1290994",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "532805edd424aaaf8dd9",
+   "seconds": 0.2
+  },
+  "031_chebyshev.R": {
+   "status": "ok",
+   "output": "> n31 <- c(25, 100, 400)\n> eps31 <- .2  # Tolleranza\n> # Varianza della popolazione = 1\n> lim31 <- pmin(1, 1/(n31*eps31^2))\n> data.frame(n = n31, limite = lim31)\n    n limite\n1  25 1.0000\n2 100 0.2500\n3 400 0.0625",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "0eb4cbee05b555c624bb",
+   "seconds": 0.0
+  },
+  "032_media_cumulativa.R": {
+   "status": "ok",
+   "output": "> set.seed(17)\n> x32 <- rexp(200)\n> n32 <- seq_along(x32)\n> mc32 <- cumsum(x32) / n32\n> plot(n32, mc32, type = \"l\",\n+   xlab = \"n\", ylab = \"Media\")\n> abline(h = 1, lty = 2)",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "6d9ade5088bc966c8baf",
+   "seconds": 0.1
+  },
+  "033_standardizzazione.R": {
+   "status": "ok",
+   "output": "> set.seed(17)\n> n33 <- 60\n> m33 <- replicate(1000,\n+   mean(rexp(n33)))\n> z33 <- sqrt(n33) * (m33 - 1)\n> c(media = mean(z33), sd = sd(z33))\n      media          sd \n-0.03029407  1.00687452 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "fbf39bdc67ae337ce8fa",
+   "seconds": 0.1
+  },
+  "034_dipendenza_totale.R": {
+   "status": "ok",
+   "output": "> set.seed(17)\n> z34 <- rnorm(1)\n> x34 <- rep(z34, 100)\n> mean(x34)  # Identico a z34\n[1] -1.015009\n> # Aggiungere copie lascia la media\n> # uguale alla stessa osservazione.",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "5026baa69468af30b793",
+   "seconds": 0.0
+  },
+  "035_lab_distribuzioni.R": {
+   "status": "ok",
+   "output": "> # n: osservazioni; B: campioni\n> a35 <- lab_distribuzioni(\n+   n = 12, B = 1000,\n+   population = \"exp\", seed = 17)\n> b35 <- lab_distribuzioni(\n+   n = 60, B = 1000,\n+   population = \"exp\", seed = 17)\n> a35$indicatori\nmedia_delle_medie    sd_delle_medie        se_teorico \n        0.9857088         0.2887726         0.2886751 \n> b35$indicatori\nmedia_delle_medie    sd_delle_medie        se_teorico \n        0.9960891         0.1299869         0.1290994 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "97ee7d9d7cfc9b10f62d",
+   "seconds": 0.1
+  },
+  "036_varianza.R": {
+   "status": "ok",
+   "output": "> x36 <- c(4, 5, 6, 9)\n> sc36 <- x36 - mean(x36)\n> sum(sc36)  # Scarti vincolati\n[1] 0\n> sum(sc36^2)/(length(x36)-1)\n[1] 4.666667\n> var(x36)   # Stesso denominatore\n[1] 4.666667\n> sd(x36)^2\n[1] 4.666667",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "3f52891d70673de199a9",
+   "seconds": 0.0
+  },
+  "037_sd_se.R": {
+   "status": "ok",
+   "output": "> f37 <- read.csv(\n+   \"Dati/fossili_simulati.csv\")\n> p37 <- subset(f37,\n+               morfotipo == \"Rounded\")\n> x37 <- p37$diametro_tot_um\n> n37 <- length(x37)\n> s37 <- sd(x37)\n> c(SD = s37, SE = s37/sqrt(n37))\n      SD       SE \n1.000452 0.111854 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "224c3bed8b60fe12f97a",
+   "seconds": 0.0
+  },
+  "038_covarianze.R": {
+   "status": "ok",
+   "output": "> # Quattro osservazioni, varianza 1\n> S38 <- matrix(.2, 4, 4)\n> diag(S38) <- 1\n> w38 <- rep(1/4, 4)\n> # Varianza della loro media\n> drop(t(w38) %*% S38 %*% w38)\n[1] 0.4\n> sum(S38) / 4^2\n[1] 0.4",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "2c5fd18be54d39510f07",
+   "seconds": 0.0
+  },
+  "039_equicorrelazione.R": {
+   "status": "ok",
+   "output": "> n39 <- 60\n> rho39 <- .2\n> deff39 <- 1 + (n39-1)*rho39\n> c(SE = sqrt(deff39/n39),\n+   n_eff = n39/deff39)\n       SE     n_eff \n0.4618802 4.6875000 \n> # Varianza marginale fissata a 1",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "725c361109c0504fbd6b",
+   "seconds": 0.0
+  },
+  "040_lab_dipendenza.R": {
+   "status": "ok",
+   "output": "> a40 <- lab_dipendenza(\n+   n = 60, B = 200,\n+   rho = 0, seed = 17)\n> b40 <- lab_dipendenza(\n+   n = 60, B = 200,\n+   rho = .2, seed = 17)\n> a40$indicatori\nse_indipendenza     se_corretto  sd_delle_medie           n_eff \n      0.1290994       0.1290994       0.1328882      60.0000000 \n> b40$indicatori\nse_indipendenza     se_corretto  sd_delle_medie           n_eff \n      0.1290994       0.4618802       0.4567261       4.6875000 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "fbe6adbd706d55d44a8d",
+   "seconds": 0.1
+  },
+  "041_stazioni.R": {
+   "status": "ok",
+   "output": "> G41 <- 6   # Stazioni indipendenti\n> m41 <- 4   # Provini per stazione\n> rho41 <- .6\n> deff41 <- 1 + (m41-1)*rho41\n> n41 <- G41*m41\n> c(DEFF = deff41, n_eff = n41/deff41)\n    DEFF    n_eff \n2.800000 8.571429 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "22126590e784e8fdc27a",
+   "seconds": 0.0
+  },
+  "042_radice_n.R": {
+   "status": "ok",
+   "output": "> n42 <- c(4, 25, 100)\n> se42 <- 1/sqrt(n42)\n> data.frame(n = n42, SE = se42)\n    n  SE\n1   4 0.5\n2  25 0.2\n3 100 0.1\n> # Rapporto: da 25 a 100\n> sqrt(25/100)\n[1] 0.5",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "1cd55ed565e9d01f532f",
+   "seconds": 0.0
+  },
+  "043_proporzione.R": {
+   "status": "ok",
+   "output": "> evento43 <- c(rep(1, 18), rep(0, 42))\n> n43 <- length(evento43)\n> p43 <- mean(evento43)\n> sqrt(p43*(1-p43)/n43)\n[1] 0.0591608\n> # Con zero eventi la stima e' zero:\n> # non implica certezza su p.",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "eb2491883fc94cdf6e5a",
+   "seconds": 0.0
+  },
+  "044_popolazione_finita.R": {
+   "status": "ok",
+   "output": "> pop44 <- c(2, 4, 6, 8, 10)\n> m44 <- colMeans(combn(pop44, 2))\n> # Varianza esatta sui 10 campioni\n> mean((m44-mean(pop44))^2)\n[1] 3\n> # Formula senza reinserimento\n> (1-2/length(pop44))*var(pop44)/2\n[1] 3",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "09c5f8e9eeb27d9a33c0",
+   "seconds": 0.0
+  },
+  "045_strati.R": {
+   "status": "ok",
+   "output": "> f45 <- read.csv(\n+   \"Dati/fossili_simulati.csv\")\n> g45 <- split(f45$diametro_tot_um,\n+              f45$morfotipo)\n> w45 <- c(Rounded = .5, Spiky = .5)\n> se45 <- sqrt(sum(w45^2 *\n+   sapply(g45, var)/lengths(g45)))\n> se45\n[1] 0.07596071",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "d97cc71e309542ff20bb",
+   "seconds": 0.0
+  },
+  "046_pianificazione.R": {
+   "status": "ok",
+   "output": "> sigma46 <- 1  # SD pilota, micrometri\n> E46 <- .1     # Semiampiezza voluta\n> z46 <- qnorm(.975)\n> n46 <- ceiling((z46*sigma46/E46)^2)\n> n46\n[1] 385\n> z46*sigma46/sqrt(n46)\n[1] 0.09988901",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "d8494288cb13e6409e1f",
+   "seconds": 0.0
+  },
+  "047_barre.R": {
+   "status": "ok",
+   "output": "> f47 <- read.csv(\n+   \"Dati/fossili_simulati.csv\")\n> p47 <- subset(f47,\n+               morfotipo == \"Rounded\")\n> x47 <- p47$diametro_tot_um\n> s47 <- sd(x47); n47 <- length(x47)\n> c(SD = s47, SE = s47/sqrt(n47),\n+   IC95 = qt(.975,n47-1)*s47/sqrt(n47))\n       SD        SE      IC95 \n1.0004524 0.1118540 0.2226398 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "23dca383443ed18770b9",
+   "seconds": 0.0
+  },
+  "048_student.R": {
+   "status": "ok",
+   "output": "> n48 <- 20\n> q48 <- qt(.975, df = n48-1)\n> q48  # Circa 2.093\n[1] 2.093024\n> # Area centrale della Student\n> pt(q48, n48-1) - pt(-q48, n48-1)\n[1] 0.95",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "c29bda5c5634129a1976",
+   "seconds": 0.0
+  },
+  "049_intervallo_t.R": {
+   "status": "ok",
+   "output": "> # Esempio costruito, n = 6\n> x49 <- c(4.2, 5.1, 5.4, 6, 6.3, 7)\n> n49 <- length(x49)\n> se49 <- sd(x49)/sqrt(n49)\n> q49 <- qt(.975, n49-1)\n> mean(x49) + c(-1,1)*q49*se49\n[1] 4.634870 6.698463",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "cdc08c9c7339ff452a1f",
+   "seconds": 0.0
+  },
+  "050_livelli.R": {
+   "status": "ok",
+   "output": "> liv50 <- c(.80, .90, .95, .99)\n> q50 <- qt((1+liv50)/2, df = 19)\n> data.frame(livello = liv50,\n+            quantile = q50)\n  livello quantile\n1    0.80 1.327728\n2    0.90 1.729133\n3    0.95 2.093024\n4    0.99 2.860935\n> # La semiampiezza e' quantile * SE.",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "382dc44b4be7c379540e",
+   "seconds": 0.0
+  },
+  "051_ic_fossili.R": {
+   "status": "ok",
+   "output": "> f51 <- read.csv(\n+   \"Dati/fossili_simulati.csv\")\n> p51 <- subset(f51,\n+               morfotipo == \"Rounded\")\n> x51 <- p51$diametro_tot_um\n> n51 <- length(x51)\n> q51 <- qt(.975, n51-1)\n> se51 <- sd(x51)/sqrt(n51)\n> mean(x51) + c(-1,1)*q51*se51\n[1] 5.840987 6.286266\n> t.test(x51)$conf.int\n[1] 5.840987 6.286266\nattr(,\"conf.level\")\n[1] 0.95",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "3473be26868176550f2c",
+   "seconds": 0.0
+  },
+  "052_copertura.R": {
+   "status": "ok",
+   "output": "> a52 <- lab_intervalli(\n+   n = 30, B = 200, rho = 0,\n+   level = .95, seed = 17)\n> sum(a52$dati$copre)  # 187 su 200\n[1] 187\n> mean(a52$dati$copre)\n[1] 0.935\n> a52$indicatori\n       copertura livello_nominale                B        errore_mc \n      0.93500000       0.95000000     200.00000000       0.01743201 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "f12cccaae3aa21c4aa04",
+   "seconds": 0.0
+  },
+  "053_lab_intervalli.R": {
+   "status": "ok",
+   "output": "> b53 <- lab_intervalli(\n+   n = 30, B = 200, rho = .2,\n+   level = .95, seed = 17)\n> b53$indicatori\n       copertura livello_nominale                B        errore_mc \n      0.49000000       0.95000000     200.00000000       0.03534827 \n> c53 <- mean(b53$dati$copre)\n> # SE Monte Carlo della copertura\n> sqrt(c53*(1-c53)/200)\n[1] 0.03534827",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "937f566931bb9b71e545",
+   "seconds": 0.1
+  },
+  "054_previsione.R": {
+   "status": "ok",
+   "output": "> # x51: diametri Rounded\n> n54 <- length(x51)\n> q54 <- qt(.975, n54-1)\n> mean(x51) + c(-1,1)*q54 *\n+   sd(x51)*sqrt(1+1/n54)\n[1] 4.059869 8.067385\n> # Include la variabilita' futura.",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "7ce75bb8033db208c323",
+   "seconds": 0.0
+  },
+  "055_contrasto.R": {
+   "status": "ok",
+   "output": "> f55 <- read.csv(\n+   \"Dati/fossili_simulati.csv\")\n> g55 <- split(f55$diametro_tot_um,\n+              f55$morfotipo)\n> S55 <- g55$Spiky; R55 <- g55$Rounded\n> mean(S55) - mean(R55)\n[1] 0.5820284\n> t.test(S55, R55,\n+        var.equal = FALSE)$conf.int\n[1] 0.2819532 0.8821035\nattr(,\"conf.level\")\n[1] 0.95",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "b41b899f9fa447841269",
+   "seconds": 0.0
+  },
+  "056_differenze.R": {
+   "status": "ok",
+   "output": "> # Tre coppie costruite, micrometri\n> tot56 <- c(7.2, 5.8, 6.4)\n> int56 <- c(6.3, 5.0, 5.3)\n> d56 <- tot56 - int56\n> d56\n[1] 0.9 0.8 1.1\n> sd(d56)/sqrt(length(d56))\n[1] 0.08819171\n> # Il numero di coppie e' 3.",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "34496d4b4f97d838d9e5",
+   "seconds": 0.0
+  },
+  "057_ic_appaiato.R": {
+   "status": "ok",
+   "output": "> f57 <- read.csv(\n+   \"Dati/fossili_simulati.csv\")\n> p57 <- subset(f57,\n+               morfotipo == \"Rounded\")\n> d57 <- p57$diametro_tot_um -\n+        p57$diametro_int_um\n> c(media = mean(d57), n = length(d57))\n     media          n \n 0.8566402 80.0000000 \n> t.test(d57)$conf.int\n[1] 0.8017632 0.9115173\nattr(,\"conf.level\")\n[1] 0.95",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "41ab9111af9f6db6a5e6",
+   "seconds": 0.0
+  },
+  "058_sensibilita.R": {
+   "status": "ok",
+   "output": "> # Esempio costruito\n> x58 <- c(4.1,4.7,5,5.2,5.4,5.6,5.8,6)\n> z58 <- x58\n> z58[8] <- 12  # Un valore cambiato\n> rbind(prima = c(mean(x58), sd(x58)),\n+       dopo = c(mean(z58), sd(z58)))\n       [,1]      [,2]\nprima 5.225 0.6204837\ndopo  5.975 2.4927036\n> rbind(t.test(x58)$conf.int,\n+       t.test(z58)$conf.int)\n         [,1]     [,2]\n[1,] 4.706263 5.743737\n[2,] 3.891048 8.058952",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "470aa9f3d101a0fc00c0",
+   "seconds": 0.0
+  },
+  "060_distribuzione_empirica.R": {
+   "status": "ok",
+   "output": "> # Quattro osservazioni adimensionali\n> x60 <- c(4, 5, 7, 8)\n> F60 <- ecdf(x60)  # Frazione <= t\n> F60(c(4, 6, 8))  # .25, .50, 1\n[1] 0.25 0.50 1.00\n> plot(F60, main = \"CDF empirica\",\n+      xlab = \"t\", ylab = \"F_n(t)\")",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "be138a5bead9f7602a89",
+   "seconds": 0.1
+  },
+  "061_masse.R": {
+   "status": "ok",
+   "output": "> x61 <- c(4, 5, 7, 8)\n> p61 <- rep(1/4, 4)\n> sum(p61)       # Probabilita totale\n[1] 1\n> sum(x61*p61)   # Media empirica: 6\n[1] 6\n> # Ogni posizione ha probabilita 1/4\n> data.frame(valore = x61, p = p61)\n  valore    p\n1      4 0.25\n2      5 0.25\n3      7 0.25\n4      8 0.25",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "771c7015cd0b9f71cdbf",
+   "seconds": 0.0
+  },
+  "062_indici.R": {
+   "status": "ok",
+   "output": "> x62 <- c(4, 5, 7, 8)\n> # Replica scelta per il diagramma\n> j62 <- c(3, 3, 1, 4)\n> x62[j62]        # 7, 7, 4, 8\n[1] 7 7 4 8\n> mean(x62[j62])  # 6.5\n[1] 6.5\n> # Una replica estratta casualmente\n> set.seed(17)\n> sample.int(4, 4, replace = TRUE)\n[1] 2 4 1 2",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "e7e59454717d998374ee",
+   "seconds": 0.0
+  },
+  "063_molteplicita.R": {
+   "status": "ok",
+   "output": "> x63 <- c(4, 5, 7, 8)\n> j63 <- c(3, 3, 1, 4)\n> N63 <- tabulate(j63, nbins = 4)\n> N63              # 1, 0, 2, 1\n[1] 1 0 2 1\n> sum(N63)         # 4 estrazioni\n[1] 4\n> sum(N63*x63)/4   # Media: 6.5\n[1] 6.5\n> mean(x63[j63])   # Stesso valore\n[1] 6.5",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "829a232c6f9bd7668bfc",
+   "seconds": 0.0
+  },
+  "064_enumerazione.R": {
+   "status": "ok",
+   "output": "> x64 <- c(4, 5, 7, 8)\n> # Tutte le 4^4 sequenze ordinate\n> j64 <- as.matrix(expand.grid(\n+   rep(list(1:4), 4)))\n> m64 <- apply(j64, 1,\n+   function(j) mean(x64[j]))\n> length(m64)               # 256\n[1] 256\n> mean(m64)                 # 6\n[1] 6\n> mean((m64-mean(m64))^2)    # .625\n[1] 0.625",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "e4757752093e068bf33a",
+   "seconds": 0.0
+  },
+  "065_varianza_condizionata.R": {
+   "status": "ok",
+   "output": "> x65 <- c(4, 5, 7, 8)\n> n65 <- length(x65)\n> s265 <- var(x65)        # 10/3\n> v65 <- (n65-1)/n65^2*s265\n> v65                    # .625\n[1] 0.625\n> sqrt(v65)              # SE esatto\n[1] 0.7905694\n> # Varianza di una sola estrazione\n> mean((x65-mean(x65))^2)  # 2.5\n[1] 2.5",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "5d03a3064f68fb9415be",
+   "seconds": 0.0
+  },
+  "066_molte_repliche.R": {
+   "status": "ok",
+   "output": "> x66 <- c(4, 5, 7, 8)\n> n66 <- length(x66)\n> B66 <- 2000\n> set.seed(17)\n> b66 <- replicate(B66, {\n+   j <- sample.int(n66, n66,\n+                   replace = TRUE)\n+   mean(x66[j])\n+ })\n> length(b66)  # Una media per replica\n[1] 2000",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "e2589a0a91e0c3241870",
+   "seconds": 0.1
+  },
+  "067_errore_standard_boot.R": {
+   "status": "ok",
+   "output": "> # b66 contiene 2000 medie bootstrap\n> sd(b66)      # SE bootstrap: circa .783\n[1] 0.7830958\n> # Errore MC della media delle repliche\n> sd(b66)/sqrt(length(b66))  # .0175\n[1] 0.01751055\n> # Dispersione delle quattro misure\n> sd(x66)      # Circa 1.826\n[1] 1.825742",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "e0495fa017df05e2dbba",
+   "seconds": 0.1
+  },
+  "068_bias_bootstrap.R": {
+   "status": "ok",
+   "output": "> # Media delle repliche meno stima\n> mean(b66) - mean(x66)  # .00225\n[1] 0.00225\n> # Il valore condizionato esatto e 0\n> sum(x66/length(x66)) - mean(x66)\n[1] 0\n> # Una selezione distorta del campione\n> # richiede informazioni sul disegno.",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "5c3e0fd895391008780c",
+   "seconds": 0.1
+  },
+  "069_quantile_tipo7.R": {
+   "status": "ok",
+   "output": "> # Esempio di 20 statistiche ordinate\n> v69 <- seq(1, 2.9, by = .1)\n> p69 <- .975\n> h69 <- 1 + (length(v69)-1)*p69\n> j69 <- floor(h69)\n> g69 <- h69-j69\n> (1-g69)*v69[j69] + g69*v69[j69+1]\n[1] 2.8525\n> quantile(v69, p69, type = 7)\n 97.5% \n2.8525 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "377ab581312ddff2ebe1",
+   "seconds": 0.0
+  },
+  "070_bootstrap_mediana.R": {
+   "status": "ok",
+   "output": "> set.seed(17)\n> x70 <- rlnorm(30, 0, .6)\n> set.seed(17)\n> m70 <- replicate(2000,\n+   median(sample(x70, replace = TRUE)))\n> median(x70)\n[1] 1.207147\n> quantile(m70, c(.025, .975),\n+          type = 7)\n    2.5%    97.5% \n1.020215 1.504735 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "1aecec58d52119cd46c7",
+   "seconds": 0.4
+  },
+  "071_laboratorio_bootstrap.R": {
+   "status": "ok",
+   "output": "> r71 <- lab_bootstrap(\n+   n = 30, B = 200, seed = 17)\n> r71$indicatori\nmedia_osservata    se_bootstrap       inferiore       superiore \n      1.3638767       0.1243239       1.1293768       1.6043741 \n> # La distribuzione e condizionata\n> # ai 30 valori del campione.\n> hist(r71$dati$media,\n+      xlab = \"Media bootstrap\",\n+      main = \"Ricampionamento\")",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "432ed6a13c3acadc032d",
+   "seconds": 0.0
+  },
+  "072_struttura_dati.R": {
+   "status": "ok",
+   "output": "> # Dati sintetici letti da setup.R\n> table(fossili$morfotipo)\n\nRounded   Spiky \n     80      80 \n> table(provini$stazione)\n\nA1 A2 A3 B1 B2 B3 \n 4  4  4  4  4  4 \n> # Una riga del fossile contiene\n> # due misure della stessa unita.\n> head(fossili[c(\"id\",\n+   \"diametro_tot_um\", \"diametro_int_um\")])\n    id diametro_tot_um diametro_int_um\n1 F001        7.234159        6.351843\n2 F002        5.810230        5.006650\n3 F003        6.637885        5.631578\n4 F004        4.305180        3.502563\n5 F005        6.364019        5.683653\n6 F006        6.937162        6.139933",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "81b045c2fe3b2b067679",
+   "seconds": 0.0
+  },
+  "073_quote_pooled.R": {
+   "status": "ok",
+   "output": "> # Indici del campione riunito\n> g73 <- fossili$morfotipo\n> set.seed(17)\n> j73 <- sample.int(length(g73),\n+   length(g73), replace = TRUE)\n> table(g73[j73])\n\nRounded   Spiky \n     81      79 \n> # N_R varia fra repliche.\n> length(j73)  # Totale sempre 160\n[1] 160",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "0b8d9bfb22cbe2361d60",
+   "seconds": 0.0
+  },
+  "074_stratificato.R": {
+   "status": "ok",
+   "output": "> g74 <- split(fossili$diametro_tot_um,\n+              fossili$morfotipo)\n> rb74 <- function(v)\n+   mean(sample(v, replace = TRUE))\n> set.seed(17)\n> b74 <- replicate(2000,\n+   .5*rb74(g74$Rounded) +\n+   .5*rb74(g74$Spiky))\n> sd(b74)\n[1] 0.07617235",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "e05a0bea092e28ad978c",
+   "seconds": 0.3
+  },
+  "075_pooled_stratificato.R": {
+   "status": "ok",
+   "output": "> z75 <- fossili$diametro_tot_um\n> set.seed(17)\n> bp75 <- replicate(2000,\n+   mean(sample(z75, replace = TRUE)))\n> # b74 usa quote fissate a 80 e 80\n> c(pooled = sd(bp75),\n+   stratificato = sd(b74))\n      pooled stratificato \n  0.08098468   0.07617235 \n> mean(z75)  # Media osservata comune\n[1] 6.354641",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "b96039fd4970d5fa7ab2",
+   "seconds": 0.4
+  },
+  "076_contrasto_gruppi.R": {
+   "status": "ok",
+   "output": "> # Contrasto Spiky meno Rounded\n> set.seed(17)\n> delta76 <- replicate(2000,\n+   rb74(g74$Spiky) - rb74(g74$Rounded))\n> mean(g74$Spiky) - mean(g74$Rounded)\n[1] 0.5820284\n> quantile(delta76, c(.025, .975),\n+          type = 7)\n     2.5%     97.5% \n0.2728335 0.8884810 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "ca7ba1c1406f3ce7ee0f",
+   "seconds": 0.5
+  },
+  "077_coppie.R": {
+   "status": "ok",
+   "output": "> r77 <- subset(fossili,\n+                morfotipo == \"Rounded\")\n> d77 <- with(r77,\n+   diametro_tot_um - diametro_int_um)\n> set.seed(17)\n> bd77 <- replicate(2000,\n+   mean(sample(d77, replace = TRUE)))\n> c(differenza = mean(d77),\n+   SE = sd(bd77))\ndifferenza         SE \n0.85664024 0.02753858 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "2e93b8dbff0b51880cfd",
+   "seconds": 0.2
+  },
+  "078_medie_stazione.R": {
+   "status": "ok",
+   "output": "> # Densita in g/cm^3, 4 provini/sito\n> st78 <- aggregate(densita ~ stazione,\n+                   provini, mean)\n> st78\n  stazione densita\n1       A1  2.6850\n2       A2  2.6525\n3       A3  2.6050\n4       B1  2.5925\n5       B2  2.5475\n6       B3  2.5125\n> mean(provini$densita)\n[1] 2.599167\n> mean(st78$densita)  # Stesso valore\n[1] 2.599167\n> table(provini$stazione)\n\nA1 A2 A3 B1 B2 B3 \n 4  4  4  4  4  4 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "06f110bb9c37e0ba05dd",
+   "seconds": 0.1
+  },
+  "079_stazioni_intere.R": {
+   "status": "ok",
+   "output": "> v79 <- split(provini$densita,\n+               provini$stazione)\n> # Sei indici illustrativi\n> j79 <- c(2, 2, 6, 4, 1, 3)\n> mean(unlist(v79[j79]))\n[1] 2.616667\n> mean(sapply(v79[j79], mean))\n[1] 2.616667\n> # Identici: 4 provini per stazione",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "508844d982f7c549ed7b",
+   "seconds": 0.0
+  },
+  "080_gruppi_diseguali.R": {
+   "status": "ok",
+   "output": "> # Due stazioni illustrative\n> n80 <- c(2, 8)\n> medie80 <- c(2.4, 2.8)  # g/cm^3\n> mean(medie80)           # 2.60\n[1] 2.6\n> weighted.mean(medie80, n80) # 2.72\n[1] 2.72\n> # L'aggregazione definisce i pesi.",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "4e22f3585cdd2c7d25c2",
+   "seconds": 0.0
+  },
+  "081_righe_stazioni.R": {
+   "status": "ok",
+   "output": "> set.seed(17)\n> br81 <- replicate(2000,\n+   mean(sample(provini$densita,\n+               replace = TRUE)))\n> set.seed(17)\n> bs81 <- replicate(2000,\n+   mean(sample(stazioni$densita,\n+               replace = TRUE)))\n> c(righe = sd(br81), siti = sd(bs81))\n     righe       siti \n0.01385636 0.02386359 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "af438d0e9206743f3788",
+   "seconds": 0.3
+  },
+  "082_affioramenti.R": {
+   "status": "ok",
+   "output": "> a82 <- split(stazioni$densita,\n+               stazioni$affioramento)\n> set.seed(17)\n> ab82 <- replicate(2000,\n+   rb74(a82$A) - rb74(a82$B))\n> mean(a82$A) - mean(a82$B)\n[1] 0.09666667\n> quantile(ab82, c(.025, .975),\n+          type = 7)\n  2.5%  97.5% \n0.0425 0.1500 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "c9647ce371ed76fde25a",
+   "seconds": 0.5
+  },
+  "083_pochi_siti.R": {
+   "status": "ok",
+   "output": "> # Sei medie locali indipendenti\n> quantile(bs81, c(.025, .975),\n+          type = 7)\n    2.5%    97.5% \n2.552917 2.643333 \n> # Student assume normalita delle\n> # medie di stazione, oltre a iid.\n> t.test(stazioni$densita)$conf.int\n[1] 2.532018 2.666316\nattr(,\"conf.level\")\n[1] 0.95\n> length(stazioni$densita)  # 6\n[1] 6",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "47fc427347e42fbd8d0f",
+   "seconds": 0.3
+  },
+  "084_modello_stazioni.R": {
+   "status": "ok",
+   "output": "> G84 <- 12\n> m84 <- 6\n> tau84 <- 2     # SD fra stazioni\n> rho84 <- tau84^2/(tau84^2+1)\n> se84 <- sqrt(tau84^2/G84 +\n+              1/(G84*m84))\n> c(rho_intra = rho84, SE = se84)\nrho_intra        SE \n0.8000000 0.5892557 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "c5a8593c6fa27f7a3082",
+   "seconds": 0.0
+  },
+  "085_laboratorio_stazioni.R": {
+   "status": "ok",
+   "output": "> r85 <- lab_ricampionamento(\n+   tau = 2, B = 200, seed = 17)\n> r85$indicatori\n            se_misure           se_stazioni stazioni_indipendenti \n            0.2385281             0.4940452            12.0000000 \n> # Variante: componente comune nulla\n> r85b <- lab_ricampionamento(\n+   tau = 0, B = 200, seed = 17)\n> r85b$indicatori\n            se_misure           se_stazioni stazioni_indipendenti \n            0.1178871             0.1803520            12.0000000 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "d2952f036f7d0b14afd2",
+   "seconds": 0.1
+  },
+  "088_serie_temporale.R": {
+   "status": "ok",
+   "output": "> r88 <- lab_blocchi(length = 8,\n+   rho = .7, B = 200, seed = 17)\n> x88 <- r88$campione\n> plot(x88, type = \"l\",\n+      xlab = \"Tempo\",\n+      ylab = \"Valore adimensionale\")\n> abline(h = 0, lty = 2)",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "0a0930c36f3ad25294c5",
+   "seconds": 0.1
+  },
+  "089_varianza_ar1.R": {
+   "status": "ok",
+   "output": "> n89 <- 120\n> rho89 <- .7\n> h89 <- 1:(n89-1)\n> v89 <- (n89 + 2*sum(\n+   (n89-h89)*rho89^h89))/n89^2\n> sqrt(v89)      # SE teorico: .215\n[1] 0.2148068\n> 1/sqrt(n89)    # Ipotesi iid: .091\n[1] 0.09128709",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "d1be9f9fe0e3e741a6b3",
+   "seconds": 0.0
+  },
+  "090_indici_individuali.R": {
+   "status": "ok",
+   "output": "> set.seed(17)\n> j90 <- sample.int(length(x88),\n+   length(x88), replace = TRUE)\n> head(j90, 12)\n [1]  50 104  97  94 108 111 119 103  45  39  42  22\n> # I valori adiacenti nella replica\n> # possono essere lontani nella serie.\n> head(diff(j90), 11)\n [1]  54  -7  -3  14   3   8 -16 -58  -6   3 -20",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "25a4af8f2772efacc460",
+   "seconds": 0.1
+  },
+  "091_blocchi_esempio.R": {
+   "status": "ok",
+   "output": "> n91 <- 8\n> L91 <- 3\n> inizi91 <- c(7, 3, 5)\n> j91 <- unlist(lapply(inizi91,\n+   function(s)\n+     ((s-1+0:(L91-1)) %% n91)+1))\n> j91             # 9 indici\n[1] 7 8 1 3 4 5 5 6 7\n> j91[1:n91]      # Troncamento a 8\n[1] 7 8 1 3 4 5 5 6",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "89e4d0f45b8a1f70edd4",
+   "seconds": 0.0
+  },
+  "092_replica_blocchi.R": {
+   "status": "ok",
+   "output": "> n92 <- length(x88)\n> L92 <- 8\n> set.seed(17)\n> s92 <- sample.int(n92,\n+   ceiling(n92/L92), replace = TRUE)\n> j92 <- unlist(lapply(s92,\n+   function(s)\n+     ((s-1+0:(L92-1)) %% n92)+1))\n> mean(x88[j92[1:n92]])\n[1] 0.3681399",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "41407019801b1ac7fe80",
+   "seconds": 0.1
+  },
+  "093_confronto_blocchi.R": {
+   "status": "ok",
+   "output": "> # Output del caso iniziale r88\n> r88$indicatori\n  se_individuale       se_blocchi lunghezza_blocco                n \n       0.1216752        0.2644455        8.0000000      120.0000000 \n> split(r88$dati$media,\n+       r88$dati$metodo) |>\n+   lapply(sd)\n$`Blocchi circolari`\n[1] 0.2644455\n\n$`Singole osservazioni`\n[1] 0.1216752\n\n> # SE teorico: modello AR(1)\n> sqrt(v89)\n[1] 0.2148068",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "031e57c69b4917a90baa",
+   "seconds": 0.1
+  },
+  "094_numero_blocchi.R": {
+   "status": "ok",
+   "output": "> n94 <- 120\n> L94 <- c(1, 8, 30)\n> data.frame(lunghezza = L94,\n+   blocchi = ceiling(n94/L94))\n  lunghezza blocchi\n1         1     120\n2         8      15\n3        30       4\n> # L=1: 120 blocchi individuali\n> # L=8: 15 blocchi\n> # L=30: 4 blocchi",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "c491c4095cc31e7debee",
+   "seconds": 0.0
+  },
+  "095_laboratorio_blocchi.R": {
+   "status": "ok",
+   "output": "> r95 <- lab_blocchi(length = 8,\n+   rho = .7, B = 200, seed = 17)\n> r95$indicatori\n  se_individuale       se_blocchi lunghezza_blocco                n \n       0.1216752        0.2644455        8.0000000      120.0000000 \n> r95b <- lab_blocchi(length = 1,\n+   rho = .7, B = 200, seed = 17)\n> r95b$indicatori\n  se_individuale       se_blocchi lunghezza_blocco                n \n       0.1216752        0.1296051        1.0000000      120.0000000 \n> identical(r95$campione,\n+           r95b$campione) # TRUE\n[1] TRUE",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "bc904759ecfafed7b491",
+   "seconds": 0.2
+  },
+  "096_tre_numeri.R": {
+   "status": "ok",
+   "output": "> n96 <- 30   # Osservazioni fissate\n> B96 <- 200  # Repliche per calcolo\n> R96 <- 30   # Ripetizioni del calcolo\n> c(osservazioni = n96,\n+   repliche = B96,\n+   ripetizioni = R96)\nosservazioni     repliche  ripetizioni \n          30          200           30 \n> B96*R96     # 6000 medie calcolate\n[1] 6000",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "86f841a8e21b4b1c03b6",
+   "seconds": 0.1
+  },
+  "097_stabilita_se.R": {
+   "status": "ok",
+   "output": "> set.seed(17)\n> x97 <- rlnorm(30, 0, .6)\n> se97 <- function(B)\n+   sd(replicate(B,\n+     mean(sample(x97, replace = TRUE))))\n> set.seed(717)\n> s97 <- sapply(c(50, 200, 1000),\n+   function(B) replicate(12, se97(B)))\n> s97\n           [,1]      [,2]      [,3]\n [1,] 0.1122276 0.1144028 0.1175176\n [2,] 0.1174933 0.1195171 0.1123337\n [3,] 0.1172793 0.1049076 0.1134835\n [4,] 0.1110098 0.1127077 0.1139311\n [5,] 0.1230922 0.1134959 0.1162380\n [6,] 0.1029060 0.1106625 0.1155382\n [7,] 0.1075193 0.1096405 0.1150243\n [8,] 0.1236127 0.1069562 0.1080417\n [9,] 0.1048629 0.1238255 0.1204933\n[10,] 0.1151135 0.1122989 0.1080681\n[11,] 0.1107277 0.1172632 0.1158534\n[12,] 0.1136830 0.1143835 0.1123372",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "b87a7667484e3a431363",
+   "seconds": 0.9
+  },
+  "098_limiti_ripetuti.R": {
+   "status": "ok",
+   "output": "> set.seed(17)\n> x98 <- rlnorm(30, 0, .6)\n> q98 <- replicate(30, {\n+   b <- replicate(200,\n+     mean(sample(x98, replace = TRUE)))\n+   quantile(b, .975, type = 7)\n+ })\n> sd(q98)  # Variabilita numerica\n[1] 0.02373867",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "535ae10d8b8d6e9e16fa",
+   "seconds": 0.4
+  },
+  "099_posizione_coda.R": {
+   "status": "ok",
+   "output": "> B99 <- c(40, 200, 1000)\n> p99 <- .975\n> h99 <- 1 + (B99-1)*p99\n> data.frame(B = B99, posizione = h99,\n+   repliche_coda_circa = B99*(1-p99))\n     B posizione repliche_coda_circa\n1   40    39.025                   1\n2  200   195.025                   5\n3 1000   975.025                  25\n> # Il quantile dipende da pochi\n> # valori vicini alla coda superiore.",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "aa9fe6df9fc5fb7830e8",
+   "seconds": 0.0
+  },
+  "100_confronto_B.R": {
+   "status": "ok",
+   "output": "> r100a <- lab_precisione(\n+   B = 200, seed = 17)\n> r100b <- lab_precisione(\n+   B = 1000, seed = 17)\n> c(B200 = sd(r100a$dati$y),\n+   B1000 = sd(r100b$dati$y))\n      B200      B1000 \n0.02373867 0.01292483 \n> identical(r100a$campione,\n+           r100b$campione)\n[1] TRUE",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "0e90bc4171f1dcd1cbcb",
+   "seconds": 2.0
+  },
+  "101_laboratorio_precisione.R": {
+   "status": "ok",
+   "output": "> r101 <- lab_precisione(\n+   B = 200, seed = 17)\n> r101$indicatori\n                  B sd_limite_superiore             n_fisso \n       200.00000000          0.02373867         30.00000000 \n> plot(r101$dati$x, r101$dati$y,\n+   xlab = \"Ripetizione\",\n+   ylab = \"Limite superiore\")\n> mean(r101$campione) # Media fissata\n[1] 1.363877",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "308d34c1ec7d9fd5c0ca",
+   "seconds": 0.3
+  },
+  "102_registro.R": {
+   "status": "ok",
+   "output": "> dir.create(\"Risultati\",\n+            showWarnings = FALSE)\n> registro102 <- list(\n+   n = 30, B = 200, seed = 17,\n+   unita = \"osservazione\",\n+   statistica = \"media\",\n+   quantili = \"type 7\",\n+   ambiente = sessionInfo())\n> saveRDS(registro102,\n+         \"Risultati/registro.rds\")",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "75c622e1c28e03a81549",
+   "seconds": 0.1
+  },
+  "106_fossili.R": {
+   "status": "ok",
+   "output": "> # Diametri in micrometri, dati del corso\n> x106 <- fossili$diametro_tot_um\n> g106 <- split(x106,fossili$morfotipo)\n> set.seed(17)\n> b106 <- replicate(2000,\n+   mean(sample(x106,replace=TRUE)))\n> s106 <- replicate(2000,mean(vapply(\n+   g106,function(z)\n+     mean(sample(z,replace=TRUE)),0.0)))\n> c(pooled=sd(b106),strati=sd(s106))\n    pooled     strati \n0.08098468 0.07578455 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "75ae669bd647de5fe120",
+   "seconds": 0.6
+  },
+  "107_relazione.R": {
+   "status": "ok",
+   "output": "> # Registrare risultato e ambiente\n> r107 <- lab_ricampionamento(\n+   tau=2,B=1000,seed=17)\n> dir.create(\"Risultati\",\n+            showWarnings=FALSE)\n> saveRDS(r107,\"Risultati/stazioni.rds\")\n> writeLines(capture.output(sessionInfo()),\n+   \"Risultati/sessionInfo.txt\")",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "97481700b4b3f1976c19",
+   "seconds": 0.2
+  }
+ },
+ "cards": {
+  "Esercizi/01_estimandi.R": {
+   "status": "ok",
+   "tail": "  media_misure media_stazioni\nA     9.982584       7.963128\nB     8.014477       8.014477"
+  },
+  "Esercizi/02_selezione.R": {
+   "status": "ok",
+   "tail": "  bias_teorico se_teorico mse_simulato\nA           -1  0.2581989     1.038753\nB           -1  0.1290994     1.003284"
+  },
+  "Esercizi/03_distribuzioni.R": {
+   "status": "ok",
+   "tail": "  media_delle_medie sd_delle_medie se_teorico\nA         1.0070264      0.1246276  0.1290994\nB         0.9857088      0.1247833  0.1290994"
+  },
+  "Esercizi/04_dipendenza.R": {
+   "status": "ok",
+   "tail": "  se_indipendenza se_corretto sd_delle_medie   n_eff\nA       0.1290994   0.4618802      0.4567261  4.6875\nB       0.1290994   0.1290994      0.1328882 60.0000"
+  },
+  "Esercizi/05_intervalli.R": {
+   "status": "ok",
+   "tail": "  copertura livello_nominale   B  errore_mc\nA     0.935             0.95 200 0.01743201\nB     0.490             0.95 200 0.03534827"
+  },
+  "Esercizi/06_bootstrap.R": {
+   "status": "ok",
+   "tail": "  media_osservata se_bootstrap inferiore superiore\nA        1.363877    0.1243239  1.129377  1.604374\nB        1.363877    0.1155085  1.141827  1.591852"
+  },
+  "Esercizi/07_ricampionamento.R": {
+   "status": "ok",
+   "tail": "  se_misure se_stazioni stazioni_indipendenti\nA 0.2385281   0.4940452                    12\nB 0.1178871   0.1803520                    12"
+  },
+  "Esercizi/08_blocchi.R": {
+   "status": "ok",
+   "tail": "  se_individuale se_blocchi lunghezza_blocco   n\nA      0.1216752  0.2644455                8 120\nB      0.1216752  0.1296051                1 120"
+  },
+  "Esercizi/09_precisione.R": {
+   "status": "ok",
+   "tail": "    B sd_limite_superiore n_fisso\nA 200          0.02373867      30\nB 800          0.01225607      30"
+  }
+ }
+}

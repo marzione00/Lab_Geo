@@ -1,0 +1,131 @@
+---
+title: "La coppia \u00e8 parte del dato"
+subtitle: "M06_N10 \u00b7 Gemina"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come ricostruiamo correttamente le coppie quando le misure prima e dopo arrivano in tabelle con ordini diversi?
+
+## Obiettivi
+
+- Usare gli identificativi per abbinare le osservazioni.
+- Verificare coppie complete e differenze con segno.
+
+**Prima di iniziare.** Vettori, indicizzazione, media, varianza e grafici di base in R.
+
+**Dati e unità.** Ventiquattro coppie sintetiche prima/dopo in unità convenzionali. Ogni identificativo rappresenta la stessa unità nelle due misure.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M06_N10/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M06_N10")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(6010)
+```
+
+## 1. Separare le tabelle e controllare gli identificativi
+
+La relazione di coppia è un'informazione del disegno e deve sopravvivere a ordinamenti ed esportazioni. Creiamo due tabelle e invertiamo intenzionalmente l'ordine della seconda. L'uguaglianza delle lunghezze non assicura che righe nella stessa posizione appartengano alla stessa unità.
+
+```{r passo_01}
+dati <- carica_dati("misure_appaiate_simulate.csv")
+prima <- dati[c("id", "prima")]
+dopo <- dati[rev(seq_len(nrow(dati))), c("id", "dopo")]
+stopifnot(!anyDuplicated(prima$id), !anyDuplicated(dopo$id))
+stopifnot(setequal(prima$id, dopo$id))
+print(head(prima))
+print(head(dopo))
+print(c(stesso_ordine = identical(prima$id, dopo$id)))
+```
+
+**Lettura del risultato.** I due elenchi contengono gli stessi identificativi ma in ordine diverso. Una sottrazione per posizione calcolerebbe differenze fra unità sbagliate.
+
+## 2. Allineare con match e verificare l'esito
+
+La funzione match restituisce, per ciascun identificativo della prima tabella, la sua posizione nella seconda. Controlliamo l'assenza di indici mancanti prima di usarli. Poi costruiamo una nuova tabella con colonne coerenti per ogni coppia.
+
+```{r passo_02}
+posizione <- match(prima$id, dopo$id)
+stopifnot(!anyNA(posizione))
+dopo_allineato <- dopo[posizione, ]
+stopifnot(identical(prima$id, dopo_allineato$id))
+coppie <- data.frame(id = prima$id, prima = prima$prima,
+                     dopo = dopo_allineato$dopo)
+coppie$differenza <- coppie$dopo - coppie$prima
+print(head(coppie))
+```
+
+**Lettura del risultato.** Il controllo sugli identificativi verifica l'abbinamento anche quando l'ordine è stato modificato. La differenza conserva il verso dopo meno prima.
+
+## 3. Confrontare abbinamento corretto e sottrazione per posizione
+
+La media delle differenze può restare identica anche con un abbinamento sbagliato se gli stessi valori sono tutti presenti. La dispersione delle differenze e l'incertezza cambiano. Per questo il solo controllo della media non basta a verificare le coppie.
+
+```{r passo_03}
+d_corretto <- coppie$differenza
+d_errato <- dopo$dopo - prima$prima
+print(data.frame(schema = c("Identificativi allineati", "Posizioni non allineate"),
+  media = c(mean(d_corretto), mean(d_errato)),
+  SD_differenze = c(sd(d_corretto), sd(d_errato))))
+stopifnot(isTRUE(all.equal(mean(d_corretto), mean(d_errato))))
+print(c(coppie = nrow(coppie), SE_corretto = sd(d_corretto) / sqrt(nrow(coppie))))
+```
+
+**Lettura del risultato.** Il controllo mette in evidenza un errore che può essere invisibile nella stima centrale. La covarianza entro coppia determina una parte essenziale della precisione del cambiamento.
+
+## Variante svolta
+
+Rendere mancante una misura dopo in una copia e selezionare coppie complete prima del calcolo.
+
+```{r variante}
+incomplete <- coppie
+incomplete$dopo[3] <- NA_real_
+utilizzabili <- complete.cases(incomplete[c("prima", "dopo")])
+analisi <- incomplete[utilizzabili, ]
+d_complete <- analisi$dopo - analisi$prima
+print(c(coppie_originali = nrow(coppie), coppie_analizzate = nrow(analisi),
+        media_differenze_complete = mean(d_complete)))
+print(incomplete$id[!utilizzabili])
+```
+
+La stessa selezione deve essere applicata a entrambe le colonne. Il conteggio degli esclusi va dichiarato; l'analisi delle sole coppie complete può essere distorta se la mancanza dipende dal cambiamento.
+
+## Errore da riconoscere
+
+Non ordinare separatamente prima e dopo per valore e non fidarsi del numero uguale di righe. Verificare identificativi unici e corrispondenza esplicita.
+
+## Risposta alla domanda
+
+L'abbinamento appartiene al dato e al disegno. Conservare gli identificativi permette di controllare le differenze e protegge la stima della loro incertezza.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M06_N10` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M06/M06_N10.R).

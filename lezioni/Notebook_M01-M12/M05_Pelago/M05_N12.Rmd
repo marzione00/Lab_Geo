@@ -1,0 +1,128 @@
+---
+title: "Bootstrap della media di un gruppo"
+subtitle: "M05_N12 \u00b7 Pelago"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come stimiamo la variabilità della media Rounded ricampionando soltanto le unità di quel gruppo?
+
+## Obiettivi
+
+- Costruire una distribuzione bootstrap della media.
+- Confrontare la simulazione con la varianza condizionale teorica.
+
+**Prima di iniziare.** Vettori, indicizzazione, media, varianza e grafici di base in R.
+
+**Dati e unità.** Ottanta fossili sintetici Rounded, diametro totale in micrometri; il ricampionamento assume fossili indipendenti all'interno del gruppo.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M05_N12/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M05_N12")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(5012)
+```
+
+## 1. Definire campione e bersaglio
+
+La quantità stimata è la media del diametro totale nella popolazione Rounded rappresentata dal campione. Selezioniamo il gruppo prima di ricampionare: introdurre Spiky cambierebbe la popolazione empirica e quindi la domanda. Controlliamo le misure prima della simulazione.
+
+```{r passo_01}
+dati <- carica_dati("fossili_simulati.csv")
+gruppo <- dati[dati$morfotipo == "Rounded", ]
+x <- gruppo$diametro_tot_um
+stopifnot(all(is.finite(x)), all(x > 0), !anyDuplicated(gruppo$id))
+n <- length(x)
+stima <- mean(x)
+print(c(n = n, media_um = stima, SD_um = sd(x)))
+```
+
+**Lettura del risultato.** La media osservata resta il riferimento delle repliche. L'uso di dati sintetici permette l'esercizio, ma non produce una conclusione su fossili realmente raccolti.
+
+## 2. Ricampionare e controllare l'errore standard
+
+Ogni replica estrae n indici con reinserimento. Per la media, la varianza condizionale bootstrap è nota: ((n−1)/n) s²/n. Il fattore (n−1)/n deriva dalla varianza della distribuzione empirica, che usa il denominatore n.
+
+```{r passo_02}
+set.seed(512)
+B <- 2000
+medie_boot <- replicate(B, mean(x[sample.int(n, n, replace = TRUE)]))
+se_boot <- sd(medie_boot)
+se_empirico_esatto <- sqrt((n - 1) / n) * sd(x) / sqrt(n)
+print(c(SE_boot_um = se_boot, SE_condizionale_um = se_empirico_esatto,
+        SE_classico_um = sd(x) / sqrt(n)))
+print(c(media_repliche = mean(medie_boot), media_osservata = stima))
+```
+
+**Lettura del risultato.** La differenza fra il SE simulato e quello condizionale esatto deriva dal numero finito di repliche. La vicinanza al SE classico non elimina le ipotesi sul campione.
+
+## 3. Leggere un intervallo percentile
+
+I quantili 2,5% e 97,5% delimitano un intervallo percentile bootstrap. È una procedura approssimata e la sua copertura dipende da distribuzione, numerosità e regolarità della statistica; non basta costruire molti ricampionamenti per garantirla.
+
+```{r passo_03}
+intervallo <- quantile(medie_boot, c(0.025, 0.975), names = FALSE)
+print(data.frame(media_um = stima, inferiore_um = intervallo[1],
+                 superiore_um = intervallo[2], B = B))
+hist(medie_boot, breaks = 30, col = "#95BDD0", border = "white", ylab = "Frequenza",
+     main = "Bootstrap della media Rounded", xlab = "Media del diametro (um)")
+abline(v = stima, col = "#27647B", lwd = 2)
+abline(v = intervallo, col = "#A33B31", lty = 2)
+```
+
+**Lettura del risultato.** L'istogramma riguarda medie ricampionate e non diametri individuali. Un intervallo stretto descrive la precisione condizionata al campione, non l'assenza di selezione nella raccolta.
+
+## Variante svolta
+
+Cambiare seme mantenendo dati e numero di repliche, e confrontare gli estremi.
+
+```{r variante}
+set.seed(1512)
+medie_boot2 <- replicate(B, mean(sample(x, n, replace = TRUE)))
+intervallo2 <- quantile(medie_boot2, c(0.025, 0.975), names = FALSE)
+print(data.frame(seme = c(512, 1512),
+  SE = c(se_boot, sd(medie_boot2)), inferiore = c(intervallo[1], intervallo2[1]),
+  superiore = c(intervallo[2], intervallo2[2])))
+```
+
+I piccoli cambiamenti mostrano la componente numerica del bootstrap. Due semi non sono due nuovi campioni di fossili e non misurano tutta l'incertezza scientifica.
+
+## Errore da riconoscere
+
+Non sostituire n con B nella formula del SE: le repliche aumentano la precisione del calcolo, non il numero di fossili osservati.
+
+## Risposta alla domanda
+
+Il bootstrap della media riproduce la variabilità della distribuzione empirica del gruppo. Il disegno, l'unità indipendente e i limiti dell'intervallo devono restare dichiarati.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M05_N12` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M05/M05_N12.R).

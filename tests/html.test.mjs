@@ -19,9 +19,17 @@ test('escape covers the five HTML metacharacters and nullish values', () => {
 });
 test('html escapes interpolations unless they are marked raw', () => {
   const name = '<img src=x onerror=alert(1)>';
-  assert.equal(H.html`<p>${name}</p>`, '<p>&lt;img src=x onerror=alert(1)&gt;</p>');
-  assert.equal(H.html`<p>${H.raw('<b>ok</b>')}</p>`, '<p><b>ok</b></p>');
-  assert.equal(H.html`<p>${null}${undefined}${2}</p>`, '<p>2</p>');
+  assert.equal(String(H.html`<p>${name}</p>`), '<p>&lt;img src=x onerror=alert(1)&gt;</p>');
+  assert.equal(String(H.html`<p>${H.raw('<b>ok</b>')}</p>`), '<p><b>ok</b></p>');
+  assert.equal(String(H.html`<p>${null}${undefined}${2}</p>`), '<p>2</p>');
+});
+test('nested html and arrays stay markup, their own interpolations stay escaped', () => {
+  const items = ['<a>', 'b&c'].map(t => H.html`<li>${t}</li>`);
+  assert.equal(String(H.html`<ul>${items}</ul>`), '<ul><li>&lt;a&gt;</li><li>b&amp;c</li></ul>');
+  assert.equal(String(H.html`<p>${H.html`<b>${'"x"'}</b>`}</p>`), '<p><b>&quot;x&quot;</b></p>');
+  assert.equal(String(H.html`${['<i>', H.html`<i>`]}`), '&lt;i&gt;<i>');
+  assert.equal('<div>' + H.html`<p>${'&'}</p>` + '</div>', '<div><p>&amp;</p></div>');
+  assert.equal(String(H.html`<p>${H.html`<b>`.toString()}</p>`), '<p>&lt;b&gt;</p>');
 });
 test('the default policy rejects executable markup and accepts escaped text', () => {
   for (const bad of [

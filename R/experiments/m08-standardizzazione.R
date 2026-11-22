@@ -2,6 +2,8 @@
 # Valutare l’effetto delle unità sulla geometria del campione.
 # Dati sintetici; parametri e ambiente dichiarati.
 # Dipendenze: install.packages(c("ggplot2", "jsonlite", "svglite"))
+# Codice: PolyForm Noncommercial 1.0.0, https://polyformproject.org/licenses/noncommercial/1.0.0
+# Required Notice: Copyright 2026 Marzio De Corato (https://github.com/marzione00/Lab_Geo)
 
 # GeoStat Lab — funzioni comuni. R >= 4.3; ggplot2 >= 3.4; jsonlite.
 suppressPackageStartupMessages(library(ggplot2))
@@ -65,8 +67,8 @@ data <- data.frame(x = x[, 1], y = x[, 2])
 plots <- list(point_plot(data, title = "Geometria delle variabili", xl = "Variabile 1", yl = "Variabile 2") + 
     coord_equal())
 
-metrics <- metric(`SD variabile 1` = f(sd(x[, 1])), `SD variabile 2` = f(sd(x[, 2])), `Distanza punti 1 e 2` = f(sqrt(sum((x[1, 
-    ] - x[2, ])^2))))
+metrics <- metric(`SD variabile 1` = f(sd(x[, 1])), `SD variabile 2` = f(sd(x[, 2])),
+    `Distanza punti 1 e 2` = f(sqrt(sum((x[1, ] - x[2, ])^2))))
 
 print(metrics, row.names = FALSE)
 if (!interactive()) grDevices::cairo_pdf("figure_esperimento.pdf", width=9, height=5.5)

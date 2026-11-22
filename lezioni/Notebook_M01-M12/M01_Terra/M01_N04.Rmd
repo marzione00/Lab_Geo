@@ -1,0 +1,130 @@
+---
+title: "Leggere una colonna e selezionare una riga"
+subtitle: "M01_N04 \u00b7 Terra"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come si selezionano osservazioni e variabili mantenendo il collegamento fra massa, volume e identificativo?
+
+## Obiettivi
+
+- Distinguere indicizzazione di un vettore e di una tabella.
+- Costruire una selezione logica leggibile e verificarne la numerosità.
+
+**Prima di iniziare.** Saper eseguire una cella R e riconoscere vettori, assegnamenti e nomi di colonne.
+
+**Dati e unità.** Si utilizzano i 24 provini sintetici del modulo. Una riga rappresenta un provino e deve mantenere associate tutte le sue misure.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M01_N04/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M01_N04")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(1004)
+```
+
+## 1. Riconoscere l'oggetto estratto
+
+L'operatore dollaro estrae una colonna come vettore. Le parentesi quadre su una tabella distinguono righe e colonne mediante una virgola. Confrontiamo esplicitamente questi risultati, perché forme simili possono restituire oggetti diversi.
+
+```{r passo_01}
+# Ogni esecuzione riparte dal CSV condiviso, senza modificare il file.
+d <- carica_dati("campioni_modulo1.csv", stringsAsFactors = FALSE)
+stopifnot(nrow(d) == 24L, !anyDuplicated(d$id))
+
+masse <- d$massa_g
+terza_massa <- masse[3]
+terzo_provino <- d[3, , drop = FALSE]
+print(terza_massa)
+print(terzo_provino)
+print(class(masse))
+print(class(terzo_provino))
+```
+
+**Lettura del risultato.** Il primo risultato è un singolo valore numerico, il secondo una tabella di una riga. L'identificativo della riga rende interpretabile la massa; la terza posizione, da sola, dipende dall'ordinamento corrente.
+
+## 2. Dare un nome alla condizione
+
+Una selezione logica produce un valore vero o falso per ogni riga. Nominarla permette di controllare il criterio prima di applicarlo e di riusarlo senza riscrivere espressioni che potrebbero divergere.
+
+```{r passo_02}
+in_A <- d$affioramento == "A"
+print(in_A)
+print(table(in_A))
+campi <- c("id", "massa_g", "volume_cm3")
+provini_A <- d[in_A, campi, drop = FALSE]
+print(provini_A)
+stopifnot(nrow(provini_A) == sum(in_A))
+```
+
+**Lettura del risultato.** Ogni TRUE seleziona una riga intera. Il conteggio deve coincidere con il numero di righe estratte. L'argomento drop = FALSE mantiene una tabella anche quando si selezionasse una sola colonna.
+
+## 3. Combinare condizioni e verificare gli abbinamenti
+
+Restringiamo la selezione con una soglia sul volume. Il simbolo & richiede che entrambe le condizioni siano vere nella stessa riga. Verifichiamo infine le masse selezionate tornando alla tabella originale attraverso gli identificativi.
+
+```{r passo_03}
+seleziona <- in_A & d$volume_cm3 >= 40
+scelti <- d[seleziona, campi, drop = FALSE]
+print(scelti)
+posizioni <- match(scelti$id, d$id)
+stopifnot(!anyNA(posizioni))
+stopifnot(identical(scelti$massa_g, d$massa_g[posizioni]))
+print(data.frame(totali_A = sum(in_A), scelti = nrow(scelti)))
+```
+
+**Lettura del risultato.** Il controllo tramite match dimostra che le masse restano associate agli stessi provini. La soglia costruisce un sottoinsieme con un criterio preciso; non rappresenta una procedura neutrale rispetto alla distribuzione dei volumi.
+
+## Variante svolta
+
+Selezionare i provini di B con volume compreso fra 40 e 50 cm³, estremi inclusi.
+
+```{r variante}
+in_intervallo <- d$affioramento == "B" &
+                 d$volume_cm3 >= 40 & d$volume_cm3 <= 50
+risposta <- d[in_intervallo, c("id", "affioramento", "volume_cm3"), drop = FALSE]
+print(risposta)
+stopifnot(all(risposta$volume_cm3 >= 40 & risposta$volume_cm3 <= 50))
+```
+
+I due confronti definiscono entrambi i limiti. Scrivere soltanto il limite superiore includerebbe anche volumi piccoli non richiesti; riportare il gruppo nell'output rende più facile controllare la consegna.
+
+## Errore da riconoscere
+
+Ordinare o filtrare separatamente due colonne può rompere gli abbinamenti fra misure. Si selezionano righe della tabella intera, mantenendo l'identificativo accanto ai valori.
+
+## Risposta alla domanda
+
+La selezione è corretta quando rispetta il criterio, ha la numerosità prevista e conserva le associazioni fra colonne. Un controllo sull'identificativo permette di verificarlo anche dopo un riordinamento.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M01_N04` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M01/M01_N04.R).

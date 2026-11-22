@@ -1,0 +1,143 @@
+---
+title: "MAE e RMSE nelle decisioni di previsione"
+subtitle: "M07_N19 \u00b7 Annula"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Come cambia il confronto fra previsioni quando pochi errori sono particolarmente grandi?
+
+## Obiettivi
+
+- Collegare la domanda al calcolo riportato.
+- Interpretare il risultato usando variabili e unità del problema.
+
+**Prima di iniziare.** Vettori, data frame, indicizzazione e funzioni di base in R.
+
+**Dati e unità.** Fossili simulati del corso: 160 individui, 80 Rounded e 80 Spiky. Diametri e spessori sono espressi in micrometri. Nel generatore, diametro interno = diametro totale − 2 × spessore. La relazione contiene quindi un vincolo geometrico noto.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Annula oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M07_Annula` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M07_Annula/Risultati/M07_N19/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M07_Annula"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M07_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M07_Annula o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M07_N19")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(7019)
+```
+
+## 1. Un calcolo controllabile a mano
+
+Usiamo tre osservazioni per rendere esplicite le operazioni. Gli errori 0, 0 e −3 hanno MAE 1 e RMSE $\sqrt{3}$.
+
+```{r passo_01}
+osservato <- c(1,2,3)
+previsto <- c(1,2,6)
+e <- osservato-previsto
+data.frame(osservato,previsto,errore=e,assoluto=abs(e),quadrato=e^2)
+metriche(osservato,previsto)
+```
+
+**Lettura del risultato.** La radice riporta il RMSE nell’unità originale. Il quadrato, applicato prima della media, fa pesare molto l’errore di ampiezza 3.
+
+## 2. Due modelli con errori distribuiti diversamente
+
+Confrontiamo una regola con errori moderati su tutti i casi e una con molti errori nulli ma un grande errore. La graduatoria dipende dalla perdita ritenuta pertinente.
+
+```{r passo_02}
+vero <- rep(0,10)
+regola_A <- rep(.8,10)
+regola_B <- c(rep(0,9),3)
+rbind(A=metriche(vero,regola_A),B=metriche(vero,regola_B))
+barplot(rbind(abs(vero-regola_A),abs(vero-regola_B)),beside=TRUE,
+ col=c("#087C74","#C57E42"),xlab="Caso",ylab="Errore assoluto")
+legend("topleft",c("A","B"),fill=c("#087C74","#C57E42"),bty="n")
+```
+
+**Lettura del risultato.** MAE preferisce B: 0,30 contro 0,80. RMSE preferisce A: 0,80 contro circa 0,95. Le due graduatorie rispondono a pesi diversi assegnati agli errori grandi.
+
+## 3. Le metriche sul caso dei fossili
+
+Torniamo alla procedura fissata nei notebook precedenti. Il confronto con il riferimento usa sia MAE sia RMSE, mantenendo la scelta del modello basata sul criterio già dichiarato.
+
+```{r passo_03}
+# Ogni riga identifica un fossile simulato.
+f <- carica_dati("fossili_simulati.csv")
+f$morfotipo <- factor(f$morfotipo, levels=c("Rounded", "Spiky"))
+x <- f$diametro_tot_um
+y <- f$diametro_int_um
+stopifnot(nrow(f)==160L, !anyDuplicated(f$id),
+          all(is.finite(x)), all(is.finite(y)))
+# Partizione fissata prima del confronto dei modelli.
+# Nel CSV didattico ogni quinto individuo forma il test.
+is_test <- seq_len(nrow(f)) %% 5L == 0L
+train <- f[!is_test, ]
+test <- f[is_test, ]
+stopifnot(nrow(train)==128L, nrow(test)==32L,
+          length(intersect(train$id, test$id))==0L)
+# La funzione ripete la stima su cinque partizioni del solo training.
+# Il suo codice completo e' spiegato nel notebook N12.
+scelta <- seleziona_modello(train, seme=714)
+finale <- lm(scelta$formule[[scelta$nome]], data=train)
+p <- predict(finale,test)
+p0 <- rep(mean(train$diametro_int_um),nrow(test))
+rbind(riferimento=metriche(test$diametro_int_um,p0),
+ modello=metriche(test$diametro_int_um,p))
+```
+
+**Lettura del risultato.** In questo esempio il modello con morfotipo migliora entrambe le metriche. Questo accordo non elimina il bisogno di controllare dove si concentrano gli errori e quale popolazione il test rappresenta.
+
+## Variante svolta
+
+Moltiplicare tutti i valori dell’esempio a tre casi per 1000: come cambiano MAE e RMSE?
+
+```{r variante}
+rbind(unita_iniziale=metriche(osservato,previsto),
+       unita_mille_volte_piu_piccola=metriche(1000*osservato,1000*previsto))
+```
+
+Entrambe le metriche si moltiplicano per 1000. Per confrontare studi o strumenti, unità della risposta e popolazione dei casi devono essere coerenti.
+
+## Errore da riconoscere
+
+Scegliere dopo aver visto i risultati la metrica che favorisce il proprio modello rende il confronto ambiguo.
+
+## Risposta alla domanda
+
+La metrica esprime una scelta sul costo degli errori. La graduatoria fra modelli può cambiare quando cambia quella scelta.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M07_N19` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M07/M07_N19.R).

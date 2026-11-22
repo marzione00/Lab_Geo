@@ -1,0 +1,131 @@
+---
+title: "Pooled e quote casuali"
+subtitle: "M05_N13 \u00b7 Pelago"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Che cosa succede alle quote dei due morfotipi se ricampioniamo tutte le righe insieme?
+
+## Obiettivi
+
+- Misurare la composizione delle repliche pooled.
+- Collegare il ricampionamento alla domanda sulla miscela.
+
+**Prima di iniziare.** Vettori, indicizzazione, media, varianza e grafici di base in R.
+
+**Dati e unità.** Centosessanta fossili sintetici: ottanta Rounded e ottanta Spiky; diametro totale in micrometri.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M05_N13/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M05_N13")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(5013)
+```
+
+## 1. Identificare la composizione osservata
+
+Nel ricampionamento pooled ogni riga è selezionabile con la stessa probabilità, senza fissare il numero di fossili per gruppo. Prima di applicarlo, definiamo la domanda: una media della miscela con composizione campionaria variabile è diversa da una media con quote imposte dal disegno.
+
+```{r passo_01}
+dati <- carica_dati("fossili_simulati.csv")
+stopifnot(all(is.finite(dati$diametro_tot_um)))
+n <- nrow(dati)
+quote <- prop.table(table(dati$morfotipo))
+medie_gruppo <- tapply(dati$diametro_tot_um, dati$morfotipo, mean)
+print(quote)
+print(medie_gruppo)
+print(c(media_miscela = mean(dati$diametro_tot_um)))
+```
+
+**Lettura del risultato.** Il campione originale ha quote uguali. Questo non obbliga una replica pooled ad avere esattamente ottanta elementi per ciascun morfotipo.
+
+## 2. Registrare insieme media e composizione
+
+Ogni selezione degli indici viene usata sia per il diametro sia per il morfotipo. In questo modo manteniamo l'associazione di riga. Salviamo due statistiche per replica: la media dei diametri e la quota Spiky.
+
+```{r passo_02}
+set.seed(513)
+B <- 2000
+repliche <- replicate(B, {
+  i <- sample.int(n, n, replace = TRUE)
+  c(media = mean(dati$diametro_tot_um[i]),
+    quota_Spiky = mean(dati$morfotipo[i] == "Spiky"))
+})
+print(apply(repliche, 1, range))
+print(c(quota_media = mean(repliche["quota_Spiky", ]),
+        SD_quota = sd(repliche["quota_Spiky", ])))
+```
+
+**Lettura del risultato.** La quota varia attorno a quella empirica. Parte della variabilità della media pooled può derivare dal cambiamento delle quote, oltre che dalla selezione di valori diversi entro gruppo.
+
+## 3. Osservare il legame fra quota e media
+
+Il grafico mette in relazione due proprietà della stessa replica. Se le medie dei gruppi differiscono, una maggiore quota del gruppo con media più alta tende a spostare la media della miscela; rimane comunque variabilità interna ai gruppi.
+
+```{r passo_03}
+plot(repliche["quota_Spiky", ], repliche["media", ], pch = 16,
+     col = grDevices::adjustcolor("#27647B", alpha.f = 0.18),
+     xlab = "Quota Spiky nella replica", ylab = "Media del diametro (um)",
+     main = "Composizione casuale nel bootstrap pooled")
+print(c(correlazione = cor(repliche["quota_Spiky", ], repliche["media", ]),
+        SE_pooled_um = sd(repliche["media", ])))
+print(quantile(repliche["quota_Spiky", ], c(0.025, 0.5, 0.975)))
+```
+
+**Lettura del risultato.** La correlazione descrive il meccanismo di composizione in questa simulazione. Non dimostra un rapporto causale fra quota del morfotipo e crescita dei singoli fossili.
+
+## Variante svolta
+
+Ricampionare ottanta fossili da ogni gruppo e confrontare la variabilità della media complessiva.
+
+```{r variante}
+gruppi <- split(dati$diametro_tot_um, dati$morfotipo)
+stratificate <- replicate(B, mean(c(
+  sample(gruppi$Rounded, length(gruppi$Rounded), replace = TRUE),
+  sample(gruppi$Spiky, length(gruppi$Spiky), replace = TRUE))))
+print(data.frame(disegno = c("Pooled", "Quote fisse"),
+  SE_um = c(sd(repliche["media", ]), sd(stratificate))))
+```
+
+Il secondo schema mantiene la composizione osservata esattamente fissa. Il confronto illustra due modelli di ripetizione del campione: va scelto quello coerente con la raccolta e con il bersaglio.
+
+## Errore da riconoscere
+
+Non usare pooled per comodità quando il disegno impone numerosità di strato. La composizione casuale introdurrebbe una variabilità che quel disegno non prevede.
+
+## Risposta alla domanda
+
+Ricampionare tutte le righe insieme rende casuali anche le quote dei gruppi. La scelta deve corrispondere alla popolazione e al disegno che si intendono rappresentare.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M05_N13` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M05/M05_N13.R).

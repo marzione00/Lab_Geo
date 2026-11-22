@@ -3,7 +3,7 @@
 (function (root) {
   'use strict';
   const D = root.GEO_BRIEFING,
-    { html, raw } = root.GeoHTML;
+    { html } = root.GeoHTML;
   const KEY = 'geostat:briefing:v' + D.version;
   const reduced = () => root.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const remember = key => {
@@ -45,13 +45,13 @@
         <button type="button" class="briefing-skip">Salta</button>
       </header>
       <ol class="briefing-progress" aria-hidden="true">
-        ${raw(D.cards.map((_, i) => `<li${i <= index ? ' class="done"' : ''}></li>`).join(''))}
+        ${D.cards.map((_, i) => html`<li${i <= index ? html` class="done"` : ''}></li>`)}
       </ol>
       <h2 id="briefing-title">${card.title}</h2>
       <div id="briefing-body" class="briefing-body">
-        ${raw(card.lines.map(line => html`<p class="briefing-line">${fill(line)}</p>`).join(''))}
+        ${card.lines.map(line => html`<p class="briefing-line">${fill(line)}</p>`)}
       </div>
-      <div class="briefing-actions">${raw(actions(card, index === n - 1))}</div>`;
+      <div class="briefing-actions">${actions(card, index === n - 1)}</div>`;
   }
 
   // The spotlight is a frame over the highlighted element; its shadow dims the rest of the page.
@@ -91,7 +91,7 @@
     index = Math.max(0, Math.min(D.cards.length - 1, i));
     const card = D.cards[index],
       panel = dialog.querySelector('.briefing-card');
-    panel.innerHTML = markup(card);
+    panel.innerHTML = html`${markup(card)}`;
     panel.querySelector('[data-move="-1"]')?.toggleAttribute('disabled', index === 0);
     panel.querySelector('.briefing-primary').focus();
     aim(card);
@@ -145,8 +145,7 @@
     dialog.className = 'briefing';
     dialog.setAttribute('aria-labelledby', 'briefing-title');
     dialog.setAttribute('aria-describedby', 'briefing-body');
-    dialog.innerHTML =
-      '<div class="briefing-spot" aria-hidden="true" hidden></div><section class="briefing-card hud-panel" data-tone="action"></section>';
+    dialog.innerHTML = html`<div class="briefing-spot" aria-hidden="true" hidden></div><section class="briefing-card hud-panel" data-tone="action"></section>`;
     dialog.addEventListener('click', onClick);
     dialog.addEventListener('keydown', onKey);
     dialog.addEventListener('cancel', e => {

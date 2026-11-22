@@ -1,0 +1,134 @@
+---
+title: "Scrivere una descrizione che rispetti i dati"
+subtitle: "M03_N10 \u00b7 Iride"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come trasformare frequenze e riassunti numerici in un breve testo controllabile, senza attribuire ai dati conclusioni che non sostengono?
+
+## Obiettivi
+
+- Collegare frasi descrittive a calcoli riproducibili.
+- Separare proprietà del campione e affermazioni sulla popolazione.
+
+**Prima di iniziare.** Frequenze, media, deviazione standard e sprintf.
+
+**Dati e unità.** Archivio didattico sintetico: 160 fossili, 80 Rounded e 80 Spiky. Diametri e spessori sono espressi in micrometri; ogni riga identifica un individuo.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M03_N10/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M03_N10")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(3010)
+```
+
+## 1. Preparare la tabella da citare
+
+La descrizione deve poggiare su una tabella verificabile. Calcoliamo numerosità, media, deviazione standard e mediana per ciascun morfotipo; il numero di cifre nel testo verrà deciso dopo i calcoli.
+
+```{r passo_01}
+f <- carica_dati("fossili_simulati.csv")
+gruppi <- split(f$diametro_tot_um, f$morfotipo)
+tab <- as.data.frame(t(sapply(gruppi, function(x)
+  c(n = length(x), media_um = mean(x), sd_um = sd(x), mediana_um = median(x)))))
+tab$morfotipo <- rownames(tab)
+# Le percentuali accompagnano i conteggi e conservano il denominatore del campione.
+tab$percentuale <- 100 * tab$n / sum(tab$n)
+print(tab)
+stopifnot(sum(tab$n) == nrow(f))
+```
+
+**Lettura del risultato.** La deviazione standard riguarda la variabilità dei diametri individuali, non l'incertezza della media. Tenerla in una colonna distinta evita che una notazione ambigua con il simbolo più o meno venga interpretata come intervallo di confidenza.
+
+## 2. Comporre frasi dai risultati
+
+Usiamo sprintf per inserire i valori direttamente nelle frasi. La descrizione dichiara origine sintetica, dimensione del campione e unità; il confronto delle medie rimane esplicitamente riferito agli individui osservati.
+
+```{r passo_02}
+apertura <- sprintf("Il campione sintetico comprende %d fossili.", nrow(f))
+        # I numeri del testo derivano dagli oggetti calcolati, non da trascrizioni manuali.
+        frasi <- sprintf("%s: n = %d; diametro medio %.3f um, deviazione standard %.3f um, mediana %.3f um.",
+                         tab$morfotipo, tab$n, tab$media_um, tab$sd_um, tab$mediana_um)
+        differenza <- tab["Spiky", "media_um"] - tab["Rounded", "media_um"]
+        confronto <- sprintf("Nel campione la differenza delle medie Spiky meno Rounded è %.3f um.", differenza)
+        testo <- c(apertura, frasi, confronto,
+                   "Le proporzioni dei morfotipi sono fissate dalla costruzione del file.")
+        cat(paste(testo, collapse = "
+"), "
+")
+```
+
+**Lettura del risultato.** Il testo comunica una differenza descrittiva senza chiamarla effetto causale o differenza significativa. Per sostenere un'inferenza servirebbero una domanda statistica, un modello e informazioni sulla provenienza delle osservazioni.
+
+## 3. Salvare testo e calcoli
+
+Conserviamo tabella e descrizione nello stesso percorso dei risultati. Il file numerico mantiene le cifre originali; il testo usa tre decimali per una lettura agevole, senza suggerire una precisione strumentale non documentata.
+
+```{r passo_03}
+file_tab <- percorso_risultati("riassunto_morfotipi.csv")
+file_testo <- percorso_risultati("descrizione_campione.txt")
+# Il CSV conserva la precisione del calcolo; l arrotondamento riguarda soltanto il testo.
+write.csv(tab, file_tab, row.names = FALSE)
+writeLines(testo, file_testo, useBytes = TRUE)
+print(readLines(file_testo, warn = FALSE))
+riletta <- read.csv(file_tab)
+stopifnot(sum(riletta$n) == nrow(f))
+```
+
+**Lettura del risultato.** Il lettore può risalire dalle frasi ai numeri e ricontrollare il confronto. Se cambiano i dati, rieseguire il notebook aggiorna entrambi; la correzione manuale delle sole frasi rischierebbe di lasciarli incoerenti.
+
+## Variante svolta
+
+Riscrivere il confronto usando le mediane e precisare nel testo quale indice viene confrontato.
+
+```{r variante}
+delta_mediane <- tab["Spiky", "mediana_um"] - tab["Rounded", "mediana_um"]
+        frase_mediane <- sprintf("La differenza delle mediane Spiky meno Rounded è %.3f um nel campione sintetico.", delta_mediane)
+        cat(frase_mediane, "
+")
+        print(c(differenza_medie_um = differenza, differenza_mediane_um = delta_mediane))
+        writeLines(frase_mediane, percorso_risultati("confronto_mediane.txt"), useBytes = TRUE)
+```
+
+La nuova frase riguarda un altro indice e può produrre una differenza diversa. Non è una correzione della frase precedente: esplicita una diversa caratteristica della distribuzione.
+
+## Errore da riconoscere
+
+Non sostituire 'nel campione' con 'in natura' e non usare 'significativo' come sinonimo di visibile. Non attribuire all'arrotondamento un significato di accuratezza strumentale.
+
+## Risposta alla domanda
+
+Una descrizione riproducibile dichiara origine dei dati, numerosità, unità e indice confrontato. Ogni frase numerica deriva dal codice; le conclusioni restano proporzionate alle informazioni realmente contenute nel campione.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M03_N10` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M03/M03_N10.R).

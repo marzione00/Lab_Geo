@@ -1,0 +1,131 @@
+---
+title: "Fissare l’origine della previsione"
+subtitle: "M10_N01 · Futura"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Quali osservazioni erano disponibili nel dicembre 1998?
+
+## Obiettivi
+
+- Controllare il calendario mensile.
+- Separare adattamento e test prima delle scelte.
+- Associare origine, bersaglio e orizzonte.
+
+**Prima di iniziare.** Sono richiesti vettori, tabelle e funzioni R di base. I blocchi vanno eseguiti in ordine. Il notebook è autonomo rispetto agli altri.
+
+**Dati e unità.** CO₂ storica: 204 mesi da gennaio 1985 a dicembre 2001, concentrazione in ppm. Le medie derivano dalle osservazioni settimanali attribuite al mese della data, secondo la convenzione del corso. Sono dati storici, distinti da una serie mensile ufficiale e da una misura attuale. Il protocollo usa 168 mesi per l’adattamento (1985–1998) e 36 per il test (1999–2001).
+
+## Preparazione
+
+Aprire il progetto autonomo di Futura o quello generale del corso. I calcoli usano R base e stats. Gli output del notebook vanno in `Risultati/M10_N01/`; i CSV originali restano invariati.
+
+```{r preparazione}
+# Trova la cartella M10 dal progetto autonomo o dal progetto generale.
+.gs_cerca <- normalizePath(getwd(),winslash="/",mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca,
+    file.path(.gs_cerca,"M10_Futura"),
+    file.path(.gs_cerca,"03_Notebook_svolti","M10_Futura"),
+    file.path(.gs_cerca,"M10","03_Notebook_svolti","M10_Futura"))
+  .gs_ok <- file.exists(file.path(.gs_candidati,"M10_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati,"R","funzioni_notebook.R"))
+  if(any(.gs_ok)) { .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]; break }
+  .gs_padre <- dirname(.gs_cerca)
+  if(.gs_padre==.gs_cerca) stop("Aprire il progetto M10_Futura o quello generale dei notebook.")
+  .gs_cerca <- .gs_padre
+}
+source(file.path(.gs_modulo,"R","funzioni_notebook.R"),local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo,"M10_N01")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88,digits=6)
+if(requireNamespace("knitr",quietly=TRUE)) {
+  knitr::opts_chunk$set(echo=TRUE,error=FALSE,warning=TRUE,message=TRUE,
+    fig.width=8,fig.height=5,dpi=150,fig.align="center")
+}
+set.seed(10001)
+```
+
+## 1. Il calendario identifica le osservazioni
+
+Una riga corrisponde a un mese. Il controllo usa le date, perché una sequenza di numeri senza calendario non determina l’orizzonte.
+
+```{r passo_01}
+d <- carica_dati("co2_1985_2001.csv")
+d$data <- as.Date(d$data)
+stopifnot(!anyDuplicated(d$data), !anyNA(d$co2_ppm))
+stopifnot(identical(d$data,seq(as.Date("1985-01-01"),as.Date("2001-12-01"),by="month")))
+data.frame(prima=min(d$data),ultima=max(d$data),mesi=nrow(d),
+           minimo_settimane=min(d$n_settimane))
+```
+
+**Lettura del risultato.** Le 204 righe formano una griglia mensile completa. La copertura settimanale rimane una colonna del dato, anche quando il valore mensile è disponibile.
+
+## 2. La divisione conserva l’ordine
+
+L’origine fissa è l’ultimo mese del train. Tutti i valori successivi servono soltanto alla verifica del protocollo già definito.
+
+```{r passo_02}
+c2 <- prepara_co2(carica_dati("co2_1985_2001.csv"))
+train <- c2$train; test <- c2$test; h <- c2$h
+ data.frame(insieme=c("Train","Test"),n=c(length(train),length(test)),
+   inizio=c("1985-01","1999-01"),fine=c("1998-12","2001-12"))
+ stopifnot(length(train)==168L,h==36L,max(time(train))<min(time(test)))
+```
+
+**Lettura del risultato.** Nessuna osservazione 1999–2001 entra nel train. Il periodo di test è noto come calendario, mentre i suoi valori restano fuori dalla stima.
+
+## 3. L’orizzonte misura la distanza dall’origine
+
+La separazione appare sul grafico. L’esposizione del test qui rende visibile il disegno didattico: le scelte di modello devono essere fissate prima del suo uso per confrontare gli errori.
+
+```{r passo_03}
+stile_grafico()
+plot(c2$dati$data,c2$dati$co2_ppm,type="n",xlab="Data",ylab="CO2 (ppm)",
+     main="Train e test: origine dicembre 1998")
+lines(c2$dati$data[1:168],c2$dati$co2_ppm[1:168],col=palette_geo[1],lwd=2)
+lines(c2$date_test,as.numeric(test),col=palette_geo[2],lwd=2)
+abline(v=as.numeric(as.Date("1999-01-01")),lty=2)
+legend("topleft",c("Train: 168 mesi","Test: 36 mesi"),col=palette_geo[1:2],lty=1,bty="n")
+data.frame(origine="1998-12",bersaglio=as.character(c2$date_test[c(1,12,36)]),h=c(1,12,36))
+```
+
+**Lettura del risultato.** I primi 12 mesi e il terzo anno del test rispondono a orizzonti diversi. Conservarli evita di chiamare «previsione a un mese» una sequenza prodotta una sola volta per 36 mesi.
+
+## Variante svolta
+
+**Un’origine precedente.** Spostare l’origine a dicembre 1997 e misurare quante osservazioni restano nei due segmenti.
+
+```{r variante}
+tr97 <- window(c2$y,end=c(1997,12)); te97 <- window(c2$y,start=c(1998,1))
+data.frame(origine="1997-12",n_train=length(tr97),n_test=length(te97))
+stopifnot(length(tr97)+length(te97)==204L)
+```
+
+La variante cambia il problema: aumenta il periodo da prevedere e riduce quello disponibile per l’adattamento. Non confrontare i suoi errori come se il protocollo fosse identico.
+
+## Errore da riconoscere
+
+Rimescolare le righe prima dello split, oppure scegliere la data di separazione dopo aver confrontato gli errori sul futuro.
+
+## Risposta alla domanda
+
+Al dicembre 1998 sono disponibili i 168 mesi del train. Una previsione verificabile conserva la data dell’origine, le date bersaglio e il numero di passi. I risultati su questo archivio storico hanno valore didattico.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M10_N01` di [GeoStat Lab M10](https://marzione00.github.io/Lab_Geo/#indice). Il [codice originale del laboratorio](https://github.com/marzione00/Lab_Geo/blob/649f7cc577b96bd1044d81e78a2f530813e4f96b/materiali/laboratori/M10/M10_N01.R) è conservato anche in `R/Originali_corso`. Gli ampliamenti e le varianti sono identificati nella mappa allegata.
+
+Documentazione dei metodi: [R stats, arima](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/arima.html), [predict.Arima](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/predict.arima.html), [Box.test](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/box.test.html) e [p.adjust](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/p.adjust.html).

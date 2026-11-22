@@ -1,0 +1,135 @@
+---
+title: "Un modello continuo non assegna probabilit\u00e0 ai singoli punti"
+subtitle: "M04_N10 \u00b7 Aurea"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come calcolare la probabilità di una densità compresa in un intervallo, e perché l'altezza della curva non è una probabilità?
+
+## Obiettivi
+
+- Distinguere funzione di densità e probabilità cumulativa.
+- Calcolare e rappresentare un'area sotto una normale.
+
+**Prima di iniziare.** Intervalli numerici, probabilità e significato di media e deviazione standard.
+
+**Dati e unità.** Modello didattico normale della densità con media 2,65 g/cm³ e deviazione standard 0,06 g/cm³. I parametri sono assegnati, non stimati da un campione.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M04_N10/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M04_N10")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(4010)
+```
+
+## 1. Calcolare un intervallo
+
+La densità è continua nel modello. P(a minore di X minore di b) si ottiene come F(b) meno F(a), dove pnorm fornisce la cumulativa. Per una variabile continua includere i singoli estremi non cambia la probabilità.
+
+```{r passo_01}
+mu <- 2.65
+sigma <- .06
+a <- 2.55
+b <- 2.75
+# La differenza delle cumulative e un area compresa fra due soglie fisiche.
+probabilita <- pnorm(b, mean = mu, sd = sigma) - pnorm(a, mean = mu, sd = sigma)
+altezza_centrale <- dnorm(mu, mean = mu, sd = sigma)
+print(c(probabilita_intervallo = probabilita, densita_al_centro = altezza_centrale))
+stopifnot(probabilita > 0, probabilita < 1, sigma > 0)
+```
+
+**Lettura del risultato.** dnorm restituisce un'altezza con unità inverse, qui cm³/g. Può superare uno senza violare alcuna regola: la probabilità è l'area di un intervallo, mentre quella di un punto esatto è zero nel modello continuo.
+
+## 2. Colorare l'area
+
+Disegniamo la curva e riempiamo soltanto l'intervallo richiesto. La figura associa una regione geometrica al calcolo cumulativo; la griglia grafica approssima il disegno, mentre pnorm calcola numericamente la probabilità.
+
+```{r passo_02}
+griglia <- seq(mu - 4 * sigma, mu + 4 * sigma, length.out = 500)
+densita <- dnorm(griglia, mu, sigma)
+plot(griglia, densita, type = "l", lwd = 2, col = "#1D7890",
+     xlab = "Densita della roccia (g/cm^3)", ylab = "Densita di probabilita (cm^3/g)")
+intervallo <- seq(a, b, length.out = 200)
+# I due zeri chiudono il poligono sulla base per colorare soltanto l intervallo.
+polygon(c(a, intervallo, b), c(0, dnorm(intervallo, mu, sigma), 0),
+        col = "#F1DFCF", border = NA)
+lines(griglia, densita, col = "#1D7890", lwd = 2)
+abline(v = c(a, b), lty = 2, col = "#C57E42")
+```
+
+**Lettura del risultato.** L'area colorata corrisponde all'evento richiesto. La doppia presenza della parola densità va interpretata con le unità: sull'asse orizzontale è una proprietà fisica, su quello verticale è una densità di probabilità.
+
+## 3. Verificare con estrazioni
+
+Simuliamo valori dal modello e contiamo quelli nell'intervallo. La frequenza approssima l'area, con una variabilità dovuta al numero finito di estrazioni; non modifica la probabilità già calcolata.
+
+```{r passo_03}
+set.seed(410)
+B <- 3000
+valori <- rnorm(B, mean = mu, sd = sigma)
+dentro <- valori >= a & valori <= b
+q <- mean(dentro)
+# L errore standard quantifica la variabilita della frequenza simulata, non del modello.
+se_mc <- sqrt(q * (1 - q) / B)
+print(c(simulazione = q, modello = probabilita, errore_standard_mc = se_mc))
+print(c(osservazioni_esattamente_mu = sum(valori == mu)))
+```
+
+**Lettura del risultato.** L'assenza di valori esattamente uguali alla media nella simulazione illustra la natura continua, ma non è una dimostrazione matematica. Numeri memorizzati e strumenti reali hanno risoluzione finita; il modello continuo è un'approssimazione.
+
+## Variante svolta
+
+Calcolare la probabilità che una lettura arrotondata a due decimali venga riportata come 2,65.
+
+```{r variante}
+risoluzione <- .01
+basso <- mu - risoluzione / 2
+alto <- mu + risoluzione / 2
+probabilita_arrotondata <- pnorm(alto, mu, sigma) - pnorm(basso, mu, sigma)
+print(c(bordo_inferiore = basso, bordo_superiore = alto,
+        probabilita_lettura_265 = probabilita_arrotondata))
+stopifnot(probabilita_arrotondata > 0)
+```
+
+La lettura arrotondata rappresenta un intervallo di valori possibili, quindi ha probabilità positiva. La convenzione sui casi esattamente a metà non cambia la probabilità nel modello continuo.
+
+## Errore da riconoscere
+
+Non usare dnorm(2.65, ...) come probabilità di misurare esattamente 2,65. Non confondere una lettura arrotondata, che rappresenta un intervallo, con un punto matematico esatto.
+
+## Risposta alla domanda
+
+Nel modello continuo le probabilità si ottengono da aree e differenze di cumulative. Altezza, unità e intervallo devono essere distinti, soprattutto quando la stessa parola 'densità' indica sia una proprietà fisica sia una funzione probabilistica.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M04_N10` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M04/M04_N10.R).

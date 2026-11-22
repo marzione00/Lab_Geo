@@ -1,0 +1,133 @@
+---
+title: "La binomiale: numero di successi in n prove"
+subtitle: "M04_N05 \u00b7 Aurea"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Quale distribuzione descrive il numero di segnali in dieci prove indipendenti con uguale probabilità di successo?
+
+## Obiettivi
+
+- Collegare prove di Bernoulli e conteggio binomiale.
+- Verificare somma delle probabilità, media e varianza del modello.
+
+**Prima di iniziare.** Probabilità di un evento e operazioni su vettori.
+
+**Dati e unità.** Modello didattico X binomiale con n = 10 prove e p = 0,30. Le repliche simulate servono a controllare il modello, non sono osservazioni geologiche.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M04_N05/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M04_N05")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(4005)
+```
+
+## 1. Calcolare tutte le probabilità
+
+La binomiale richiede un numero fissato di prove, indipendenza e probabilità di successo costante. dbinom calcola la massa di probabilità dei conteggi interi; valori intermedi come due e mezzo successi non appartengono al modello.
+
+```{r passo_01}
+n <- 10
+p <- .30
+k <- 0:n
+# dbinom restituisce probabilita di conteggi interi, non altezze di una densita continua.
+massa <- dbinom(k, size = n, prob = p)
+tab <- data.frame(successi = k, probabilita = massa)
+print(tab)
+stopifnot(all(massa >= 0), abs(sum(massa) - 1) < 1e-12)
+```
+
+**Lettura del risultato.** La probabilità di ciascun conteggio comprende tutti gli ordinamenti delle prove che producono quel numero di successi. Per questo non basta moltiplicare p per se stesso senza considerare le combinazioni possibili.
+
+## 2. Ricostruire media e varianza
+
+Il valore atteso è la somma dei conteggi pesati per le loro probabilità. La varianza pesa gli scarti quadratici dal valore atteso; confrontiamo le somme con le formule n per p e n per p per uno meno p.
+
+```{r passo_02}
+# Il valore atteso e una media ponderata dalle probabilita di tutti gli esiti.
+media_somma <- sum(k * massa)
+varianza_somma <- sum((k - media_somma)^2 * massa)
+media_formula <- n * p
+varianza_formula <- n * p * (1 - p)
+print(rbind(somme = c(media = media_somma, varianza = varianza_somma),
+            formule = c(media = media_formula, varianza = varianza_formula)))
+stopifnot(abs(media_somma - media_formula) < 1e-12)
+stopifnot(abs(varianza_somma - varianza_formula) < 1e-12)
+```
+
+**Lettura del risultato.** Il valore atteso non promette un conteggio esatto in ogni replica. La varianza è una proprietà della distribuzione dei conteggi e dipende sia dal numero di prove sia dalla probabilità assegnata.
+
+## 3. Confrontare teoria e repliche
+
+Generiamo duemila conteggi, ognuno relativo a dieci prove. Il grafico a segmenti rappresenta probabilità in punti discreti e i punti sovrapposti mostrano le frequenze delle simulazioni.
+
+```{r passo_03}
+set.seed(405)
+B <- 2000
+estratti <- rbinom(B, size = n, prob = p)
+# Il fattore con livelli espliciti conserva anche i conteggi mai osservati.
+frequenze <- as.numeric(table(factor(estratti, levels = k))) / B
+plot(k, massa, type = "h", lwd = 4, col = "#1D7890",
+     xlab = "Successi in 10 prove", ylab = "Probabilita o frequenza")
+points(k, frequenze, pch = 16, col = "#C57E42")
+print(c(media_simulata = mean(estratti), varianza_simulata = var(estratti)))
+legend("topright", c("Modello", "Simulazione"), col = c("#1D7890", "#C57E42"), pch = c(NA, 16), lty = c(1, NA), bty = "n")
+```
+
+**Lettura del risultato.** Le frequenze non coincidono esattamente con la massa teorica perché B è finito. Per rappresentare esiti non osservati manteniamo tutti i livelli da zero a dieci nel fattore prima di costruire la tabella.
+
+## Variante svolta
+
+Cambiare la probabilità a 0,70 conservando dieci prove e confrontare le due distribuzioni.
+
+```{r variante}
+p2 <- .70
+massa2 <- dbinom(k, size = n, prob = p2)
+print(data.frame(k = k, p03 = massa, p07 = massa2))
+print(c(media_07 = n * p2, varianza_07 = n * p2 * (1 - p2)))
+stopifnot(max(abs(massa2 - rev(massa))) < 1e-12)
+stopifnot(abs(n * p2 * (1 - p2) - varianza_formula) < 1e-12)
+```
+
+Scambiare successo e insuccesso riflette la distribuzione rispetto a cinque. La media cambia e la varianza resta uguale perché il prodotto p per uno meno p è simmetrico.
+
+## Errore da riconoscere
+
+Non confondere n, prove dentro un esperimento, con B, esperimenti simulati. Se le probabilità cambiano fra prove o le prove sono dipendenti, la binomiale semplice può essere inadeguata.
+
+## Risposta alla domanda
+
+La binomiale collega una regola per singole prove a una distribuzione dei conteggi. Le somme di probabilità verificano le formule, mentre la simulazione mostra le fluttuazioni attese in un numero finito di repliche.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M04_N05` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M04/M04_N05.R).

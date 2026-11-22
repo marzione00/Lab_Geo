@@ -13,6 +13,7 @@ const GENERATED = {
   'experiments-data.js': ['GEO_LABS'],
   'narrative-data.js': ['GEO_NARRATIVE'],
   'research-data.js': ['GEO_RESEARCH'],
+  'lesson-index.js': ['GEO_LESSON_INDEX'],
 };
 // Loaded on demand by app.js with SRI; never read while a script loads.
 const ON_DEMAND = {
@@ -20,6 +21,8 @@ const ON_DEMAND = {
   'solution-data.js': ['GEO_SOLUTIONS'],
   'briefing.js': ['GEO_BRIEFING', 'GeoBriefing'],
   'audio.js': ['GeoAudio'],
+  // assets/lessons/<ID>.js add entries to window.GEO_LESSONS.
+  'lessons/*.js': ['GEO_LESSONS'],
 };
 // assets/content/*.js add entries to window.GEO_MODULES, the cache that app.js creates.
 const HOSTS = new Set(['root', 'window', 'globalThis', 'self']);

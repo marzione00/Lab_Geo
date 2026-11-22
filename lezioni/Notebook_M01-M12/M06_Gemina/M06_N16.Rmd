@@ -1,0 +1,132 @@
+---
+title: "Categorie: osservato e atteso in una tabella"
+subtitle: "M06_N16 \u00b7 Gemina"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+La frequenza di una categoria è associata al sito, e come si costruiscono i conteggi attesi sotto indipendenza?
+
+## Obiettivi
+
+- Confrontare conteggi e proporzioni con denominatori espliciti.
+- Ricostruire il chi quadrato e distinguere il riferimento esatto di Fisher.
+
+**Prima di iniziare.** Vettori, indicizzazione, media, varianza e grafici di base in R.
+
+**Dati e unità.** Tabella didattica di sessanta osservazioni indipendenti, trenta per sito. Le due categorie sono presenza e assenza di un carattere.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M06_N16/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M06_N16")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(6016)
+```
+
+## 1. Costruire la tabella e leggere i denominatori
+
+Una tabella di contingenza contiene conteggi di unità, non medie o percentuali già arrotondate. Inseriamo diciotto presenze su trenta nel sito A e nove su trenta nel sito B. Le proporzioni di riga permettono il confronto mantenendo visibili i denominatori.
+
+```{r passo_01}
+osservati <- matrix(c(18, 12, 9, 21), nrow = 2, byrow = TRUE,
+                   dimnames = list(sito = c("A", "B"),
+                                   categoria = c("Presente", "Assente")))
+stopifnot(all(osservati >= 0), all(osservati == floor(osservati)))
+tot_riga <- rowSums(osservati)
+tot_col <- colSums(osservati)
+n <- sum(osservati)
+print(addmargins(osservati))
+print(prop.table(osservati, margin = 1))
+```
+
+**Lettura del risultato.** Le differenze di frequenza vanno rapportate al totale di ciascun sito. Con totali diversi, confrontare soltanto i conteggi di presenza potrebbe produrre una lettura fuorviante.
+
+## 2. Derivare gli attesi sotto indipendenza
+
+Sotto indipendenza la proporzione complessiva di ogni categoria si applica a ciascun totale di riga. Gli attesi sono prodotti dei margini divisi per n. La statistica di Pearson somma (osservato−atteso)²/atteso su tutte le celle.
+
+```{r passo_02}
+attesi <- outer(tot_riga, tot_col) / n
+contributi <- (osservati - attesi)^2 / attesi
+X2 <- sum(contributi)
+df <- (nrow(osservati) - 1) * (ncol(osservati) - 1)
+p_manual <- pchisq(X2, df = df, lower.tail = FALSE)
+print(attesi)
+print(contributi)
+print(c(chi_quadrato = X2, df = df, p = p_manual))
+```
+
+**Lettura del risultato.** Le celle con contributi maggiori spiegano dove osservato e atteso differiscono di più in questa tabella. Il test globale non attribuisce una causa all'associazione.
+
+## 3. Verificare Pearson e confrontare Fisher
+
+Disattiviamo esplicitamente la correzione di continuità per verificare la formula di Pearson appena calcolata. Fisher usa invece un riferimento condizionato ai margini della tabella. I due p-value possono differire anche quando entrambi i calcoli sono corretti.
+
+```{r passo_03}
+pearson <- chisq.test(osservati, correct = FALSE)
+fisher <- fisher.test(osservati)
+stopifnot(isTRUE(all.equal(unname(pearson$statistic), X2)))
+stopifnot(isTRUE(all.equal(pearson$p.value, p_manual)))
+print(data.frame(metodo = c("Pearson senza correzione", "Fisher condizionato"),
+                 p = c(pearson$p.value, fisher$p.value)))
+barplot(t(prop.table(osservati, 1)), beside = FALSE,
+        col = c("#27647B", "#E7B977"), ylim = c(0, 1),
+        ylab = "Proporzione nel sito", xlab = "Sito", legend.text = TRUE)
+```
+
+**Lettura del risultato.** Qui gli attesi non sono piccoli. In tabelle sparse la qualità dell'approssimazione chi quadrato richiede attenzione; l'indipendenza delle unità rimane necessaria anche per Fisher.
+
+## Variante svolta
+
+Ridurre da nove a quattro le presenze del sito B nella tabella didattica mantenendo trenta osservazioni, e ricalcolare Fisher.
+
+```{r variante}
+variante <- osservati
+variante["B", ] <- c(4, 26)
+print(variante)
+print(prop.table(variante, 1))
+print(c(p_Fisher_originale = fisher$p.value,
+        p_Fisher_variante = fisher.test(variante)$p.value))
+```
+
+La variante costruisce un diverso insieme di conteggi e un'associazione osservata diversa. Non modifica dati reali e non è una procedura per cercare il p-value più favorevole.
+
+## Errore da riconoscere
+
+Non passare percentuali a chisq.test come se fossero conteggi e non trattare misure ripetute della stessa unità come osservazioni indipendenti.
+
+## Risposta alla domanda
+
+Il confronto tra categorie richiede conteggi, margini e disegno. Il calcolo degli attesi rende chiara la nulla di indipendenza e il significato della statistica globale.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M06_N16` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M06/M06_N16.R).

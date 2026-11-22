@@ -1,0 +1,131 @@
+---
+title: "Il test appaiato \u00e8 un test sulle differenze"
+subtitle: "M06_N12 \u00b7 Gemina"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come si ricostruiscono test t e intervallo per il cambiamento medio usando un solo vettore di differenze?
+
+## Obiettivi
+
+- Calcolare la media e il SE delle differenze.
+- Verificare l'equivalenza fra test a un campione e t.test appaiato.
+
+**Prima di iniziare.** Vettori, indicizzazione, media, varianza e grafici di base in R.
+
+**Dati e unità.** Ventiquattro coppie sintetiche prima/dopo in unità convenzionali. Consideriamo indipendenti le coppie e, per l'esattezza finita del test, normali le differenze.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M06_N12/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M06_N12")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(6012)
+```
+
+## 1. Trasformare ogni coppia in un cambiamento
+
+Sottraiamo prima da dopo soltanto sulle stesse coppie complete. Il vettore d contiene un'osservazione per unità indipendente. L'ipotesi nulla riguarda la media di questi cambiamenti; non richiede che le distribuzioni marginali di prima e dopo abbiano la stessa varianza.
+
+```{r passo_01}
+dati <- carica_dati("misure_appaiate_simulate.csv")
+stopifnot(!anyDuplicated(dati$id))
+coppie <- dati[complete.cases(dati[c("prima", "dopo")]), ]
+d <- coppie$dopo - coppie$prima
+n <- length(d)
+stopifnot(n > 1, all(is.finite(d)))
+media_d <- mean(d)
+se_d <- sd(d) / sqrt(n)
+print(c(coppie = n, media_differenza = media_d, SE_differenza = se_d))
+```
+
+**Lettura del risultato.** La dispersione di d, e non la dispersione separata delle due colonne, determina il SE appaiato. La numerosità è il numero di coppie utilizzabili.
+
+## 2. Ricostruire la formula di Student
+
+Per la nulla di cambiamento medio zero, t è la media delle differenze divisa per il suo SE. I gradi di libertà sono n−1. L'intervallo bilaterale usa la stessa distribuzione di riferimento e conserva l'unità originale delle misure.
+
+```{r passo_02}
+delta0 <- 0
+df <- n - 1
+t_osservato <- (media_d - delta0) / se_d
+p <- 2 * pt(-abs(t_osservato), df = df)
+margine <- qt(0.975, df) * se_d
+intervallo <- media_d + c(-1, 1) * margine
+print(c(t = t_osservato, df = df, p_bilaterale = p))
+print(c(inferiore = intervallo[1], superiore = intervallo[2]))
+```
+
+**Lettura del risultato.** Un intervallo che non comprende zero segnala incompatibilità con cambiamento medio nullo secondo questo metodo. Non implica che tutte le unità cambino nello stesso verso.
+
+## 3. Verificare le due formulazioni in R
+
+La formulazione appaiata calcola internamente le differenze nell'ordine degli argomenti. Confrontiamo t.test(d) con t.test(dopo, prima, paired = TRUE), mantenendo identiche coppie, livello e alternativa. I risultati devono coincidere entro la precisione numerica.
+
+```{r passo_03}
+un_campione <- t.test(d, mu = delta0)
+appaiato <- t.test(coppie$dopo, coppie$prima, paired = TRUE, mu = delta0)
+stopifnot(isTRUE(all.equal(un_campione$p.value, appaiato$p.value)))
+stopifnot(isTRUE(all.equal(p, appaiato$p.value)))
+stopifnot(isTRUE(all.equal(as.numeric(appaiato$conf.int), intervallo)))
+print(appaiato)
+qqnorm(d, main = "Forma delle differenze", ylab = "Dopo - prima (u.c.)")
+qqline(d, col = "#A33B31", lwd = 2)
+```
+
+**Lettura del risultato.** La normale richiesta per il riferimento t esatto riguarda le differenze. Il grafico non verifica indipendenza fra coppie e non deve essere usato come certificazione automatica delle ipotesi.
+
+## Variante svolta
+
+Confrontare il cambiamento medio con 0,02 unità convenzionali, valore didattico fissato come riferimento.
+
+```{r variante}
+riferimento <- 0.02
+t_riferimento <- (media_d - riferimento) / se_d
+p_riferimento <- 2 * pt(-abs(t_riferimento), df)
+verifica <- t.test(d, mu = riferimento)
+print(c(riferimento = riferimento, t = t_riferimento, p = p_riferimento))
+stopifnot(isTRUE(all.equal(p_riferimento, verifica$p.value)))
+```
+
+Cambiare la nulla modifica il contrasto standardizzato e il p-value, ma non la stima del cambiamento medio. Il valore di riferimento richiede una motivazione scientifica in un'indagine reale.
+
+## Errore da riconoscere
+
+Non richiedere normalità delle due colonne separatamente come condizione decisiva del test appaiato. Esaminare le differenze e il disegno delle coppie.
+
+## Risposta alla domanda
+
+Il test appaiato è un test a un campione sulle differenze. Unità, segno, coppie complete e ipotesi devono essere espliciti in ogni passaggio.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M06_N12` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M06/M06_N12.R).

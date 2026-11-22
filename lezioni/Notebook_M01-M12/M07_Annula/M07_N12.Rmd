@@ -1,0 +1,150 @@
+---
+title: "Validazione interna sul solo training"
+subtitle: "M07_N12 \u00b7 Annula"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Come confrontare tre modelli senza usare il test per la scelta?
+
+## Obiettivi
+
+- Collegare la domanda al calcolo riportato.
+- Interpretare il risultato usando variabili e unità del problema.
+
+**Prima di iniziare.** Vettori, data frame, indicizzazione e funzioni di base in R.
+
+**Dati e unità.** Fossili simulati del corso: 160 individui, 80 Rounded e 80 Spiky. Diametri e spessori sono espressi in micrometri. Nel generatore, diametro interno = diametro totale − 2 × spessore. La relazione contiene quindi un vincolo geometrico noto.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Annula oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M07_Annula` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M07_Annula/Risultati/M07_N12/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M07_Annula"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M07_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M07_Annula o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M07_N12")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(7012)
+```
+
+## 1. Le cinque partizioni
+
+Dividiamo i 128 casi di training in cinque gruppi. A turno un gruppo serve alla valutazione interna e gli altri quattro alla stima. Il seme rende la divisione riproducibile.
+
+```{r passo_01}
+# Ogni riga identifica un fossile simulato.
+f <- carica_dati("fossili_simulati.csv")
+f$morfotipo <- factor(f$morfotipo, levels=c("Rounded", "Spiky"))
+x <- f$diametro_tot_um
+y <- f$diametro_int_um
+stopifnot(nrow(f)==160L, !anyDuplicated(f$id),
+          all(is.finite(x)), all(is.finite(y)))
+# Partizione fissata prima del confronto dei modelli.
+# Nel CSV didattico ogni quinto individuo forma il test.
+is_test <- seq_len(nrow(f)) %% 5L == 0L
+train <- f[!is_test, ]
+test <- f[is_test, ]
+stopifnot(nrow(train)==128L, nrow(test)==32L,
+          length(intersect(train$id, test$id))==0L)
+set.seed(714)
+fold <- sample(rep(1:5,length.out=nrow(train)))
+table(fold)
+formule <- list(lineare=diametro_int_um~diametro_tot_um,
+ con_morfotipo=diametro_int_um~diametro_tot_um+morfotipo,
+ polinomio3=diametro_int_um~poly(diametro_tot_um,3))
+```
+
+**Lettura del risultato.** I fold contengono 25 o 26 casi. Questa suddivisione presuppone che i singoli fossili sintetici siano unità adeguate per lo scambio fra partizioni.
+
+## 2. Ristimare il modello a ogni giro
+
+Il ciclo ripete tutta la stima. `poly()` impara la base polinomiale nella porzione di stima e `predict()` applica quella stessa base ai casi lasciati fuori.
+
+```{r passo_02}
+cv <- do.call(rbind,lapply(names(formule),function(nome) {
+ do.call(rbind,lapply(1:5,function(k) {
+  tr <- train[fold!=k,]
+  va <- train[fold==k,]
+  m <- lm(formule[[nome]],data=tr)
+  pr <- predict(m,newdata=va)
+  met <- metriche(va$diametro_int_um,pr)
+  data.frame(modello=nome,fold=k,
+             MAE=unname(met["MAE"]),RMSE=unname(met["RMSE"]))
+ }))
+}))
+cv
+```
+
+**Lettura del risultato.** Ogni riga riguarda una formula e un fold. Gli errori variano fra partizioni perché cambiano sia i casi usati per stimare sia i casi valutati. I fold condividono gran parte del training e non sono repliche indipendenti.
+
+## 3. Scelta dichiarata dal criterio
+
+Come nel laboratorio originale, usiamo la media dei cinque RMSE di fold. È una scelta esplicita, leggermente diversa dal RMSE ottenuto aggregando tutti gli errori lasciati fuori.
+
+```{r passo_03}
+media_cv <- aggregate(cbind(MAE,RMSE)~modello,cv,mean)
+media_cv
+scelto <- media_cv$modello[which.min(media_cv$RMSE)]
+scelto
+barplot(media_cv$RMSE,names.arg=media_cv$modello,
+ col=c("#087C74","#C57E42","#7363AA"),
+ ylab="Media dei RMSE interni (micrometri)",cex.names=.85)
+```
+
+**Lettura del risultato.** La formula con morfotipo ha RMSE medio circa 0,252 µm, contro circa 0,273 della retta semplice e 0,272 del polinomio cubico. La scelta usa solo questi risultati interni, senza consultare gli errori del test.
+
+## Variante svolta
+
+Ripetere il calcolo con la funzione di supporto e verificare che produca gli stessi risultati.
+
+```{r variante}
+automatica <- seleziona_modello(train,seme=714)
+automatica$riepilogo
+stopifnot(identical(automatica$nome,scelto),
+ max(abs(automatica$riepilogo$RMSE-media_cv$RMSE))<1e-12)
+```
+
+La funzione di supporto implementa esattamente il ciclo illustrato. Nei notebook successivi evita di ripetere decine di righe senza nascondere la procedura.
+
+## Errore da riconoscere
+
+Scegliere il modello dal minimo errore sul test farebbe usare il test come parte dell’addestramento della procedura.
+
+## Risposta alla domanda
+
+La validazione interna seleziona la formula. L’errore del candidato vincente in questa stessa scelta non è ancora una valutazione esterna della procedura completa.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M07_N12` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M07/M07_N12.R).

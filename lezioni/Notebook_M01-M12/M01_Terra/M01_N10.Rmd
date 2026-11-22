@@ -1,0 +1,135 @@
+---
+title: "Rileggere il disegno prima dei numeri"
+subtitle: "M01_N10 \u00b7 Terra"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Quando una media dei provini e una media delle stazioni rispondono alla stessa domanda, e quando cambiano i pesi?
+
+## Obiettivi
+
+- Confrontare sintesi a livelli diversi del campionamento.
+- Riconoscere il peso implicito delle stazioni in una media individuale.
+
+**Prima di iniziare.** Saper eseguire una cella R e riconoscere vettori, assegnamenti e nomi di colonne.
+
+**Dati e unità.** Il dataset sintetico contiene quattro provini per ciascuna delle sei stazioni. Una variante costruita rimuove due righe per rendere visibile l'effetto dello sbilanciamento.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M01_N10/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M01_N10")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(1010)
+```
+
+## 1. Descrivere il disegno osservato
+
+Prima di confrontare medie ricostruiamo la distribuzione dei provini. La tabella incrociata e i conteggi per stazione mostrano quali unità partecipano al confronto e se ciascuna contribuisce con lo stesso numero di osservazioni.
+
+```{r passo_01}
+# Ogni esecuzione riparte dal CSV condiviso, senza modificare il file.
+d <- carica_dati("campioni_modulo1.csv", stringsAsFactors = FALSE)
+stopifnot(nrow(d) == 24L, !anyDuplicated(d$id))
+
+stopifnot(all(is.finite(d$massa_g)), all(d$massa_g > 0),
+          all(is.finite(d$volume_cm3)), all(d$volume_cm3 > 0))
+d$densita_g_cm3 <- d$massa_g / d$volume_cm3
+
+print(table(d$affioramento, d$stazione))
+n_stazione <- table(d$stazione)
+print(n_stazione)
+stopifnot(all(n_stazione == 4L))
+```
+
+**Lettura del risultato.** Il bilanciamento attuale è una proprietà dei dati didattici, non una regola generale. Il numero di provini per stazione diventa un peso quando si calcola una media aggregando direttamente tutte le righe.
+
+## 2. Confrontare due sintesi
+
+Calcoliamo prima una densità media per stazione e poi la media di queste medie entro ogni affioramento. Confrontiamola con la media dei provini: nel disegno bilanciato ogni stazione riceve lo stesso peso in entrambi i calcoli.
+
+```{r passo_02}
+per_stazione <- aggregate(densita_g_cm3 ~ affioramento + stazione,
+                          data = d, FUN = mean)
+media_provini <- tapply(d$densita_g_cm3, d$affioramento, mean)
+media_stazioni <- tapply(per_stazione$densita_g_cm3, per_stazione$affioramento, mean)
+print(per_stazione)
+print(data.frame(affioramento = names(media_provini),
+                 media_provini = media_provini, media_stazioni = media_stazioni))
+stopifnot(isTRUE(all.equal(media_provini, media_stazioni)))
+```
+
+**Lettura del risultato.** L'uguaglianza numerica deriva qui dai conteggi uguali, non dall'intercambiabilità delle unità. Un'analisi dell'incertezza dovrebbe comunque chiarire quali unità siano trattate come indipendenti e quale popolazione sia oggetto dell'inferenza.
+
+## 3. Rendere espliciti i pesi
+
+Ricostruiamo la media complessiva usando le medie delle stazioni e i rispettivi conteggi. La media ponderata restituisce la sintesi dei provini; la media non ponderata attribuisce lo stesso contributo a ogni stazione.
+
+```{r passo_03}
+medie_st <- tapply(d$densita_g_cm3, d$stazione, mean)
+pesi <- as.numeric(n_stazione[names(medie_st)])
+media_ponderata <- weighted.mean(medie_st, w = pesi)
+media_non_ponderata <- mean(medie_st)
+print(c(provini = mean(d$densita_g_cm3),
+        stazioni_ponderate = media_ponderata, stazioni_uguali = media_non_ponderata))
+stopifnot(isTRUE(all.equal(media_ponderata, mean(d$densita_g_cm3))))
+```
+
+**Lettura del risultato.** I pesi spiegano il contributo effettivo delle stazioni. Nessuna delle due sintesi è universalmente corretta: la scelta dipende dal fatto che la domanda riguardi il provino osservato o una stazione considerata con uguale importanza.
+
+## Variante svolta
+
+Ripetere il confronto dopo aver tolto due provini di A1 in una copia.
+
+```{r variante}
+ridotto <- d[!d$id %in% c("C01", "C02"), , drop = FALSE]
+m_r <- tapply(ridotto$densita_g_cm3, ridotto$stazione, mean)
+n_r <- table(factor(ridotto$stazione, levels = names(m_r)))
+print(c(media_provini = mean(ridotto$densita_g_cm3),
+        media_stazioni = mean(m_r),
+        media_ponderata = weighted.mean(m_r, as.numeric(n_r))))
+stopifnot(isTRUE(all.equal(weighted.mean(m_r, as.numeric(n_r)),
+                           mean(ridotto$densita_g_cm3))))
+```
+
+Lo sbilanciamento modifica i pesi impliciti e può separare le due medie. La rimozione è un esperimento didattico dichiarato; non suggerisce di eliminare provini per ottenere un risultato desiderato.
+
+## Errore da riconoscere
+
+Aggregare per stazione e poi dimenticare di dichiararlo cambia l'unità della risposta. Nella relazione finale occorre nominare sia l'unità sintetizzata sia il criterio di ponderazione.
+
+## Risposta alla domanda
+
+Il disegno di campionamento entra nel calcolo attraverso i pesi. Conoscerlo permette di spiegare perché medie apparentemente simili coincidano nel caso bilanciato e possano divergere dopo una selezione.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M01_N10` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M01/M01_N10.R).

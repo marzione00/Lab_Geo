@@ -1,0 +1,133 @@
+---
+title: "Laboratorio applicativo: classi esplicite"
+subtitle: "M03_N20 \u00b7 Iride"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come costruire una tabella di frequenze e un istogramma che assegnino esattamente gli stessi individui alle classi?
+
+## Obiettivi
+
+- Dichiarare estremi, ampiezza e chiusura degli intervalli.
+- Verificare la corrispondenza fra cut e hist.
+
+**Prima di iniziare.** Istogrammi, frequenze, sequenze e operatori di confronto.
+
+**Dati e unità.** Archivio didattico sintetico: 160 fossili, 80 Rounded e 80 Spiky. Diametri e spessori sono espressi in micrometri; ogni riga identifica un individuo.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M03_N20/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M03_N20")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(3020)
+```
+
+## 1. Definire le classi prima del conteggio
+
+Scegliamo intervalli di mezzo micrometro che coprano tutte le misure. Gli estremi derivano dal campo dei dati, mentre l'ampiezza è una scelta didattica dichiarata e non un parametro stimato della popolazione.
+
+```{r passo_01}
+f <- carica_dati("fossili_simulati.csv")
+x <- f$diametro_tot_um
+ampiezza <- .5
+# Arrotondiamo verso l esterno per includere tutte le misure nei confini.
+inferiore <- floor(min(x) / ampiezza) * ampiezza
+superiore <- ceiling(max(x) / ampiezza) * ampiezza
+confini <- seq(inferiore, superiore, by = ampiezza)
+print(confini)
+stopifnot(min(x) >= confini[1], max(x) <= tail(confini, 1))
+```
+
+**Lettura del risultato.** Le classi ricoprono l'intero intervallo osservato senza sovrapporsi. Se aggiungessimo un valore oltre gli estremi dovremmo ricalcolare i confini, altrimenti alcune osservazioni resterebbero escluse.
+
+## 2. Assegnare individui e controllare
+
+Adottiamo intervalli aperti a sinistra e chiusi a destra, includendo anche il primo estremo. Usiamo gli stessi argomenti in cut e hist; le etichette dei fattori aiutano a rendere visibile la convenzione.
+
+```{r passo_02}
+# right = TRUE chiude a destra; include.lowest include anche il minimo bordo.
+classe <- cut(x, breaks = confini, right = TRUE, include.lowest = TRUE)
+conteggi <- table(classe)
+h <- hist(x, breaks = confini, right = TRUE, include.lowest = TRUE, plot = FALSE)
+tab <- data.frame(classe = names(conteggi), n = as.integer(conteggi),
+                  frequenza = as.integer(conteggi) / length(x))
+print(tab)
+stopifnot(!anyNA(classe), sum(conteggi) == length(x))
+stopifnot(all(as.integer(conteggi) == h$counts))
+```
+
+**Lettura del risultato.** I conteggi coincidono perché confini e convenzioni coincidono. hist usa una piccola tolleranza numerica vicino ai bordi: quando misure e bordi differiscono soltanto per arrotondamenti informatici, occorre controllare esplicitamente l'assegnazione.
+
+## 3. Disegnare e conservare la tabella
+
+L'istogramma finale ha classi equiampie, quindi possiamo usare i conteggi come altezze. La tabella conserva anche le quote e viene esportata per consentire al lettore di verificare la figura.
+
+```{r passo_03}
+plot(h, freq = TRUE, col = "#1D7890", border = "white",
+     xlab = "Diametro totale (um)", ylab = "Fossili per classe (n)",
+     main = "Classi dichiarate di 0,5 um")
+write.csv(tab, percorso_risultati("frequenze_classi_05um.csv"), row.names = FALSE)
+# Un esempio esatto sui bordi rende verificabile la convenzione degli intervalli.
+casi_bordo <- c(0, .5, 1)
+print(data.frame(valore = casi_bordo,
+  classe = cut(casi_bordo, c(0, .5, 1), right = TRUE, include.lowest = TRUE)))
+```
+
+**Lettura del risultato.** Nell'esempio di bordo, il valore mezzo appartiene alla prima classe perché il bordo destro è incluso. Il valore zero entra grazie a include.lowest; omettere questo argomento può produrre un NA all'estremo inferiore.
+
+## Variante svolta
+
+Ripetere l'intera classificazione con ampiezza di un micrometro e verificare la conservazione degli individui.
+
+```{r variante}
+confini_1 <- seq(floor(min(x)), ceiling(max(x)), by = 1)
+classe_1 <- cut(x, confini_1, right = TRUE, include.lowest = TRUE)
+t1 <- table(classe_1)
+h1 <- hist(x, breaks = confini_1, right = TRUE, include.lowest = TRUE, plot = FALSE)
+print(data.frame(classe = names(t1), n = as.integer(t1)))
+stopifnot(sum(t1) == length(x), all(as.integer(t1) == h1$counts))
+print(c(classi_05 = length(conteggi), classi_1 = length(t1)))
+```
+
+La numerosità resta identica mentre la tabella diventa più aggregata. Eventuali differenze di forma derivano dalla scelta delle classi; non rappresentano cambiamenti nei fossili misurati.
+
+## Errore da riconoscere
+
+Non definire i bordi una volta nella tabella e un'altra nel grafico con una regola automatica. Non ignorare gli NA prodotti da cut: potrebbero segnalare misure fuori intervallo.
+
+## Risposta alla domanda
+
+Confini e convenzione di chiusura fanno parte della definizione delle classi. Usarli in modo identico per tabella e grafico, controllando conteggi e bordi, rende il laboratorio riproducibile e impedisce esclusioni silenziose.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M03_N20` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M03/M03_N20.R).

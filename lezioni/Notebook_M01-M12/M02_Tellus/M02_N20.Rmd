@@ -1,0 +1,133 @@
+---
+title: "Laboratorio applicativo \u2014 Massa contro moli"
+subtitle: "M02_N20 \u00b7 Tellus"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come possiamo dimostrare con un esempio semplice che un rapporto in massa e un rapporto molare esprimono quantità differenti?
+
+## Obiettivi
+
+- Svolgere il calcolo chimico passando da grammi a moli.
+- Verificare l'invarianza dei rapporti rispetto a un fattore comune di scala.
+
+**Prima di iniziare.** Saper eseguire una cella R e riconoscere vettori, assegnamenti e nomi di colonne.
+
+**Dati e unità.** Gli esempi sono composizioni costruite, espresse come grammi di MgO e FeO su una base convenzionale. Si considerano soltanto questi due ossidi, con masse molari 40,304 e 71,844 g/mol; il rapporto non descrive l'intera composizione della roccia.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M02_N20/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M02_N20")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(2020)
+```
+
+## 1. Partire da un rapporto in massa
+
+Prendiamo quaranta grammi di MgO e dieci di FeO. Il primo rapporto risponde alla domanda 'quale frazione della massa dei due ossidi è MgO?'. Il denominatore comprende soltanto le due masse dichiarate, non altri componenti eventualmente presenti nel campione.
+
+```{r passo_01}
+MgO_g <- 40
+FeO_g <- 10
+massa_due_ossidi <- MgO_g + FeO_g
+frazione_massa <- MgO_g / massa_due_ossidi
+print(c(MgO_g = MgO_g, FeO_g = FeO_g, frazione_massa = frazione_massa))
+stopifnot(abs(frazione_massa - 0.8) < 1e-12)
+```
+
+**Lettura del risultato.** Il valore 0,8 riguarda la massa degli ossidi scelti. Non indica direttamente la proporzione di atomi di Mg fra Mg e Fe, perché un grammo dei due ossidi contiene numeri differenti di unità formula.
+
+## 2. Contare quantità molari prima del rapporto
+
+Dividiamo ogni massa per la rispettiva massa molare. Nel modello MgO e FeO contengono un catione di interesse per unità formula, quindi il rapporto delle quantità molari degli ossidi coincide con quello dei due cationi.
+
+```{r passo_02}
+M_MgO <- 40.304
+M_FeO <- 71.844
+n_Mg <- MgO_g / M_MgO
+n_Fe <- FeO_g / M_FeO
+frazione_molare <- n_Mg / (n_Mg + n_Fe)
+print(c(n_Mg_mol = n_Mg, n_Fe_mol = n_Fe, Mg_num = frazione_molare))
+print(c(differenza = frazione_molare - frazione_massa))
+stopifnot(frazione_molare > frazione_massa, frazione_molare < 1)
+```
+
+**Lettura del risultato.** Il rapporto molare è maggiore in questo esempio perché MgO ha massa molare minore di FeO. Entrambi i rapporti sono adimensionali, ma l'assenza di unità non li rende equivalenti: numeratore e denominatore rappresentano grandezze diverse.
+
+## 3. Estendere il confronto a più composizioni
+
+Manteniamo costante la massa totale dei due ossidi e variamo la quota di MgO. Una tabella e un grafico mostrano la relazione fra frazione in massa e frazione molare, inclusi gli estremi con un solo catione presente.
+
+```{r passo_03}
+esempi <- data.frame(MgO_g = seq(0, 50, by = 5))
+esempi$FeO_g <- 50 - esempi$MgO_g
+esempi$frazione_massa <- esempi$MgO_g / (esempi$MgO_g + esempi$FeO_g)
+esempi$n_Mg <- esempi$MgO_g / M_MgO
+esempi$n_Fe <- esempi$FeO_g / M_FeO
+esempi$Mg_num <- esempi$n_Mg / (esempi$n_Mg + esempi$n_Fe)
+print(esempi[c("MgO_g", "FeO_g", "frazione_massa", "Mg_num")])
+plot(esempi$frazione_massa, esempi$Mg_num, type = "b", pch = 19, col = "steelblue",
+     xlab = "Frazione in massa di MgO fra i due ossidi", ylab = "Frazione molare Mg / (Mg + Fe)")
+abline(a = 0, b = 1, lty = 2)
+stopifnot(esempi$Mg_num[1] == 0, tail(esempi$Mg_num, 1) == 1)
+```
+
+**Lettura del risultato.** Agli estremi i rapporti coincidono perché è presente un solo componente; nelle miscele interne differiscono. La curva deriva dalla conversione delle quantità e non da una regressione adattata a misure sperimentali o da una relazione geologica stimata.
+
+## Variante svolta
+
+Raddoppiare entrambe le masse e verificare che i due rapporti restino invariati.
+
+```{r variante}
+fattore <- 2
+nuova_frazione_massa <- (fattore * MgO_g) / (fattore * MgO_g + fattore * FeO_g)
+nuovo_n_Mg <- fattore * MgO_g / M_MgO
+nuovo_n_Fe <- fattore * FeO_g / M_FeO
+nuova_frazione_molare <- nuovo_n_Mg / (nuovo_n_Mg + nuovo_n_Fe)
+print(c(massa = nuova_frazione_massa, molare = nuova_frazione_molare))
+stopifnot(abs(nuova_frazione_massa - frazione_massa) < 1e-12,
+          abs(nuova_frazione_molare - frazione_molare) < 1e-12)
+```
+
+Il fattore comune si semplifica in ciascun rapporto, quindi la base convenzionale non ne cambia il valore. Cambiare soltanto una delle due masse modificherebbe invece la composizione e richiederebbe un nuovo calcolo.
+
+## Errore da riconoscere
+
+Dire 'i rapporti non hanno unità, quindi sono confrontabili' trascura che un rapporto conserva il significato delle grandezze da cui deriva. Si dichiarano sempre componenti, base e conversione stechiometrica.
+
+## Risposta alla domanda
+
+Il confronto dimostra perché Mg# richieda quantità molari e una convenzione esplicita. La verifica per riscalamento controlla la formula; il trattamento del ferro e la qualità delle analisi restano assunzioni da documentare nell'applicazione.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M02_N20` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M02/M02_N20.R).

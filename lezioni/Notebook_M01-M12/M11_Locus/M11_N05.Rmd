@@ -1,0 +1,145 @@
+---
+title: "Proiezione e controllo di ritorno"
+subtitle: "M11_N05 · Locus"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Una trasformazione geografica può essere controllata tornando alle coordinate iniziali?
+
+## Obiettivi
+
+- Eseguire st_transform con sf reale.
+- Controllare il ritorno in longitudine–latitudine.
+- Distinguere reversibilità numerica e validità del CRS sorgente.
+
+**Prima di iniziare.** Sono richiesti vettori, tabelle, coordinate e funzioni R di base. I blocchi vanno eseguiti in ordine; il notebook è autonomo rispetto agli altri. Questo notebook richiede il pacchetto sf installato prima dell’analisi e usa le sue funzioni effettive.
+
+**Dati e unità.** 64 siti sintetici su una griglia 8 × 8, con passo 250 m e coordinate locali x_m e y_m fra 0 e 1750 m. Questo piano locale non ha un codice EPSG. La concentrazione è sintetica, in unità arbitrarie (u.a.); la quota è in metri sintetici. Ogni riga descrive un sito e il suo valore puntuale, non la media di una cella. Le colonne lon e lat forniscono un georiferimento sintetico separato, vicino a 9° E e 45° N, costruito con una relazione approssimata. Non sono coordinate UTM ottenute aggiungendo un’origine alle coordinate locali. Nel percorso geografico l’ordine è sempre longitudine, latitudine.
+
+## Preparazione
+
+Aprire il progetto autonomo di Locus o quello generale dei notebook. I CSV locali restano invariati. Gli output vanno in `Risultati/M11_N05/`. Nessun download o installazione viene eseguito nei blocchi.
+
+```{r preparazione}
+# Trova il modulo dal progetto autonomo o dal progetto generale dei notebook.
+.gs_cerca <- normalizePath(getwd(),winslash="/",mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca,file.path(.gs_cerca,"M11_Locus"),
+    file.path(.gs_cerca,"03_Notebook_svolti","M11_Locus"),
+    file.path(.gs_cerca,"M11","03_Notebook_svolti","M11_Locus"))
+  .gs_ok <- file.exists(file.path(.gs_candidati,"M11_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati,"R","funzioni_notebook.R"))
+  if(any(.gs_ok)) { .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]];break }
+  .gs_padre <- dirname(.gs_cerca)
+  if(.gs_padre==.gs_cerca) stop("Aprire il progetto M11_Locus o quello generale dei notebook.")
+  .gs_cerca <- .gs_padre
+}
+source(file.path(.gs_modulo,"R","funzioni_notebook.R"),local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo,"M11_N05")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88,digits=6)
+if(requireNamespace("knitr",quietly=TRUE)) {
+  knitr::opts_chunk$set(echo=TRUE,error=FALSE,warning=TRUE,message=TRUE,
+    fig.width=8,fig.height=5,dpi=150,fig.align="center")
+}
+set.seed(11005)
+```
+
+## 1. L’oggetto geografico dichiara l’ordine
+
+Usiamo OGC:CRS84 per rendere esplicito l’ordine longitudine, latitudine. È una precisazione dell’ingresso WGS84 del laboratorio originale. Nessun CRS viene assegnato a x_m/y_m.
+
+```{r passo_01}
+d <- carica_dati("spazio_v3.csv")
+audit_spazio(d)
+richiedi_sf()
+ p <- sf::st_as_sf(d,coords=c("lon","lat"),crs="OGC:CRS84",remove=FALSE)
+ data.frame(oggetti=nrow(p),geometria=as.character(unique(sf::st_geometry_type(p))),
+   longlat=sf::st_is_longlat(p),sf_version=as.character(packageVersion("sf")))
+ sf::sf_extSoftVersion()
+ stopifnot(identical(sf::st_coordinates(p)[,1],d$lon),
+   identical(sf::st_coordinates(p)[,2],d$lat))
+```
+
+**Lettura del risultato.** L’output registra anche le librerie geografiche effettivamente utilizzate. Il codice richiede sf installato e non sostituisce la trasformazione con una formula manuale.
+
+## 2. La trasformazione cambia i numeri e le unità
+
+EPSG:32632 identifica UTM zona 32 Nord. I valori trasformati provengono dalla geometria lon–lat sintetica.
+
+```{r passo_02}
+q <- sf::st_transform(p,32632)
+xy <- sf::st_coordinates(q)
+risultato <- data.frame(id=d$id,est_UTM32N_m=xy[,1],nord_UTM32N_m=xy[,2])
+head(risultato,6)
+data.frame(EPSG=sf::st_crs(q)$epsg,unita=sf::st_crs(q)$units_gdal)
+stopifnot(!sf::st_is_longlat(q),sf::st_crs(q)$epsg==32632)
+```
+
+**Lettura del risultato.** La proiezione produce metri in un sistema di riferimento specificato. Il fatto che anche le coordinate locali siano in metri non le rende coordinate UTM.
+
+## 3. Il ritorno misura la reversibilità numerica
+
+Trasformiamo nuovamente in OGC:CRS84 e confrontiamo le due colonne originali con tolleranza 10⁻⁷ gradi.
+
+```{r passo_03}
+ritorno <- sf::st_coordinates(sf::st_transform(q,"OGC:CRS84"))
+scarti <- data.frame(asse=c("longitudine","latitudine"),
+  massimo_scarto_gradi=c(max(abs(ritorno[,1]-d$lon)),max(abs(ritorno[,2]-d$lat))))
+scarti
+stopifnot(all(scarti$massimo_scarto_gradi<1e-7))
+stile_grafico()
+par(mar=c(4.6,8,3,1.2))
+plot(xy[,1],xy[,2],asp=1,pch=19,col=palette_geo[1],xaxt="n",
+  xlab="Est UTM32N (m)",ylab="",main="Georiferimento sintetico trasformato")
+axis(1,at=pretty(xy[,1],n=3))
+mtext("Nord UTM32N (m)",side=2,line=6,las=0)
+write.csv(risultato,percorso_risultati("coordinate_UTM32N.csv"),row.names=FALSE)
+write.csv(scarti,percorso_risultati("controllo_ritorno.csv"),row.names=FALSE)
+```
+
+**Lettura del risultato.** Il ritorno controlla il percorso numerico. Una trasformazione reversibile può comunque partire da un CRS attribuito erroneamente: la fonte va verificata separatamente.
+
+## Variante svolta
+
+**Sottrarre un’origine non ricostruisce il piano locale.** Confrontare gli scostamenti UTM dal primo punto con x_m/y_m.
+
+```{r variante}
+delta <- sweep(xy,2,xy[1,],"-")
+confronto <- data.frame(asse=c("x","y"),
+  massimo_scarto_m=c(max(abs(delta[,1]-d$x_m)),max(abs(delta[,2]-d$y_m))))
+confronto
+```
+
+Lo scarto riflette la relazione approssimata usata per costruire lon e lat. L’esempio vieta di presentare la griglia locale come semplice traslazione della griglia UTM.
+
+## Errore da riconoscere
+
+Assegnare EPSG:32632 al piano locale oppure interpretare un ritorno preciso come prova che il CRS sorgente fosse giusto.
+
+## Risposta alla domanda
+
+Il controllo di ritorno documenta la reversibilità di st_transform. La validità geografica richiede ancora fonte, CRS e ordine degli assi corretti. Il georiferimento sintetico e il piano locale restano due rappresentazioni distinte.
+
+## Raccordo con le slide
+
+[Slide 25–28 e 30 della lezione Locus](../../02_PDF/M11_Locus/Locus_M11_statistica_spaziale.pdf#page=25). Il notebook conserva il tema del laboratorio originale e aggiunge verifiche e una variante svolta.
+
+
+## Riferimenti e provenienza
+
+Questo svolgimento sviluppa `M11_N05` del [modulo M11 del corso](https://marzione00.github.io/Lab_Geo/#modulo-M11). Il [codice originale](https://github.com/marzione00/Lab_Geo/blob/649f7cc577b96bd1044d81e78a2f530813e4f96b/materiali/laboratori/M11/M11_N05.R) è conservato immutato in `R/Originali_corso/`; la mappa allegata documenta gli ampliamenti. Dati e originali hanno impronte SHA-256 e SHA-1 Git verificate.
+
+Documentazione primaria: [sf, trasformazione](https://r-spatial.github.io/sf/reference/st_transform.html), [sf, CRS](https://r-spatial.github.io/sf/reference/st_crs.html), [sf, scrittura](https://r-spatial.github.io/sf/reference/st_write.html), [GeoJSON RFC7946](https://www.rfc-editor.org/rfc/rfc7946).

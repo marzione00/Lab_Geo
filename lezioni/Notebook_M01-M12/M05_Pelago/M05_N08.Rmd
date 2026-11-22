@@ -1,0 +1,127 @@
+---
+title: "Precisione, selezione e popolazione finita"
+subtitle: "M05_N08 \u00b7 Pelago"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Quanto cambia la precisione quando campioniamo senza reinserimento da una popolazione piccola, e che cosa resta irrisolto se selezioniamo i valori?
+
+## Obiettivi
+
+- Calcolare la correzione per popolazione finita.
+- Separare variabilità di campionamento e selezione distorta.
+
+**Prima di iniziare.** Vettori, indicizzazione, media, varianza e grafici di base in R.
+
+**Dati e unità.** Popolazione didattica di otto densità, in g/cm³. Enumeriamo tutti i campioni casuali semplici di quattro unità.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M05_N08/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M05_N08")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(5008)
+```
+
+## 1. Enumerare un disegno casuale semplice
+
+L'enumerazione evita l'errore Monte Carlo perché considera ogni campione possibile con la stessa probabilità. La matrice prodotta da combn contiene gli indici dei provini: quattro indici per colonna, senza ripetizioni interne.
+
+```{r passo_01}
+x <- c(2.40, 2.45, 2.52, 2.60, 2.68, 2.75, 2.83, 2.91)
+Npop <- length(x)
+n <- 4
+mu <- mean(x)
+S2 <- var(x) # denominatore Npop - 1 nella varianza finita
+indici <- combn(seq_along(x), n)
+medie <- apply(indici, 2, function(i) mean(x[i]))
+print(c(campioni_possibili = ncol(indici), media_popolazione = mu))
+```
+
+**Lettura del risultato.** Le medie sono associate a campioni equiprobabili. Se il disegno desse probabilità diverse ai campioni, non potremmo usare la loro semplice media per descriverlo.
+
+## 2. Verificare la varianza esatta
+
+La varianza della media è (1−n/N)S²/n quando S² usa il denominatore N−1. Per la distribuzione enumerata calcoliamo la media degli scarti quadratici dal suo valore atteso: usare var(medie) aggiungerebbe una correzione campionaria non necessaria.
+
+```{r passo_02}
+var_esatta <- mean((medie - mu)^2)
+var_formula <- (1 - n / Npop) * S2 / n
+var_reinserimento <- mean((x - mu)^2) / n
+stopifnot(isTRUE(all.equal(var_esatta, var_formula)))
+print(c(var_enumerata = var_esatta, var_formula = var_formula,
+        var_con_reinserimento = var_reinserimento))
+print(c(SE_senza = sqrt(var_esatta), SE_con = sqrt(var_reinserimento)))
+```
+
+**Lettura del risultato.** Osservare metà della popolazione riduce l'incertezza rispetto a estrazioni indipendenti con reinserimento. È essenziale mantenere coerenti i denominatori delle due varianze.
+
+## 3. Mostrare una selezione che esclude parte della popolazione
+
+Scegliere sempre i quattro valori più piccoli produce una media perfettamente ripetibile ma sistematicamente distante dal parametro. La ripetibilità della regola non equivale a rappresentatività: nessuna correzione della varianza recupera i provini esclusi dalla selezione.
+
+```{r passo_03}
+selezionati <- sort(x)[seq_len(n)]
+media_selettiva <- mean(selezionati)
+print(c(media_selettiva = media_selettiva,
+        scarto_dal_parametro = media_selettiva - mu))
+hist(medie, breaks = 12, col = "#95BDD0", border = "white", ylab = "Frequenza",
+     xlab = "Media campionaria (g/cm3)", main = "Tutti i campioni casuali")
+abline(v = c(mu, media_selettiva), col = c("#27647B", "#A33B31"), lwd = 2)
+```
+
+**Lettura del risultato.** La linea della selezione mostra un errore dovuto alla regola di inclusione. Aumentare le repliche della stessa selezione non rende quella regola casuale.
+
+## Variante svolta
+
+Calcolare la precisione teorica per tutte le numerosità, fino al censimento.
+
+```{r variante}
+piano <- data.frame(n = 1:Npop)
+piano$frazione <- piano$n / Npop
+piano$SE <- sqrt((1 - piano$frazione) * S2 / piano$n)
+print(piano)
+stopifnot(tail(piano$SE, 1) == 0)
+```
+
+Al censimento non resta incertezza di campionamento per la media di questa popolazione finita. Errori di misura e incompletezza dell'elenco richiedono invece un'analisi separata.
+
+## Errore da riconoscere
+
+La correzione finita vale per il disegno casuale senza reinserimento specificato; non va applicata soltanto perché il campione sembra numeroso.
+
+## Risposta alla domanda
+
+La precisione dipende dalla frazione campionata e dal disegno. Una selezione distorta può essere molto ripetibile e restare lontana dalla quantità di interesse.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M05_N08` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M05/M05_N08.R).

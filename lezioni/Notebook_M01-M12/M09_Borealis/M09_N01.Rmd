@@ -1,0 +1,129 @@
+---
+title: "Date, valori e provenienza dell\u2019archivio CO\u2082"
+subtitle: "M09_N01 \u00b7 Borealis"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Quale periodo descrivono questi dati e quanti valori sono realmente disponibili?
+
+## Obiettivi
+
+- Verificare periodo, unità e fonte.
+- Distinguere griglia regolare e completezza dei valori.
+- Conservare metadati e date.
+
+**Prima di iniziare.** Lettura di CSV, vettori, indicizzazione e funzioni di base in R. I blocchi vanno eseguiti nell’ordine all’interno del singolo notebook.
+
+**Dati e unità.** Archivio storico CO₂ 1958–2001, copia del dataset settimanale statsmodels attribuito a Keeling, Whorf e CDIAC. Le concentrazioni sono espresse in ppm. Le medie mensili del corso derivano dai valori settimanali assegnati al mese della data e differiscono per definizione da una serie mensile ufficiale.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Borealis oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M09_Borealis` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M09_Borealis/Risultati/M09_N01/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M09_Borealis"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M09_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M09_Borealis o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M09_N01")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(9001)
+```
+
+## 1. Leggere il tempo insieme alla misura
+
+La conversione in Date permette di ordinare gli istanti e calcolare le distanze nel calendario. Il numero di riga, da solo, non identifica una data. Il controllo dei duplicati riguarda la chiave temporale di questa singola serie.
+
+```{r passo_01}
+w <- carica_dati("co2_settimanale_storica.csv")
+w$data <- as.Date(w$data)
+w <- w[order(w$data), ]
+stopifnot(!anyNA(w$data), !anyDuplicated(w$data))
+head(w, 4)
+data.frame(prima=min(w$data), ultima=max(w$data),
+ righe=nrow(w), osservate=sum(!is.na(w$co2)), mancanti=sum(is.na(w$co2)))
+```
+
+**Lettura del risultato.** L’archivio contiene 2.284 date settimanali e 59 valori mancanti. Il periodo si conclude nel 2001: nessun valore della tabella rappresenta la concentrazione atmosferica attuale.
+
+## 2. Controllare la distanza fra le date
+
+Una griglia regolare riguarda gli istanti, non la presenza della misura in ogni istante. Una riga con NA mantiene la posizione della settimana assente.
+
+```{r passo_02}
+passi_giorni <- as.integer(diff(w$data))
+table(passi_giorni)
+stopifnot(all(passi_giorni==7L))
+head(w[is.na(w$co2), ], 6)
+```
+
+**Lettura del risultato.** Gli intervalli sono di sette giorni anche quando manca il valore di CO₂. Eliminare le righe con NA prima di controllare il calendario nasconderebbe questa distinzione.
+
+## 3. Disegnare anche le interruzioni
+
+Il grafico usa le date reali e lascia interrotta la linea in corrispondenza degli NA. La provenienza e la definizione settimanale devono accompagnare ogni esportazione.
+
+```{r passo_03}
+plot(w$data, w$co2, type="l", col="#087C74",
+ xlab="Data", ylab="CO2 (ppm)", main="Archivio settimanale storico")
+metadati <- data.frame(fonte="Copia statsmodels, Keeling-Whorf/CDIAC",
+ prima=as.character(min(w$data)), ultima=as.character(max(w$data)),
+ unita="ppm", passo_giorni=7, aggregazione="Media settimanale storica")
+write.csv(metadati, percorso_risultati("metadati_CO2.csv"), row.names=FALSE)
+metadati
+```
+
+**Lettura del risultato.** La crescita e il ciclo stagionale sono leggibili nel periodo storico. La curva non autorizza una stima del presente senza acquisire nuovi dati e documentarne la compatibilità.
+
+## Variante svolta
+
+Contare gli NA per anno e trovare gli anni con più assenze.
+
+```{r variante}
+assenze <- aggregate(is.na(w$co2), list(anno=format(w$data,"%Y")), sum)
+names(assenze)[2] <- "settimane_mancanti"
+head(assenze[order(-assenze$settimane_mancanti), ], 6)
+```
+
+Le assenze non sono distribuite in modo uniforme. Un conteggio globale va affiancato alla loro collocazione nel calendario.
+
+## Errore da riconoscere
+
+Presentare questo CSV come una misura aggiornata o interpretare NA come concentrazione zero.
+
+## Risposta alla domanda
+
+Si tratta di un archivio storico con 2.225 valori osservati su 2.284 date. La griglia è settimanale e le assenze restano esplicite.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M09_N01` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M09/M09_N01.R).

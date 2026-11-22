@@ -1,0 +1,659 @@
+{
+ "R": "R version 4.6.0 (2026-04-24)",
+ "fragments": {
+  "004_date.R": {
+   "status": "ok",
+   "output": "> # ISO 8601: anno-mese-giorno.\n> date_es <- as.Date(c(\"2001-01-01\",\n+                     \"2001-02-01\",\n+                     \"2001-03-01\"))\n> class(date_es)\n[1] \"Date\"\n> diff(date_es)\nTime differences in days\n[1] 31 28\n> # Febbraio e gennaio hanno durate diverse.",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "3cf0892a4f2bdfdac565",
+   "seconds": 17.4
+  },
+  "007_archivio.R": {
+   "skipped": [
+    "tseries"
+   ],
+   "hash": "5e5913bcfcafbfe5892e",
+   "seconds": 0.0
+  },
+  "008_tabella.R": {
+   "status": "ok",
+   "output": "> head(d, 5)\n        data co2_ppm n_settimane\n1 1985-01-01 344.925           4\n2 1985-02-01 345.875           4\n3 1985-03-01 347.440           5\n4 1985-04-01 348.325           4\n5 1985-05-01 348.825           4\n> str(d)\n'data.frame':\t204 obs. of  3 variables:\n $ data       : Date, format: \"1985-01-01\" \"1985-02-01\" ...\n $ co2_ppm    : num  345 346 347 348 349 ...\n $ n_settimane: int  4 4 5 4 4 5 4 4 4 4 ...\n> # Tre ruoli: data, concentrazione, copertura.\n> stopifnot(inherits(d$data, \"Date\"),\n+   is.numeric(d$co2_ppm),\n+   all(d$n_settimane >= 0))",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "f98210aa0f745e002ea0",
+   "seconds": 0.1
+  },
+  "009_ordinare.R": {
+   "status": "ok",
+   "output": "> # L'ordinamento coinvolge l'intera tabella.\n> wk <- wk[order(wk$data), ]\n> stopifnot(!anyNA(wk$data))\n> anyDuplicated(wk$data)\n[1] 0\n> table(as.integer(diff(wk$data)))\n\n   7 \n2283 \n> # Una differenza in Date restituisce giorni.",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "4e2a1b82bc6d59b783d9",
+   "seconds": 0.1
+  },
+  "010_assenze.R": {
+   "status": "ok",
+   "output": "> cal_es <- data.frame(\n+   data = seq(as.Date(\"2001-01-01\"),\n+              by = \"month\", length.out = 8),\n+   valore = c(5, 7, 6, NA, 9, 7, 6, 4))\n> cal_es[is.na(cal_es$valore), ]\n        data valore\n4 2001-04-01     NA\n> # Il NA mantiene la posizione di aprile.",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "4e6d1f5cd7d9ef35e161",
+   "seconds": 0.1
+  },
+  "011_duplicati.R": {
+   "status": "ok",
+   "output": "> duplicati <- wk[\n+   duplicated(wk$data) |\n+     duplicated(wk$data, fromLast = TRUE), ]\n> nrow(duplicati)\n[1] 0\n> # Qui il risultato e' zero.\n> # Con piu' sensori, controllare data + sensore.",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "ac8b7ca3b2921fd87ee4",
+   "seconds": 0.1
+  },
+  "012_griglia.R": {
+   "status": "ok",
+   "output": "> griglia_es <- data.frame(\n+   data = seq(min(cal_es$data), max(cal_es$data),\n+              by = \"month\"))\n> osservati_es <- cal_es[-4, ]\n> completo_es <- merge(griglia_es, osservati_es,\n+                     by = \"data\", all.x = TRUE)\n> completo_es\n        data valore\n1 2001-01-01      5\n2 2001-02-01      7\n3 2001-03-01      6\n4 2001-04-01     NA\n5 2001-05-01      9\n6 2001-06-01      7\n7 2001-07-01      6\n8 2001-08-01      4",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "de17c313a419cd9f9559",
+   "seconds": 0.1
+  },
+  "013_ts.R": {
+   "status": "ok",
+   "output": "> y <- ts(d$co2_ppm,\n+         start = c(1985, 1), frequency = 12)\n> start(y)\n[1] 1985    1\n> end(y)\n[1] 2001   12\n> frequency(y)\n[1] 12\n> head(time(y))\n          Jan      Feb      Mar      Apr      May      Jun\n1985 1985.000 1985.083 1985.167 1985.250 1985.333 1985.417\n> # Il tempo interno e' espresso in anni.",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "955279e45a214fee144a",
+   "seconds": 0.1
+  },
+  "014_controllo_ts.R": {
+   "status": "ok",
+   "output": "> griglia <- seq(as.Date(\"1985-01-01\"),\n+                as.Date(\"2001-12-01\"), by = \"month\")\n> stopifnot(identical(d$data, griglia),\n+           nrow(d) == 204L,\n+           !anyNA(d$co2_ppm),\n+           !anyDuplicated(d$data))\n> # Solo ora la frequenza descrive il file.",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "2496a682e29506542286",
+   "seconds": 0.1
+  },
+  "016_aggregare.R": {
+   "status": "ok",
+   "output": "> mese_w <- format(wk$data, \"%Y-%m\")\n> gruppi_w <- split(wk$co2, mese_w)\n> media_m <- vapply(gruppi_w, function(v) {\n+   if (all(is.na(v))) NA_real_\n+   else mean(v, na.rm = TRUE)\n+ }, numeric(1))\n> n_m <- vapply(gruppi_w, function(v)\n+   sum(!is.na(v)), integer(1))\n> head(cbind(media_m, n_m))\n         media_m n_m\n1958-03 316.1000   1\n1958-04 317.2000   4\n1958-05 317.4333   3\n1958-06       NA   0\n1958-07 315.6250   4\n1958-08 314.9500   4",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "51814bd0002e7a0587b8",
+   "seconds": 0.1
+  },
+  "017_confronto.R": {
+   "status": "ok",
+   "output": "> pos <- match(format(mon$data, \"%Y-%m\"),\n+              names(media_m))\n> ricostruita <- unname(media_m[pos])\n> stopifnot(identical(is.na(ricostruita),\n+                     is.na(mon$co2_ppm)))\n> scarto <- max(abs(ricostruita - mon$co2_ppm),\n+               na.rm = TRUE)\n> stopifnot(scarto < 1e-6)\n> scarto\n[1] 3.333333e-07",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "4da1fd23c599d73c5c45",
+   "seconds": 0.1
+  },
+  "019_pesi.R": {
+   "status": "ok",
+   "output": "> medie_es <- c(10, 20)\n> conteggi_es <- c(2, 8)\n> mean(medie_es)\n[1] 15\n> weighted.mean(medie_es, conteggi_es)\n[1] 18\n> mean(rep(medie_es, conteggi_es))\n[1] 18\n> # Gli ultimi due risultati coincidono.",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "86d2b3daa32249b34b52",
+   "seconds": 0.1
+  },
+  "020_durate.R": {
+   "status": "ok",
+   "output": "> valori_es <- c(10, 20)\n> durate_es <- c(1, 3) # ore\n> weighted.mean(valori_es, durate_es)\n[1] 17.5\n> # Ipotesi: ogni valore rappresenta\n> # l'intero intervallo indicato.",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "e3524392f6992f51767e",
+   "seconds": 0.1
+  },
+  "021_operatori.R": {
+   "status": "ok",
+   "output": "> pioggia_es <- c(0, 5, 12, NA, 3)\n> c(totale_osservato = sum(pioggia_es, na.rm = TRUE),\n+   media_osservata = mean(pioggia_es, na.rm = TRUE),\n+   massimo_osservato = max(pioggia_es, na.rm = TRUE),\n+   giorni_osservati = sum(!is.na(pioggia_es)))\n totale_osservato   media_osservata massimo_osservato  giorni_osservati \n               20                 5                12                 4 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "631ca9da4a2f663658d5",
+   "seconds": 0.1
+  },
+  "022_risoluzione.R": {
+   "status": "ok",
+   "output": "> mese_es <- 1:48\n> segnale_es <- sin(2*pi*mese_es/12) +\n+               0.35*sin(2*pi*mese_es/3)\n> blocco3 <- (mese_es - 1) %/% 3\n> blocco12 <- (mese_es - 1) %/% 12\n> tapply(segnale_es, blocco3, mean)\n         0          1          2          3          4          5          6 \n 0.7886751  0.4553418 -0.7886751 -0.4553418  0.7886751  0.4553418 -0.7886751 \n         7          8          9         10         11         12         13 \n-0.4553418  0.7886751  0.4553418 -0.7886751 -0.4553418  0.7886751  0.4553418 \n        14         15 \n-0.7886751 -0.4553418 \n> tapply(segnale_es, blocco12, mean)\n            0             1             2             3 \n 7.069053e-18 -1.472256e-16  3.192794e-16  5.248820e-16 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "848d1174d31b29f100f0",
+   "seconds": 0.1
+  },
+  "025_registro.R": {
+   "status": "ok",
+   "output": "> registro <- data.frame(\n+   data = d$data,\n+   co2_ppm = d$co2_ppm,\n+   n_settimane = d$n_settimane)\n> attr(registro, \"definizione\") <-\n+   \"Media delle settimane assegnate al mese\"\n> head(registro, 3)\n        data co2_ppm n_settimane\n1 1985-01-01 344.925           4\n2 1985-02-01 345.875           4\n3 1985-03-01 347.440           5\n> # Le colonne derivate verranno aggiunte dopo.",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "66ce67aa514150d78963",
+   "seconds": 0.1
+  },
+  "027_componenti.R": {
+   "status": "ok",
+   "output": "> ricostruita_T <- with(temp,\n+   trend_simulato + stagione_simulata +\n+     residuo_simulato)\n> err_T <- max(abs(temp$temperatura_C -\n+                  ricostruita_T))\n> stopifnot(err_T < 2e-8)",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "fac6b235c9936aa4c18d",
+   "seconds": 0.1
+  },
+  "028_stagione.R": {
+   "status": "ok",
+   "output": "> # Una linea per ogni anno del segmento.\n> yr <- as.integer(format(d$data, \"%Y\"))\n> mo <- as.integer(format(d$data, \"%m\"))\n> matplot(1:12, sapply(c(1985, 1992, 2001),\n+   function(a) d$co2_ppm[yr == a]),\n+   type = \"l\", lty = 1, xlab = \"Mese\",\n+   ylab = \"CO2 (ppm)\")",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "486e86465cb2458b9733",
+   "seconds": 0.1
+  },
+  "030_media_mobile.R": {
+   "status": "ok",
+   "output": "> ma3 <- stats::filter(z, rep(1/3, 3),\n+                      sides = 2)\n> ma13 <- stats::filter(z, rep(1/13, 13),\n+                       sides = 2)\n> plot(z, col = \"grey60\")\n> lines(ma3, col = \"#C57E42\")\n> lines(ma13, col = \"#7363AA\", lwd = 2)",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "01a634d2c78fe01d4040",
+   "seconds": 0.1
+  },
+  "031_bordi.R": {
+   "status": "ok",
+   "output": "> c(NA_media3 = sum(is.na(ma3)),\n+   NA_media13 = sum(is.na(ma13)))\n NA_media3 NA_media13 \n         2         12 \n> which(is.na(ma13))\n [1]   1   2   3   4   5   6 235 236 237 238 239 240\n> # Con 240 dati completi: 2 NA e 12 NA.\n> stopifnot(sum(is.na(ma3)) == 2L,\n+           sum(is.na(ma13)) == 12L)",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "4f28c27b7687439e9751",
+   "seconds": 0.1
+  },
+  "032_filtro_causale.R": {
+   "status": "ok",
+   "output": "> passato13 <- stats::filter(z,\n+   rep(1/13, 13), sides = 1)\n> # Ogni valore usa presente e 12 mesi precedenti.\n> head(cbind(z, ma13, passato13), 15)\n                 z     ma13 passato13\nJan 2000  4.000000       NA        NA\nFeb 2000  4.968381       NA        NA\nMar 2000  6.671840       NA        NA\nApr 2000 10.641411       NA        NA\nMay 2000 16.283412       NA        NA\nJun 2000 19.566171       NA        NA\nJul 2000 22.891788 11.64929        NA\nAug 2000 20.806707 11.61035        NA\nSep 2000 17.458652 11.74588        NA\nOct 2000 12.682511 12.14758        NA\nNov 2000  8.877839 12.59573        NA\nDec 2000  4.339688 12.72430        NA\nJan 2001  2.252402 12.80757  11.64929\nFeb 2001  3.493774 12.50869  11.61035\nMar 2001  6.730287 12.14051  11.74588",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "9b088920452e8d4703ab",
+   "seconds": 0.1
+  },
+  "035_loess.R": {
+   "status": "ok",
+   "output": "> tempo_T <- seq_along(z)\n> lo20 <- loess(as.numeric(z) ~ tempo_T,\n+               span = 0.20)\n> lo60 <- loess(as.numeric(z) ~ tempo_T,\n+               span = 0.60)\n> head(cbind(predict(lo20), predict(lo60)))\n         [,1]     [,2]\n[1,] 10.23701 11.69403\n[2,] 10.49901 11.71265\n[3,] 10.74700 11.73119\n[4,] 10.98067 11.74965\n[5,] 11.19968 11.76801\n[6,] 11.40375 11.78626\n> # Stesse osservazioni, diverso intorno.",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "d15293b270e57d5e4f8d",
+   "seconds": 0.1
+  },
+  "036_mediana.R": {
+   "status": "ok",
+   "output": "> v_es <- c(0, .2, -.1, .1, 6, -.1, .2, 0, .1)\n> med_es <- runmed(v_es, k = 3, endrule = \"keep\")\n> avg_es <- stats::filter(v_es, rep(1/3, 3))\n> cbind(v_es, med_es, avg_es)\nTime Series:\nStart = 1 \nEnd = 9 \nFrequency = 1 \n  v_es med_es     avg_es\n1  0.0    0.0         NA\n2  0.2    0.0 0.03333333\n3 -0.1    0.1 0.06666667\n4  0.1    0.1 2.00000000\n5  6.0    0.1 2.00000000\n6 -0.1    0.2 2.03333333\n7  0.2    0.0 0.03333333\n8  0.0    0.1 0.10000000\n9  0.1    0.1         NA\n> # Una finestra di tre valori.",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "aa05344ad9699feef78d",
+   "seconds": 0.1
+  },
+  "037_anomalia.R": {
+   "status": "ok",
+   "output": "> mese_T <- as.integer(format(temp$data, \"%m\"))\n> base_T <- temp$data >= as.Date(\"2000-01-01\") &\n+           temp$data <= as.Date(\"2004-12-01\")\n> clima_T <- tapply(temp$temperatura_C[base_T],\n+                  mese_T[base_T], mean)\n> riferimento_T <- unname(clima_T[mese_T])\n> anomalia_T <- temp$temperatura_C - riferimento_T",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "612965a28449fe209af5",
+   "seconds": 0.1
+  },
+  "038_stl.R": {
+   "status": "ok",
+   "output": "> stl_T <- stl(z, s.window = \"periodic\",\n+              robust = TRUE)\n> componenti_T <- stl_T$time.series\n> err_stl <- max(abs(rowSums(componenti_T) -\n+                    as.numeric(z)))\n> stopifnot(err_stl < 1e-10)\n> plot(stl_T)",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "45aa472b3dad104ddd31",
+   "seconds": 0.2
+  },
+  "039_registro_componenti.R": {
+   "status": "ok",
+   "output": "> tab_T <- data.frame(\n+   data = temp$data,\n+   osservata = temp$temperatura_C,\n+   riferimento = riferimento_T,\n+   anomalia = anomalia_T,\n+   resto_STL = componenti_T[, \"remainder\"])\n> head(tab_T, 3)\n        data osservata riferimento   anomalia   resto_STL\n1 2000-01-01  4.000000    3.560727  0.4392735  0.03961360\n2 2000-02-01  4.968381    4.751981  0.2164000  0.07895692\n3 2000-03-01  6.671840    7.477557 -0.8057171 -1.07513733",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "7117e2c997b56fc96e7d",
+   "seconds": 0.1
+  },
+  "040_lag1.R": {
+   "status": "ok",
+   "output": "> x40 <- proc$ar1\n> coppie1 <- data.frame(\n+   passato = head(x40, -1),\n+   presente = tail(x40, -1))\n> head(coppie1)\n     passato   presente\n1  0.0000000  0.7318843\n2  0.7318843 -0.3635376\n3 -0.3635376 -0.0412485\n4 -0.0412485 -0.2825834\n5 -0.2825834 -0.2525773\n6 -0.2525773 -0.8887853\n> nrow(coppie1)\n[1] 299\n> # 300 valori generano 299 coppie al ritardo 1.",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "f07ef7b281e30ec7aa71",
+   "seconds": 0.1
+  },
+  "041_lag12.R": {
+   "status": "ok",
+   "output": "> n41 <- nrow(d)\n> coppie12 <- data.frame(\n+   data = d$data[13:n41],\n+   passato = head(d$co2_ppm, -12),\n+   presente = tail(d$co2_ppm, -12))\n> head(coppie12, 3)\n        data passato presente\n1 1986-01-01 344.925  346.250\n2 1986-02-01 345.875  346.825\n3 1986-03-01 347.440  347.740\n> stopifnot(nrow(coppie12) == 192L)",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "af7ba1d028f059d498e2",
+   "seconds": 0.1
+  },
+  "042_scatter_lag.R": {
+   "status": "ok",
+   "output": "> plot(coppie1$passato, coppie1$presente,\n+      pch = 16, col = \"#1D789080\",\n+      xlab = \"Valore precedente\",\n+      ylab = \"Valore presente\")\n> cor(coppie1$passato, coppie1$presente)\n[1] 0.6566057",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "64949213c5cbd845de9a",
+   "seconds": 0.1
+  },
+  "043_cor_vs_acf.R": {
+   "status": "ok",
+   "output": "> x43 <- c(1, 2, 3, 5, 4)\n> cor(head(x43, -1), tail(x43, -1))\n[1] 0.6803361\n> as.numeric(acf(x43, lag.max = 1,\n+                plot = FALSE)$acf[2])\n[1] 0.4\n> # cor() ricentra separatamente le due colonne.\n> # acf() usa la media dell'intera serie.",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "873f74ee94d13849ec1b",
+   "seconds": 0.1
+  },
+  "044_acf_manuale.R": {
+   "status": "ok",
+   "output": "> xc44 <- x43 - mean(x43)\n> rho44 <- sum(head(xc44, -1) *\n+                tail(xc44, -1)) / sum(xc44^2)\n> rho_R <- as.numeric(acf(x43, plot = FALSE)$acf[2])\n> stopifnot(abs(rho44 - rho_R) < 1e-12)\n> rho44 # 0.4\n[1] 0.4",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "a32a6ffd77e55cda715e",
+   "seconds": 0.1
+  },
+  "046_scala_acf.R": {
+   "status": "ok",
+   "output": "> a46 <- as.numeric(acf(proc$ar1,\n+   lag.max = 24, plot = FALSE)$acf)\n> b46 <- as.numeric(acf(10*proc$ar1 + 5,\n+   lag.max = 24, plot = FALSE)$acf)\n> stopifnot(max(abs(a46 - b46)) < 1e-12)",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "8934e157f33292a76a66",
+   "seconds": 0.1
+  },
+  "047_leggere_acf.R": {
+   "status": "ok",
+   "output": "> acf(proc$ar1, lag.max = 24,\n+     main = \"AR(1): ritardi in passi\")\n> acf(y, lag.max = 24,\n+     main = \"CO2: ritardi espressi in anni\")\n> # Per y mensile, il ritardo 1 del grafico\n> # corrisponde a 12 osservazioni.",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 2,
+   "same": true,
+   "hash": "69537fbfe4fd5b12fef3",
+   "seconds": 0.2
+  },
+  "049_bande.R": {
+   "status": "ok",
+   "output": "> a49 <- as.numeric(acf(proc$rumore_bianco,\n+   lag.max = 24, plot = FALSE)$acf)[-1]\n> banda49 <- 1.96 / sqrt(nrow(proc))\n> which(abs(a49) > banda49)\n[1] 4\n> # Confronti puntuali, fra loro dipendenti.",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "606dffc90621421c9d06",
+   "seconds": 0.1
+  },
+  "050_na_acf.R": {
+   "status": "ok",
+   "output": "> # Controllo prima di calcolare l'ACF.\n> stopifnot(!anyNA(y))\n> # Esempio: un mese rimane NA.\n> y50 <- y\n> y50[30] <- NA\n> sum(complete.cases(head(y50, -1),\n+                    tail(y50, -1)))\n[1] 201",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "112cf132b577f4be57e7",
+   "seconds": 0.1
+  },
+  "051_pacf.R": {
+   "status": "ok",
+   "output": "> pacf(proc$ar1, lag.max = 24,\n+      main = \"Autocorrelazione parziale\")\n> # R stima modelli autoregressivi\n> # di ordine via via maggiore.",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "c0425da85b7c3ef579c7",
+   "seconds": 0.1
+  },
+  "052_acf_pacf_teoria.R": {
+   "status": "ok",
+   "output": "> # Valori teorici per AR(1), phi = 0.65.\n> ARMAacf(ar = 0.65, lag.max = 12)\n          0           1           2           3           4           5 \n1.000000000 0.650000000 0.422500000 0.274625000 0.178506250 0.116029063 \n          6           7           8           9          10          11 \n0.075418891 0.049022279 0.031864481 0.020711913 0.013462743 0.008750783 \n         12 \n0.005688009 \n> ARMAacf(ar = 0.65, lag.max = 12, pacf = TRUE)\n [1] 0.65 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "68d695403e5767da306c",
+   "seconds": 0.1
+  },
+  "053_tre_acf.R": {
+   "status": "ok",
+   "output": "> for (nome in c(\"rumore_bianco\", \"ar1\",\n+                \"random_walk\")) {\n+   acf(proc[[nome]], lag.max = 24, main = nome)\n+ }",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 3,
+   "same": true,
+   "hash": "1b610e0b17b9f537849a",
+   "seconds": 0.1
+  },
+  "056_rumore.R": {
+   "status": "ok",
+   "output": "> set.seed(19056)\n> # Rumore gaussiano IID.\n> e56 <- rnorm(300)\n> acf(e56, lag.max = 24,\n+     main = \"Rumore bianco simulato\")\n> # L'ACF campionaria oscilla attorno a zero.\n> mean(e56)\n[1] 0.09267148\n> var(e56)\n[1] 0.8238131",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "968514fb85af63a0f308",
+   "seconds": 0.1
+  },
+  "057_dipendenza.R": {
+   "status": "ok",
+   "output": "> set.seed(19057)\n> u57 <- rnorm(10001)\n> e57 <- head(u57, -1) * tail(u57, -1)\n> # Stessa coppia di tempi, due confronti.\n> cor(head(e57, -1), tail(e57, -1))\n[1] -0.00334617\n> cor(head(e57^2, -1), tail(e57^2, -1))\n[1] 0.2211798",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "10bda5e05ea49778c2e4",
+   "seconds": 0.1
+  },
+  "058_ar1.R": {
+   "status": "ok",
+   "output": "> set.seed(19058)\n> # arima.sim gestisce il tratto iniziale.\n> a58 <- arima.sim(\n+   model = list(ar = 0.65), n = 300)\n> plot(a58, ylab = \"Valore\",\n+      main = \"AR(1), phi = 0.65\")\n> acf(a58, lag.max = 24)",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 2,
+   "same": true,
+   "hash": "5b524b7eef7e34be13b1",
+   "seconds": 0.1
+  },
+  "059_impulso.R": {
+   "status": "ok",
+   "output": "> # Risposta teorica a un impulso unitario.\n> k59 <- 0:12\n> effetto59 <- 0.65^k59\n> data.frame(ritardo = k59,\n+            effetto = round(effetto59, 4))\n   ritardo effetto\n1        0  1.0000\n2        1  0.6500\n3        2  0.4225\n4        3  0.2746\n5        4  0.1785\n6        5  0.1160\n7        6  0.0754\n8        7  0.0490\n9        8  0.0319\n10       9  0.0207\n11      10  0.0135\n12      11  0.0088\n13      12  0.0057",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "74687bb910fa52fcfbd5",
+   "seconds": 0.1
+  },
+  "060_varianza_ar.R": {
+   "status": "ok",
+   "output": "> phi60 <- c(0, 0.3, 0.65, 0.9)\n> # Innovazioni con varianza unitaria.\n> data.frame(phi = phi60,\n+   varianza = 1 / (1 - phi60^2))\n   phi varianza\n1 0.00 1.000000\n2 0.30 1.098901\n3 0.65 1.731602\n4 0.90 5.263158",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "7f545a41d00745855e02",
+   "seconds": 0.1
+  },
+  "061_acf_ar.R": {
+   "status": "ok",
+   "output": "> k61 <- 0:12\n> # Curve teoriche, senza errore campionario.\n> rho61 <- sapply(c(0.65, -0.65, 0.9),\n+                function(p) p^k61)\n> matplot(k61, rho61, type = \"b\",\n+         xlab = \"Ritardo\", ylab = \"ACF\")\n> abline(h = 0, col = \"grey70\")",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "16cb6e01498f7b820da9",
+   "seconds": 0.1
+  },
+  "062_inizializzazione.R": {
+   "status": "ok",
+   "output": "> # Il CSV fornito parte da un valore fissato.\n> head(proc[, c(\"passo\", \"ar1\")])\n  passo        ar1\n1     1  0.0000000\n2     2  0.7318843\n3     3 -0.3635376\n4     4 -0.0412485\n5     5 -0.2825834\n6     6 -0.2525773\n> stopifnot(proc$ar1[1] == 0)\n> h62 <- 0:10\n> v62 <- (1 - 0.65^(2 * h62)) /\n+        (1 - 0.65^2)\n> data.frame(passi = h62, varianza = v62)\n   passi varianza\n1      0 0.000000\n2      1 1.000000\n3      2 1.422500\n4      3 1.601006\n5      4 1.676425\n6      5 1.708290\n7      6 1.721752\n8      7 1.727440\n9      8 1.729844\n10     9 1.730859\n11    10 1.731288",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "57b05e9b2fcc7015a31c",
+   "seconds": 0.1
+  },
+  "063_rumore_comune.R": {
+   "status": "ok",
+   "output": "> set.seed(19063)\n> e63 <- rnorm(150)\n> ar63 <- function(phi) {\n+   x <- numeric(length(e63))\n+   for (t in 2:length(x))\n+     x[t] <- phi * x[t-1] + e63[t]\n+   x\n+ }\n> # Le due traiettorie usano lo stesso e63.\n> matplot(cbind(ar63(0.3), ar63(0.9)),\n+         type = \"l\", ylab = \"Valore\")",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "1eef0e713f1880bac86a",
+   "seconds": 0.1
+  },
+  "064_random_walk.R": {
+   "status": "ok",
+   "output": "> set.seed(19064)\n> e64 <- rnorm(150)\n> # X0 = 0. cumsum conserva gli shock.\n> rw64 <- c(0, cumsum(e64))\n> plot(0:150, rw64, type = \"l\",\n+      xlab = \"Tempo\", ylab = \"X\")\n> stopifnot(isTRUE(all.equal(\n+   diff(rw64), e64)))",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "aff39498ea4755c70e04",
+   "seconds": 0.1
+  },
+  "065_varianza_rw.R": {
+   "status": "ok",
+   "output": "> t65 <- c(1, 4, 25, 100)\n> # X0 fissato, varianza innovazioni = 1.\n> data.frame(tempo = t65,\n+            varianza = t65,\n+            deviazione = sqrt(t65))\n  tempo varianza deviazione\n1     1        1          1\n2     4        4          2\n3    25       25          5\n4   100      100         10",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "0be13ec9c7bf3fca666e",
+   "seconds": 0.1
+  },
+  "066_repliche.R": {
+   "status": "ok",
+   "output": "> set.seed(19066)\n> B66 <- 2000\n> # Ogni colonna usa innovazioni nuove.\n> rw66 <- replicate(B66, cumsum(rnorm(100)))\n> # Varianza tra repliche, a tempo fissato.\n> v66 <- apply(rw66, 1, var)\n> round(v66[c(1, 25, 100)], 1)\n[1]   1.0  23.8 107.4",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "55b9e00a8b2fdc3694a2",
+   "seconds": 0.2
+  },
+  "069_detrending.R": {
+   "status": "ok",
+   "output": "> # Temperatura sintetica: una retta da verificare.\n> t69 <- seq_along(z)\n> fit69 <- lm(as.numeric(z) ~ t69)\n> res69 <- residuals(fit69)\n> plot(t69, res69, type = \"l\",\n+      xlab = \"Mese\", ylab = \"Residuo\")\n> acf(res69, lag.max = 36)",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 2,
+   "same": true,
+   "hash": "e3c6fbe00290575db77c",
+   "seconds": 0.1
+  },
+  "070_incrementi.R": {
+   "status": "ok",
+   "output": "> x70 <- c(10, 13, 12, 16)\n> diff(x70)\n[1]  3 -1  4\n> # Il secondo incremento e' negativo.\n> stopifnot(identical(diff(x70),\n+                     c(3, -1, 4)))",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "1690076a75bb88e8949f",
+   "seconds": 0.1
+  },
+  "071_date_differenze.R": {
+   "status": "ok",
+   "output": "> dy71 <- diff(y)\n> # Ogni differenza assume la data finale.\n> tab71 <- data.frame(\n+   data = tail(d$data, -1),\n+   incremento_ppm = as.numeric(dy71))\n> head(tab71)\n        data incremento_ppm\n1 1985-02-01          0.950\n2 1985-03-01          1.565\n3 1985-04-01          0.885\n4 1985-05-01          0.500\n5 1985-06-01         -0.645\n6 1985-07-01         -1.730\n> c(n = length(dy71), start(dy71))\n   n           \n 203 1985    2 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "d97b36603bac23913b77",
+   "seconds": 0.1
+  },
+  "073_stagionale.R": {
+   "status": "ok",
+   "output": "> ds73 <- diff(y, lag = 12)\n> # Il primo valore confronta due gennaio.\n> data.frame(\n+   data = tail(d$data, -12),\n+   variazione_annua = as.numeric(ds73))[1:4, ]\n        data variazione_annua\n1 1986-01-01            1.325\n2 1986-02-01            0.950\n3 1986-03-01            0.300\n4 1986-04-01            1.200\n> c(start(ds73), end(ds73))\n[1] 1986    1 2001   12\n> length(ds73)\n[1] 192",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "029de1f943e04a181cc3",
+   "seconds": 0.1
+  },
+  "074_operatore.R": {
+   "status": "ok",
+   "output": "> # Identita' su un vettore numerico.\n> v74 <- as.numeric(y)\n> manuale74 <- v74[-1] - head(v74, -1)\n> stopifnot(isTRUE(all.equal(\n+   manuale74, as.numeric(diff(y)))))",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "103fbf19d6bb00b054e5",
+   "seconds": 0.1
+  },
+  "075_combinata.R": {
+   "status": "ok",
+   "output": "> dc75 <- diff(diff(y, lag = 12))\n> # Cambiare l'ordine produce lo stesso filtro.\n> alt75 <- diff(diff(y), lag = 12)\n> stopifnot(isTRUE(all.equal(dc75, alt75)))\n> plot(dc75, ylab = \"Differenza combinata\")\n> acf(dc75, lag.max = 36)",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 2,
+   "same": true,
+   "hash": "ecb2a357d1f4c0c28b2d",
+   "seconds": 0.1
+  },
+  "076_numerosita.R": {
+   "status": "ok",
+   "output": "> # Confronto sul segmento completo.\n> forme76 <- list(livelli = y,\n+   ordinaria = diff(y),\n+   stagionale = diff(y, lag = 12),\n+   combinata = diff(diff(y, lag = 12)))\n> sapply(forme76, length)\n   livelli  ordinaria stagionale  combinata \n       204        203        192        191 \n> sapply(forme76, start)\n     livelli ordinaria stagionale combinata\n[1,]    1985      1985       1986      1986\n[2,]       1         2          1         2",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "42a05eb8e1485d2ede13",
+   "seconds": 0.1
+  },
+  "077_ricostruzione.R": {
+   "status": "ok",
+   "output": "> v77 <- as.numeric(y)\n> ric77 <- c(v77[1],\n+            v77[1] + cumsum(diff(v77)))\n> # Tolleranza dovuta all'aritmetica numerica.\n> max(abs(ric77 - v77))\n[1] 0\n> stopifnot(max(abs(ric77 - v77)) < 1e-10)",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "91b5f6e6390b51170008",
+   "seconds": 0.1
+  },
+  "080_sovradifferenza.R": {
+   "status": "ok",
+   "output": "> set.seed(19080)\n> e80 <- rnorm(10000)\n> de80 <- diff(e80)\n> r80 <- acf(de80, lag.max = 10,\n+            plot = FALSE)$acf\n> round(c(varianza = var(de80),\n+         acf1 = r80[2]), 3)\nvarianza     acf1 \n   2.040   -0.502 \n> acf(de80, lag.max = 10)",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "b6ea93f4b252d75ca84e",
+   "seconds": 0.1
+  },
+  "081_alternative.R": {
+   "status": "ok",
+   "output": "> # Due ACF teoriche con lo stesso primo lag.\n> lag81 <- 0:8\n> acf_diff81 <- c(1, -0.5, rep(0, 7))\n> acf_ar81 <- (-0.5)^lag81\n> data.frame(lag = lag81,\n+   rumore_differenziato = acf_diff81,\n+   ar_negativo = acf_ar81)\n  lag rumore_differenziato ar_negativo\n1   0                  1.0  1.00000000\n2   1                 -0.5 -0.50000000\n3   2                  0.0  0.25000000\n4   3                  0.0 -0.12500000\n5   4                  0.0  0.06250000\n6   5                  0.0 -0.03125000\n7   6                  0.0  0.01562500\n8   7                  0.0 -0.00781250\n9   8                  0.0  0.00390625",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "d3760d50f99437044c80",
+   "seconds": 0.1
+  },
+  "082_due_trasformazioni.R": {
+   "status": "ok",
+   "output": "> set.seed(19082)\n> t82 <- 1:200\n> x82 <- 10 + 0.04 * t82 + rnorm(200)\n> r82 <- residuals(lm(x82 ~ t82))\n> d82 <- diff(x82)\n> # Lo stesso input, due resti differenti.\n> c(detrend = acf(r82, plot = FALSE)$acf[2],\n+   differenza = acf(d82, plot = FALSE)$acf[2])\n    detrend  differenza \n-0.01719765 -0.50815910 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "46a49167227f09ec7b79",
+   "seconds": 0.1
+  },
+  "083_registro.R": {
+   "status": "ok",
+   "output": "> registro83 <- data.frame(\n+   serie = c(\"livelli\", \"diff1\", \"diff12\", \"combinata\"),\n+   n = sapply(forme76, length),\n+   prima_data = as.character(d$data[c(1,2,13,14)]),\n+   ultima_data = as.character(tail(d$data, 1)))\n> registro83\n               serie   n prima_data ultima_data\nlivelli      livelli 204 1985-01-01  2001-12-01\nordinaria      diff1 203 1985-02-01  2001-12-01\nstagionale    diff12 192 1986-01-01  2001-12-01\ncombinata  combinata 191 1986-02-01  2001-12-01",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "2d589b4c8d557018971e",
+   "seconds": 0.1
+  },
+  "087_ritardi_adf.R": {
+   "skipped": [
+    "tseries"
+   ],
+   "hash": "cbee4937a9e15de64f35",
+   "seconds": 0.0
+  },
+  "088_adf.R": {
+   "skipped": [
+    "tseries"
+   ],
+   "hash": "b7bc4b22b4ddfcc86bc9",
+   "seconds": 0.0
+  },
+  "089_somme_parziali.R": {
+   "status": "ok",
+   "output": "> # Versione Level: si sottrae la media.\n> e89 <- as.numeric(y) - mean(y)\n> S89 <- cumsum(e89)\n> plot(S89, type = \"l\", ylab = \"Somma residui\",\n+      xlab = \"Mese\")\n> abline(h = 0, col = \"grey70\")",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "71d6829fdbfe7f71176a",
+   "seconds": 0.1
+  },
+  "091_kpss.R": {
+   "skipped": [
+    "tseries"
+   ],
+   "hash": "eaf2906ae1d481508510",
+   "seconds": 0.0
+  },
+  "093_avvisi.R": {
+   "skipped": [
+    "tseries"
+   ],
+   "hash": "348116980ed44cee4967",
+   "seconds": 0.0
+  },
+  "095_cambio_livello.R": {
+   "status": "ok",
+   "output": "> set.seed(19095)\n> x95 <- c(rep(0, 80), rep(2, 80)) + rnorm(160)\n> plot(x95, type = \"l\", ylab = \"Valore\")\n> abline(v = 80.5, col = \"darkorange\")\n> # Consultare i metadati prima dei test.\n> c(media_prima = mean(x95[1:80]),\n+   media_dopo = mean(x95[81:160]))\nmedia_prima  media_dopo \n  0.1197949   1.9153373 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "7841e46ccb1b225b923d",
+   "seconds": 0.1
+  },
+  "096_resoconto.R": {
+   "skipped": [
+    "tseries"
+   ],
+   "hash": "e12d2eeeb11f5baa4d15",
+   "seconds": 0.0
+  },
+  "098_co2_diff1.R": {
+   "status": "ok",
+   "output": "> delta1 <- diff(y)\n> plot(delta1, ylab = \"Differenza (ppm)\")\n> acf(as.numeric(delta1), lag.max = 24,\n+     main = \"Differenza mensile\")\n> length(delta1) # 203 valori\n[1] 203",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 2,
+   "same": true,
+   "hash": "59f6efd8a691012d2905",
+   "seconds": 0.1
+  },
+  "099_co2_diff12.R": {
+   "status": "ok",
+   "output": "> delta12 <- diff(y, lag = 12)\n> plot(delta12,\n+      ylab = \"Differenza rispetto a 12 mesi (ppm)\")\n> length(delta12) # 192 valori\n[1] 192\n> acf(as.numeric(delta12), lag.max = 24)",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 2,
+   "same": true,
+   "hash": "599c4b9f4e426e545175",
+   "seconds": 0.1
+  },
+  "100_co2_combinata.R": {
+   "status": "ok",
+   "output": "> deltaC <- diff(diff(y, lag = 12))\n> alternativaC <- diff(diff(y), lag = 12)\n> stopifnot(max(abs(deltaC - alternativaC)) < 1e-10)\n> length(deltaC) # 191 valori\n[1] 191\n> plot(deltaC, ylab = \"Differenza combinata (ppm)\")",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "b5541e10c36448b0fadd",
+   "seconds": 0.1
+  },
+  "101_allineare_trasformazioni.R": {
+   "status": "ok",
+   "output": "> confronto <- data.frame(\n+   data = d$data,\n+   livello = as.numeric(y),\n+   diff1 = c(NA, as.numeric(delta1)),\n+   diff12 = c(rep(NA, 12), as.numeric(delta12)),\n+   combinata = c(rep(NA, 13), as.numeric(deltaC)))\n> head(confronto, 15)\n         data livello  diff1 diff12 combinata\n1  1985-01-01 344.925     NA     NA        NA\n2  1985-02-01 345.875  0.950     NA        NA\n3  1985-03-01 347.440  1.565     NA        NA\n4  1985-04-01 348.325  0.885     NA        NA\n5  1985-05-01 348.825  0.500     NA        NA\n6  1985-06-01 348.180 -0.645     NA        NA\n7  1985-07-01 346.450 -1.730     NA        NA\n8  1985-08-01 344.300 -2.150     NA        NA\n9  1985-09-01 343.000 -1.300     NA        NA\n10 1985-10-01 342.800 -0.200     NA        NA\n11 1985-11-01 344.220  1.420     NA        NA\n12 1985-12-01 345.575  1.355     NA        NA\n13 1986-01-01 346.250  0.675  1.325        NA\n14 1986-02-01 346.825  0.575  0.950    -0.375\n15 1986-03-01 347.740  0.915  0.300    -0.650",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 5,
+   "same": true,
+   "hash": "0ba1d22e2ec247d2a333",
+   "seconds": 0.1
+  },
+  "103_diagnosi_residua.R": {
+   "status": "ok",
+   "output": "> varianti <- list(diff1 = delta1,\n+                  diff12 = delta12,\n+                  combinata = deltaC)\n> sapply(varianti, function(v) {\n+   a <- as.numeric(acf(as.numeric(v),\n+     lag.max = 12, plot = FALSE)$acf)\n+   c(lag1 = a[2], lag12 = a[13])\n+ })\n          diff1      diff12  combinata\nlag1  0.7125639  0.83253071 -0.2806780\nlag12 0.8950255 -0.09533192 -0.4011919",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 5,
+   "same": true,
+   "hash": "4c8cb99ab2e9ea955763",
+   "seconds": 0.1
+  },
+  "104_esportare.R": {
+   "status": "ok",
+   "output": "> dir.create(\"Risultati\", showWarnings = FALSE)\n> write.csv(confronto,\n+   \"Risultati/CO2_trasformazioni.csv\",\n+   row.names = FALSE)\n> scelte <- list(periodo = range(d$data),\n+   frequenza = 12, ritardi = c(1, 12),\n+   ADF_k = 4, KPSS_lshort = TRUE)\n> saveRDS(scelte, \"Risultati/scelte.rds\")",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 5,
+   "same": true,
+   "hash": "4408bfc0a425b4b82f36",
+   "seconds": 0.1
+  }
+ }
+}

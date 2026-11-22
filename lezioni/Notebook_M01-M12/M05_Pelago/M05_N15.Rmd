@@ -1,0 +1,132 @@
+---
+title: "Contrasti indipendenti e coppie"
+subtitle: "M05_N15 \u00b7 Pelago"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Perché il bootstrap di una differenza fra gruppi indipendenti è diverso dal bootstrap di un cambiamento appaiato?
+
+## Obiettivi
+
+- Ricampionare separatamente gruppi indipendenti.
+- Conservare le coppie e il segno dopo meno prima.
+
+**Prima di iniziare.** Vettori, indicizzazione, media, varianza e grafici di base in R.
+
+**Dati e unità.** Fossili sintetici Rounded e Spiky in micrometri; ventiquattro coppie di misure sintetiche prima/dopo in unità convenzionali. Sono due esempi distinti.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M05_N15/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M05_N15")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(5015)
+```
+
+## 1. Definire il contrasto fra gruppi
+
+Per i fossili consideriamo due campioni indipendenti e fissiamo il segno Spiky meno Rounded. Ogni gruppo mantiene la propria numerosità. Ricampionare un unico vettore mescolato non conserverebbe le due popolazioni empiriche del contrasto.
+
+```{r passo_01}
+fossili <- carica_dati("fossili_simulati.csv")
+a <- fossili$diametro_tot_um[fossili$morfotipo == "Rounded"]
+b <- fossili$diametro_tot_um[fossili$morfotipo == "Spiky"]
+stopifnot(all(is.finite(c(a, b))))
+delta_ind <- mean(b) - mean(a)
+set.seed(515)
+B <- 2000
+boot_ind <- replicate(B, mean(sample(b, length(b), TRUE)) -
+                         mean(sample(a, length(a), TRUE)))
+print(c(differenza_um = delta_ind, SE_um = sd(boot_ind)))
+```
+
+**Lettura del risultato.** Un valore positivo indica un diametro medio maggiore per Spiky. L'incertezza ricampionata contiene il contributo di entrambi i gruppi, senza introdurre corrispondenze fra fossili diversi.
+
+## 2. Definire il cambiamento entro coppia
+
+Nel secondo archivio lo stesso identificativo collega prima e dopo. Controlliamo l'unicità degli identificativi e usiamo soltanto coppie complete. Sottrarre prima da dopo produce un dato per unità: la differenza conserva la relazione interna alla coppia.
+
+```{r passo_02}
+coppie <- carica_dati("misure_appaiate_simulate.csv")
+stopifnot(!anyDuplicated(coppie$id))
+complete <- complete.cases(coppie[c("prima", "dopo")])
+coppie <- coppie[complete, ]
+d <- coppie$dopo - coppie$prima
+stopifnot(all(is.finite(d)))
+print(c(coppie_complete = length(d), cambiamento_medio = mean(d)))
+print(head(data.frame(id = coppie$id, differenza = d)))
+```
+
+**Lettura del risultato.** La numerosità è il numero di coppie complete. Le unità del cambiamento sono quelle delle misure originali; non vanno confrontate direttamente con i micrometri dell'esempio fossile.
+
+## 3. Ricampionare intere coppie
+
+Un solo insieme di indici deve selezionare entrambe le colonne. Ricampionare direttamente le differenze è equivalente per la media del cambiamento. Controlliamo questa equivalenza in una replica e poi costruiamo la distribuzione completa.
+
+```{r passo_03}
+np <- nrow(coppie)
+i <- sample.int(np, np, replace = TRUE)
+controllo1 <- mean(coppie$dopo[i] - coppie$prima[i])
+controllo2 <- mean(d[i])
+stopifnot(isTRUE(all.equal(controllo1, controllo2)))
+boot_coppie <- replicate(B, mean(d[sample.int(np, np, replace = TRUE)]))
+print(c(cambiamento = mean(d), SE_appaiato = sd(boot_coppie)))
+print(quantile(boot_coppie, c(0.025, 0.975)))
+```
+
+**Lettura del risultato.** La covarianza fra prima e dopo è preservata perché ciascun cambiamento rimane integro. Gli estremi sono un intervallo percentile approssimato per la media delle differenze.
+
+## Variante svolta
+
+Simulare lo schema che ricampiona prima e dopo separatamente e confrontare la dispersione.
+
+```{r variante}
+boot_separato <- replicate(B,
+  mean(sample(coppie$dopo, np, TRUE)) - mean(sample(coppie$prima, np, TRUE)))
+print(data.frame(schema = c("Coppie conservate", "Colonne separate"),
+  media_boot = c(mean(boot_coppie), mean(boot_separato)),
+  SE_boot = c(sd(boot_coppie), sd(boot_separato))))
+print(c(covarianza_prima_dopo = cov(coppie$prima, coppie$dopo)))
+```
+
+Le stime possono avere centri simili, ma la variabilità cambia perché il secondo schema elimina la covarianza. Non è lo schema adatto a questi dati appaiati.
+
+## Errore da riconoscere
+
+Non usare lo stesso schema di ricampionamento soltanto perché entrambi gli esercizi calcolano una differenza fra due medie.
+
+## Risposta alla domanda
+
+La formula del contrasto non identifica da sola il disegno. I gruppi indipendenti richiedono ricampionamenti separati; le coppie richiedono che la relazione fra misure sia conservata.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M05_N15` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M05/M05_N15.R).

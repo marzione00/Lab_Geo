@@ -1,0 +1,139 @@
+---
+title: "Pesi spaziali normalizzati per riga"
+subtitle: "M11_N12 · Locus"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Che cosa cambia quando ogni sito distribuisce peso totale uno sui propri vicini?
+
+## Obiettivi
+
+- Costruire A binaria con soglia 260 m.
+- Normalizzare per riga e verificare W.
+- Riconoscere bordi, asimmetria e siti isolati.
+
+**Prima di iniziare.** Sono richiesti vettori, tabelle, coordinate e funzioni R di base. I blocchi vanno eseguiti in ordine; il notebook è autonomo rispetto agli altri. I calcoli usano R base e i pacchetti standard.
+
+**Dati e unità.** 64 siti sintetici su una griglia 8 × 8, con passo 250 m e coordinate locali x_m e y_m fra 0 e 1750 m. Questo piano locale non ha un codice EPSG. La concentrazione è sintetica, in unità arbitrarie (u.a.); la quota è in metri sintetici. Ogni riga descrive un sito e il suo valore puntuale, non la media di una cella.
+
+## Preparazione
+
+Aprire il progetto autonomo di Locus o quello generale dei notebook. I CSV locali restano invariati. Gli output vanno in `Risultati/M11_N12/`. Nessun download o installazione viene eseguito nei blocchi.
+
+```{r preparazione}
+# Trova il modulo dal progetto autonomo o dal progetto generale dei notebook.
+.gs_cerca <- normalizePath(getwd(),winslash="/",mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca,file.path(.gs_cerca,"M11_Locus"),
+    file.path(.gs_cerca,"03_Notebook_svolti","M11_Locus"),
+    file.path(.gs_cerca,"M11","03_Notebook_svolti","M11_Locus"))
+  .gs_ok <- file.exists(file.path(.gs_candidati,"M11_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati,"R","funzioni_notebook.R"))
+  if(any(.gs_ok)) { .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]];break }
+  .gs_padre <- dirname(.gs_cerca)
+  if(.gs_padre==.gs_cerca) stop("Aprire il progetto M11_Locus o quello generale dei notebook.")
+  .gs_cerca <- .gs_padre
+}
+source(file.path(.gs_modulo,"R","funzioni_notebook.R"),local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo,"M11_N12")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88,digits=6)
+if(requireNamespace("knitr",quietly=TRUE)) {
+  knitr::opts_chunk$set(echo=TRUE,error=FALSE,warning=TRUE,message=TRUE,
+    fig.width=8,fig.height=5,dpi=150,fig.align="center")
+}
+set.seed(11012)
+```
+
+## 1. A conserva la relazione binaria
+
+La soglia 260 m include i vicini ortogonali a 250 m ed esclude le diagonali a circa 353.6 m. La relazione fra due siti è simmetrica.
+
+```{r passo_01}
+d <- carica_dati("spazio_v3.csv")
+audit_spazio(d)
+ ps <- pesi_spaziali(d,260)
+ A <- ps$A;nv <- ps$n_vicini;W <- ps$W
+ data.frame(siti=nrow(A),collegamenti_non_diretti=sum(A)/2,S0_binario=sum(A),
+   isolati=sum(nv==0),simmetrica=all(A==t(A)))
+ table(nv)
+ stopifnot(sum(A)==224L,all(A==t(A)),all(diag(A)==0),all(nv>0))
+```
+
+**Lettura del risultato.** Ci sono 112 collegamenti non diretti, rappresentati due volte nella matrice. Gli angoli hanno due vicini, i bordi tre e gli interni quattro.
+
+## 2. W rende ciascun lag una media locale
+
+La normalizzazione usa $w_{ij}=a_{ij}/\sum_j a_{ij}$. Ogni riga non isolata somma a uno; il peso del singolo vicino dipende dal numero di vicini del sito che riceve la media.
+
+```{r passo_02}
+risultato <- data.frame(id=d$id,n_vicini=nv,somma_riga=rowSums(W))
+head(risultato,10)
+data.frame(S0_normalizzato=sum(W),scarto_somma=max(abs(rowSums(W)-1)),
+  asimmetria_massima=max(abs(W-t(W))))
+stopifnot(max(abs(rowSums(W)-1))<1e-12,abs(sum(W)-64)<1e-12)
+data.frame(direzione=c("S01 verso S02","S02 verso S01"),peso=c(W[1,2],W[2,1]))
+```
+
+**Lettura del risultato.** La geometria binaria è simmetrica, mentre W non lo è: un angolo assegna 1/2 a ciascun vicino, un bordo 1/3. Questo modifica il prodotto quadratico usato da Moran.
+
+## 3. La rete e il registro documentano la scelta
+
+Mostriamo una sola volta ogni collegamento binario e conserviamo entrambe le matrici con gli ID.
+
+```{r passo_03}
+ind <- which(upper.tri(A)&A>0,arr.ind=TRUE)
+stile_grafico()
+plot(d$x_m,d$y_m,type="n",asp=1,xlab="x locale (m)",ylab="y locale (m)",main="Vicinato entro 260 m")
+segments(d$x_m[ind[,1]],d$y_m[ind[,1]],d$x_m[ind[,2]],d$y_m[ind[,2]],col="grey70")
+points(d$x_m,d$y_m,pch=19,col=palette_geo[1])
+dimnames(A) <- dimnames(W) <- list(d$id,d$id)
+write.csv(A,percorso_risultati("A_binaria.csv"))
+write.csv(W,percorso_risultati("W_normalizzata.csv"))
+write.csv(risultato,percorso_risultati("audit_pesi.csv"),row.names=FALSE)
+```
+
+**Lettura del risultato.** Il disegno rappresenta la relazione, mentre il CSV conserva i pesi numerici. È necessario nominare la matrice quando si riporta un indice spaziale.
+
+## Variante svolta
+
+**Una soglia troppo piccola produce isolati.** Ridurre la soglia a 200 m e controllare la normalizzazione senza dividere per zero.
+
+```{r variante}
+piccoli <- pesi_spaziali(d,200)
+data.frame(soglia_m=200,isolati=length(piccoli$isolati),somma_pesi=sum(piccoli$W))
+stopifnot(length(piccoli$isolati)==64L,all(is.finite(piccoli$W)),sum(piccoli$W)==0)
+```
+
+Qui nessuna relazione resta disponibile e Moran non è definito. Il codice conserva righe nulle e obbliga a discutere la scelta del vicinato; non inventa vicini.
+
+## Errore da riconoscere
+
+Dividere righe isolate per zero o presumere che una normalizzazione per riga conservi la simmetria.
+
+## Risposta alla domanda
+
+W distribuisce peso totale uno sui vicini di ciascun sito e consente una media locale. I bordi cambiano i pesi e possono rendere W asimmetrica: A e W devono restare oggetti distinti e dichiarati.
+
+## Raccordo con le slide
+
+[Slide 44–55 della lezione Locus](../../02_PDF/M11_Locus/Locus_M11_statistica_spaziale.pdf#page=44). Il notebook conserva il tema del laboratorio originale e aggiunge verifiche e una variante svolta.
+
+
+## Riferimenti e provenienza
+
+Questo svolgimento sviluppa `M11_N12` del [modulo M11 del corso](https://marzione00.github.io/Lab_Geo/#modulo-M11). Il [codice originale](https://github.com/marzione00/Lab_Geo/blob/649f7cc577b96bd1044d81e78a2f530813e4f96b/materiali/laboratori/M11/M11_N12.R) è conservato immutato in `R/Originali_corso/`; la mappa allegata documenta gli ampliamenti. Dati e originali hanno impronte SHA-256 e SHA-1 Git verificate.
+
+Documentazione primaria delle operazioni: [R, dist](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/dist.html), [R, aggregate](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/aggregate.html), [R, sample](https://stat.ethz.ch/R-manual/R-devel/library/base/html/sample.html). Le definizioni spaziali e il riferimento inferenziale seguono il laboratorio originale, con le distinzioni esplicitate nel testo.

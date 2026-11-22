@@ -1,0 +1,133 @@
+---
+title: "Stimare il modello sui livelli, non sulle differenze già calcolate"
+subtitle: "M10_N03 · Futura"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Come si applica correttamente una specifica SARIMA?
+
+## Obiettivi
+
+- Dichiarare ordini e periodo stagionale.
+- Stimare sui livelli lasciando le differenze alla funzione.
+- Controllare convergenza e struttura dei coefficienti.
+
+**Prima di iniziare.** Sono richiesti vettori, tabelle e funzioni R di base. I blocchi vanno eseguiti in ordine. Il notebook è autonomo rispetto agli altri.
+
+**Dati e unità.** CO₂ storica: 204 mesi da gennaio 1985 a dicembre 2001, concentrazione in ppm. Le medie derivano dalle osservazioni settimanali attribuite al mese della data, secondo la convenzione del corso. Sono dati storici, distinti da una serie mensile ufficiale e da una misura attuale. Il protocollo usa 168 mesi per l’adattamento (1985–1998) e 36 per il test (1999–2001).
+
+## Preparazione
+
+Aprire il progetto autonomo di Futura o quello generale del corso. I calcoli usano R base e stats. Gli output del notebook vanno in `Risultati/M10_N03/`; i CSV originali restano invariati.
+
+```{r preparazione}
+# Trova la cartella M10 dal progetto autonomo o dal progetto generale.
+.gs_cerca <- normalizePath(getwd(),winslash="/",mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca,
+    file.path(.gs_cerca,"M10_Futura"),
+    file.path(.gs_cerca,"03_Notebook_svolti","M10_Futura"),
+    file.path(.gs_cerca,"M10","03_Notebook_svolti","M10_Futura"))
+  .gs_ok <- file.exists(file.path(.gs_candidati,"M10_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati,"R","funzioni_notebook.R"))
+  if(any(.gs_ok)) { .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]; break }
+  .gs_padre <- dirname(.gs_cerca)
+  if(.gs_padre==.gs_cerca) stop("Aprire il progetto M10_Futura o quello generale dei notebook.")
+  .gs_cerca <- .gs_padre
+}
+source(file.path(.gs_modulo,"R","funzioni_notebook.R"),local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo,"M10_N03")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88,digits=6)
+if(requireNamespace("knitr",quietly=TRUE)) {
+  knitr::opts_chunk$set(echo=TRUE,error=FALSE,warning=TRUE,message=TRUE,
+    fig.width=8,fig.height=5,dpi=150,fig.align="center")
+}
+set.seed(10003)
+```
+
+## 1. La specifica entra nella funzione
+
+Nel modello SARIMA$(0,1,1)(0,1,1)_{12}$, le differenze ordinaria e stagionale sono interne alla stima. In R i coefficienti MA usano la convenzione con il segno più.
+
+```{r passo_01}
+c2 <- prepara_co2(carica_dati("co2_1985_2001.csv"))
+train <- c2$train; test <- c2$test; h <- c2$h
+ fit <- stats::arima(train,order=c(0,1,1),
+   seasonal=list(order=c(0,1,1),period=12),
+   include.mean=FALSE,method="ML")
+ fit
+ stopifnot(is.null(fit$code) || fit$code==0L)
+```
+
+**Lettura del risultato.** La stima riceve i 168 livelli. La chiamata dichiara due differenze e due termini MA, senza drift. Il numero di coefficienti non misura da solo l’adeguatezza del modello.
+
+## 2. Coefficienti e precisione numerica
+
+Il modello soddisfa $(1-B)(1-B^{12})y_t=(1+\theta B)(1+\Theta B^{12})\varepsilon_t$. Gli errori standard sono quelli dell’approssimazione della stima.
+
+```{r passo_02}
+data.frame(termine=names(coef(fit)),stima=as.numeric(coef(fit)),
+  errore_standard=sqrt(diag(fit$var.coef)))
+data.frame(varianza_innovazioni=fit$sigma2,logLik=as.numeric(logLik(fit)),
+           AIC=AIC(fit),codice_convergenza=fit$code)
+stopifnot(length(coef(fit))==2L,all(is.finite(fit$var.coef)))
+```
+
+**Lettura del risultato.** La convergenza è un requisito di calcolo, non una garanzia scientifica. AIC riguarda l’adattamento penalizzato e va distinto dalla prestazione futura.
+
+## 3. La differenza esplicita serve a capire
+
+Costruiamo la trasformazione separatamente per controllarne l’indice temporale. Questo oggetto serve alla diagnosi, mentre il modello precedente resta stimato sui livelli.
+
+```{r passo_03}
+z <- diff(diff(train,lag=12),differences=1)
+data.frame(livelli=length(train),dopo_differenza_12=length(diff(train,lag=12)),
+           doppia_differenza=length(z))
+stile_grafico()
+plot(z,type="l",col=palette_geo[1],xlab="Anno",ylab="Differenza (ppm)",
+     main="Trasformazione diagnostica: (1-B)(1-B^12)")
+abline(h=0,lty=2)
+```
+
+**Lettura del risultato.** La trasformazione esplicita conserva 155 valori. Passarla di nuovo a una chiamata con d=1 e D=1 introdurrebbe altre differenze.
+
+## Variante svolta
+
+**Una specifica alternativa dichiarata.** Stimare un modello stagionale con il solo termine MA stagionale. Il confronto è esplorativo all’interno del train.
+
+```{r variante}
+alternativo <- arima(train,order=c(0,1,0),
+  seasonal=list(order=c(0,1,1),period=12),include.mean=FALSE,method="ML")
+stopifnot(is.null(alternativo$code)||alternativo$code==0L)
+data.frame(modello=c("MA1 e MA stagionale","Solo MA stagionale"),
+           AIC=c(AIC(fit),AIC(alternativo)))
+```
+
+Le due specifiche condividono differenze, campione e metodo ML. Il confronto AIC è interpretabile in questo contesto, ma il modello scelto richiede ancora diagnostica e validazione.
+
+## Errore da riconoscere
+
+Applicare diff due volte ai dati e poi dichiarare ancora d=1 e D=1 in arima.
+
+## Risposta alla domanda
+
+La specifica SARIMA va applicata ai livelli quando arima gestisce le differenze. Ordini, metodo di stima, componenti deterministiche e convergenza fanno parte del risultato riproducibile.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M10_N03` di [GeoStat Lab M10](https://marzione00.github.io/Lab_Geo/#indice). Il [codice originale del laboratorio](https://github.com/marzione00/Lab_Geo/blob/649f7cc577b96bd1044d81e78a2f530813e4f96b/materiali/laboratori/M10/M10_N03.R) è conservato anche in `R/Originali_corso`. Gli ampliamenti e le varianti sono identificati nella mappa allegata.
+
+Documentazione dei metodi: [R stats, arima](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/arima.html), [predict.Arima](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/predict.arima.html), [Box.test](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/box.test.html) e [p.adjust](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/p.adjust.html).

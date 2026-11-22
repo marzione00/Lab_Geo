@@ -1,0 +1,134 @@
+---
+title: "Un'alternativa tidyverse, con equivalente R base"
+subtitle: "M02_N09 \u00b7 Tellus"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come si esprime la sequenza raggruppare e riassumere senza dipendere da un pacchetto aggiuntivo?
+
+## Obiettivi
+
+- Riconoscere le operazioni concettuali dietro sintassi differenti.
+- Verificare due implementazioni R base della stessa sintesi per stazione.
+
+**Prima di iniziare.** Saper eseguire una cella R e riconoscere vettori, assegnamenti e nomi di colonne.
+
+**Dati e unità.** Il notebook usa i 24 provini sintetici e soltanto funzioni distribuite con R. Il richiamo a group_by e summarise è descrittivo: il codice eseguibile non richiede tidyverse.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M02_N09/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M02_N09")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(2009)
+```
+
+## 1. Esplicitare la trasformazione richiesta
+
+La sequenza spesso scritta con group_by e summarise significa: identificare i gruppi, calcolare una sintesi per ciascuno, restituire una riga per gruppo. Qui la realizziamo con split, mantenendo lo stesso significato e mostrando gli oggetti intermedi.
+
+```{r passo_01}
+# Ogni esecuzione riparte dal CSV condiviso, senza modificare il file.
+d <- carica_dati("campioni_modulo1.csv", stringsAsFactors = FALSE)
+stopifnot(nrow(d) == 24L, !anyDuplicated(d$id))
+
+stopifnot(all(is.finite(d$massa_g)), all(d$massa_g > 0),
+          all(is.finite(d$volume_cm3)), all(d$volume_cm3 > 0))
+d$densita_g_cm3 <- d$massa_g / d$volume_cm3
+
+per_stazione <- split(d$densita_g_cm3, d$stazione)
+print(names(per_stazione))
+print(lengths(per_stazione))
+stopifnot(sum(lengths(per_stazione)) == nrow(d))
+```
+
+**Lettura del risultato.** La lista rende visibili i gruppi prima della sintesi. Cambiare sintassi non cambia l'unità richiesta: una riga finale rappresenterà sempre una stazione e dovrà riportare quante densità individuali sono state utilizzate.
+
+## 2. Riassumere con un risultato atteso
+
+vapply richiede di dichiarare la forma dell'uscita della funzione. Usiamo questa proprietà per ottenere un conteggio e una media per stazione; se la funzione restituisse una forma inattesa, il procedimento si arresterebbe invece di creare una struttura ambigua.
+
+```{r passo_02}
+n <- vapply(per_stazione, length, integer(1))
+media <- vapply(per_stazione, mean, numeric(1))
+sd_entro <- vapply(per_stazione, sd, numeric(1))
+tabella_split <- data.frame(stazione = names(per_stazione), n = n,
+                            media_g_cm3 = media, sd_g_cm3 = sd_entro, row.names = NULL)
+tabella_split <- tabella_split[order(tabella_split$stazione), , drop = FALSE]
+print(tabella_split)
+```
+
+**Lettura del risultato.** La tabella ha un contratto semplice: stazione unica, numerosità e sintesi numeriche. Nell'uso facoltativo di tidyverse, group_by definirebbe lo stesso raggruppamento e summarise la stessa riduzione; il lettore deve riconoscere prima queste operazioni.
+
+## 3. Verificare con aggregate
+
+Una seconda espressione della stessa operazione offre un controllo leggibile. Usiamo aggregate per la media e per il conteggio, uniamo i risultati e confrontiamo chiavi e valori con la tabella precedente, dopo aver stabilito un ordine comune.
+
+```{r passo_03}
+medie <- aggregate(densita_g_cm3 ~ stazione, data = d, FUN = mean)
+numeri <- aggregate(id ~ stazione, data = d, FUN = length)
+names(medie)[2] <- "media_g_cm3"
+names(numeri)[2] <- "n"
+tabella_aggregate <- merge(medie, numeri, by = "stazione", sort = TRUE)
+print(tabella_aggregate)
+stopifnot(identical(tabella_split$stazione, tabella_aggregate$stazione))
+stopifnot(isTRUE(all.equal(tabella_split$media_g_cm3, tabella_aggregate$media_g_cm3)))
+stopifnot(all(tabella_split$n == tabella_aggregate$n))
+```
+
+**Lettura del risultato.** L'accordo riguarda queste definizioni, questi dati completi e queste funzioni. Con mancanti occorre dichiarare esplicitamente quali righe ogni implementazione esclude: sintassi simili possono avere comportamenti predefiniti diversi e denominatori non coincidenti.
+
+## Variante svolta
+
+Ripetere la sintesi per affioramento e controllare il nuovo numero di gruppi.
+
+```{r variante}
+per_affioramento <- split(d$densita_g_cm3, d$affioramento)
+tabella_aff <- data.frame(affioramento = names(per_affioramento),
+                          n = lengths(per_affioramento),
+                          media_g_cm3 = vapply(per_affioramento, mean, numeric(1)))
+print(tabella_aff)
+stopifnot(nrow(tabella_aff) == 2L, sum(tabella_aff$n) == nrow(d))
+```
+
+La modifica della chiave cambia l'unità della tabella finale, mentre la regola di sintesi rimane la stessa. Riconoscere questa separazione facilita il passaggio fra strumenti senza imparare ogni espressione come una formula isolata.
+
+## Errore da riconoscere
+
+Confondere la conoscenza di una catena di comandi con la comprensione del raggruppamento porta a perdere l'unità della tabella. Chiave, denominatore e significato della sintesi vanno dichiarati qualunque sintassi si scelga.
+
+## Risposta alla domanda
+
+Il notebook esegue le operazioni essenziali con R base e rende riconoscibile il corrispondente lessico tidyverse. I controlli sui risultati consentono di confrontare implementazioni senza introdurre dipendenze per l'esercitazione.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M02_N09` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M02/M02_N09.R).

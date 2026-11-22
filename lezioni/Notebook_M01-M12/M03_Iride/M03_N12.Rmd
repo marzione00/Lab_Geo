@@ -1,0 +1,132 @@
+---
+title: "Istogramma: il ruolo delle classi"
+subtitle: "M03_N12 \u00b7 Iride"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Quanto della forma che vediamo in un istogramma dipende dall'ampiezza e dall'origine delle classi?
+
+## Obiettivi
+
+- Costruire confini espliciti e verificare il numero reale delle classi.
+- Confrontare istogrammi mantenendo fissi i dati.
+
+**Prima di iniziare.** Istogramma, minimo, massimo e sequenze numeriche.
+
+**Dati e unità.** Archivio didattico sintetico: 160 fossili, 80 Rounded e 80 Spiky. Diametri e spessori sono espressi in micrometri; ogni riga identifica un individuo.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M03_N12/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M03_N12")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(3012)
+```
+
+## 1. Verificare una richiesta automatica
+
+In hist un numero singolo passato a breaks è un suggerimento. R può scegliere confini comodi e restituire un numero diverso di intervalli. Per sapere che cosa è stato disegnato leggiamo l'oggetto restituito.
+
+```{r passo_01}
+f <- carica_dati("fossili_simulati.csv")
+x <- f$diametro_tot_um
+# plot = FALSE permette di ispezionare confini e conteggi prima di disegnare.
+h8 <- hist(x, breaks = 8, plot = FALSE)
+h25 <- hist(x, breaks = 25, plot = FALSE)
+print(data.frame(richiesta = c(8, 25),
+  classi_effettive = c(length(h8$counts), length(h25$counts))))
+print(h8$breaks)
+stopifnot(sum(h8$counts) == length(x), sum(h25$counts) == length(x))
+```
+
+**Lettura del risultato.** La numerosità totale rimane identica, anche se la suddivisione cambia. Un grafico con più barre non contiene nuovi individui: mostra la stessa informazione con un diverso livello di aggregazione.
+
+## 2. Confrontare due ampiezze dichiarate
+
+Definiamo intervalli larghi mezzo micrometro e un micrometro con estremi comuni. Usiamo densità sull'asse verticale, così l'area totale resta uno e il confronto fra classi di diversa ampiezza è leggibile.
+
+```{r passo_02}
+estremi <- c(floor(min(x)), ceiling(max(x)))
+fini <- seq(estremi[1], estremi[2], by = .5)
+larghi <- seq(estremi[1], estremi[2], by = 1)
+hf <- hist(x, breaks = fini, plot = FALSE)
+hl <- hist(x, breaks = larghi, plot = FALSE)
+# Una scala verticale comune evita confronti ingannevoli fra altezze.
+tetto <- max(c(hf$density, hl$density)) * 1.1
+plot(hf, freq = FALSE, col = "#1D7890", border = "white", ylim = c(0, tetto),
+     main = "Classi di 0,5 um", xlab = "Diametro totale (um)", ylab = "Densita (1/um)")
+plot(hl, freq = FALSE, col = "#C57E42", border = "white", ylim = c(0, tetto),
+     main = "Classi di 1 um", xlab = "Diametro totale (um)", ylab = "Densita (1/um)")
+```
+
+**Lettura del risultato.** Le classi ampie nascondono dettagli locali; quelle strette rendono più evidenti anche oscillazioni dovute alla numerosità finita. Un avvallamento presente in una sola scelta dei confini richiede cautela prima di essere interpretato come separazione naturale.
+
+## 3. Controllare le aree
+
+La densità di ciascuna barra è il conteggio diviso per numerosità e ampiezza. Calcoliamo l'area complessiva nei due casi per controllare che la scala verticale sia stata usata correttamente.
+
+```{r passo_03}
+# Densita per ampiezza restituisce la frequenza relativa della singola barra.
+area_fine <- sum(hf$density * diff(hf$breaks))
+area_larga <- sum(hl$density * diff(hl$breaks))
+print(c(area_fine = area_fine, area_larga = area_larga))
+stopifnot(abs(area_fine - 1) < 1e-12, abs(area_larga - 1) < 1e-12)
+print(data.frame(ampiezza = c(.5, 1), classi = c(length(hf$counts), length(hl$counts))))
+```
+
+**Lettura del risultato.** L'area unitaria non rende identiche le forme: assicura una normalizzazione coerente. Per confrontare conteggi invece di densità dovremmo mantenere uguali anche le ampiezze, oltre a dichiarare le numerosità dei campioni.
+
+## Variante svolta
+
+Spostare di un quarto di micrometro l'origine delle classi da mezzo micrometro.
+
+```{r variante}
+traslati <- seq(estremi[1] - .25, estremi[2] + .75, by = .5)
+ht <- hist(x, breaks = traslati, plot = FALSE)
+plot(ht, freq = FALSE, col = "#7363AA", border = "white",
+     xlab = "Diametro totale (um)", ylab = "Densita (1/um)", main = "Stessa ampiezza, origine spostata")
+stopifnot(sum(ht$counts) == length(x))
+print(head(data.frame(inizio = head(ht$breaks, -1), n = ht$counts)))
+```
+
+L'ampiezza non cambia, ma alcuni individui passano a una barra vicina. La stabilità dei caratteri generali rispetto a questo spostamento è più informativa della posizione di un singolo massimo locale.
+
+## Errore da riconoscere
+
+Non chiamare 'otto classi' un istogramma costruito con breaks = 8 senza controllare i confini restituiti. Non leggere il numero di picchi come una proprietà certa della popolazione.
+
+## Risposta alla domanda
+
+La forma visibile dipende anche da ampiezza e origine delle classi. Dichiarare i confini e confrontare scelte ragionevoli aiuta a distinguere caratteristiche stabili della distribuzione da dettagli introdotti dall'aggregazione.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M03_N12` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M03/M03_N12.R).

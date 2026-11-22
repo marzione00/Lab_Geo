@@ -1,0 +1,155 @@
+---
+title: "Esportare una previsione verificabile"
+subtitle: "M10_N09 · Futura"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Quali file permettono a un’altra persona di ricostruire la previsione?
+
+## Obiettivi
+
+- Salvare date, metodi e intervalli.
+- Conservare il modello e il protocollo.
+- Rileggere gli output e controllarne l’identità.
+
+**Prima di iniziare.** Sono richiesti vettori, tabelle e funzioni R di base. I blocchi vanno eseguiti in ordine. Il notebook è autonomo rispetto agli altri.
+
+**Dati e unità.** CO₂ storica: 204 mesi da gennaio 1985 a dicembre 2001, concentrazione in ppm. Le medie derivano dalle osservazioni settimanali attribuite al mese della data, secondo la convenzione del corso. Sono dati storici, distinti da una serie mensile ufficiale e da una misura attuale. Il protocollo usa 168 mesi per l’adattamento (1985–1998) e 36 per il test (1999–2001).
+
+## Preparazione
+
+Aprire il progetto autonomo di Futura o quello generale del corso. I calcoli usano R base e stats. Gli output del notebook vanno in `Risultati/M10_N09/`; i CSV originali restano invariati.
+
+```{r preparazione}
+# Trova la cartella M10 dal progetto autonomo o dal progetto generale.
+.gs_cerca <- normalizePath(getwd(),winslash="/",mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca,
+    file.path(.gs_cerca,"M10_Futura"),
+    file.path(.gs_cerca,"03_Notebook_svolti","M10_Futura"),
+    file.path(.gs_cerca,"M10","03_Notebook_svolti","M10_Futura"))
+  .gs_ok <- file.exists(file.path(.gs_candidati,"M10_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati,"R","funzioni_notebook.R"))
+  if(any(.gs_ok)) { .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]; break }
+  .gs_padre <- dirname(.gs_cerca)
+  if(.gs_padre==.gs_cerca) stop("Aprire il progetto M10_Futura o quello generale dei notebook.")
+  .gs_cerca <- .gs_padre
+}
+source(file.path(.gs_modulo,"R","funzioni_notebook.R"),local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo,"M10_N09")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88,digits=6)
+if(requireNamespace("knitr",quietly=TRUE)) {
+  knitr::opts_chunk$set(echo=TRUE,error=FALSE,warning=TRUE,message=TRUE,
+    fig.width=8,fig.height=5,dpi=150,fig.align="center")
+}
+set.seed(10009)
+```
+
+## 1. La tabella conserva il bersaglio
+
+Esportiamo valori previsti e osservati con origine e orizzonte, in modo che la tabella si interpreti anche fuori dalla sessione R.
+
+```{r passo_01}
+c2 <- prepara_co2(carica_dati("co2_1985_2001.csv"))
+train <- c2$train; test <- c2$test; h <- c2$h
+fit <- stima_sarima(train)
+ fc <- predict(fit,n.ahead=h)
+ tab <- data.frame(origine="1998-12-01",data=as.character(c2$date_test),h=1:h,
+   osservato=as.numeric(test),previsto=as.numeric(fc$pred),
+   inferiore95=as.numeric(fc$pred-qnorm(.975)*fc$se),
+   superiore95=as.numeric(fc$pred+qnorm(.975)*fc$se),unita="ppm")
+ write.csv(tab,percorso_risultati("previsioni_test.csv"),row.names=FALSE)
+ pr <- baseline_co2(train,h)[c("Ultimo","Stagionale","Deriva")]
+ pr$SARIMA <- tab$previsto
+ met <- as.data.frame(do.call(rbind,lapply(pr,function(z) metriche(tab$osservato,z))))
+ met$modello <- rownames(met); rownames(met) <- NULL
+ write.csv(met,percorso_risultati("metriche_test.csv"),row.names=FALSE)
+ head(tab,3)
+ met
+```
+
+**Lettura del risultato.** L’origine non si ricava dal semplice nome del modello. Date e unità devono accompagnare ogni valore.
+
+## 2. Il modello e la specifica hanno file distinti
+
+L’oggetto RDS conserva l’adattamento. Il testo spiega la procedura a chi non apre R.
+
+```{r passo_02}
+saveRDS(fit,percorso_risultati("modello_SARIMA.rds"))
+ cv <- do.call(rbind,lapply(c(120L,132L,144L),function(o) {
+   tr <- ts(as.numeric(train)[1:o],start=c(1985,1),frequency=12)
+   osservato <- as.numeric(train)[o+1:12]
+   previsto <- as.numeric(predict(stima_sarima(tr),n.ahead=12)$pred)
+   stagionale <- as.numeric(tail(tr,12))
+   data.frame(origine=o,RMSE_SARIMA=metriche(osservato,previsto)["RMSE"],
+     RMSE_stagionale=metriche(osservato,stagionale)["RMSE"])
+ }))
+ rownames(cv) <- NULL
+ write.csv(cv,percorso_risultati("validazione_interna_train.csv"),row.names=FALSE)
+ cv
+ protocollo <- c("CO2 storica: aggregazione mensile del corso, ppm.",
+   "Train 1985-01/1998-12. Test 1999-01/2001-12.",
+   "Origine fissa dicembre 1998, 36 mesi, nessun aggiornamento nel test.",
+   "SARIMA(0,1,1)(0,1,1)[12], ML, senza drift.",
+   "Intervalli gaussiani puntuali condizionali. Incertezza dei parametri esclusa.",
+   paste("Runtime:",R.version.string),capture.output(met))
+ writeLines(protocollo,percorso_risultati("protocollo.txt"),useBytes=TRUE)
+ cat(paste(protocollo,collapse="
+"))
+```
+
+**Lettura del risultato.** Il contenitore RDS dipende da R. CSV e protocollo testuale rendono il risultato accessibile e controllabile anche senza caricare l’oggetto.
+
+## 3. La rilettura controlla la consegna
+
+Un file scritto con successo può essere incompleto o mal interpretato. Verifichiamo numero di righe, colonne e corrispondenza numerica.
+
+```{r passo_03}
+ritorno <- read.csv(percorso_risultati("previsioni_test.csv"),stringsAsFactors=FALSE)
+fit2 <- readRDS(percorso_risultati("modello_SARIMA.rds"))
+stopifnot(nrow(ritorno)==36L,identical(ritorno$data,tab$data),
+  isTRUE(all.equal(ritorno$previsto,tab$previsto,tolerance=1e-10)),
+  isTRUE(all.equal(as.numeric(predict(fit2,n.ahead=h)$pred),tab$previsto)))
+data.frame(controllo=c("36 righe","Date identiche","Valori riletti","Previsione da RDS"),esito=TRUE)
+```
+
+**Lettura del risultato.** Il controllo di ritorno rende verificabile il percorso fino al file consegnato.
+
+## Variante svolta
+
+**La metrica si ricalcola dal CSV.** Usare soltanto la tabella riletta per ottenere le metriche finali.
+
+```{r variante}
+metriche(ritorno$osservato,ritorno$previsto)
+write.csv(as.data.frame(t(metriche(ritorno$osservato,ritorno$previsto))),
+  percorso_risultati("metriche_da_csv.csv"),row.names=FALSE)
+```
+
+Chi riceve il CSV può controllare le metriche senza rieseguire la stima. La provenienza dei dati resta comunque necessaria.
+
+## Errore da riconoscere
+
+Consegnare soltanto il grafico o un RDS senza calendario, unità e descrizione della specifica.
+
+## Risposta alla domanda
+
+Una previsione ricostruibile unisce tabella, protocollo, dati originali e codice. La rilettura verifica che l’esportazione conservi effettivamente ciò che si intende comunicare.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M10_N09` di [GeoStat Lab M10](https://marzione00.github.io/Lab_Geo/#indice). Il [codice originale del laboratorio](https://github.com/marzione00/Lab_Geo/blob/649f7cc577b96bd1044d81e78a2f530813e4f96b/materiali/laboratori/M10/M10_N09.R) è conservato anche in `R/Originali_corso`. Gli ampliamenti e le varianti sono identificati nella mappa allegata.
+
+Documentazione dei metodi: [R stats, arima](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/arima.html), [predict.Arima](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/predict.arima.html), [Box.test](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/box.test.html) e [p.adjust](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/p.adjust.html).

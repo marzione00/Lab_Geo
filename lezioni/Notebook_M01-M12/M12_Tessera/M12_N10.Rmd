@@ -1,0 +1,137 @@
+---
+title: "Pendenza in gradi e in percentuale"
+subtitle: "M12_N10 · Tessera"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Una pendenza di 45 gradi coincide con il 45 per cento?
+
+## Obiettivi
+
+- Calcolare il modulo del gradiente interno.
+- Distinguere angolo in gradi e rapporto percentuale.
+- Conservare le coordinate delle 616 celle valide.
+
+**Prima di iniziare.** Sono richiesti vettori, matrici, tabelle e funzioni R di base. Eseguire i blocchi in ordine; ogni notebook è autonomo rispetto agli altri. I calcoli usano R base e i pacchetti standard.
+
+**Dati e unità.** Il raster è interamente sintetico: 24 righe × 30 colonne, 720 celle quadrate di lato 30 m. Nel CSV riga e colonna partono da zero; x_m = 30 × colonna e y_m = 30 × riga indicano i centri nel piano locale. La riga 0 è a Sud; la riga 23 è a Nord. Le quote sono in metri sintetici. I dati non descrivono un rilievo reale.
+
+**Relazione usata.** $g=\sqrt{g_x^2+g_y^2},\quad \theta_{\mathrm{gradi}}=\frac{180}{\pi}\arctan(g),\quad p_{\%}=100g.$
+
+## Preparazione
+
+Aprire il progetto autonomo di Tessera o quello generale dei notebook. I file originali restano invariati. Gli output vanno in `Risultati/M12_N10/`. Nessun download o installazione avviene nei blocchi.
+
+```{r preparazione}
+# Trova il modulo dal progetto autonomo o da quello generale dei notebook.
+.gs_cerca <- normalizePath(getwd(),winslash="/",mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca,file.path(.gs_cerca,"M12_Tessera"),
+    file.path(.gs_cerca,"03_Notebook_svolti","M12_Tessera"),
+    file.path(.gs_cerca,"M12","03_Notebook_svolti","M12_Tessera"))
+  .gs_ok <- file.exists(file.path(.gs_candidati,"M12_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati,"R","funzioni_notebook.R"))
+  if(any(.gs_ok)) { .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]];break }
+  .gs_padre <- dirname(.gs_cerca)
+  if(.gs_padre==.gs_cerca) stop("Aprire il progetto M12_Tessera o quello generale dei notebook.")
+  .gs_cerca <- .gs_padre
+}
+source(file.path(.gs_modulo,"R","funzioni_notebook.R"),local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo,"M12_N10")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88,digits=6)
+if(requireNamespace("knitr",quietly=TRUE)) {
+  knitr::opts_chunk$set(echo=TRUE,error=FALSE,warning=TRUE,message=TRUE,
+    fig.width=8,fig.height=5,dpi=150,fig.align="center")
+}
+set.seed(20261104)
+```
+
+## 1. Dal gradiente a due unità di pendenza
+
+Le differenze centrali producono due rapporti adimensionali. Angolo e percentuale derivano dallo stesso modulo g, con trasformazioni diverse.
+
+```{r passo_01}
+d <- carica_dati("raster_v3.csv")
+audit_raster(d)
+d <- d[order(d$riga,d$colonna),]
+Z <- matrice_quote(d)
+ g <- gradienti_centrali(Z)
+ risultato <- data.frame(x_m=rep((1:28)*30,22),y_m=rep((1:22)*30,each=28),
+   gradi=as.vector(t(g$gradi)),percento=as.vector(t(g$percento)))
+ summary(risultato[c("gradi","percento")])
+ stopifnot(nrow(risultato)==616L,all(risultato$gradi>=0&risultato$gradi<90))
+```
+
+**Lettura del risultato.** La relazione è angolo = arctan(g) e percentuale = 100g. Le due colonne non sono intercambiabili.
+
+## 2. Tre valori di riferimento controllano la conversione
+
+Usiamo angoli noti e verifichiamo il percorso inverso.
+
+```{r passo_02}
+angoli <- c(0,10,45)
+conversione <- data.frame(gradi=angoli,percento=100*tan(angoli*pi/180))
+conversione
+errore <- max(abs(atan(risultato$percento/100)*180/pi-risultato$gradi))
+data.frame(errore_ritorno_gradi=errore)
+stopifnot(abs(conversione$percento[3]-100)<1e-10,errore<1e-10)
+```
+
+**Lettura del risultato.** 45 gradi corrispondono al 100 per cento. La percentuale può superare 100; non è una probabilità.
+
+## 3. L’istogramma dichiara l’unità
+
+Il grafico riguarda le sole celle interne su cui la derivata centrale è definita.
+
+```{r passo_03}
+stile_grafico()
+hist(risultato$gradi,breaks=20,col=palette_geo[1],border="white",
+  xlab="Pendenza (gradi)",ylab="Numero di celle interne",main="Pendenza sintetica: 616 celle interne")
+write.csv(risultato,percorso_risultati("pendenze_interne.csv"),row.names=FALSE)
+write.csv(conversione,percorso_risultati("conversione_unita.csv"),row.names=FALSE)
+```
+
+**Lettura del risultato.** Le celle sono spazialmente dipendenti. Le barre descrivono una distribuzione di valori, non 616 repliche indipendenti.
+
+## Variante svolta
+
+**Conservare le unità del piano analitico.** Verificare la pendenza di un piano con gradiente (0,12; 0,08).
+
+```{r variante}
+modulo <- sqrt(.12^2+.08^2)
+data.frame(modulo=modulo,gradi=atan(modulo)*180/pi,percento=100*modulo)
+```
+
+Un caso analitico aiuta a riconoscere valori impossibili o conversioni mancanti, ma non quantifica da solo l’errore del DEM.
+
+## Errore da riconoscere
+
+Confondere gradi e percentuale, dimenticare radianti o trattare tutte le celle interne come repliche indipendenti.
+
+## Risposta alla domanda
+
+La pendenza in gradi è un angolo; quella percentuale è cento volte il dislivello per unità di distanza orizzontale. Entrambe richiedono unità coerenti e una regola esplicita per i bordi.
+
+## Raccordo con le slide
+
+[Slide 57–61, 66 della lezione Tessera](../../02_PDF/M12_Tessera/Tessera_M12_raster_telerilevamento_morfometria.pdf#page=57). La [mappa dei notebook e delle slide](MAPPA_SLIDE.csv) conserva il raccordo puntuale con la lezione estesa.
+
+## Riferimenti e provenienza
+
+Questo svolgimento sviluppa `M12_N10` del [modulo M12 del corso](https://marzione00.github.io/Lab_Geo/#modulo-M12). Il [codice originale](https://github.com/marzione00/Lab_Geo/blob/649f7cc577b96bd1044d81e78a2f530813e4f96b/materiali/laboratori/M12/M12_N10.R) è conservato immutato in `R/Originali_corso/`. Dati e originali hanno SHA-256 e SHA-1 Git verificati; gli ampliamenti sono dichiarati nella [mappa degli originali](MAPPA_ORIGINALI.csv).
+
+Documentazione primaria delle operazioni: [R, matrix](https://stat.ethz.ch/R-manual/R-devel/library/base/html/matrix.html), [R, image](https://stat.ethz.ch/R-manual/R-devel/library/graphics/html/image.html), [R, quantile](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/quantile.html). Le ipotesi e le convenzioni specifiche sono esplicitate nello svolgimento.

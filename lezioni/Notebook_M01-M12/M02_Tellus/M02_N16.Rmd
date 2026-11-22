@@ -1,0 +1,134 @@
+---
+title: "Sotto il limite: non eliminare il simbolo e basta"
+subtitle: "M02_N16 \u00b7 Tellus"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Che informazione contiene una misura scritta '<0,05', e come differisce da un valore esatto o da ND?
+
+## Obiettivi
+
+- Distinguere misurato, censurato e mancante.
+- Calcolare limiti descrittivi dichiarando l'insieme di record considerato.
+
+**Prima di iniziare.** Saper eseguire una cella R e riconoscere vettori, assegnamenti e nomi di colonne.
+
+**Dati e unità.** Il file sintetico censura_esempio.csv contiene quattro record in unità convenzionali: due valori misurati, un valore inferiore al limite e un ND. Il limite non è un valore osservato.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M02_N16/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M02_N16")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(2016)
+```
+
+## 1. Leggere valore, limite e stato separatamente
+
+La tabella conserva il testo originale e rappresenta separatamente l'informazione numerica disponibile. Per un record censurato conosciamo un limite, non il valore esatto. Per ND, in questo esercizio, non disponiamo neppure di un limite utilizzabile.
+
+```{r passo_01}
+cens <- carica_dati("censura_esempio.csv", stringsAsFactors = FALSE)
+print(cens)
+misurato <- cens$stato == "misurato"
+censurato <- cens$stato == "censurato"
+mancante <- cens$stato == "mancante"
+stopifnot(all(misurato | censurato | mancante))
+stopifnot(all(is.finite(cens$valore_osservato[misurato])))
+stopifnot(all(is.na(cens$valore_osservato[censurato])),
+          all(is.finite(cens$limite[censurato])), all(cens$limite[censurato] > 0))
+print(table(cens$stato))
+```
+
+**Lettura del risultato.** Le tre categorie richiedono trattamenti diversi. Sostituire '<0,05' con 0,05 trasformerebbe un'informazione di intervallo in una misura esatta; sostituire ND con zero introdurrebbe un valore che il file non contiene.
+
+## 2. Costruire limiti per il sottoinsieme informativo
+
+Supponiamo esplicitamente che la grandezza sia non negativa. Per il record censurato il valore appartiene all'intervallo da zero al limite, con estremo superiore escluso. Calcoliamo quindi estremi per la media dei soli record misurati o censurati.
+
+```{r passo_02}
+informativo <- misurato | censurato
+n_informativo <- sum(informativo)
+somma_misurati <- sum(cens$valore_osservato[misurato])
+media_minima <- somma_misurati / n_informativo
+limite_superiore_media <- (somma_misurati + sum(cens$limite[censurato])) / n_informativo
+print(c(n_informativo = n_informativo, n_mancante = sum(mancante),
+        estremo_inferiore = media_minima, estremo_superiore_escluso = limite_superiore_media))
+stopifnot(media_minima < limite_superiore_media)
+```
+
+**Lettura del risultato.** Questi estremi riguardano tre record, non l'intera tabella di quattro. Il record ND non ha un limite superiore noto e impedisce di trasferire automaticamente l'intervallo alla media complessiva. Gli estremi non sono un intervallo di confidenza.
+
+## 3. Mostrare valori e intervalli
+
+Nel grafico i valori misurati sono punti, mentre il record censurato è un segmento. Il cerchio aperto ricorda che il limite non è incluso. Il record mancante rimane dichiarato nel conteggio e non riceve una coordinata numerica inventata.
+
+```{r passo_03}
+z <- cens[informativo, , drop = FALSE]
+x <- seq_len(nrow(z))
+massimo <- max(c(z$valore_osservato, z$limite), na.rm = TRUE)
+plot(x, rep(0, nrow(z)), type = "n", xaxt = "n", ylim = c(0, 1.2 * massimo),
+     xlab = "Record con informazione numerica", ylab = "Valore (unita convenzionali)")
+axis(1, at = x, labels = z$id)
+osservati <- z$stato == "misurato"
+sotto_limite <- z$stato == "censurato"
+points(x[osservati], z$valore_osservato[osservati], pch = 19, col = "steelblue")
+segments(x[sotto_limite], 0, x[sotto_limite], z$limite[sotto_limite], col = "firebrick", lwd = 2)
+points(x[sotto_limite], z$limite[sotto_limite], pch = 1, col = "firebrick")
+```
+
+**Lettura del risultato.** La diversa rappresentazione impedisce di leggere il censurato come un'osservazione al limite. Il grafico descrive l'informazione disponibile sotto l'ipotesi di non negatività; non introduce una distribuzione probabilistica per i valori nascosti.
+
+## Variante svolta
+
+Mostrare l'effetto dell'ipotesi convenzionale di sostituire il censurato con metà limite.
+
+```{r variante}
+media_meta_limite <- (somma_misurati + sum(cens$limite[censurato] / 2)) / n_informativo
+media_soli_misurati <- mean(cens$valore_osservato[misurato])
+print(c(media_con_meta_limite = media_meta_limite,
+        media_soli_misurati = media_soli_misurati))
+stopifnot(media_meta_limite >= media_minima, media_meta_limite < limite_superiore_media)
+```
+
+La sostituzione produce un singolo numero assumendo un valore per la misura non osservata. Non è una correzione universale; serve qui a mostrare la sensibilità del risultato. Anche escludere il censurato cambia l'insieme descritto e il denominatore.
+
+## Errore da riconoscere
+
+Rimuovere il simbolo '<' fa perdere la censura. La tabella deve conservare stato e limite, e qualsiasi sostituzione numerica va identificata come assunzione con conseguenze sulla sintesi.
+
+## Risposta alla domanda
+
+Il dato censurato contiene più informazione di un generico mancante, ma meno di una misura esatta. Una sintesi corretta dichiara quali record descrive, quali limiti usa e quali ipotesi aggiunge.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M02_N16` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M02/M02_N16.R).

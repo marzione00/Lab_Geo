@@ -1,0 +1,142 @@
+---
+title: "Risposta binaria e regressione logistica"
+subtitle: "M07_N16 \u00b7 Annula"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Come stimare la probabilità che un fossile appartenga al morfotipo Spiky?
+
+## Obiettivi
+
+- Collegare la domanda al calcolo riportato.
+- Interpretare il risultato usando variabili e unità del problema.
+
+**Prima di iniziare.** Vettori, data frame, indicizzazione e funzioni di base in R.
+
+**Dati e unità.** Fossili simulati del corso: 160 individui, 80 Rounded e 80 Spiky. Diametri e spessori sono espressi in micrometri. Nel generatore, diametro interno = diametro totale − 2 × spessore. La relazione contiene quindi un vincolo geometrico noto.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Annula oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M07_Annula` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M07_Annula/Risultati/M07_N16/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M07_Annula"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M07_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M07_Annula o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M07_N16")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(7016)
+```
+
+## 1. La codifica dell’evento
+
+Definiamo $Y=1$ per Spiky e $Y=0$ per Rounded. La probabilità modellata è quindi $P(\mathrm{Spiky}\mid x)$. Il rapporto interno/totale è disponibile qui perché la risposta è il morfotipo, non il diametro interno.
+
+```{r passo_01}
+# Ogni riga identifica un fossile simulato.
+f <- carica_dati("fossili_simulati.csv")
+f$morfotipo <- factor(f$morfotipo, levels=c("Rounded", "Spiky"))
+x <- f$diametro_tot_um
+y <- f$diametro_int_um
+stopifnot(nrow(f)==160L, !anyDuplicated(f$id),
+          all(is.finite(x)), all(is.finite(y)))
+# Partizione fissata prima del confronto dei modelli.
+# Nel CSV didattico ogni quinto individuo forma il test.
+is_test <- seq_len(nrow(f)) %% 5L == 0L
+train <- f[!is_test, ]
+test <- f[is_test, ]
+stopifnot(nrow(train)==128L, nrow(test)==32L,
+          length(intersect(train$id, test$id))==0L)
+train$spiky <- as.integer(train$morfotipo=="Spiky")
+test$spiky <- as.integer(test$morfotipo=="Spiky")
+table(train$morfotipo,train$spiky)
+head(train[,c("morfotipo","spiky","diametro_tot_um","rapporto_int_tot")])
+```
+
+**Lettura del risultato.** La tabella controlla il significato di 0 e 1. Prima di usare un predittore si verifica sempre che sia misurabile al momento della previsione: una buona formula dipende dal compito.
+
+## 2. Il modello del logit
+
+Il predittore lineare è $\eta=\beta_0+\beta_1D_{\mathrm{tot}}+\beta_2q$, dove $q=D_{\mathrm{int}}/D_{\mathrm{tot}}$. La trasformazione logistica restituisce $p=1/(1+e^{-\eta})$ fra 0 e 1.
+
+```{r passo_02}
+# Spiky=1 e Rounded=0: la probabilita' riguarda Spiky.
+train$spiky <- as.integer(train$morfotipo=="Spiky")
+test$spiky <- as.integer(test$morfotipo=="Spiky")
+logit <- glm(spiky ~ diametro_tot_um + rapporto_int_tot,
+             data=train, family=binomial())
+stopifnot(logit$converged)
+prob <- as.numeric(predict(logit, newdata=test, type="response"))
+stopifnot(all(is.finite(prob)), all(prob>=0 & prob<=1))
+coef(logit)
+head(data.frame(id=test$id,osservato=test$spiky,probabilita=prob))
+```
+
+**Lettura del risultato.** Le probabilità sono previsioni condizionate alle due misure e al campione di riferimento. `type="response"` restituisce p, mentre il valore predefinito per un GLM è sulla scala del collegamento.
+
+## 3. Odds e incrementi interpretabili
+
+Il coefficiente moltiplica gli odds per $\exp(\beta_j\Delta x)$ quando il predittore cambia di $\Delta x$ e gli altri restano fissi. Un aumento di 0,01 del rapporto è più leggibile di un aumento unitario, che copre quasi tutta la scala possibile.
+
+```{r passo_03}
+b <- coef(logit)
+c(OR_per_1_micrometro=exp(b["diametro_tot_um"]),
+  OR_per_001_rapporto=exp(.01*b["rapporto_int_tot"]))
+eta <- predict(logit,test,type="link")
+stopifnot(max(abs(plogis(eta)-prob))<1e-12)
+```
+
+**Lettura del risultato.** Gli odds ratio dipendono dall’incremento dichiarato. Non sono rapporti fra probabilità. L’effetto di un incremento sulla probabilità cambia con il punto di partenza.
+
+## Variante svolta
+
+Calcolare le probabilità a diametro totale 6 µm per rapporti 0,75 e 0,85.
+
+```{r variante}
+casi <- data.frame(diametro_tot_um=c(6,6),rapporto_int_tot=c(.75,.85))
+cbind(casi,probabilita_Spiky=predict(logit,casi,type="response"))
+```
+
+Il confronto mantiene fisso il diametro totale. I valori restano un’applicazione del modello, da leggere rispetto al campo congiunto delle due misure nel training.
+
+## Errore da riconoscere
+
+Usare `rapporto_int_tot` per prevedere il diametro interno quando il diametro totale è noto rivelerebbe algebricamente la risposta. Qui il bersaglio è invece il morfotipo.
+
+## Risposta alla domanda
+
+La logistica modella probabilità di un evento definito. La scala logit rende lineari i coefficienti, mentre la probabilità varia in modo non lineare.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M07_N16` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M07/M07_N16.R).

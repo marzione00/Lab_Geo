@@ -1,0 +1,132 @@
+---
+title: "Il ciclo stagionale dentro gli anni"
+subtitle: "M09_N05 \u00b7 Borealis"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Come riconosciamo l’oscillazione annuale senza confonderla con il livello medio dei diversi anni?
+
+## Obiettivi
+
+- Costruire gruppi di calendario.
+- Distinguere livello annuo e profilo mensile.
+- Riconoscere l’uso di osservazioni future.
+
+**Prima di iniziare.** Lettura di CSV, vettori, indicizzazione e funzioni di base in R. I blocchi vanno eseguiti nell’ordine all’interno del singolo notebook.
+
+**Dati e unità.** Archivio storico CO₂ 1958–2001, copia del dataset settimanale statsmodels attribuito a Keeling, Whorf e CDIAC. Le concentrazioni sono espresse in ppm. Le medie mensili del corso derivano dai valori settimanali assegnati al mese della data e differiscono per definizione da una serie mensile ufficiale.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Borealis oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M09_Borealis` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M09_Borealis/Risultati/M09_N05/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M09_Borealis"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M09_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M09_Borealis o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M09_N05")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(9005)
+```
+
+## 1. Confrontare i mesi
+
+Una media di tutti i valori di gennaio combina diciassette anni con livelli crescenti di CO₂. I boxplot descrivono la distribuzione storica per mese, ma comprendono anche l’effetto del trend.
+
+```{r passo_01}
+d <- carica_dati("co2_1985_2001.csv")
+d$data <- as.Date(d$data)
+d <- d[order(d$data), ]
+attese <- seq(as.Date("1985-01-01"), as.Date("2001-12-01"), by="month")
+stopifnot(identical(d$data, attese), !anyNA(d$co2_ppm))
+y <- ts(d$co2_ppm, start=c(1985,1), frequency=12)
+d$mese <- as.integer(format(d$data,"%m"))
+d$anno <- format(d$data,"%Y")
+boxplot(co2_ppm~mese, data=d, col="#D9ECE8", border="#087C74",
+ xlab="Mese", ylab="CO2 (ppm)")
+aggregate(co2_ppm~mese, data=d, mean)
+```
+
+**Lettura del risultato.** Le distribuzioni mensili mescolano il ciclo entro l’anno e lo spostamento dei livelli fra anni. La loro dispersione non misura soltanto variabilità stagionale.
+
+## 2. Centrare ogni anno per descrivere il ciclo
+
+Sottraiamo a ogni mese la media del suo anno: $a_{y,m}=x_{y,m}-\bar x_y$. Questo centramento è descrittivo e usa tutti i mesi dell’anno, compresi quelli successivi al mese considerato.
+
+```{r passo_02}
+d$scarto_media_anno <- d$co2_ppm-ave(d$co2_ppm,d$anno,FUN=mean)
+ciclo <- aggregate(scarto_media_anno~mese,data=d,mean)
+plot(ciclo$mese,ciclo$scarto_media_anno,type="b",pch=19,col="#087C74",
+ xlab="Mese",ylab="Scarto dalla media annua (ppm)")
+abline(h=0,lty=3)
+ciclo
+```
+
+**Lettura del risultato.** La curva rende più leggibile l’alternanza annuale. Non elimina ogni possibile cambiamento della forma stagionale e non è una trasformazione utilizzabile online senza conoscere l’anno completo.
+
+## 3. Conservare le differenze fra anni
+
+Le curve annuali centrate mostrano quanto il profilo di ciascun anno si discosti da quello medio. Un unico ciclo medio può nascondere variazioni di ampiezza e di forma.
+
+```{r passo_03}
+mat <- matrix(d$scarto_media_anno,nrow=12)
+matplot(1:12,mat,type="l",lty=1,col=adjustcolor("grey45",.35),
+ xlab="Mese",ylab="Scarto dalla media annua (ppm)")
+lines(1:12,rowMeans(mat),col="#087C74",lwd=3)
+range(apply(mat,2,function(z)diff(range(z))))
+```
+
+**Lettura del risultato.** La linea più spessa è una sintesi dei profili annuali. L’intervallo delle ampiezze descrive la variabilità osservata e non una periodicità perfettamente immutabile.
+
+## Variante svolta
+
+Confrontare il ciclo medio dei primi otto anni e degli ultimi nove.
+
+```{r variante}
+d$periodo <- ifelse(d$anno<="1992","1985-1992","1993-2001")
+aggregate(scarto_media_anno~mese+periodo,data=d,mean)
+```
+
+Le due sintesi permettono un controllo descrittivo della stabilità del profilo. Il confronto non è di per sé un test del cambiamento climatico.
+
+## Errore da riconoscere
+
+Usare il centramento annuale calcolato sull’intero anno come se ogni valore fosse disponibile al momento del mese corrente.
+
+## Risposta alla domanda
+
+Il centramento per anno separa descrittivamente il livello annuale dal profilo mensile. Le curve dei singoli anni restano necessarie per leggere la variabilità del ciclo.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M09_N05` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M09/M09_N05.R).

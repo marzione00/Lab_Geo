@@ -1,0 +1,142 @@
+---
+title: "Probabilit\u00e0 e classi: due valutazioni"
+subtitle: "M07_N17 \u00b7 Annula"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Come giudicare una probabilità prevista e la classe ottenuta dopo aver scelto una soglia?
+
+## Obiettivi
+
+- Collegare la domanda al calcolo riportato.
+- Interpretare il risultato usando variabili e unità del problema.
+
+**Prima di iniziare.** Vettori, data frame, indicizzazione e funzioni di base in R.
+
+**Dati e unità.** Fossili simulati del corso: 160 individui, 80 Rounded e 80 Spiky. Diametri e spessori sono espressi in micrometri. Nel generatore, diametro interno = diametro totale − 2 × spessore. La relazione contiene quindi un vincolo geometrico noto.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Annula oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M07_Annula` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M07_Annula/Risultati/M07_N17/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M07_Annula"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M07_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M07_Annula o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M07_N17")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(7017)
+```
+
+## 1. Previsioni e riferimento probabilistico
+
+Stimiamo la logistica sul training e usiamo la frequenza di Spiky nel training come probabilità costante di riferimento. Tutte le valutazioni riguardano gli stessi 32 casi di test.
+
+```{r passo_01}
+# Ogni riga identifica un fossile simulato.
+f <- carica_dati("fossili_simulati.csv")
+f$morfotipo <- factor(f$morfotipo, levels=c("Rounded", "Spiky"))
+x <- f$diametro_tot_um
+y <- f$diametro_int_um
+stopifnot(nrow(f)==160L, !anyDuplicated(f$id),
+          all(is.finite(x)), all(is.finite(y)))
+# Partizione fissata prima del confronto dei modelli.
+# Nel CSV didattico ogni quinto individuo forma il test.
+is_test <- seq_len(nrow(f)) %% 5L == 0L
+train <- f[!is_test, ]
+test <- f[is_test, ]
+stopifnot(nrow(train)==128L, nrow(test)==32L,
+          length(intersect(train$id, test$id))==0L)
+# Spiky=1 e Rounded=0: la probabilita' riguarda Spiky.
+train$spiky <- as.integer(train$morfotipo=="Spiky")
+test$spiky <- as.integer(test$morfotipo=="Spiky")
+logit <- glm(spiky ~ diametro_tot_um + rapporto_int_tot,
+             data=train, family=binomial())
+stopifnot(logit$converged)
+prob <- as.numeric(predict(logit, newdata=test, type="response"))
+stopifnot(all(is.finite(prob)), all(prob>=0 & prob<=1))
+p_base <- mean(train$spiky)
+c(probabilita_riferimento=p_base,n_test=nrow(test))
+```
+
+**Lettura del risultato.** La frequenza del training è 0,5. Una probabilità costante non usa le misure del fossile e fornisce un confronto per il modello.
+
+## 2. Brier score
+
+Il Brier score è $n^{-1}\sum(p_i-y_i)^2$. Valuta la qualità delle probabilità, assegnando maggiore perdita alle previsioni sicure nella direzione sbagliata.
+
+```{r passo_02}
+Brier <- mean((prob-test$spiky)^2)
+Brier_base <- mean((p_base-test$spiky)^2)
+c(Brier_modello=Brier,Brier_riferimento=Brier_base)
+head(data.frame(osservato=test$spiky,p=prob,perdita=(prob-test$spiky)^2))
+```
+
+**Lettura del risultato.** Il modello produce Brier circa 0,159 contro 0,250 del riferimento. Valori più piccoli indicano minore perdita quadratica delle probabilità su questi casi.
+
+## 3. Soglia e matrice di confusione
+
+Fissiamo la soglia a 0,5 per l’esempio. La classe prevista perde informazione sul grado di incertezza contenuto in p. La matrice distingue falsi positivi e falsi negativi.
+
+```{r passo_03}
+soglia <- .5
+classe <- as.integer(prob>=soglia)
+table(osservato=factor(test$spiky,levels=0:1),
+      previsto=factor(classe,levels=0:1))
+c(accuratezza=mean(classe==test$spiky),soglia=soglia)
+```
+
+**Lettura del risultato.** L’accuratezza è 0,75, cioè 24 classificazioni corrette su 32. Non sostituisce il Brier: due modelli possono assegnare le stesse classi con probabilità molto diverse.
+
+## Variante svolta
+
+Confrontare due probabilità che producono la stessa classe quando l’evento osservato è 1.
+
+```{r variante}
+p <- c(.51,.99)
+data.frame(p=p,classe=as.integer(p>=.5),Brier_individuale=(p-1)^2)
+```
+
+Entrambe le classi sono corrette, ma le perdite quadratiche sono 0,2401 e 0,0001. La valutazione delle probabilità distingue ciò che l’accuratezza tratta come identico.
+
+## Errore da riconoscere
+
+Scegliere la soglia che massimizza l’accuratezza su questo test e riportare la stessa accuratezza come verifica finale introduce ottimismo.
+
+## Risposta alla domanda
+
+Il Brier riguarda la previsione probabilistica. L’accuratezza riguarda una decisione ottenuta con una soglia dichiarata.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M07_N17` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M07/M07_N17.R).

@@ -1,0 +1,136 @@
+---
+title: "Guardare le distribuzioni prima del risultato numerico"
+subtitle: "M06_N02 \u00b7 Gemina"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Quali caratteristiche dei diametri dobbiamo descrivere prima di interpretare un confronto numerico fra i morfotipi?
+
+## Obiettivi
+
+- Confrontare centro, dispersione e code.
+- Usare assi e soglie comuni senza eliminare automaticamente gli estremi.
+
+**Prima di iniziare.** Vettori, indicizzazione, media, varianza e grafici di base in R.
+
+**Dati e unità.** Diametri totali sintetici di ottanta Rounded e ottanta Spiky, espressi in micrometri.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M06_N02/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M06_N02")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(6002)
+```
+
+## 1. Riepilogare posizione e dispersione
+
+Due medie non descrivono completamente le distribuzioni. Calcoliamo numerosità, deviazione standard, mediana e quartili con la stessa funzione per entrambi i gruppi. I controlli sui valori finiti precedono i riepiloghi, così eventuali problemi non vengono nascosti da un'eliminazione automatica.
+
+```{r passo_01}
+dati <- carica_dati("fossili_simulati.csv")
+gruppi <- split(dati$diametro_tot_um, dati$morfotipo)
+stopifnot(all(vapply(gruppi, function(x) all(is.finite(x)), logical(1))))
+descrivi <- function(x) c(n = length(x), media = mean(x), SD = sd(x),
+  mediana = median(x), Q1 = unname(quantile(x, 0.25)),
+  Q3 = unname(quantile(x, 0.75)))
+tabella <- t(vapply(gruppi, descrivi, numeric(6)))
+print(tabella)
+```
+
+**Lettura del risultato.** Media e mediana descrivono il centro in modi diversi; SD e intervallo interquartile descrivono la dispersione. Le differenze fra queste colonne orientano le domande da approfondire, senza scegliere automaticamente un test.
+
+## 2. Confrontare l'intera distribuzione empirica
+
+Le funzioni di ripartizione mostrano, per ogni soglia, la quota di diametri minori o uguali alla soglia. Usiamo lo stesso dominio per i gruppi. Una distanza fra le curve riguarda le distribuzioni empiriche e non soltanto le medie.
+
+```{r passo_02}
+a <- gruppi$Rounded
+b <- gruppi$Spiky
+limiti <- range(c(a, b))
+plot(ecdf(a), xlim = limiti, col = "#27647B", do.points = FALSE,
+     verticals = TRUE, main = "Distribuzioni empiriche",
+     xlab = "Diametro totale (um)", ylab = "Proporzione cumulata")
+lines(ecdf(b), col = "#A66B24", do.points = FALSE, verticals = TRUE)
+legend("topleft", legend = c("Rounded", "Spiky"),
+       col = c("#27647B", "#A66B24"), lty = 1, bty = "n")
+```
+
+**Lettura del risultato.** Un gruppo spostato verso diametri maggiori tende ad avere una quota cumulata minore alle stesse soglie. Attraversamenti o distanze variabili suggeriscono che il confronto non si riduce necessariamente a una traslazione.
+
+## 3. Identificare gli estremi senza cancellarli
+
+La regola del boxplot segnala valori lontani dai quartili, ma non distingue da sola un errore da un valore plausibile. Conserviamo gli identificativi dei punti segnalati per un controllo della registrazione e del processo di misura.
+
+```{r passo_03}
+segnala <- function(x) {
+  q <- quantile(x, c(0.25, 0.75), names = FALSE)
+  amp <- q[2] - q[1]
+  x < q[1] - 1.5 * amp | x > q[2] + 1.5 * amp
+}
+flag <- ave(dati$diametro_tot_um, dati$morfotipo,
+            FUN = function(x) as.numeric(segnala(x))) > 0
+print(dati[flag, c("id", "morfotipo", "diametro_tot_um")])
+print(table(morfotipo = dati$morfotipo, segnalato = flag))
+```
+
+**Lettura del risultato.** Una tabella vuota significherebbe soltanto assenza di segnalazioni con questa regola. Una tabella con punti segnalati richiede verifica, non rimozione automatica.
+
+## Variante svolta
+
+Disegnare due istogrammi usando esattamente gli stessi intervalli e la stessa scala verticale.
+
+```{r variante}
+tagli <- seq(floor(limiti[1]), ceiling(limiti[2]), length.out = 13)
+ha <- hist(a, breaks = tagli, plot = FALSE)
+hb <- hist(b, breaks = tagli, plot = FALSE)
+ymax <- max(c(ha$counts, hb$counts))
+vecchio <- par(mfrow = c(1, 2))
+plot(ha, ylim = c(0, ymax), col = "#95BDD0", main = "Rounded",
+     xlab = "Diametro (um)", ylab = "Frequenza")
+plot(hb, ylim = c(0, ymax), col = "#E7B977", main = "Spiky",
+     xlab = "Diametro (um)", ylab = "Frequenza")
+par(vecchio)
+```
+
+Intervalli diversi o assi diversi possono alterare la percezione della dispersione. Qui le numerosità sono uguali; con numerosità diverse conviene confrontare densità o frequenze relative.
+
+## Errore da riconoscere
+
+Non usare un punto oltre i baffi come prova automatica di errore, né scegliere il metodo soltanto dalla presenza di un estremo nel grafico.
+
+## Risposta alla domanda
+
+Il confronto parte da struttura, distribuzioni e qualità dei dati. Un numero finale diventa interpretabile soltanto dopo aver chiarito che cosa rappresentano i gruppi.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M06_N02` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M06/M06_N02.R).

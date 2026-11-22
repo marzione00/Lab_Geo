@@ -1,0 +1,143 @@
+---
+title: "Laboratorio applicativo \u2014 Differenze a mano"
+subtitle: "M06_N20 \u00b7 Gemina"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Possiamo ricostruire un'analisi appaiata completa dalle differenze, controllando ogni identità prima di scrivere la conclusione?
+
+## Obiettivi
+
+- Calcolare a mano stima, varianza, SE e intervallo.
+- Produrre una conclusione con verso, unità, numerosità e limiti.
+
+**Prima di iniziare.** Vettori, indicizzazione, media, varianza e grafici di base in R.
+
+**Dati e unità.** Ventiquattro coppie sintetiche prima/dopo in unità convenzionali. L'analisi usa le stesse coppie complete in tutti i calcoli.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M06_N20/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M06_N20")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(6020)
+```
+
+## 1. Ricostruire le differenze riga per riga
+
+Partiamo dagli identificativi e controlliamo che ogni riga contenga entrambe le occasioni di misura. La colonna delle differenze è il materiale di lavoro dell'analisi appaiata. Stampare le prime righe permette di verificare il segno prima di applicare formule aggregate.
+
+```{r passo_01}
+originali <- carica_dati("misure_appaiate_simulate.csv")
+stopifnot(!anyDuplicated(originali$id))
+complete <- complete.cases(originali[c("prima", "dopo")])
+dati <- originali[complete, ]
+dati$d <- dati$dopo - dati$prima
+stopifnot(all(is.finite(dati$d)))
+n <- nrow(dati)
+media_d <- sum(dati$d) / n
+print(head(dati[c("id", "prima", "dopo", "d")]))
+print(c(coppie_usate = n, coppie_escluse = sum(!complete)))
+```
+
+**Lettura del risultato.** Una differenza positiva indica un aumento nella stessa unità. Le righe escluse devono essere dichiarate e non possono essere recuperate sottraendo misure appartenenti a identificativi diversi.
+
+## 2. Calcolare varianza e errore standard senza scorciatoie
+
+Sottraiamo la media delle differenze, eleviamo al quadrato gli scarti e dividiamo per n−1. Questa è la varianza campionaria delle differenze. Il suo significato non coincide con la differenza fra varianze o fra deviazioni standard delle due colonne.
+
+```{r passo_02}
+scarti <- dati$d - media_d
+SS <- sum(scarti^2)
+var_d <- SS / (n - 1)
+sd_d <- sqrt(var_d)
+se_d <- sd_d / sqrt(n)
+stopifnot(isTRUE(all.equal(var_d, var(dati$d))))
+stopifnot(isTRUE(all.equal(media_d, mean(dati$dopo) - mean(dati$prima))))
+var_da_coppie <- var(dati$dopo) + var(dati$prima) -
+                 2 * cov(dati$prima, dati$dopo)
+stopifnot(isTRUE(all.equal(var_d, var_da_coppie)))
+print(c(media_d = media_d, somma_quadrati = SS, SD_d = sd_d, SE_d = se_d))
+```
+
+**Lettura del risultato.** L'identità delle medie è algebrica; l'identità delle varianze mostra invece il contributo della covarianza. Sottrarre due deviazioni standard non fornisce il SE del cambiamento.
+
+## 3. Ricostruire intervallo e test
+
+Con coppie indipendenti e differenze normali, il riferimento t con n−1 gradi di libertà è esatto. Calcoliamo l'intervallo al 95% e il confronto bilaterale con cambiamento medio zero. La verifica mediante t.test controlla i passaggi numerici senza sostituire il ragionamento sul disegno.
+
+```{r passo_03}
+df <- n - 1
+margine <- qt(0.975, df) * se_d
+intervallo <- media_d + c(-1, 1) * margine
+t_obs <- media_d / se_d
+p <- 2 * pt(-abs(t_obs), df)
+controllo <- t.test(dati$dopo, dati$prima, paired = TRUE)
+stopifnot(isTRUE(all.equal(as.numeric(controllo$conf.int), intervallo)))
+stopifnot(isTRUE(all.equal(controllo$p.value, p)))
+risultato <- data.frame(contrasto = "Dopo - prima", unita = "u.c.", n = n,
+  stima = media_d, SE = se_d, inferiore = intervallo[1],
+  superiore = intervallo[2], t = t_obs, df = df, p = p)
+print(risultato)
+```
+
+**Lettura del risultato.** La tabella contiene gli elementi necessari per la conclusione quantitativa. Il p-value riguarda la nulla e le ipotesi del modello; non certifica rilevanza pratica, causalità o cambiamento in ogni singola unità.
+
+## Variante svolta
+
+Esportare un resoconto e verificare che arrotondare per la stampa non cambi l'analisi.
+
+```{r variante}
+tabella_stampa <- risultato
+    colonne <- c("stima", "SE", "inferiore", "superiore", "t")
+    tabella_stampa[colonne] <- lapply(tabella_stampa[colonne], round, digits = 4)
+    print(tabella_stampa)
+    write.csv(risultato, percorso_risultati("analisi_appaiata_completa.csv"),
+              row.names = FALSE)
+    stopifnot(isTRUE(all.equal(risultato$stima, mean(dati$d))))
+    cat(sprintf("Su %d coppie, il cambiamento medio dopo - prima e %.4f u.c.; IC 95%% [%.4f, %.4f].
+",
+                n, media_d, intervallo[1], intervallo[2]))
+```
+
+L'archivio conserva le cifre del calcolo, mentre la tabella stampata facilita la lettura. La frase quantitativa va accompagnata dall'indipendenza delle coppie, dalle ipotesi sulle differenze e dalla natura sintetica dei dati.
+
+## Errore da riconoscere
+
+Non dedurre l'incertezza dalla differenza di due SD e non arrotondare i dati intermedi per far coincidere risultati stampati.
+
+## Risposta alla domanda
+
+L'analisi appaiata completa nasce dalle differenze delle stesse unità. Il resoconto finale dichiara verso, unità, coppie, stima e intervallo, con condizioni e limiti del modello.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M06_N20` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M06/M06_N20.R).

@@ -1,0 +1,536 @@
+stdout 
+stdout SLIDE 004
+stdout 
+stdout > T0 <- end(train)
+stdout 
+stdout > h <- length(test)
+stdout 
+stdout > c(anno=T0[1], mese=T0[2], h=h)
+stdout anno mese    h 
+stdout 1998   12   36 
+stdout 
+stdout > stopifnot(h == 36L)
+stdout 
+stdout SLIDE 006
+stdout 
+stdout > train <- window(y, end=c(1998,12))
+stdout 
+stdout > test <- window(y, start=c(1999,1))
+stdout 
+stdout > stopifnot(length(train)==168,
+stdout +           length(test)==36)
+stdout 
+stdout SLIDE 012
+stdout 
+stdout > p_media <- rep(mean(train), 36)
+stdout 
+stdout > head(p_media)
+stdout [1] 355.84 355.84 355.84 355.84 355.84 355.84
+stdout 
+stdout > stopifnot(length(unique(p_media))==1)
+stdout 
+stdout SLIDE 013
+stdout 
+stdout > p_ultimo <- rep(tail(train,1), 36)
+stdout 
+stdout > head(p_ultimo)
+stdout [1] 366.925 366.925 366.925 366.925 366.925 366.925
+stdout 
+stdout > stopifnot(length(p_ultimo)==36)
+stdout 
+stdout SLIDE 014
+stdout 
+stdout > p_stag <- rep(tail(train,12),
+stdout +               length.out=36)
+stdout 
+stdout > stopifnot(identical(
+stdout +   as.numeric(p_stag[1:12]),
+stdout +   as.numeric(p_stag[13:24])))
+stdout 
+stdout SLIDE 015
+stdout 
+stdout > mese_futuro <- rep(1:12,3)
+stdout 
+stdout > mese_fonte <- rep(cycle(tail(
+stdout +   train,12)),3)
+stdout 
+stdout > stopifnot(all(mese_futuro==
+stdout +               mese_fonte))
+stdout 
+stdout SLIDE 016
+stdout 
+stdout > yy <- as.numeric(train)
+stdout 
+stdout > delta <- (tail(yy,1)-yy[1])/
+stdout +          (length(yy)-1)
+stdout 
+stdout > p_deriva <- tail(yy,1)+(1:36)*delta
+stdout 
+stdout SLIDE 022
+stdout 
+stdout > b <- baseline(train, h=36)
+stdout 
+stdout > stopifnot(all(lengths(b)==36))
+stdout 
+stdout > stopifnot(all(is.finite(
+stdout +   unlist(b))))
+stdout 
+stdout > names(b)
+stdout [1] "Media"      "Ultimo"     "Stagionale" "Deriva"    
+stdout 
+stdout SLIDE 024
+stdout 
+stdout > mu <- 10
+stdout 
+stdout > phi <- 0.65
+stdout 
+stdout > c0 <- mu*(1-phi)
+stdout 
+stdout > stopifnot(all.equal(
+stdout +   c0/(1-phi), mu))
+stdout 
+stdout SLIDE 025
+stdout 
+stdout > phi <- 0.65; xT <- 2
+stdout 
+stdout > p1 <- phi*xT
+stdout 
+stdout > c(previsione=p1, varianza=1)
+stdout previsione   varianza 
+stdout        1.3        1.0 
+stdout 
+stdout SLIDE 026
+stdout 
+stdout > h_ar <- 1:30
+stdout 
+stdout > p_ar <- 0.65^h_ar*2
+stdout 
+stdout > head(p_ar)
+stdout [1] 1.300000 0.845000 0.549250 0.357013 0.232058 0.150838
+stdout 
+stdout SLIDE 028
+stdout 
+stdout > v_ar <- (1-0.65^(2*h_ar))/
+stdout +         (1-0.65^2)
+stdout 
+stdout > c(primo=v_ar[1],
+stdout +   limite=1/(1-0.65^2))
+stdout  primo limite 
+stdout 1.0000 1.7316 
+stdout 
+stdout SLIDE 030
+stdout 
+stdout > lag_ar <- 0:20
+stdout 
+stdout > rho <- 0.65^lag_ar
+stdout 
+stdout > cbind(lag=lag_ar, rho=rho)[1:6,]
+stdout      lag      rho
+stdout [1,]   0 1.000000
+stdout [2,]   1 0.650000
+stdout [3,]   2 0.422500
+stdout [4,]   3 0.274625
+stdout [5,]   4 0.178506
+stdout [6,]   5 0.116029
+stdout 
+stdout SLIDE 032
+stdout 
+stdout > phi2 <- c(0.6,-0.2)
+stdout 
+stdout > radici <- polyroot(c(1,-phi2))
+stdout 
+stdout > Mod(radici)
+stdout [1] 2.23607 2.23607
+stdout 
+stdout > stopifnot(all(Mod(radici)>1))
+stdout 
+stdout SLIDE 033
+stdout 
+stdout > set.seed(101033)
+stdout 
+stdout > x_ma <- arima.sim(list(ma=0.6),
+stdout +                   n=240)
+stdout 
+stdout > head(x_ma)
+stdout Time Series:
+stdout Start = 1 
+stdout End = 6 
+stdout Frequency = 1 
+stdout [1]  0.1597134 -1.8615863  1.4738527  1.5487217  0.5485163  0.0444481
+stdout 
+stdout SLIDE 034
+stdout 
+stdout > theta <- 0.6
+stdout 
+stdout > c(rho1=theta/(1+theta^2),
+stdout +   rho2=0)
+stdout     rho1     rho2 
+stdout 0.441176 0.000000 
+stdout 
+stdout > ARMAacf(ma=theta, lag.max=5)
+stdout        0        1        2        3        4        5 
+stdout 1.000000 0.441176 0.000000 0.000000 0.000000 0.000000 
+stdout 
+stdout SLIDE 035
+stdout 
+stdout > theta <- 0.6
+stdout 
+stdout > radice_ma <- polyroot(c(1,theta))
+stdout 
+stdout > Mod(radice_ma)
+stdout [1] 1.66667
+stdout 
+stdout > stopifnot(Mod(radice_ma)>1)
+stdout 
+stdout SLIDE 037
+stdout 
+stdout > set.seed(101037)
+stdout 
+stdout > x_arma <- arima.sim(
+stdout +   list(ar=0.65,ma=0.4), n=240)
+stdout 
+stdout > acf(x_arma, plot=FALSE)$acf[1:6]
+stdout [1] 1.000000 0.782793 0.550542 0.461394 0.407301 0.308969
+stdout 
+stdout SLIDE 038
+stdout 
+stdout > psi <- c(1,ARMAtoMA(
+stdout +   ar=0.65, ma=0.4, lag.max=20))
+stdout 
+stdout > head(psi)
+stdout [1] 1.000000 1.050000 0.682500 0.443625 0.288356 0.187432
+stdout 
+stdout SLIDE 041
+stdout 
+stdout > d1 <- diff(train)
+stdout 
+stdout > c(livelli=length(train),
+stdout +   differenze=length(d1))
+stdout    livelli differenze 
+stdout        168        167 
+stdout 
+stdout > head(d1)
+stdout         Feb    Mar    Apr    May    Jun    Jul
+stdout 1985  0.950  1.565  0.885  0.500 -0.645 -1.730
+stdout 
+stdout SLIDE 042
+stdout 
+stdout > d12 <- diff(train, lag=12)
+stdout 
+stdout > stopifnot(length(d12)==156)
+stdout 
+stdout > frequency(train)
+stdout [1] 12
+stdout 
+stdout SLIDE 043
+stdout 
+stdout > w <- diff(diff(train, lag=12))
+stdout 
+stdout > w2 <- diff(diff(train), lag=12)
+stdout 
+stdout > stopifnot(isTRUE(all.equal(w,w2)))
+stdout 
+stdout > length(w)
+stdout [1] 155
+stdout 
+stdout SLIDE 045
+stdout 
+stdout > specifica <- list(
+stdout +   order=c(0,1,1),
+stdout +   seasonal=list(order=c(0,1,1),
+stdout +                 period=12))
+stdout 
+stdout > specifica
+stdout $order
+stdout [1] 0 1 1
+stdout 
+stdout $seasonal
+stdout $seasonal$order
+stdout [1] 0 1 1
+stdout 
+stdout $seasonal$period
+stdout [1] 12
+stdout 
+stdout 
+stdout 
+stdout SLIDE 048
+stdout 
+stdout > fit <- arima(train,
+stdout +   order=c(0,1,1),
+stdout +   seasonal=list(order=c(0,1,1),
+stdout +                 period=12),
+stdout +   include.mean=FALSE, method="ML")
+stdout 
+stdout SLIDE 049
+stdout 
+stdout > fit$code
+stdout [1] 0
+stdout 
+stdout > coef(fit)
+stdout       ma1      sma1 
+stdout -0.328848 -0.889699 
+stdout 
+stdout > sqrt(diag(fit$var.coef))
+stdout       ma1      sma1 
+stdout 0.0784764 0.1146449 
+stdout 
+stdout > stopifnot(fit$code==0)
+stdout 
+stdout SLIDE 053
+stdout 
+stdout > c(AIC=AIC(fit), BIC=BIC(fit))
+stdout     AIC     BIC 
+stdout 90.4379 99.5681 
+stdout 
+stdout > logLik(fit)
+stdout 'log Lik.' -42.2189 (df=3)
+stdout 
+stdout > nobs(fit)
+stdout [1] 155
+stdout 
+stdout SLIDE 055
+stdout 
+stdout > pred <- predict(fit,n.ahead=36)
+stdout 
+stdout > p_hat <- as.numeric(pred$pred)
+stdout 
+stdout > s_hat <- as.numeric(pred$se)
+stdout 
+stdout > stopifnot(length(p_hat)==36,
+stdout +           all(s_hat>0))
+stdout 
+stdout SLIDE 057
+stdout 
+stdout > class(fit)
+stdout [1] "Arima"
+stdout 
+stdout > fit$call
+stdout arima(x = train, order = c(0, 1, 1), seasonal = list(order = c(0, 
+stdout     1, 1), period = 12), include.mean = FALSE, method = "ML")
+stdout 
+stdout > getRversion()
+stdout [1] ‘4.6.0’
+stdout 
+stdout SLIDE 059
+stdout 
+stdout > res <- as.numeric(residuals(fit))
+stdout 
+stdout > res <- res[14:length(res)]
+stdout 
+stdout > stopifnot(length(res)==155,
+stdout +           all(is.finite(res)))
+stdout 
+stdout SLIDE 061
+stdout 
+stdout > c(media=mean(res),
+stdout +   sd=sd(res), min=min(res),
+stdout +   max=max(res))
+stdout      media         sd        min        max 
+stdout  0.0122795  0.3000804 -0.7139145  0.7833653 
+stdout 
+stdout SLIDE 062
+stdout 
+stdout > acf_res <- acf(res,lag.max=36,
+stdout +                plot=FALSE)
+stdout 
+stdout > acf_res$acf[c(2,13,25)]
+stdout [1]  0.00656913  0.08709354 -0.00390166
+stdout 
+stdout SLIDE 065
+stdout 
+stdout > lb <- Box.test(res, lag=24,
+stdout +   type="Ljung-Box", fitdf=2)
+stdout 
+stdout > c(Q=unname(lb$statistic),
+stdout +   df=unname(lb$parameter),
+stdout +   p=lb$p.value)
+stdout         Q        df         p 
+stdout 14.241537 22.000000  0.892685 
+stdout 
+stdout SLIDE 067
+stdout 
+stdout > acf_quadrati <- acf(res^2,
+stdout +   lag.max=24, plot=FALSE)
+stdout 
+stdout > head(as.numeric(acf_quadrati$acf))
+stdout [1]  1.00000000  0.08006352  0.01632544 -0.00975509 -0.04735866  0.00557238
+stdout 
+stdout SLIDE 071
+stdout 
+stdout > origini <- c(120,132,144)
+stdout 
+stdout > stopifnot(all(origini+12<=
+stdout +               length(train)))
+stdout 
+stdout > cv <- valida_origini(train,origini)
+stdout 
+stdout SLIDE 073
+stdout 
+stdout > dim(cv)
+stdout [1] 36  9
+stdout 
+stdout > table(cv$origine)
+stdout 
+stdout 120 132 144 
+stdout  12  12  12 
+stdout 
+stdout > range(cv$h)
+stdout [1]  1 12
+stdout 
+stdout > stopifnot(nrow(cv)==36)
+stdout 
+stdout SLIDE 081
+stdout 
+stdout > stopifnot(max(time(train)) <
+stdout +           min(time(test)))
+stdout 
+stdout > stopifnot(length(intersect(
+stdout +   time(train),time(test)))==0)
+stdout 
+stdout SLIDE 083
+stdout 
+stdout > obs <- as.numeric(test)
+stdout 
+stdout > p_hat <- as.numeric(fc$previsto)
+stdout 
+stdout > stopifnot(length(obs)==length(p_hat))
+stdout 
+stdout > e <- obs-p_hat
+stdout 
+stdout > stopifnot(all(is.finite(e)))
+stdout 
+stdout SLIDE 084
+stdout 
+stdout > metriche(obs, p_hat)
+stdout       MAE      RMSE      bias 
+stdout  0.974469  1.062193 -0.968499 
+stdout 
+stdout > c(MAE=mean(abs(e)),
+stdout +   RMSE=sqrt(mean(e^2)),
+stdout +   bias=mean(e))
+stdout       MAE      RMSE      bias 
+stdout  0.974469  1.062193 -0.968499 
+stdout 
+stdout SLIDE 088
+stdout 
+stdout > z <- qnorm(0.975)
+stdout 
+stdout > lo <- fc$previsto-z*fc$se
+stdout 
+stdout > hi <- fc$previsto+z*fc$se
+stdout 
+stdout > stopifnot(all(lo<=hi))
+stdout 
+stdout SLIDE 090
+stdout 
+stdout > ampiezza <- fc$superiore-
+stdout +             fc$inferiore
+stdout 
+stdout > c(min=min(ampiezza),
+stdout +   media=mean(ampiezza),
+stdout +   max=max(ampiezza))
+stdout     min   media     max 
+stdout 1.17947 3.55589 5.40533 
+stdout 
+stdout SLIDE 094
+stdout 
+stdout > v <- processi[1:250,
+stdout +   c("x_VAR","y_VAR")]
+stdout 
+stdout > varfit <- stima_VAR1(v)
+stdout 
+stdout > varfit$A
+stdout         x_lag     y_lag
+stdout [1,] 0.474488 0.0108738
+stdout [2,] 0.596560 0.3491662
+stdout 
+stdout SLIDE 095
+stdout 
+stdout > dv <- varfit$dati_ritardati
+stdout 
+stdout > stopifnot(nrow(dv)==249)
+stdout 
+stdout > coef(varfit$x)
+stdout (Intercept)       x_lag       y_lag 
+stdout  -0.0985176   0.4744882   0.0108738 
+stdout 
+stdout > coef(varfit$y)
+stdout (Intercept)       x_lag       y_lag 
+stdout   0.0397921   0.5965605   0.3491662 
+stdout 
+stdout SLIDE 096
+stdout 
+stdout > lambda <- eigen(varfit$A,
+stdout +                 only.values=TRUE)$values
+stdout 
+stdout > Mod(lambda)
+stdout [1] 0.513873 0.309782
+stdout 
+stdout > stopifnot(all(Mod(lambda)<1))
+stdout 
+stdout SLIDE 098
+stdout 
+stdout > ridotto_y <- lm(y~y_lag,data=dv)
+stdout 
+stdout > completo_y <- varfit$y
+stdout 
+stdout > anova(ridotto_y, completo_y)
+stdout Analysis of Variance Table
+stdout 
+stdout Model 1: y ~ y_lag
+stdout Model 2: y ~ x_lag + y_lag
+stdout   Res.Df   RSS Df Sum of Sq    F Pr(>F)    
+stdout 1    247 375.4                             
+stdout 2    246 278.9  1     96.58 85.2 <2e-16 ***
+stdout ---
+stdout Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+stdout 
+stdout SLIDE 099
+stdout 
+stdout > g1 <- anova(ridotto_y,varfit$y)
+stdout 
+stdout > g2 <- anova(lm(x~x_lag,data=dv),
+stdout +             varfit$x)
+stdout 
+stdout > p_g <- c(g1$`Pr(>F)`[2],
+stdout +          g2$`Pr(>F)`[2])
+stdout 
+stdout > p.adjust(p_g,method="holm")
+stdout [1] 2.57802e-17 8.11496e-01
+stdout 
+stdout SLIDE 100
+stdout 
+stdout > varpred <- previsione_VAR1(
+stdout +   varfit,ultimo=v[250,],h=10)
+stdout 
+stdout > stopifnot(all(dim(varpred)==c(10,2)))
+stdout 
+stdout > head(varpred)
+stdout               X          Y
+stdout [1,]  0.2599449 -0.4102330
+stdout [2,]  0.0203624  0.0516254
+stdout [3,] -0.0882945  0.0699653
+stdout [4,] -0.1396516  0.0115486
+stdout [5,] -0.1646551 -0.0394861
+stdout [6,] -0.1770739 -0.0722218
+stdout 
+stdout SLIDE 103
+stdout 
+stdout > fossilifit <- lm(
+stdout +   diametro_int_um~diametro_tot_um,
+stdout +   data=fossilitrain)
+stdout 
+stdout > p_fos <- predict(fossilifit,
+stdout +                  newdata=fossilitest)
+stdout 
+stdout SLIDE 107
+stdout 
+stdout > tab <- data.frame(
+stdout +   data=co2$data[169:204],
+stdout +   osservato=as.numeric(test), fc)
+stdout 
+stdout > stopifnot(!anyDuplicated(tab$data))
+stdout 
+stdout > names(tab)
+stdout [1] "data"      "osservato" "h"         "previsto"  "se"        "inferiore" "superiore"
+stdout Tutti i frammenti delle slide sono stati eseguiti.

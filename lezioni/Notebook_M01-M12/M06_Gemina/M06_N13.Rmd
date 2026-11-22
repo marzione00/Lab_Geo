@@ -1,0 +1,138 @@
+---
+title: "Ignorare le coppie cambia l\u2019incertezza"
+subtitle: "M06_N13 \u00b7 Gemina"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Perché la stessa differenza media può avere errori standard diversi quando conserviamo oppure ignoriamo le coppie?
+
+## Obiettivi
+
+- Ricostruire il contributo della covarianza.
+- Confrontare due formule senza cambiare la stima centrale.
+
+**Prima di iniziare.** Vettori, indicizzazione, media, varianza e grafici di base in R.
+
+**Dati e unità.** Ventiquattro coppie sintetiche prima/dopo in unità convenzionali. La variante usa un modello costruito con un effetto comune dell'unità.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M06_N13/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M06_N13")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(6013)
+```
+
+## 1. Verificare l'identità della stima centrale
+
+Sulle stesse coppie complete, la media di dopo meno prima è uguale alla media dopo meno la media prima. Questa identità è algebrica e non dice nulla sulla formula corretta per l'incertezza. Conserviamo gli identificativi per non confonderla con libertà di riabbinamento.
+
+```{r passo_01}
+dati <- carica_dati("misure_appaiate_simulate.csv")
+stopifnot(!anyDuplicated(dati$id))
+dati <- dati[complete.cases(dati[c("prima", "dopo")]), ]
+n <- nrow(dati)
+d <- dati$dopo - dati$prima
+differenza_medie <- mean(dati$dopo) - mean(dati$prima)
+stopifnot(isTRUE(all.equal(mean(d), differenza_medie)))
+print(c(media_differenze = mean(d), differenza_medie = differenza_medie))
+```
+
+**Lettura del risultato.** La stima centrale coincide perché le due somme usano esattamente le stesse unità. Se si eliminassero valori mancanti separatamente, l'identità potrebbe non riferirsi allo stesso insieme di coppie.
+
+## 2. Esplicitare il termine di covarianza
+
+La varianza della differenza è var(dopo) + var(prima) − 2 cov(prima,dopo). Una covarianza positiva riduce la dispersione dei cambiamenti rispetto a quella ottenuta trattando le colonne come indipendenti. Il suo segno e la sua grandezza dipendono dal disegno e dai dati.
+
+```{r passo_02}
+var_prima <- var(dati$prima)
+var_dopo <- var(dati$dopo)
+cov_coppia <- cov(dati$prima, dati$dopo)
+var_formula <- var_dopo + var_prima - 2 * cov_coppia
+stopifnot(isTRUE(all.equal(var(d), var_formula)))
+se_appaiato <- sd(d) / sqrt(n)
+se_indipendente <- sqrt(var_prima / n + var_dopo / n)
+print(c(covarianza = cov_coppia, correlazione = cor(dati$prima, dati$dopo),
+        SE_appaiato = se_appaiato, SE_indipendente = se_indipendente))
+```
+
+**Lettura del risultato.** La differenza fra SE non deriva da una modifica dei valori medi. Ignorare le coppie elimina un termine informativo della struttura del dato.
+
+## 3. Confrontare gli intervalli dichiarando il disegno
+
+Calcoliamo l'intervallo appaiato e, come confronto didattico, quello che tratterebbe le colonne come campioni indipendenti. Il secondo non è il modello del disegno osservato. La tabella serve a capire le conseguenze dell'errore, non a scegliere l'intervallo preferito.
+
+```{r passo_03}
+corretto <- t.test(dati$dopo, dati$prima, paired = TRUE)
+separato <- t.test(dati$dopo, dati$prima, paired = FALSE)
+print(data.frame(schema = c("Appaiato", "Indipendente illustrativo"),
+  inferiore = c(corretto$conf.int[1], separato$conf.int[1]),
+  superiore = c(corretto$conf.int[2], separato$conf.int[2]),
+  p = c(corretto$p.value, separato$p.value)))
+print(c(rapporto_SE = se_indipendente / se_appaiato))
+```
+
+**Lettura del risultato.** Un'eventuale diversa conclusione numerica non autorizza a scegliere il modello a posteriori. L'esistenza delle coppie viene dall'esperimento e precede l'analisi.
+
+## Variante svolta
+
+Aumentare l'eterogeneità comune fra unità in un modello mantenendo gli stessi errori delle due occasioni.
+
+```{r variante}
+simula <- function(tau) {
+  set.seed(613)
+  u <- rnorm(30, sd = tau)
+  e1 <- rnorm(30, sd = 0.1)
+  e2 <- rnorm(30, sd = 0.1)
+  data.frame(prima = 5 + u + e1, dopo = 5.04 + u + e2)
+}
+s3 <- simula(3)
+s5 <- simula(5)
+d3 <- s3$dopo - s3$prima
+d5 <- s5$dopo - s5$prima
+stopifnot(isTRUE(all.equal(d3, d5)))
+print(data.frame(tau = c(3, 5), SD_prima = c(sd(s3$prima), sd(s5$prima)),
+  SE_cambiamento = c(sd(d3), sd(d5)) / sqrt(30)))
+```
+
+L'effetto comune u si cancella nella sottrazione, mentre resta nella variabilità dei livelli. Usiamo due scale positive e lo stesso seme per mantenere gli stessi errori casuali nelle due simulazioni.
+
+## Errore da riconoscere
+
+Non dire che l'appaiamento riduce sempre il SE: la formula dipende dalla covarianza. Il motivo per conservarlo è la coerenza con il disegno.
+
+## Risposta alla domanda
+
+La differenza media può restare invariata mentre la sua incertezza cambia molto. La covarianza entro coppia è parte dell'informazione da conservare.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M06_N13` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M06/M06_N13.R).

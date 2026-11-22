@@ -1,0 +1,141 @@
+---
+title: "Generare una relazione che riporti i risultati reali"
+subtitle: "M10_N13 · Futura"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Come si scrive una conclusione collegata agli output calcolati?
+
+## Obiettivi
+
+- Generare il testo dai risultati dell’analisi.
+- Esplicitare fonte, split e unità.
+- Rileggere la relazione senza completare a mano i numeri.
+
+**Prima di iniziare.** Sono richiesti vettori, tabelle e funzioni R di base. I blocchi vanno eseguiti in ordine. Il notebook è autonomo rispetto agli altri.
+
+**Dati e unità.** 160 fossili sintetici del corso. Diametri e spessore sono espressi in micrometri. Il diametro interno deriva dal totale meno due volte lo spessore, entro l’arrotondamento del CSV. Il test contiene ogni quinta riga: 32 individui, separati dai 128 usati per stimare. È un protocollo didattico su dati già noti, non una validazione prospettica.
+
+## Preparazione
+
+Aprire il progetto autonomo di Futura o quello generale del corso. I calcoli usano R base e stats. Gli output del notebook vanno in `Risultati/M10_N13/`; i CSV originali restano invariati.
+
+```{r preparazione}
+# Trova la cartella M10 dal progetto autonomo o dal progetto generale.
+.gs_cerca <- normalizePath(getwd(),winslash="/",mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca,
+    file.path(.gs_cerca,"M10_Futura"),
+    file.path(.gs_cerca,"03_Notebook_svolti","M10_Futura"),
+    file.path(.gs_cerca,"M10","03_Notebook_svolti","M10_Futura"))
+  .gs_ok <- file.exists(file.path(.gs_candidati,"M10_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati,"R","funzioni_notebook.R"))
+  if(any(.gs_ok)) { .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]; break }
+  .gs_padre <- dirname(.gs_cerca)
+  if(.gs_padre==.gs_cerca) stop("Aprire il progetto M10_Futura o quello generale dei notebook.")
+  .gs_cerca <- .gs_padre
+}
+source(file.path(.gs_modulo,"R","funzioni_notebook.R"),local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo,"M10_N13")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88,digits=6)
+if(requireNamespace("knitr",quietly=TRUE)) {
+  knitr::opts_chunk$set(echo=TRUE,error=FALSE,warning=TRUE,message=TRUE,
+    fig.width=8,fig.height=5,dpi=150,fig.align="center")
+}
+set.seed(10013)
+```
+
+## 1. I risultati vengono prima della frase
+
+Ricalcoliamo il progetto per rendere autonomo questo notebook. La tabella finale alimenterà il testo.
+
+```{r passo_01}
+f <- carica_dati("fossili_simulati.csv"); s <- prepara_fossili(f)
+tr <- s$train; te <- s$test
+mod <- lm(diametro_int_um~diametro_tot_um,data=tr)
+prev <- as.numeric(predict(mod,newdata=te))
+base <- rep(mean(tr$diametro_int_um),nrow(te))
+m0 <- metriche(te$diametro_int_um,base); m1 <- metriche(te$diametro_int_um,prev)
+confronto <- data.frame(modello=c("Media_train","Regressione"),
+  MAE=c(m0["MAE"],m1["MAE"]),RMSE=c(m0["RMSE"],m1["RMSE"]))
+audit <- data.frame(controllo=c("ID unici","Diametri completi","Totale positivo","Interno entro totale"),
+  esito=c(!anyDuplicated(f$id),!anyNA(f[c("diametro_tot_um","diametro_int_um")]),
+    all(f$diametro_tot_um>0),all(f$diametro_int_um>0 & f$diametro_int_um<=f$diametro_tot_um)))
+stopifnot(all(audit$esito))
+confronto
+```
+
+**Lettura del risultato.** La relazione deve restare coerente se dati o specifica cambiano. Evitiamo valori numerici copiati separatamente dal codice.
+
+## 2. La conclusione mantiene i limiti
+
+La differenza di RMSE è descritta nelle unità originali. Il risultato resta condizionato al dataset sintetico e al singolo holdout.
+
+```{r passo_02}
+rapporto <- c("PROGETTO MORFOMETRICO: DATI SINTETICI",
+   "Domanda: prevedere il diametro interno a partire dal totale.",
+   sprintf("Train: %d individui; test: %d, ogni quinta riga.",nrow(tr),nrow(te)),
+   sprintf("Retta stimata: interno = %.4f + %.4f * totale (micrometri).",coef(mod)[1],coef(mod)[2]),
+   sprintf("RMSE media train: %.4f micrometri; regressione: %.4f.",m0["RMSE"],m1["RMSE"]),
+   sprintf("Differenza RMSE riferimento meno modello: %.4f micrometri.",m0["RMSE"]-m1["RMSE"]),
+   "Limiti: dati simulati, misure geometricamente legate, un solo holdout noto.",
+   "La previsione non dimostra causalita fisica; servono nuovi dati e un protocollo prospettico.")
+ cat(paste(rapporto,collapse="
+"))
+```
+
+**Lettura del risultato.** La frase riporta il risultato effettivo, anche se un’altra specifica non migliorasse il riferimento. La parte argomentativa non deve trasformare un caso sintetico in evidenza sul territorio.
+
+## 3. Testo e tabelle si verificano insieme
+
+Conserviamo coefficienti, previsioni e relazione per ricostruire tutti i numeri riportati.
+
+```{r passo_03}
+writeLines(rapporto,percorso_risultati("relazione_progetto_base.txt"),useBytes=TRUE)
+write.csv(audit,percorso_risultati("audit_progetto.csv"),row.names=FALSE)
+write.csv(confronto,percorso_risultati("metriche_progetto.csv"),row.names=FALSE)
+write.csv(data.frame(id=te$id,osservato=te$diametro_int_um,previsto=prev),
+  percorso_risultati("previsioni_fossili.csv"),row.names=FALSE)
+saveRDS(mod,percorso_risultati("modello_fossili.rds"))
+stopifnot(identical(readLines(percorso_risultati("relazione_progetto_base.txt"),warn=FALSE),rapporto))
+data.frame(righe_relazione=length(rapporto),previsioni=nrow(te),rilettura_identica=TRUE)
+```
+
+**Lettura del risultato.** La rilettura controlla la consegna, mentre il giudizio sui limiti richiede comunque un’interpretazione scientifica.
+
+## Variante svolta
+
+**Un riepilogo alternativo.** Scrivere un confronto basato su MAE, conservando il nome della metrica.
+
+```{r variante}
+sprintf("MAE sul medesimo test: riferimento %.4f, regressione %.4f micrometri.",m0["MAE"],m1["MAE"])
+```
+
+Cambiare la metrica cambia la perdita descritta. La frase deve nominarla esplicitamente.
+
+## Errore da riconoscere
+
+Scrivere una conclusione favorevole al modello prima del calcolo oppure chiamare «reali» dati costruiti per la didattica.
+
+## Risposta alla domanda
+
+Una relazione verificabile deriva i numeri dai risultati e collega domanda, unità, disegno e limiti. La parte interpretativa resta proporzionata alla natura dei dati.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M10_N13` di [GeoStat Lab M10](https://marzione00.github.io/Lab_Geo/#indice). Il [codice originale del laboratorio](https://github.com/marzione00/Lab_Geo/blob/649f7cc577b96bd1044d81e78a2f530813e4f96b/materiali/laboratori/M10/M10_N13.R) è conservato anche in `R/Originali_corso`. Gli ampliamenti e le varianti sono identificati nella mappa allegata.
+
+Documentazione dei metodi: [R stats, arima](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/arima.html), [predict.Arima](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/predict.arima.html), [Box.test](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/box.test.html) e [p.adjust](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/p.adjust.html).

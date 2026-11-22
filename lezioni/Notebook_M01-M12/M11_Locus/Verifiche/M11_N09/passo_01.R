@@ -1,0 +1,8 @@
+d <- carica_dati("spazio_v3.csv")
+audit_spazio(d)
+ a <- data.frame(id=d$id[d$x_m<=1250],zona="A")
+ b <- data.frame(id=d$id[d$x_m>=750],zona="B")
+ relazioni <- rbind(a,b)
+ frequenze <- table(relazioni$id)
+ data.frame(punti=nrow(d),relazioni=nrow(relazioni),siti_con_piu_appartenenze=sum(frequenze>1))
+ stopifnot(nrow(relazioni)==88L,sum(frequenze>1)==24L)

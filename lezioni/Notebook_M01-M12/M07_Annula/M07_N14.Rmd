@@ -1,0 +1,148 @@
+---
+title: "Errore di training e generalizzazione"
+subtitle: "M07_N14 \u00b7 Annula"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Perché il modello che si adatta meglio ai dati osservati può prevedere peggio altri dati?
+
+## Obiettivi
+
+- Collegare la domanda al calcolo riportato.
+- Interpretare il risultato usando variabili e unità del problema.
+
+**Prima di iniziare.** Vettori, data frame, indicizzazione e funzioni di base in R.
+
+**Dati e unità.** Fossili simulati del corso: 160 individui, 80 Rounded e 80 Spiky. Diametri e spessori sono espressi in micrometri. Nel generatore, diametro interno = diametro totale − 2 × spessore. La relazione contiene quindi un vincolo geometrico noto.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Annula oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M07_Annula` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M07_Annula/Risultati/M07_N14/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M07_Annula"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M07_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M07_Annula o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M07_N14")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(7014)
+```
+
+## 1. Training e test del modello selezionato
+
+L’errore sul training descrive dati usati per stimare i coefficienti. L’errore sul test descrive una realizzazione di dati esclusi dalla stima e dalla scelta interna.
+
+```{r passo_01}
+# Ogni riga identifica un fossile simulato.
+f <- carica_dati("fossili_simulati.csv")
+f$morfotipo <- factor(f$morfotipo, levels=c("Rounded", "Spiky"))
+x <- f$diametro_tot_um
+y <- f$diametro_int_um
+stopifnot(nrow(f)==160L, !anyDuplicated(f$id),
+          all(is.finite(x)), all(is.finite(y)))
+# Partizione fissata prima del confronto dei modelli.
+# Nel CSV didattico ogni quinto individuo forma il test.
+is_test <- seq_len(nrow(f)) %% 5L == 0L
+train <- f[!is_test, ]
+test <- f[is_test, ]
+stopifnot(nrow(train)==128L, nrow(test)==32L,
+          length(intersect(train$id, test$id))==0L)
+# La funzione ripete la stima su cinque partizioni del solo training.
+# Il suo codice completo e' spiegato nel notebook N12.
+scelta <- seleziona_modello(train, seme=714)
+finale <- lm(scelta$formule[[scelta$nome]], data=train)
+rbind(training=metriche(train$diametro_int_um,predict(finale,train)),
+      test=metriche(test$diametro_int_um,predict(finale,test)))
+```
+
+**Lettura del risultato.** In questa specifica partizione l’errore di test può anche risultare più piccolo di quello sul training. L’ottimismo dell’errore di training è un fenomeno medio, non una disuguaglianza garantita in ogni campione.
+
+## 2. Una simulazione con complessità crescente
+
+Generiamo training e nuovi dati indipendenti dalla stessa curva $\sin(3x)$. Adattiamo polinomi di grado crescente per osservare la differenza fra adattamento e previsione.
+
+```{r passo_02}
+set.seed(714)
+tr <- data.frame(x=seq(-1,1,length.out=24))
+tr$y <- sin(3*tr$x)+rnorm(nrow(tr),sd=.4)
+nuovi <- data.frame(x=seq(-1,1,length.out=150))
+nuovi$y <- sin(3*nuovi$x)+rnorm(nrow(nuovi),sd=.4)
+ris <- do.call(rbind,lapply(1:9,function(g) {
+ m <- lm(y~poly(x,g),data=tr)
+ data.frame(grado=g,training=metriche(tr$y,predict(m,tr))["RMSE"],
+  nuovi=metriche(nuovi$y,predict(m,nuovi))["RMSE"])
+}))
+ris
+```
+
+**Lettura del risultato.** L’errore di training diminuisce aumentando il numero di coefficienti. L’errore sui nuovi dati dipende anche dall’instabilità della curva stimata. Questa esplorazione illustra il meccanismo e non fornisce un test finale dopo la scelta del grado.
+
+## 3. Il grafico degli errori
+
+La complessità può catturare variazioni dovute al rumore nel training. La distanza fra le due curve aiuta a vedere il costo predittivo di questa sensibilità.
+
+```{r passo_03}
+matplot(ris$grado,ris[,c("training","nuovi")],type="b",pch=c(16,17),
+ col=c("#087C74","#C57E42"),lty=1,xlab="Grado del polinomio",ylab="RMSE")
+legend("topright",c("Training","Nuovi dati"),col=c("#087C74","#C57E42"),
+ pch=c(16,17),lty=1,bty="n")
+```
+
+**Lettura del risultato.** Scegliere il minimo sulla curva dei nuovi dati la trasformerebbe in una curva di validazione. Per valutare il grado così scelto occorrerebbe una terza serie indipendente.
+
+## Variante svolta
+
+Aggiungere una terza serie indipendente e valutare una sola volta il grado scelto sulla seconda.
+
+```{r variante}
+g_scelto <- ris$grado[which.min(ris$nuovi)]
+mod_scelto <- lm(y~poly(x,g_scelto),data=tr)
+set.seed(7141)
+ultimo <- data.frame(x=seq(-1,1,length.out=150))
+ultimo$y <- sin(3*ultimo$x)+rnorm(nrow(ultimo),sd=.4)
+c(grado_scelto=g_scelto,RMSE_finale=metriche(ultimo$y,predict(mod_scelto,ultimo))["RMSE"])
+```
+
+La terza serie non partecipa alla scelta del grado. Il suo errore valuta la regola già definita, pur restando soggetto alla variabilità della simulazione.
+
+## Errore da riconoscere
+
+Chiamare “test” la serie usata per scegliere il grado non conserva la sua indipendenza dalla procedura.
+
+## Risposta alla domanda
+
+Una buona previsione richiede una complessità adeguata ai dati e una valutazione che ripeta correttamente le fasi di scelta.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M07_N14` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M07/M07_N14.R).

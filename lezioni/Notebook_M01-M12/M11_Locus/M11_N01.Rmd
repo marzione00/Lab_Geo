@@ -1,0 +1,139 @@
+---
+title: "Audit delle coordinate e delle unità"
+subtitle: "M11_N01 · Locus"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Quali controlli rendono interpretabili le coordinate prima di una mappa?
+
+## Obiettivi
+
+- Verificare identità, completezza e unità.
+- Riconoscere la griglia locale e il georiferimento separato.
+- Esportare un audit leggibile.
+
+**Prima di iniziare.** Sono richiesti vettori, tabelle, coordinate e funzioni R di base. I blocchi vanno eseguiti in ordine; il notebook è autonomo rispetto agli altri. I calcoli usano R base e i pacchetti standard.
+
+**Dati e unità.** 64 siti sintetici su una griglia 8 × 8, con passo 250 m e coordinate locali x_m e y_m fra 0 e 1750 m. Questo piano locale non ha un codice EPSG. La concentrazione è sintetica, in unità arbitrarie (u.a.); la quota è in metri sintetici. Ogni riga descrive un sito e il suo valore puntuale, non la media di una cella. Le colonne lon e lat forniscono un georiferimento sintetico separato, vicino a 9° E e 45° N, costruito con una relazione approssimata. Non sono coordinate UTM ottenute aggiungendo un’origine alle coordinate locali. Nel percorso geografico l’ordine è sempre longitudine, latitudine.
+
+## Preparazione
+
+Aprire il progetto autonomo di Locus o quello generale dei notebook. I CSV locali restano invariati. Gli output vanno in `Risultati/M11_N01/`. Nessun download o installazione viene eseguito nei blocchi.
+
+```{r preparazione}
+# Trova il modulo dal progetto autonomo o dal progetto generale dei notebook.
+.gs_cerca <- normalizePath(getwd(),winslash="/",mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca,file.path(.gs_cerca,"M11_Locus"),
+    file.path(.gs_cerca,"03_Notebook_svolti","M11_Locus"),
+    file.path(.gs_cerca,"M11","03_Notebook_svolti","M11_Locus"))
+  .gs_ok <- file.exists(file.path(.gs_candidati,"M11_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati,"R","funzioni_notebook.R"))
+  if(any(.gs_ok)) { .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]];break }
+  .gs_padre <- dirname(.gs_cerca)
+  if(.gs_padre==.gs_cerca) stop("Aprire il progetto M11_Locus o quello generale dei notebook.")
+  .gs_cerca <- .gs_padre
+}
+source(file.path(.gs_modulo,"R","funzioni_notebook.R"),local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo,"M11_N01")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88,digits=6)
+if(requireNamespace("knitr",quietly=TRUE)) {
+  knitr::opts_chunk$set(echo=TRUE,error=FALSE,warning=TRUE,message=TRUE,
+    fig.width=8,fig.height=5,dpi=150,fig.align="center")
+}
+set.seed(11001)
+```
+
+## 1. Identità e completezza
+
+Un numero finito non garantisce una posizione corretta, ma duplicati e valori mancanti vanno individuati prima dell’analisi.
+
+```{r passo_01}
+d <- carica_dati("spazio_v3.csv")
+audit_spazio(d)
+ controlli <- data.frame(controllo=c("64 siti","ID unici","Posizioni locali uniche",
+   "Coordinate complete","Concentrazione completa"),
+   esito=c(nrow(d)==64L,!anyDuplicated(d$id),!anyDuplicated(d[c("x_m","y_m")]),
+     !anyNA(d[c("x_m","y_m","lon","lat")]),all(is.finite(d$concentrazione))))
+ controlli
+ stopifnot(all(controlli$esito))
+```
+
+**Lettura del risultato.** I controlli verificano proprietà del file. Non dimostrano che le coordinate rappresentino un rilievo reale: il dataset è esplicitamente sintetico.
+
+## 2. Le colonne hanno unità diverse
+
+Riportiamo gli intervalli senza usare la sola grandezza dei numeri per attribuire un sistema di riferimento.
+
+```{r passo_02}
+assi <- c("x_m","y_m","lon","lat")
+intervalli <- data.frame(asse=assi,
+  minimo=vapply(d[assi],min,numeric(1)),massimo=vapply(d[assi],max,numeric(1)),
+  unita=c("m locali","m locali","gradi Est","gradi Nord"))
+intervalli
+data.frame(asse=c("x_m","y_m"),livelli=c(length(unique(d$x_m)),length(unique(d$y_m))),
+  passo_m=c(unique(diff(sort(unique(d$x_m)))),unique(diff(sort(unique(d$y_m))))))
+```
+
+**Lettura del risultato.** La griglia ha otto livelli per asse. Per lon e lat, l’interpretazione geografica deriva dalla provenienza dichiarata e dall’ordine degli assi, non da un riconoscimento automatico.
+
+## 3. L’audit accompagna il dato
+
+Una carta delle posizioni permette di riconoscere configurazioni inattese. L’aspetto uguale degli assi conserva la geometria locale.
+
+```{r passo_03}
+stile_grafico()
+plot(d$x_m,d$y_m,pch=19,col=palette_geo[1],asp=1,ylim=c(0,1900),
+  xlab="x locale (m)",ylab="y locale (m)",main="64 siti su una griglia locale")
+text(d$x_m[c(1,8,57,64)],d$y_m[c(1,8,57,64)],d$id[c(1,8,57,64)],pos=3,cex=.8)
+write.csv(controlli,percorso_risultati("audit.csv"),row.names=FALSE)
+write.csv(intervalli,percorso_risultati("intervalli_coordinate.csv"),row.names=FALSE)
+```
+
+**Lettura del risultato.** Il disegno mostra posizioni campionate. Il vuoto fra i punti non viene riempito con valori non osservati.
+
+## Variante svolta
+
+**Un duplicato introdotto in memoria.** Aggiungere una copia del primo sito e individuarne tutte le occorrenze, senza modificare il CSV.
+
+```{r variante}
+copia <- rbind(d,d[1,])
+duplicati <- duplicated(copia$id)|duplicated(copia$id,fromLast=TRUE)
+copia[duplicati,c("id","x_m","y_m")]
+data.frame(righe=nrow(copia),id_distinti=length(unique(copia$id)),occorrenze_coinvolte=sum(duplicati))
+stopifnot(sum(duplicati)==2L,nrow(d)==64L)
+```
+
+Due righe non sono necessariamente due unità campionarie. L’audit deve identificare l’unità osservata prima di attribuire pesi alle righe.
+
+## Errore da riconoscere
+
+Assegnare un EPSG alle coordinate locali soltanto perché sono espresse in metri, oppure chiamare media areale il valore di un sito.
+
+## Risposta alla domanda
+
+Un audit utile collega ID, coordinate, unità, supporto e provenienza. Qui distinguiamo un piano metrico locale senza EPSG da un georiferimento sintetico lon–lat: entrambi sono dichiarati, nessuno certifica un rilievo reale.
+
+## Raccordo con le slide
+
+[Slide 5–16 della lezione Locus](../../02_PDF/M11_Locus/Locus_M11_statistica_spaziale.pdf#page=5). Il notebook conserva il tema del laboratorio originale e aggiunge verifiche e una variante svolta.
+
+
+## Riferimenti e provenienza
+
+Questo svolgimento sviluppa `M11_N01` del [modulo M11 del corso](https://marzione00.github.io/Lab_Geo/#modulo-M11). Il [codice originale](https://github.com/marzione00/Lab_Geo/blob/649f7cc577b96bd1044d81e78a2f530813e4f96b/materiali/laboratori/M11/M11_N01.R) è conservato immutato in `R/Originali_corso/`; la mappa allegata documenta gli ampliamenti. Dati e originali hanno impronte SHA-256 e SHA-1 Git verificate.
+
+Documentazione primaria delle operazioni: [R, dist](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/dist.html), [R, aggregate](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/aggregate.html), [R, sample](https://stat.ethz.ch/R-manual/R-devel/library/base/html/sample.html). Le definizioni spaziali e il riferimento inferenziale seguono il laboratorio originale, con le distinzioni esplicitate nel testo.

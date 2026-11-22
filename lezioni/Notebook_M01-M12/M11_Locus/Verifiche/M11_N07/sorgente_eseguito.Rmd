@@ -1,0 +1,130 @@
+---
+title: "Una carta di punti, non una superficie"
+subtitle: "M11_N07 · Locus"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Che cosa mostra una carta di valori puntuali e che cosa rimane non osservato?
+
+## Obiettivi
+
+- Associare colori a concentrazioni con una scala esplicita.
+- Conservare geometria e supporto puntuale.
+- Distinguere distribuzione marginale e disposizione spaziale.
+
+**Prima di iniziare.** Sono richiesti vettori, tabelle, coordinate e funzioni R di base. I blocchi vanno eseguiti in ordine; il notebook è autonomo rispetto agli altri. I calcoli usano R base e i pacchetti standard.
+
+**Dati e unità.** 64 siti sintetici su una griglia 8 × 8, con passo 250 m e coordinate locali x_m e y_m fra 0 e 1750 m. Questo piano locale non ha un codice EPSG. La concentrazione è sintetica, in unità arbitrarie (u.a.); la quota è in metri sintetici. Ogni riga descrive un sito e il suo valore puntuale, non la media di una cella.
+
+## Preparazione
+
+Aprire il progetto autonomo di Locus o quello generale dei notebook. I CSV locali restano invariati. Gli output vanno in `Risultati/M11_N07/`. Nessun download o installazione viene eseguito nei blocchi.
+
+```{r preparazione}
+# Trova il modulo dal progetto autonomo o dal progetto generale dei notebook.
+.gs_cerca <- normalizePath(getwd(),winslash="/",mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca,file.path(.gs_cerca,"M11_Locus"),
+    file.path(.gs_cerca,"03_Notebook_svolti","M11_Locus"),
+    file.path(.gs_cerca,"M11","03_Notebook_svolti","M11_Locus"))
+  .gs_ok <- file.exists(file.path(.gs_candidati,"M11_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati,"R","funzioni_notebook.R"))
+  if(any(.gs_ok)) { .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]];break }
+  .gs_padre <- dirname(.gs_cerca)
+  if(.gs_padre==.gs_cerca) stop("Aprire il progetto M11_Locus o quello generale dei notebook.")
+  .gs_cerca <- .gs_padre
+}
+source(file.path(.gs_modulo,"R","funzioni_notebook.R"),local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo,"M11_N07")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88,digits=6)
+if(requireNamespace("knitr",quietly=TRUE)) {
+  knitr::opts_chunk$set(echo=TRUE,error=FALSE,warning=TRUE,message=TRUE,
+    fig.width=8,fig.height=5,dpi=150,fig.align="center")
+}
+set.seed(11007)
+```
+
+## 1. Valori e scala cromatica
+
+Prima della mappa riassumiamo l’intervallo e il numero di misure, mantenendo le unità arbitrarie del dato sintetico.
+
+```{r passo_01}
+d <- carica_dati("spazio_v3.csv")
+audit_spazio(d)
+ data.frame(n=nrow(d),minimo=min(d$concentrazione),massimo=max(d$concentrazione),
+   media=mean(d$concentrazione),deviazione_standard=sd(d$concentrazione),unita="u.a.")
+ quantile(d$concentrazione,c(0,.25,.5,.75,1))
+```
+
+**Lettura del risultato.** La sintesi marginale non usa le coordinate. Due configurazioni geografiche possono avere lo stesso istogramma e un’associazione spaziale diversa.
+
+## 2. I punti conservano il supporto osservato
+
+Il grafico disegna soltanto i 64 siti e usa una legenda continua per i 20 intervalli cromatici.
+
+```{r passo_02}
+mappa_valori(d,"Valori puntuali: nessuna superficie interpolata")
+```
+
+**Lettura del risultato.** Il colore si riferisce a un sito. Il bianco fra i punti non indica concentrazione nulla e non costituisce una previsione: rappresenta assenza di osservazione nella carta.
+
+## 3. La tabella rende la scala ricostruibile
+
+Registriamo classe e colore di ogni misura senza sostituire il valore numerico originale.
+
+```{r passo_03}
+limiti <- seq(min(d$concentrazione),max(d$concentrazione),length.out=21)
+classe <- cut(d$concentrazione,limiti,include.lowest=TRUE,labels=FALSE)
+tab <- data.frame(id=d$id,x_m=d$x_m,y_m=d$y_m,concentrazione=d$concentrazione,
+  classe=classe,colore=hcl.colors(20,"Viridis")[classe])
+head(tab,6)
+write.csv(tab,percorso_risultati("mappa_punti.csv"),row.names=FALSE)
+write.csv(data.frame(limite=limiti),percorso_risultati("scala_cromatica.csv"),row.names=FALSE)
+```
+
+**Lettura del risultato.** La tabella permette di controllare il colore di un punto e di riutilizzare la stessa scala in un confronto.
+
+## Variante svolta
+
+**Stessi valori, altra disposizione.** Invertire l’ordine dei valori sulle posizioni, conservando esattamente la distribuzione marginale.
+
+```{r variante}
+altra <- d;altra$concentrazione <- rev(d$concentrazione)
+stopifnot(identical(sort(altra$concentrazione),sort(d$concentrazione)))
+mappa_valori(altra,"Valori ricollocati, distribuzione marginale invariata")
+data.frame(media_originale=mean(d$concentrazione),media_ricollocata=mean(altra$concentrazione))
+```
+
+Questa ricollocazione è deterministica e illustrativa. Non è una procedura inferenziale e non rappresenta nuove misure.
+
+## Errore da riconoscere
+
+Leggere come osservata tutta una superficie colorata o cambiare la scala cromatica fra due carte senza dichiararlo.
+
+## Risposta alla domanda
+
+Una carta di punti collega posizione e misura, lasciando visibili i luoghi non osservati. Distribuzione marginale, configurazione spaziale e superficie prevista sono tre oggetti distinti.
+
+## Raccordo con le slide
+
+[Slide 7 e 32–33 della lezione Locus](../../02_PDF/M11_Locus/Locus_M11_statistica_spaziale.pdf#page=7). Il notebook conserva il tema del laboratorio originale e aggiunge verifiche e una variante svolta.
+
+
+## Riferimenti e provenienza
+
+Questo svolgimento sviluppa `M11_N07` del [modulo M11 del corso](https://marzione00.github.io/Lab_Geo/#modulo-M11). Il [codice originale](https://github.com/marzione00/Lab_Geo/blob/649f7cc577b96bd1044d81e78a2f530813e4f96b/materiali/laboratori/M11/M11_N07.R) è conservato immutato in `R/Originali_corso/`; la mappa allegata documenta gli ampliamenti. Dati e originali hanno impronte SHA-256 e SHA-1 Git verificate.
+
+Documentazione primaria delle operazioni: [R, dist](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/dist.html), [R, aggregate](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/aggregate.html), [R, sample](https://stat.ethz.ch/R-manual/R-devel/library/base/html/sample.html). Le definizioni spaziali e il riferimento inferenziale seguono il laboratorio originale, con le distinzioni esplicitate nel testo.

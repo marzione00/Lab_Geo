@@ -1,0 +1,129 @@
+---
+title: "Ranghi appaiati: non basta cambiare un argomento"
+subtitle: "M06_N15 \u00b7 Gemina"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come cambia la costruzione a ranghi quando i dati sono coppie e quali ipotesi distinguono ranghi con segno e test dei segni?
+
+## Obiettivi
+
+- Costruire ranghi dei valori assoluti delle differenze.
+- Distinguere ipotesi di simmetria e probabilità del segno.
+
+**Prima di iniziare.** Vettori, indicizzazione, media, varianza e grafici di base in R.
+
+**Dati e unità.** Ventiquattro coppie sintetiche prima/dopo, in unità convenzionali. Le coppie sono le unità indipendenti del confronto.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M06_N15/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M06_N15")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(6015)
+```
+
+## 1. Calcolare differenze e identificare gli zeri
+
+Il test dei ranghi con segno parte dalle differenze entro coppia, non dai ranghi delle due colonne unite. Nella convenzione usata qui le differenze esattamente nulle non ricevono un rango. Documentiamo il loro numero perché cambia la numerosità effettiva del calcolo.
+
+```{r passo_01}
+dati <- carica_dati("misure_appaiate_simulate.csv")
+stopifnot(!anyDuplicated(dati$id))
+dati <- dati[complete.cases(dati[c("prima", "dopo")]), ]
+d <- dati$dopo - dati$prima
+nonzero <- d[d != 0]
+stopifnot(length(nonzero) > 0)
+print(c(coppie = length(d), differenze_nulle = sum(d == 0),
+        differenze_non_nulle = length(nonzero)))
+print(summary(d))
+```
+
+**Lettura del risultato.** Escludere gli zeri dal calcolo dei ranghi è una convenzione statistica esplicita, non una cancellazione silenziosa di dati. Le differenze restano orientate come dopo meno prima.
+
+## 2. Sommare i ranghi positivi
+
+Assegniamo ranghi ai valori assoluti non nulli e sommiamo quelli associati a differenze positive. Sotto la nulla usuale, le differenze indipendenti hanno una distribuzione simmetrica attorno a zero. La simmetria è più forte della sola mediana nulla.
+
+```{r passo_02}
+ranghi <- rank(abs(nonzero), ties.method = "average")
+Vplus <- sum(ranghi[nonzero > 0])
+Vminus <- sum(ranghi[nonzero < 0])
+test_ranghi <- wilcox.test(d, mu = 0, exact = FALSE, correct = TRUE)
+print(data.frame(differenza = nonzero, rango_assoluto = ranghi,
+                 contributo_positivo = ifelse(nonzero > 0, ranghi, 0)))
+print(c(V_positivo = Vplus, V_negativo = Vminus, p = test_ranghi$p.value))
+stopifnot(isTRUE(all.equal(Vplus, unname(test_ranghi$statistic))))
+```
+
+**Lettura del risultato.** La statistica usa sia segno sia ordine della grandezza delle differenze. Non è la stessa informazione utilizzata dal test dei segni, che ignora le grandezze.
+
+## 3. Confrontare con il test dei segni
+
+Il test binomiale dei segni considera soltanto quante differenze non nulle sono positive. La sua nulla è probabilità condizionata di segno positivo uguale a un mezzo. Non richiede simmetria delle grandezze, ma richiede unità indipendenti e una gestione dichiarata degli zeri.
+
+```{r passo_03}
+positivi <- sum(nonzero > 0)
+test_segni <- binom.test(positivi, length(nonzero), p = 0.5)
+print(data.frame(metodo = c("Ranghi con segno", "Segni"),
+  p = c(test_ranghi$p.value, test_segni$p.value),
+  informazione = c("Segno e rango assoluto", "Solo segno non nullo")))
+print(c(proporzione_positiva_nonzero = positivi / length(nonzero)))
+print(test_segni$conf.int)
+```
+
+**Lettura del risultato.** L'intervallo binomiale riguarda la probabilità di segno positivo fra differenze non nulle. Non è un intervallo per la media del cambiamento o per la mediana delle differenze.
+
+## Variante svolta
+
+Verificare l'equivalenza fra il test sulle differenze e la chiamata appaiata.
+
+```{r variante}
+appaiato <- wilcox.test(dati$dopo, dati$prima, paired = TRUE,
+                        exact = FALSE, correct = TRUE)
+stopifnot(isTRUE(all.equal(appaiato$p.value, test_ranghi$p.value)))
+stopifnot(isTRUE(all.equal(unname(appaiato$statistic), Vplus)))
+print(appaiato)
+```
+
+La coincidenza vale perché le coppie e l'ordine degli argomenti sono gli stessi. Aggiungere paired = TRUE non ripara identificativi disallineati o un disegno che non è appaiato.
+
+## Errore da riconoscere
+
+Non presentare i ranghi con segno come metodo senza ipotesi. La simmetria delle differenze e l'indipendenza delle coppie sono condizioni sostanziali.
+
+## Risposta alla domanda
+
+Ranghi indipendenti, ranghi appaiati e segni usano informazioni diverse. La scelta dipende dalla domanda e dalle ipotesi, non dalla sola presenza di valori non normali.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M06_N15` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M06/M06_N15.R).

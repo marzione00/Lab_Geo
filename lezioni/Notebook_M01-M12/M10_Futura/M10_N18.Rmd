@@ -1,0 +1,145 @@
+---
+title: "Consegnare e verificare"
+subtitle: "M10_N18 · Futura"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Quali elementi rendono completa la consegna dell’approfondimento?
+
+## Obiettivi
+
+- Conservare modello, previsioni e confronti.
+- Separare i risultati predittivi dai test.
+- Rileggere i file esportati.
+
+**Prima di iniziare.** Sono richiesti vettori, tabelle e funzioni R di base. I blocchi vanno eseguiti in ordine. Il notebook è autonomo rispetto agli altri.
+
+**Dati e unità.** Processi sintetici di 300 passi, senza unità fisica. Le colonne x_VAR e y_VAR costituiscono un sistema bivariato. Usiamo i passi 1–250 per stimare e, quando richiesto, 251–260 per una previsione a origine fissa. La prima riga è una condizione iniziale finita: l’esempio non equivale a una nuova serie osservativa.
+
+## Preparazione
+
+Aprire il progetto autonomo di Futura o quello generale del corso. I calcoli usano R base e stats. Gli output del notebook vanno in `Risultati/M10_N18/`; i CSV originali restano invariati.
+
+```{r preparazione}
+# Trova la cartella M10 dal progetto autonomo o dal progetto generale.
+.gs_cerca <- normalizePath(getwd(),winslash="/",mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca,
+    file.path(.gs_cerca,"M10_Futura"),
+    file.path(.gs_cerca,"03_Notebook_svolti","M10_Futura"),
+    file.path(.gs_cerca,"M10","03_Notebook_svolti","M10_Futura"))
+  .gs_ok <- file.exists(file.path(.gs_candidati,"M10_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati,"R","funzioni_notebook.R"))
+  if(any(.gs_ok)) { .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]; break }
+  .gs_padre <- dirname(.gs_cerca)
+  if(.gs_padre==.gs_cerca) stop("Aprire il progetto M10_Futura o quello generale dei notebook.")
+  .gs_cerca <- .gs_padre
+}
+source(file.path(.gs_modulo,"R","funzioni_notebook.R"),local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo,"M10_N18")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88,digits=6)
+if(requireNamespace("knitr",quietly=TRUE)) {
+  knitr::opts_chunk$set(echo=TRUE,error=FALSE,warning=TRUE,message=TRUE,
+    fig.width=8,fig.height=5,dpi=150,fig.align="center")
+}
+set.seed(10018)
+```
+
+## 1. La tabella collega origine e valori
+
+Ricostruiamo il VAR per un’esecuzione autonoma e salviamo i dieci bersagli con le rispettive previsioni.
+
+```{r passo_01}
+p <- carica_dati("processi_simulati.csv"); mod <- stima_var(p)
+pr <- prevedi_var(mod,10)
+obs <- as.matrix(p[251:260,c("x_VAR","y_VAR")])
+tab <- data.frame(origine=250L,passo=251:260,h=1:10,
+  X_osservata=obs[,1],Y_osservata=obs[,2],X_prevista=pr[,1],Y_prevista=pr[,2])
+write.csv(tab,percorso_risultati("consegna_VAR.csv"),row.names=FALSE)
+saveRDS(mod,percorso_risultati("modello_VAR.rds"))
+head(tab,3)
+```
+
+**Lettura del risultato.** La consegna dichiara che X e Y sono senza unità fisica. Il file del modello non sostituisce la tabella leggibile.
+
+## 2. Metriche e test rispondono a domande diverse
+
+La prima tabella valuta previsioni fuori dal train. La seconda valuta restrizioni nelle regressioni stimate.
+
+```{r passo_02}
+ultimo <- matrix(rep(as.numeric(tail(mod$v,1)),each=10),ncol=2)
+metriche_var <- data.frame(variabile=c("X","Y"),
+  RMSE_VAR=sqrt(colMeans((obs-pr)^2)),
+  RMSE_ultimo=sqrt(colMeans((obs-ultimo)^2)))
+gy <- anova(lm(y~y_lag,data=mod$lagged),mod$fit_y)
+gx <- anova(lm(x~x_lag,data=mod$lagged),mod$fit_x)
+pval <- c(gy$`Pr(>F)`[2],gx$`Pr(>F)`[2])
+granger <- data.frame(direzione=c("X verso Y","Y verso X"),p=pval,
+                       p_Holm=p.adjust(pval,"holm"))
+write.csv(metriche_var,percorso_risultati("metriche_VAR.csv"))
+write.csv(granger,percorso_risultati("Granger.csv"),row.names=FALSE)
+metriche_var
+granger
+```
+
+**Lettura del risultato.** Un test significativo non garantisce un guadagno predittivo in ogni futuro. Una buona previsione non identifica automaticamente una causa fisica.
+
+## 3. La verifica della consegna usa i file riletti
+
+Una breve scheda documenta input, parametri e limiti insieme ai controlli automatici.
+
+```{r passo_03}
+ritorno <- read.csv(percorso_risultati("consegna_VAR.csv"))
+ mod2 <- readRDS(percorso_risultati("modello_VAR.rds"))
+ stopifnot(identical(ritorno$passo,251:260),
+   isTRUE(all.equal(ritorno$X_prevista,pr[,1],check.attributes=FALSE,tolerance=1e-10)),
+   isTRUE(all.equal(prevedi_var(mod2,10),pr)))
+ scheda <- c("VAR(1) didattico su processi sintetici.",
+   "Train: passi 1-250. Test: passi 251-260. Origine fissa 250.",
+   "Due regressioni OLS con intercetta e ritardi X,Y.",
+   "Granger: due direzioni pianificate, correzione Holm.",
+   "Limiti: simulazione, singola origine, nessuna attribuzione causale fisica.")
+ writeLines(scheda,percorso_risultati("scheda_modello.txt"),useBytes=TRUE)
+ cat(paste(scheda,collapse="
+"))
+```
+
+**Lettura del risultato.** La scheda delimita il significato del risultato. La prova di rilettura controlla il trasferimento delle informazioni.
+
+## Variante svolta
+
+**Inventario degli output.** Elencare soltanto i file del notebook corrente e la loro dimensione.
+
+```{r variante}
+files <- list.files(dirname(percorso_risultati("scheda_modello.txt")),full.names=TRUE)
+data.frame(file=basename(files),bytes=file.info(files)$size)
+```
+
+L’inventario aiuta a riconoscere output mancanti. Per un archivio completo va affiancato al manifesto delle impronte del pacchetto.
+
+## Errore da riconoscere
+
+Riportare solo il p-value più favorevole oppure confondere la scheda del progetto base con quella del VAR.
+
+## Risposta alla domanda
+
+Una consegna completa collega tabella, modello, metriche e limiti. La rilettura e la ricostruzione della previsione verificano il risultato trasferito.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M10_N18` di [GeoStat Lab M10](https://marzione00.github.io/Lab_Geo/#indice). Il [codice originale del laboratorio](https://github.com/marzione00/Lab_Geo/blob/649f7cc577b96bd1044d81e78a2f530813e4f96b/materiali/laboratori/M10/M10_N18.R) è conservato anche in `R/Originali_corso`. Gli ampliamenti e le varianti sono identificati nella mappa allegata.
+
+Documentazione dei metodi: [R stats, arima](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/arima.html), [predict.Arima](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/predict.arima.html), [Box.test](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/box.test.html) e [p.adjust](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/p.adjust.html).

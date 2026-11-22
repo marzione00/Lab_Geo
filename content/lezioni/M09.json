@@ -1,0 +1,5607 @@
+{
+ "id": "M09",
+ "title": "Serie temporali ambientali",
+ "planet": "Borealis",
+ "world": "M09-f",
+ "exercisesWorld": "M09-c",
+ "pages": 106,
+ "pdf": "assets/lezioni/M09/Borealis_M09_serie_temporali.pdf",
+ "project": {
+  "dir": "borealis",
+  "files": [
+   "Dati/PROVENIENZA.json",
+   "Dati/co2_1985_2001.csv",
+   "Dati/co2_mensile_derivata.csv",
+   "Dati/co2_settimanale_storica.csv",
+   "Dati/processi_simulati.csv",
+   "Dati/temperatura_simulata.csv",
+   "R/funzioni_calcoli.R",
+   "R/rigenera_calcoli.R",
+   "setup.R"
+  ],
+  "setup": "setup.R",
+  "needs": [
+   "tseries"
+  ]
+ },
+ "reference": {
+  "R": "R version 4.6.0 (2026-04-24), webR nel browser",
+  "native": "R version 4.3.3 (2024-02-29)",
+  "note": "Uscite registrate eseguendo il codice delle slide in ordine nel browser. I 6 frammenti che richiedono pacchetti assenti in webR riportano l'uscita di R version 4.3.3 (2024-02-29)."
+ },
+ "sections": [
+  {
+   "title": "COPERTINA",
+   "first": 1,
+   "last": 1
+  },
+  {
+   "title": "I · TEMPO E CALENDARIO",
+   "first": 2,
+   "last": 14
+  },
+  {
+   "title": "II · AGGREGAZIONE E RISOLUZIONE",
+   "first": 15,
+   "last": 25
+  },
+  {
+   "title": "III · TREND, STAGIONE E SMOOTHING",
+   "first": 26,
+   "last": 39
+  },
+  {
+   "title": "IV · RITARDI E AUTOCORRELAZIONE",
+   "first": 40,
+   "last": 53
+  },
+  {
+   "title": "V · PROCESSI E STAZIONARIETÀ",
+   "first": 54,
+   "last": 67
+  },
+  {
+   "title": "VI · TREND E TRASFORMAZIONI",
+   "first": 68,
+   "last": 83
+  },
+  {
+   "title": "VII · DIAGNOSI CON ADF E KPSS",
+   "first": 84,
+   "last": 96
+  },
+  {
+   "title": "VIII · ANALISI DELLA CO₂",
+   "first": 97,
+   "last": 106
+  }
+ ],
+ "slides": [
+  {
+   "page": 1,
+   "items": [],
+   "title": "Serie temporali ambientali",
+   "section": "COPERTINA",
+   "lines": [
+    "BOREALIS",
+    "MODULO M09 · SCIENZE DELLA TERRA",
+    "Serie temporali ambientali",
+    "Calendario, dipendenza, trasformazioni e stazionarietà",
+    "Marzio De Corato",
+    "© 2026 · CC BY-NC-SA 4.0"
+   ],
+   "recall": []
+  },
+  {
+   "page": 2,
+   "title": "Che cosa perdiamo senza l’ordine temporale?",
+   "section": "I · TEMPO E CALENDARIO",
+   "recall": [
+    "Il tempo è una coordinata del dato. La distribuzione dei valori, da sola, non descrive una serie."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Una stessa distribuzione, due successioni"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "002-1",
+     "w": 277,
+     "h": 150,
+     "src": "assets/lezioni/M09/figure/002-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "Rimescolare i valori lascia invariati media, quantili e istogramma. Cambia la relazione fra un’osservazione e quelle che la precedono."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "\\mathcal D=\\{(t_i,x_i)\\}_{i=1}^{n}.",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "La domanda della lezione: quali caratteristiche della serie dipendono dal calendario e dalla successione dei valori?"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Seguiremo una serie storica di CO",
+      {
+       "t": "m",
+       "v": "_2"
+      },
+      " e due archivi simulati, in cui alcune proprietà sono note."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 3,
+   "title": "Ogni valore ha un tempo e una durata",
+   "section": "I · TEMPO E CALENDARIO",
+   "recall": [
+    "La distanza fra due tempi osservati deve restare distinguibile dal numero di righe che li separa."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "003-1",
+     "w": 277,
+     "h": 118,
+     "src": "assets/lezioni/M09/figure/003-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "math",
+     "v": "\\Delta t_i=t_i-t_{i-1}.",
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "L’indice ",
+      {
+       "t": "m",
+       "v": "i"
+      },
+      " conta le righe. Il tempo ",
+      {
+       "t": "m",
+       "v": "t_i"
+      },
+      " indica quando avviene la misura. Passare dalla riga 2 alla riga 3 può significare un giorno, un mese o un intervallo irregolare."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Coordinate lungo una carota o una traversa sono spaziali. Si possono studiare dipendenze rispetto alla distanza, dichiarando unità e spaziatura."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Un ritardo ha significato soltanto quando sappiamo quale intervallo separa le osservazioni."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 4,
+   "title": "Le date diventano oggetti di R",
+   "section": "I · TEMPO E CALENDARIO",
+   "recall": [
+    "La classe Date conserva il calendario. Una successione di mesi non è una successione di 30 giorni."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "004-1",
+     "w": 277,
+     "h": 104,
+     "src": "assets/lezioni/M09/figure/004-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "Una data civile comprende anno, mese e giorno. Il formato anno-mese-giorno evita l’ambiguità fra notazioni italiane e anglosassoni."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · leggere le date",
+     "file": "004_date.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Una griglia mensile è regolare nel calendario, anche se gli intervalli in giorni hanno durata diversa."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 5,
+   "title": "Istanti e intervalli descrivono misure diverse",
+   "section": "I · TEMPO E CALENDARIO",
+   "recall": [
+    "Data, durata e procedura di misura stabiliscono quale quantità stiamo confrontando."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "005-1",
+     "w": 277,
+     "h": 141,
+     "src": "assets/lezioni/M09/figure/005-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "Una temperatura alle ore 12 e una media giornaliera riassumono quantità diverse. Alla data occorre associare il significato della misura."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "\\bar x_{[a,b]}=\\frac{1}{b-a}\\int_a^b x(t)\\,dt.",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "La formula definisce una media temporale continua ideale. I dati discreti richiedono una regola di approssimazione."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Per serie orarie servono anche fuso, ora legale e convenzione dell’istante: inizio, centro o fine dell’intervallo."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 6,
+   "title": "La provenienza della CO₂ storica",
+   "section": "I · TEMPO E CALENDARIO",
+   "recall": [
+    "La media mensile derivata ha una definizione propria. Non va confusa con una serie mensile ufficiale aggiornata."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "006-1",
+     "w": 277,
+     "h": 138,
+     "src": "assets/lezioni/M09/figure/006-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "small",
+     "c": [
+      "Fonte: archivio distribuito con statsmodels, attribuito a Keeling e Whorf e al CDIAC."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il file settimanale del corso contiene le concentrazioni storiche dell’osservatorio di Mauna Loa. Il periodo va da marzo 1958 a dicembre 2001."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "La versione mensile del corso media i valori settimanali disponibili, assegnandoli al mese della data. È un’aggregazione locale documentata."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Questi dati servono a studiare tendenza, stagione e dipendenza temporale. La data finale dell’archivio resta esplicita in ogni analisi."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      {
+       "t": "a",
+       "h": "https://www.statsmodels.org/stable/datasets/generated/co2.html",
+       "c": [
+        "Fonte e descrizione dell’archivio storico"
+       ]
+      }
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 7,
+   "title": "Una crescita attraversata da oscillazioni",
+   "section": "I · TEMPO E CALENDARIO",
+   "recall": [
+    "Un grafico della serie deve mostrare periodo, unità e assenze prima di qualsiasi trasformazione."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "007-1",
+     "w": 279,
+     "h": 140,
+     "src": "assets/lezioni/M09/figure/007-1.svg",
+     "ratio": 0.979
+    },
+    {
+     "t": "small",
+     "c": [
+      "Medie mensili derivate. Gli intervalli privi di valori restano interruzioni della linea."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · contare le osservazioni",
+     "file": "007_archivio.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "La crescita di lungo periodo e le oscillazioni annuali pongono domande diverse. Le esamineremo separatamente."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 8,
+   "title": "La tabella conserva valore e copertura",
+   "section": "I · TEMPO E CALENDARIO",
+   "recall": [
+    "La copertura è un’informazione sulla misura aggregata e deve rimanere nella tabella."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "008-1",
+     "w": 277,
+     "h": 130,
+     "src": "assets/lezioni/M09/figure/008-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "small",
+     "c": [
+      "Prime cinque righe del segmento 1985–2001. La copertura conta i valori settimanali disponibili."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · riconoscere le colonne",
+     "file": "008_tabella.R",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La concentrazione e il numero di settimane devono viaggiare insieme. Due medie uguali possono poggiare su quantità diverse di osservazioni."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 9,
+   "title": "L’ordinamento segue il calendario",
+   "section": "I · TEMPO E CALENDARIO",
+   "recall": [
+    "La serie ordinata conserva le associazioni fra date, valori e informazioni sulla misura."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "009-1",
+     "w": 277,
+     "h": 118,
+     "src": "assets/lezioni/M09/figure/009-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "info",
+     "c": [
+      "Il controllo delle date avviene prima dell’assegnazione di una frequenza alla serie."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · ordinare tutte le colonne",
+     "file": "009_ordinare.R",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Ordinare soltanto i valori romperebbe l’associazione con date e metadati. Ogni riga deve restare integra."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 10,
+   "title": "Un’assenza occupa una posizione",
+   "section": "I · TEMPO E CALENDARIO",
+   "recall": [
+    "Un valore mancante e un valore nullo esprimono situazioni diverse."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "010-1",
+     "w": 277,
+     "h": 104,
+     "src": "assets/lezioni/M09/figure/010-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "Aprile resta nella griglia con valore NA. La distanza fra marzo e maggio continua a essere di due mesi."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · conservare il mese assente",
+     "file": "010_assenze.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Sostituire NA con zero affermerebbe che il valore osservato è nullo. È un’informazione diversa da un’assenza."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 11,
+   "title": "Le date duplicate richiedono una spiegazione",
+   "section": "I · TEMPO E CALENDARIO",
+   "recall": [
+    "La chiave che identifica un’osservazione può comprendere più campi oltre alla data."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "011-1",
+     "w": 277,
+     "h": 138,
+     "src": "assets/lezioni/M09/figure/011-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "Repliche, sensori diversi ed errori di registrazione possono condividere una data. La regola di aggregazione dipende dalla loro origine."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · isolare i duplicati",
+     "file": "011_duplicati.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Eliminare una riga prima di identificarne il ruolo può cancellare una misura valida."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 12,
+   "title": "La griglia rende espliciti i mesi attesi",
+   "section": "I · TEMPO E CALENDARIO",
+   "recall": [
+    "La griglia attesa è una scelta esplicita fondata sul calendario e sul protocollo di osservazione."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "012-1",
+     "w": 277,
+     "h": 104,
+     "src": "assets/lezioni/M09/figure/012-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il confronto con una griglia completa distingue una riga assente da una riga presente con misura mancante."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · ricostruire il calendario",
+     "file": "012_griglia.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "La chiave data deve essere univoca prima del merge. In caso contrario, una data può generare più righe."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 13,
+   "title": "ts assegna una frequenza alla successione",
+   "section": "I · TEMPO E CALENDARIO",
+   "recall": [
+    "frequency = 12 dichiara dodici passi per anno. Non verifica da sola la regolarità del file."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "013-1",
+     "w": 277,
+     "h": 130,
+     "src": "assets/lezioni/M09/figure/013-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "math",
+     "v": "t_i=1985+\\frac{i-1}{12},\\qquad i=1,\\ldots,204.",
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · costruire la serie mensile",
+     "file": "013_ts.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "ts memorizza inizio e frequenza. La tabella con le date civili resta necessaria per ricondurre ogni risultato al calendario."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 14,
+   "title": "Il segmento completo comprende 204 mesi",
+   "section": "I · TEMPO E CALENDARIO",
+   "recall": [
+    "Un controllo esplicito del calendario rende verificabili le trasformazioni successive."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "014-1",
+     "w": 277,
+     "h": 130,
+     "src": "assets/lezioni/M09/figure/014-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "small",
+     "c": [
+      "Gennaio 1985–dicembre 2001: 17 anni, 204 mesi, nessun valore mancante."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · verificare prima del calcolo",
+     "file": "014_controllo_ts.R",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Useremo questo segmento per confrontare trasformazioni. Il calendario sarà mantenuto anche quando le differenze accorciano la serie."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 15,
+   "title": "Ogni media porta con sé la copertura",
+   "section": "II · AGGREGAZIONE E RISOLUZIONE",
+   "recall": [
+    "Una media senza informazioni sulla copertura può nascondere periodi osservati in modo disomogeneo."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "015-1",
+     "w": 279,
+     "h": 140,
+     "src": "assets/lezioni/M09/figure/015-1.svg",
+     "ratio": 0.979
+    },
+    {
+     "t": "small",
+     "c": [
+      "Archivio mensile completo: numero di mesi per quantità di valori settimanali disponibili."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\bar x_m=\\frac{1}{n_m}\\sum_{\\substack{i\\in m\\\\x_i\\ \\mathrm{osservato}}}x_i.",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      {
+       "t": "m",
+       "v": "n_m"
+      },
+      " conta le osservazioni disponibili nel mese. Quando ",
+      {
+       "t": "m",
+       "v": "n_m=0"
+      },
+      ", la media rimane assente."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Un conteggio alto non garantisce una copertura uniforme: anche la posizione delle assenze nel mese può influenzare il risultato."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Nel segmento 1985–2001 ogni mese ha almeno tre osservazioni settimanali. L’archivio completo ha copertura più variabile."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 16,
+   "title": "Dal valore settimanale alla media mensile",
+   "section": "II · AGGREGAZIONE E RISOLUZIONE",
+   "recall": [
+    "La convenzione di assegnazione al mese appartiene alla definizione del dato derivato."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Una regola riproducibile"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "016-1",
+     "w": 277,
+     "h": 130,
+     "src": "assets/lezioni/M09/figure/016-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il raggruppamento usa il mese della data. Una settimana che attraversa due mesi non viene suddivisa fra loro."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · aggregare con una regola esplicita",
+     "file": "016_aggregare.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "La condizione all(is.na(v)) evita di restituire NaN per un mese completamente privo di valori."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 17,
+   "title": "La ricostruzione si confronta con il file",
+   "section": "II · AGGREGAZIONE E RISOLUZIONE",
+   "recall": [
+    "Il confronto numerico richiede le stesse date, la stessa regola e una tolleranza dichiarata."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "017-1",
+     "w": 277,
+     "h": 130,
+     "src": "assets/lezioni/M09/figure/017-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "La corrispondenza è verificata dopo l’allineamento delle date. La tolleranza riflette gli arrotondamenti del CSV."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · verificare la ricostruzione",
+     "file": "017_confronto.R",
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 18,
+   "title": "La media delle medie cambia i pesi",
+   "section": "II · AGGREGAZIONE E RISOLUZIONE",
+   "recall": [
+    "La media dei periodi e la media delle misure rispondono a domande diverse quando le numerosità cambiano."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "018-1",
+     "w": 277,
+     "h": 138,
+     "src": "assets/lezioni/M09/figure/018-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "Due periodi hanno medie 10 e 20. Il primo contiene due misure, il secondo otto."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "\\bar x_{\\rm periodi}=\\frac{10+20}{2}=15.",
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "\\bar x_{\\rm misure}=\\frac{2\\cdot10+8\\cdot20}{10}=18.",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "La prima quantità pesa allo stesso modo i periodi. La seconda pesa allo stesso modo le dieci misure disponibili."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 19,
+   "title": "I pesi dichiarano la quantità stimata",
+   "section": "II · AGGREGAZIONE E RISOLUZIONE",
+   "recall": [
+    "Prima di calcolare una media complessiva bisogna scegliere cosa riceve uguale peso."
+   ],
+   "items": [
+    {
+     "t": "math",
+     "v": "\\bar x_{\\rm misure}=\\frac{\\sum_{m=1}^{M}n_m\\bar x_m}{\\sum_{m=1}^{M}n_m}.",
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\bar x_{\\rm periodi}=\\frac{1}{M}\\sum_{m=1}^{M}\\bar x_m.",
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "019-1",
+     "w": 279,
+     "h": 111,
+     "src": "assets/lezioni/M09/figure/019-1.svg",
+     "ratio": 0.979
+    },
+    {
+     "t": "code",
+     "title": "R · calcolare le due medie",
+     "file": "019_pesi.R",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Numerosità uguali fanno coincidere le due formule. Possono coincidere anche in casi particolari, per esempio se tutte le medie dei periodi sono uguali."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 20,
+   "title": "Intervalli diversi possono richiedere durate",
+   "section": "II · AGGREGAZIONE E RISOLUZIONE",
+   "recall": [
+    "Un peso temporale ha senso soltanto insieme all’ipotesi su ciò che accade fra due misure."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "020-1",
+     "w": 277,
+     "h": 118,
+     "src": "assets/lezioni/M09/figure/020-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "math",
+     "v": "\\bar x_{\\rm tempo}=\\frac{1\\cdot10+3\\cdot20}{1+3}=17{,}5.",
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · pesare per il tempo rappresentato",
+     "file": "020_durate.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "I pesi di durata sono appropriati se il valore rappresenta l’intero intervallo. Misure puntuali irregolari richiedono un modello di interpolazione o integrazione."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 21,
+   "title": "Somma, media e massimo cambiano la domanda",
+   "section": "II · AGGREGAZIONE E RISOLUZIONE",
+   "recall": [
+    "La gestione delle assenze deve essere coerente con la quantità che l’aggregato intende descrivere."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "021-1",
+     "w": 277,
+     "h": 138,
+     "src": "assets/lezioni/M09/figure/021-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "code",
+     "title": "R · specificare l’aggregato",
+     "file": "021_operatori.R",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Una somma con un giorno assente è il totale dei soli giorni osservati. Un massimo su un periodo incompleto può perdere proprio il picco."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 22,
+   "title": "Aggregare attenua le variazioni rapide",
+   "section": "II · AGGREGAZIONE E RISOLUZIONE",
+   "recall": [
+    "La risoluzione temporale limita le oscillazioni e gli eventi che possiamo riconoscere."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "022-1",
+     "w": 279,
+     "h": 137,
+     "src": "assets/lezioni/M09/figure/022-1.svg",
+     "ratio": 0.979
+    },
+    {
+     "t": "small",
+     "c": [
+      "Segnale illustrativo con periodicità di 12 e 3 mesi. Le medie sono calcolate su blocchi disgiunti."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · cambiare la risoluzione",
+     "file": "022_risoluzione.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Una media annuale può cancellare il ciclo entro l’anno. Dal dato aggregato non si ricostruiscono in generale i valori originali."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 23,
+   "title": "Un campionamento rado può nascondere un ciclo",
+   "section": "II · AGGREGAZIONE E RISOLUZIONE",
+   "recall": [
+    "Una serie osservata quasi costante può derivare da un segnale variabile campionato sempre alla stessa fase."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "023-1",
+     "w": 279,
+     "h": 140,
+     "src": "assets/lezioni/M09/figure/023-1.svg",
+     "ratio": 0.979
+    },
+    {
+     "t": "p",
+     "c": [
+      "Nel disegno, il segnale oscilla fra ",
+      {
+       "t": "m",
+       "v": "-1"
+      },
+      " e ",
+      {
+       "t": "m",
+       "v": "1"
+      },
+      ". I campioni cadono sempre nella stessa fase e sono tutti uguali a 1."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "f_s>2f_{\\max}.",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Condizione del modello ideale: segnale limitato in frequenza e campionamento uniforme. ",
+      {
+       "t": "m",
+       "v": "f_s"
+      },
+      " è la frequenza di campionamento."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "L’aliasing rende indistinguibili frequenze diverse alla risoluzione osservata. Irregolarità e assenze richiedono analisi ulteriori."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 24,
+   "title": "Risoluzione e copertura si esaminano insieme",
+   "section": "II · AGGREGAZIONE E RISOLUZIONE",
+   "recall": [
+    "L’aggregazione modifica insieme il dettaglio visibile e il significato delle osservazioni."
+   ],
+   "items": [
+    {
+     "t": "lab",
+     "url": "https://marzione00.github.io/Lab_Geo/#laboratorio/m09-aggregazione",
+     "c": [
+      "Esperimento · Aggregazione"
+     ],
+     "col": "L",
+     "lab": "m09-aggregazione"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "024-1",
+     "w": 279,
+     "h": 137,
+     "src": "assets/lezioni/M09/figure/024-1.svg",
+     "ratio": 0.979
+    },
+    {
+     "t": "p",
+     "c": [
+      "Nell’esperimento, allargare l’intervallo di aggregazione modifica la forma e la variabilità della serie."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Confrontare finestre da 1, 3 e 12 mesi. Descrivere quale oscillazione si attenua e quali picchi non restano riconoscibili."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il confronto è interpretabile se teniamo ferma anche la regola sulle assenze. Un cambiamento di copertura può alterare la media quanto un cambiamento del segnale."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      {
+       "t": "a",
+       "h": "#laboratorio/m09-calendario",
+       "c": [
+        "Esperimento complementare: calendario e mesi mancanti"
+       ]
+      }
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 25,
+   "title": "Il dato analizzabile conserva la sua storia",
+   "section": "II · AGGREGAZIONE E RISOLUZIONE",
+   "recall": [
+    "Un’analisi riproducibile mantiene collegati osservazione originaria, calendario e trasformazioni."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "025-1",
+     "w": 277,
+     "h": 130,
+     "src": "assets/lezioni/M09/figure/025-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "code",
+     "title": "R · preparare il registro",
+     "file": "025_registro.R",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Passiamo ora alla forma della serie: andamento graduale, oscillazione periodica e variazioni che restano dopo averle rappresentate."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 26,
+   "title": "Una serie può essere descritta per componenti",
+   "section": "III · TREND, STAGIONE E SMOOTHING",
+   "recall": [
+    "Le componenti dipendono dalla rappresentazione adottata. Il resto può conservare struttura."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "026-1",
+     "w": 279,
+     "h": 143,
+     "src": "assets/lezioni/M09/figure/026-1.svg",
+     "ratio": 0.979
+    },
+    {
+     "t": "math",
+     "v": "X_t=T_t+S_t+R_t.",
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Un andamento graduale ",
+      {
+       "t": "m",
+       "v": "T_t"
+      },
+      " e una stagione ",
+      {
+       "t": "m",
+       "v": "S_t"
+      },
+      " descrivono due scale di variazione. Il resto ",
+      {
+       "t": "m",
+       "v": "R_t"
+      },
+      " raccoglie ciò che rimane dopo questa rappresentazione."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Nella temperatura simulata conosciamo le componenti del generatore. Nei dati osservati dobbiamo stimarle attraverso un modello."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La scomposizione additiva è una scelta. Componenti con ampiezza proporzionale al livello possono richiedere una trasformazione, se compatibile con il significato e il dominio dei dati."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 27,
+   "title": "Nel simulatore conosciamo le componenti",
+   "section": "III · TREND, STAGIONE E SMOOTHING",
+   "recall": [
+    "Conoscere il generatore permette di distinguere una ricostruzione esatta da una stima statistica."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "027-1",
+     "w": 279,
+     "h": 131,
+     "src": "assets/lezioni/M09/figure/027-1.svg",
+     "ratio": 0.979
+    },
+    {
+     "t": "small",
+     "c": [
+      "Trend in blu, stagione in rame. Le due curve hanno la stessa unità."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "L’identità consente di confrontare una stima delle componenti con la verità del simulatore."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "T_t=12+0{,}012t,\\qquad S_t=-8\\cos\\!\\left(\\frac{2\\pi t}{12}\\right).",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      {
+       "t": "m",
+       "v": "t=0"
+      },
+      " corrisponde a gennaio 2000. Il file comprende 240 mesi."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "code",
+     "title": "R · verificare l’identità",
+     "file": "027_componenti.R",
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 28,
+   "title": "La stagione ricorre entro l’anno",
+   "section": "III · TREND, STAGIONE E SMOOTHING",
+   "recall": [
+    "Il confronto fra gli stessi mesi di anni diversi aiuta a riconoscere la stagionalità."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "028-1",
+     "w": 279,
+     "h": 140,
+     "src": "assets/lezioni/M09/figure/028-1.svg",
+     "ratio": 0.979
+    },
+    {
+     "t": "code",
+     "title": "R · confrontare gli anni",
+     "file": "028_stagione.R",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La forma entro l’anno può ripetersi mentre il livello cresce. Un ciclo di calendario si distingue da oscillazioni con durata variabile."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 29,
+   "title": "Una media mobile combina valori vicini",
+   "section": "III · TREND, STAGIONE E SMOOTHING",
+   "recall": [
+    "La larghezza della finestra stabilisce quali variazioni contribuiscono a ciascun valore smussato."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "029-1",
+     "w": 277,
+     "h": 135,
+     "src": "assets/lezioni/M09/figure/029-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "math",
+     "v": "M_t^{(q)}=\\frac{1}{2q+1}\\sum_{j=-q}^{q}X_{t+j}.",
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La semilarghezza ",
+      {
+       "t": "m",
+       "v": "q"
+      },
+      " conta i vicini su ciascun lato. Con ",
+      {
+       "t": "m",
+       "v": "q=2"
+      },
+      " la finestra contiene cinque valori, tutti con peso ",
+      {
+       "t": "m",
+       "v": "1/5"
+      },
+      "."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Il risultato viene collocato al tempo centrale ",
+      {
+       "t": "m",
+       "v": "t"
+      },
+      ". Un’oscillazione può attenuarsi quando la finestra include fasi diverse del ciclo."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La media mobile modifica la risoluzione con cui leggiamo l’andamento locale. La scelta della finestra va motivata rispetto alla domanda."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 30,
+   "title": "Tre e tredici mesi mostrano dettagli diversi",
+   "section": "III · TREND, STAGIONE E SMOOTHING",
+   "recall": [
+    "Una curva più liscia conserva meno dettaglio. La finestra deve essere sempre dichiarata."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "030-1",
+     "w": 279,
+     "h": 137,
+     "src": "assets/lezioni/M09/figure/030-1.svg",
+     "ratio": 0.979
+    },
+    {
+     "t": "small",
+     "c": [
+      "Blu: osservata. Rame: media a 3 mesi. Viola: media a 13 mesi."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · confrontare due finestre",
+     "file": "030_media_mobile.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "La finestra di tredici mesi attenua fortemente il ciclo annuale. Non garantisce di eliminarlo esattamente: i pesi e il numero di mesi contano."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 31,
+   "title": "Ai bordi mancano alcuni vicini",
+   "section": "III · TREND, STAGIONE E SMOOTHING",
+   "recall": [
+    "La regola ai bordi è parte del metodo e può influenzare le conclusioni sulle osservazioni più recenti."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "031-1",
+     "w": 277,
+     "h": 127,
+     "src": "assets/lezioni/M09/figure/031-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "Con una finestra centrata di ",
+      {
+       "t": "m",
+       "v": "2q+1"
+      },
+      " valori, i primi e gli ultimi ",
+      {
+       "t": "m",
+       "v": "q"
+      },
+      " risultati sono NA se non estendiamo la serie."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · riconoscere i bordi incompleti",
+     "file": "031_bordi.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Una finestra più corta al bordo cambia la definizione della stima. Un’estensione artificiale introduce ipotesi sui dati esterni."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 32,
+   "title": "Una finestra rivolta al passato è causale",
+   "section": "III · TREND, STAGIONE E SMOOTHING",
+   "recall": [
+    "Un filtro causale rispetta l’ordine di disponibilità dei dati. Non stabilisce relazioni di causa fra variabili."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "032-1",
+     "w": 277,
+     "h": 135,
+     "src": "assets/lezioni/M09/figure/032-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "math",
+     "v": "M_t^-=\\frac{1}{L}\\sum_{j=0}^{L-1}X_{t-j}.",
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · usare soltanto dati già disponibili",
+     "file": "032_filtro_causale.R",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      {
+       "t": "m",
+       "v": "L"
+      },
+      " indica il numero complessivo di valori, incluso il presente. Qui la finestra è causale nel senso temporale del filtro."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "La curva segue più lentamente un cambiamento. Questo ritardo è distinto dalla disponibilità di dati futuri."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 33,
+   "title": "Una trasformazione può anticipare il futuro",
+   "section": "III · TREND, STAGIONE E SMOOTHING",
+   "recall": [
+    "La disponibilità temporale dei dati riguarda anche preprocessing, riferimenti e parametri stimati."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "033-1",
+     "w": 277,
+     "h": 135,
+     "src": "assets/lezioni/M09/figure/033-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "p",
+     "c": [
+      "Se calcoliamo una media centrata su tutta la serie, alcuni valori vicini al confine usano osservazioni del periodo successivo."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Una valutazione predittiva deve riprodurre ciò che sarebbe stato disponibile in quel momento, compresa la stima delle trasformazioni."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Per una descrizione retrospettiva possiamo usare vicini futuri, dichiarandolo. Per una previsione dobbiamo rispettare la data in cui il risultato viene prodotto."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 34,
+   "title": "LOESS adatta una regressione locale",
+   "section": "III · TREND, STAGIONE E SMOOTHING",
+   "recall": [
+    "Il parametro span governa la scala locale di adattamento. La curva stimata dipende da questa scelta."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "034-1",
+     "w": 279,
+     "h": 134,
+     "src": "assets/lezioni/M09/figure/034-1.svg",
+     "ratio": 0.979
+    },
+    {
+     "t": "small",
+     "c": [
+      "Schema illustrativo: vicino al tempo centrale, i punti evidenziati contribuiscono alla regressione locale."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "LOESS stima un polinomio in un intorno di ciascun tempo. I punti più vicini ricevono maggiore peso."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "\\widehat\\beta(t)=\\arg\\min_\\beta\\sum_i w_i(t)\\,[x_i-p_\\beta(t_i-t)]^2.",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      {
+       "t": "m",
+       "v": "p_\\beta"
+      },
+      " è il polinomio locale. I pesi ",
+      {
+       "t": "m",
+       "v": "w_i(t)"
+      },
+      " dipendono dalla distanza temporale."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Lo span stabilisce la quota di osservazioni coinvolte nell’intorno, per i valori usuali fra 0 e 1. Uno span piccolo segue dettagli più locali."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 35,
+   "title": "Lo span modifica l’andamento stimato",
+   "section": "III · TREND, STAGIONE E SMOOTHING",
+   "recall": [
+    "Una scelta di smoothing va valutata rispetto alla scala del fenomeno e ai cambiamenti che interessa descrivere."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "035-1",
+     "w": 279,
+     "h": 137,
+     "src": "assets/lezioni/M09/figure/035-1.svg",
+     "ratio": 0.979
+    },
+    {
+     "t": "small",
+     "c": [
+      "Blu: osservata. Rame: span 0,20. Viola: span 0,60."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · confrontare gli span",
+     "file": "035_loess.R",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La curva più regolare non è automaticamente più corretta. Confrontiamo le scelte e cerchiamo quali conclusioni rimangono stabili."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 36,
+   "title": "La mediana mobile risponde meno a un picco",
+   "section": "III · TREND, STAGIONE E SMOOTHING",
+   "recall": [
+    "Una procedura robusta può proteggere da errori isolati e, allo stesso tempo, attenuare eventi importanti."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "036-1",
+     "w": 279,
+     "h": 140,
+     "src": "assets/lezioni/M09/figure/036-1.svg",
+     "ratio": 0.979
+    },
+    {
+     "t": "small",
+     "c": [
+      "Esempio illustrativo. Ai bordi la mediana conserva il dato originale."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · confrontare media e mediana",
+     "file": "036_mediana.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "La mediana limita l’effetto di un valore isolato. Prima di attenuarlo, occorre capire se rappresenta un errore o un evento reale."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 37,
+   "title": "Un’anomalia dipende dal riferimento",
+   "section": "III · TREND, STAGIONE E SMOOTHING",
+   "recall": [
+    "Ogni anomalia deve dichiarare la base, la variabile e il periodo cui si riferisce."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "037-1",
+     "w": 277,
+     "h": 133,
+     "src": "assets/lezioni/M09/figure/037-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "math",
+     "v": "A_t=X_t-C_{m(t)},\\qquad C_m=\\operatorname{media}_{\\rm base}(X_t\\mid m(t)=m).",
+     "col": "L"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Base didattica di cinque anni (2000–2004), distinta da una normale climatologica trentennale."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · usare la base 2000–2004",
+     "file": "037_anomalia.R",
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 38,
+   "title": "STL separa trend, stagione e resto",
+   "section": "III · TREND, STAGIONE E SMOOTHING",
+   "recall": [
+    "Una ricostruzione esatta verifica l’identità additiva. Non dimostra che le singole componenti stimate siano vere."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "038-1",
+     "w": 279,
+     "h": 137,
+     "src": "assets/lezioni/M09/figure/038-1.svg",
+     "ratio": 0.979
+    },
+    {
+     "t": "small",
+     "c": [
+      "Blu: trend stimato. Rame: stagione stimata. Viola: resto."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · ricostruire la serie da STL",
+     "file": "038_stl.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "s.window = \"periodic\" impone una stagione che si ripete. robust = TRUE riduce l’influenza dei valori anomali nella stima."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 39,
+   "title": "Il resto merita una nuova analisi",
+   "section": "III · TREND, STAGIONE E SMOOTHING",
+   "recall": [
+    "Anomalie e resti rispondono a definizioni diverse. Entrambi possono mantenere autocorrelazione."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "039-1",
+     "w": 279,
+     "h": 140,
+     "src": "assets/lezioni/M09/figure/039-1.svg",
+     "ratio": 0.979
+    },
+    {
+     "t": "small",
+     "c": [
+      "Temperatura simulata: anomalie rispetto alla base 2000–2004. Il trend successivo resta visibile."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · conservare osservazioni e derivati",
+     "file": "039_registro_componenti.R",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Togliere una stagione o una curva graduale non garantisce che il resto sia indipendente. Il prossimo controllo riguarda le relazioni fra tempi diversi."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "lab",
+     "url": "https://marzione00.github.io/Lab_Geo/#laboratorio/m09-smoothing",
+     "c": [
+      "Esperimento · Smoothing"
+     ],
+     "col": "R",
+     "lab": "m09-smoothing"
+    }
+   ]
+  },
+  {
+   "page": 40,
+   "title": "Un ritardo costruisce coppie di osservazioni",
+   "section": "IV · RITARDI E AUTOCORRELAZIONE",
+   "recall": [
+    "Il ritardo k specifica quali coppie confrontiamo. Aumentando k diminuisce il numero di coppie disponibili."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "040-1",
+     "w": 277,
+     "h": 118,
+     "src": "assets/lezioni/M09/figure/040-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "math",
+     "v": "(x_{t-1},x_t),\\qquad t=2,\\ldots,n.",
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · allineare passato e presente",
+     "file": "040_lag1.R",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "In una serie regolare, un passo separa ogni coppia. La prima osservazione non ha un precedente nel file."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 41,
+   "title": "Dodici passi collegano lo stesso mese",
+   "section": "IV · RITARDI E AUTOCORRELAZIONE",
+   "recall": [
+    "L’unità temporale del ritardo deriva dal calendario, non dal nome attribuito alla colonna."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "041-1",
+     "w": 277,
+     "h": 118,
+     "src": "assets/lezioni/M09/figure/041-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "math",
+     "v": "(x_{t-12},x_t),\\qquad t=13,\\ldots,204.",
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · allineare due anni",
+     "file": "041_lag12.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Dodici passi valgono un anno perché la griglia è mensile e completa. In una tabella con mesi eliminati, dodici righe avrebbero un altro significato."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 42,
+   "title": "Il diagramma di ritardo mostra la dipendenza",
+   "section": "IV · RITARDI E AUTOCORRELAZIONE",
+   "recall": [
+    "La correlazione fra valori vicini descrive persistenza. Non identifica da sola il meccanismo fisico che la produce."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "042-1",
+     "w": 279,
+     "h": 145,
+     "src": "assets/lezioni/M09/figure/042-1.svg",
+     "ratio": 0.979
+    },
+    {
+     "t": "small",
+     "c": [
+      "AR(1) del file simulato: ciascun punto confronta un valore con il precedente."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · disegnare le coppie",
+     "file": "042_scatter_lag.R",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Una nube orientata segnala una relazione lineare fra i valori. Strutture curve o ampiezze variabili possono richiedere descrizioni ulteriori."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "lab",
+     "url": "https://marzione00.github.io/Lab_Geo/#laboratorio/m09-autocorrelazione",
+     "c": [
+      "Esperimento · Autocorrelazione"
+     ],
+     "col": "R",
+     "lab": "m09-autocorrelazione"
+    }
+   ]
+  },
+  {
+   "page": 43,
+   "title": "La correlazione delle coppie e l’ACF",
+   "section": "IV · RITARDI E AUTOCORRELAZIONE",
+   "recall": [
+    "cor(head(x), tail(x)) e acf(x) non sono, in generale, lo stesso stimatore."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "043-1",
+     "w": 277,
+     "h": 124,
+     "src": "assets/lezioni/M09/figure/043-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "small",
+     "c": [
+      "Esempio ",
+      {
+       "t": "m",
+       "v": "x=(1,2,3,5,4)"
+      },
+      ", media complessiva 3. I prodotti usano valori centrati sulla stessa media."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · confrontare due definizioni",
+     "file": "043_cor_vs_acf.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "I due numeri possono differire nei campioni finiti. Prima di confrontare risultati bisogna conoscere centratura e normalizzazione."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 44,
+   "title": "Lo stimatore usato da acf in R",
+   "section": "IV · RITARDI E AUTOCORRELAZIONE",
+   "recall": [
+    "La definizione dello stimatore spiega differenze numeriche che non sono errori di calcolo."
+   ],
+   "items": [
+    {
+     "t": "math",
+     "v": "\\widehat\\rho(k)= \\frac{\\sum_{t=k+1}^{n}(x_t-\\bar x)(x_{t-k}-\\bar x)} {\\sum_{t=1}^{n}(x_t-\\bar x)^2}.",
+     "col": "L"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Serie completa, demeaning predefinito. A ritardo zero il rapporto vale uno."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "044-1",
+     "w": 277,
+     "h": 124,
+     "src": "assets/lezioni/M09/figure/044-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "code",
+     "title": "R · ricostruire il calcolo",
+     "file": "044_acf_manuale.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Nell’esempio il numeratore vale 4 e il denominatore 10. Il denominatore usa tutti i valori centrati, anche ai ritardi maggiori."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 45,
+   "title": "L’autocovarianza ha un ritardo",
+   "section": "IV · RITARDI E AUTOCORRELAZIONE",
+   "recall": [
+    "Per interpretare l’ACF come una proprietà stabile del processo occorre esplicitare le ipotesi sulla serie."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "045-1",
+     "w": 279,
+     "h": 145,
+     "src": "assets/lezioni/M09/figure/045-1.svg",
+     "ratio": 0.979
+    },
+    {
+     "t": "small",
+     "c": [
+      "Le stesse osservazioni del simulatore, qui separate da quattro passi."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\gamma(k)=\\operatorname{Cov}(X_t,X_{t-k}).",
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "\\rho(k)=\\frac{\\gamma(k)}{\\gamma(0)}.",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Per un processo debolmente stazionario, ",
+      {
+       "t": "m",
+       "v": "\\gamma(k)"
+      },
+      " dipende dal ritardo e la varianza ",
+      {
+       "t": "m",
+       "v": "\\gamma(0)"
+      },
+      " è costante e finita. Supponiamo ",
+      {
+       "t": "m",
+       "v": "\\gamma(0)>0"
+      },
+      "."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "L’autocovarianza conserva l’unità al quadrato. L’autocorrelazione è adimensionale e vale uno per ",
+      {
+       "t": "m",
+       "v": "k=0"
+      },
+      "."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Le condizioni di stazionarietà saranno sviluppate nella sezione successiva."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 46,
+   "title": "Cambiare unità non cambia l’autocorrelazione",
+   "section": "IV · RITARDI E AUTOCORRELAZIONE",
+   "recall": [
+    "L’ACF permette di confrontare dipendenze lineari senza incorporare l’unità di misura."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "046-1",
+     "w": 279,
+     "h": 137,
+     "src": "assets/lezioni/M09/figure/046-1.svg",
+     "ratio": 0.979
+    },
+    {
+     "t": "math",
+     "v": "\\gamma_{aX}(k)=a^2\\gamma_X(k),\\qquad \\rho_{aX+b}(k)=\\rho_X(k)\\ (a\\ne0).",
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · verificare l’invarianza",
+     "file": "046_scala_acf.R",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Una trasformazione affine cambia livello e scala, ma conserva la struttura lineare relativa fra i ritardi. Questo non vale per trasformazioni arbitrarie."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 47,
+   "title": "L’ACF raccoglie molti ritardi",
+   "section": "IV · RITARDI E AUTOCORRELAZIONE",
+   "recall": [
+    "Prima di leggere un picco dell’ACF bisogna controllare l’unità dell’asse orizzontale."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "047-1",
+     "w": 279,
+     "h": 140,
+     "src": "assets/lezioni/M09/figure/047-1.svg",
+     "ratio": 0.979
+    },
+    {
+     "t": "code",
+     "title": "R · leggere l’asse dei ritardi",
+     "file": "047_leggere_acf.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Su un oggetto ts, R esprime l’asse in unità di tempo. Su un vettore numerico, lo esprime in passi. Le figure didattiche indicano qui i passi."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 48,
+   "title": "Le bande usuali hanno un riferimento preciso",
+   "section": "IV · RITARDI E AUTOCORRELAZIONE",
+   "recall": [
+    "La banda dell’ACF si interpreta insieme al modello di riferimento e al numero di ritardi esaminati."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "048-1",
+     "w": 279,
+     "h": 140,
+     "src": "assets/lezioni/M09/figure/048-1.svg",
+     "ratio": 0.979
+    },
+    {
+     "t": "math",
+     "v": "\\widehat\\rho(k)\\ \\approx\\ \\mathcal N(0,1/n),\\qquad \\pm\\frac{1{,}96}{\\sqrt n}.",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Approssimazione per ritardi fissati, con riferimento a rumore IID (per esempio gaussiano), momenti appropriati e campioni grandi."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Per ",
+      {
+       "t": "m",
+       "v": "n=300"
+      },
+      ", la semilarghezza è circa ",
+      {
+       "t": "m",
+       "v": "0{,}113"
+      },
+      ". Un valore oltre la banda richiede attenzione rispetto a questo riferimento."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Le bande puntuali non sono un intervallo di confidenza simultaneo per tutta l’ACF. Con dipendenza generale, la variabilità delle stime può cambiare."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 49,
+   "title": "Molti ritardi generano molti confronti",
+   "section": "IV · RITARDI E AUTOCORRELAZIONE",
+   "recall": [
+    "Un superamento isolato può verificarsi per variabilità campionaria. Sequenze e pattern richiedono una lettura congiunta."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "049-1",
+     "w": 279,
+     "h": 140,
+     "src": "assets/lezioni/M09/figure/049-1.svg",
+     "ratio": 0.979
+    },
+    {
+     "t": "small",
+     "c": [
+      "Stessa realizzazione della slide precedente. La lettura riguarda la forma complessiva e i singoli valori."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Con 24 confronti puntuali al 5%, il numero atteso di superamenti è circa ",
+      {
+       "t": "m",
+       "v": "24\\cdot0{,}05=1{,}2"
+      },
+      " sotto l’approssimazione."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · individuare i ritardi oltre banda",
+     "file": "049_bande.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Questa aspettativa non dà la probabilità di almeno un superamento. Le stime ai diversi ritardi non sono indipendenti."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 50,
+   "title": "Assenze e ritardi non si separano",
+   "section": "IV · RITARDI E AUTOCORRELAZIONE",
+   "recall": [
+    "Gestire le assenze richiede una scelta metodologica. Eliminare posizioni cambia il significato dei ritardi."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "050-1",
+     "w": 279,
+     "h": 131,
+     "src": "assets/lezioni/M09/figure/050-1.svg",
+     "ratio": 0.979
+    },
+    {
+     "t": "small",
+     "c": [
+      "Numero di coppie in una serie completa di 204 mesi. Con assenze, il numero può dipendere anche dalla loro posizione."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · contare le coppie osservate",
+     "file": "050_na_acf.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Eliminare gli NA dal vettore e ricreare ts comprimerebbe il calendario. acf(..., na.action = na.pass) usa coppie complete, ma la sequenza risultante può non essere un’ACF valida."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 51,
+   "title": "La PACF rimuove i ritardi intermedi",
+   "section": "IV · RITARDI E AUTOCORRELAZIONE",
+   "recall": [
+    "Una relazione fra tempi distanti può essere spiegata dai valori intermedi. La PACF studia ciò che rimane."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "051-1",
+     "w": 277,
+     "h": 124,
+     "src": "assets/lezioni/M09/figure/051-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "math",
+     "v": "\\operatorname{PACF}(2)=\\operatorname{Corr}(e_{t},e_{t-2}),",
+     "col": "L"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Nella formula a sinistra ",
+      {
+       "t": "m",
+       "v": "e_t"
+      },
+      " ed ",
+      {
+       "t": "m",
+       "v": "e_{t-2}"
+      },
+      " indicano questi residui di proiezione lineare."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "A ritardo 2 si regrediscono separatamente ",
+      {
+       "t": "m",
+       "v": "X_t"
+      },
+      " e ",
+      {
+       "t": "m",
+       "v": "X_{t-2}"
+      },
+      " sul valore intermedio ",
+      {
+       "t": "m",
+       "v": "X_{t-1}"
+      },
+      ". Si confrontano poi i due residui."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "code",
+     "title": "R · calcolare la PACF",
+     "file": "051_pacf.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "La PACF considera la dipendenza lineare residua. Il suo significato richiede le stesse cautele dell’ACF."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 52,
+   "title": "ACF e PACF rispondono a domande diverse",
+   "section": "IV · RITARDI E AUTOCORRELAZIONE",
+   "recall": [
+    "Il confronto con forme teoriche orienta un modello. Non trasforma una somiglianza grafica in una dimostrazione."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "052-1",
+     "w": 279,
+     "h": 140,
+     "src": "assets/lezioni/M09/figure/052-1.svg",
+     "ratio": 0.979
+    },
+    {
+     "t": "p",
+     "c": [
+      "Nell’AR(1) stazionario la relazione con il passato passa attraverso il valore immediatamente precedente. L’ACF decade, mentre la PACF teorica si annulla dopo il primo ritardo."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · confrontare le funzioni teoriche",
+     "file": "052_acf_pacf_teoria.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Nei campioni finiti le stime oscillano attorno ai valori teorici. Un taglio netto non deve comparire esattamente."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 53,
+   "title": "Tre forme di memoria da spiegare",
+   "section": "IV · RITARDI E AUTOCORRELAZIONE",
+   "recall": [
+    "La forma dell’ACF va interpretata insieme alla natura del processo e alla stabilità delle sue proprietà."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "053-1",
+     "w": 279,
+     "h": 140,
+     "src": "assets/lezioni/M09/figure/053-1.svg",
+     "ratio": 0.979
+    },
+    {
+     "t": "code",
+     "title": "R · confrontare i tre archivi",
+     "file": "053_tre_acf.R",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il rumore oscilla attorno a zero. L’AR(1) mostra memoria che tende ad attenuarsi. Nel random walk l’ACF campionaria resta elevata a più ritardi."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Il random walk non ha una varianza costante. La sua ACF campionaria è descrittiva e non è una funzione teorica stazionaria."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 54,
+   "title": "Un processo, molte traiettorie",
+   "section": "V · PROCESSI E STAZIONARIETÀ",
+   "recall": [
+    "La serie osservata è una realizzazione. Stazionarietà e dipendenza sono proprietà del modello probabilistico."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "054-1",
+     "w": 274,
+     "h": 120,
+     "src": "assets/lezioni/M09/figure/054-1.svg",
+     "ratio": 0.962
+    },
+    {
+     "t": "math",
+     "v": "\\{X_t:t\\in\\mathbb Z\\},\\qquad x_1,\\ldots,x_n.",
+     "col": "L"
+    },
+    {
+     "t": "small",
+     "c": [
+      {
+       "t": "m",
+       "v": "X_t"
+      },
+      " è una variabile casuale. ",
+      {
+       "t": "m",
+       "v": "x_t"
+      },
+      " è il valore osservato in una realizzazione del processo."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il modello descrive come potrebbero variare le osservazioni nel tempo. Il file contiene una sola traiettoria, registrata in condizioni specifiche."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Per studiare una proprietà del processo possiamo simulare molte repliche. Le repliche permettono di confrontare la distribuzione allo stesso istante."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Una traiettoria che sembra regolare non dimostra, da sola, una proprietà della distribuzione."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 55,
+   "title": "Le condizioni di stazionarietà debole",
+   "section": "V · PROCESSI E STAZIONARIETÀ",
+   "recall": [
+    "L’ACF di un processo stazionario dipende dalla distanza temporale fra le osservazioni."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "055-1",
+     "w": 274,
+     "h": 118,
+     "src": "assets/lezioni/M09/figure/055-1.svg",
+     "ratio": 0.962
+    },
+    {
+     "t": "math",
+     "v": "\\begin{aligned} \\mathbb E(X_t)&=\\mu,\\\\ \\operatorname{Var}(X_t)&=\\gamma(0)<\\infty,\\\\ \\operatorname{Cov}(X_t,X_{t-k})&=\\gamma(k). \\end{aligned}",
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La media e la varianza restano costanti. La covarianza dipende dal ritardo ",
+      {
+       "t": "m",
+       "v": "k"
+      },
+      ", senza dipendere dalla posizione nel calendario."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "La stazionarietà debole riguarda momenti di ordine uno e due. Una distribuzione completa invariata richiede una condizione più forte."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Un grafico aiuta a individuare incompatibilità evidenti. La stabilità apparente di un tratto breve offre un’evidenza limitata."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 56,
+   "title": "Il rumore bianco ha covarianze nulle",
+   "section": "V · PROCESSI E STAZIONARIETÀ",
+   "recall": [
+    "Covarianze nulle escludono dipendenza lineare ai ritardi considerati. L’indipendenza richiede di più."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "056-1",
+     "w": 274,
+     "h": 119,
+     "src": "assets/lezioni/M09/figure/056-1.svg",
+     "ratio": 0.962
+    },
+    {
+     "t": "math",
+     "v": "\\mathbb E(\\varepsilon_t)=0,\\qquad \\operatorname{Var}(\\varepsilon_t)=\\sigma_\\varepsilon^2.",
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\operatorname{Cov}(\\varepsilon_t,\\varepsilon_{t-k})=0\\quad(k\\ne0).",
+     "col": "L"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Il grafico mostra la teoria. L’ACF calcolata da 300 valori presenta fluttuazioni campionarie."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · simulare rumore bianco",
+     "file": "056_rumore.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "IID significa indipendente e identicamente distribuito. Con varianza finita, rumore IID a media zero soddisfa le condizioni di rumore bianco."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 57,
+   "title": "Assenza di correlazione e dipendenza",
+   "section": "V · PROCESSI E STAZIONARIETÀ",
+   "recall": [
+    "Un’ACF vicina a zero non esaurisce lo studio della dipendenza temporale."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "057-1",
+     "w": 274,
+     "h": 118,
+     "src": "assets/lezioni/M09/figure/057-1.svg",
+     "ratio": 0.962
+    },
+    {
+     "t": "math",
+     "v": "U_t\\overset{\\mathrm{IID}}\\sim\\mathcal N(0,1),\\qquad E_t=U_{t-1}U_t.",
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\operatorname{Corr}(E_t,E_{t+1})=0,\\qquad \\operatorname{Corr}(E_t^2,E_{t+1}^2)=\\tfrac14.",
+     "col": "L"
+    },
+    {
+     "t": "small",
+     "c": [
+      "I valori hanno covarianza nulla. I loro quadrati condividono ",
+      {
+       "t": "m",
+       "v": "U_t^2"
+      },
+      ": un valore grande di questo fattore può rendere grandi entrambi i prodotti."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · confrontare valori e quadrati",
+     "file": "057_dipendenza.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Questo esempio soddisfa la definizione debole di rumore bianco, pur conservando dipendenza non lineare."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 58,
+   "title": "L’AR(1) eredita una parte del passato",
+   "section": "V · PROCESSI E STAZIONARIETÀ",
+   "recall": [
+    "Nell’AR(1), la memoria del passato è regolata da un solo coefficiente."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "058-1",
+     "w": 274,
+     "h": 120,
+     "src": "assets/lezioni/M09/figure/058-1.svg",
+     "ratio": 0.962
+    },
+    {
+     "t": "math",
+     "v": "X_t=\\phi X_{t-1}+\\varepsilon_t,\\qquad |\\phi|<1.",
+     "col": "L"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Innovazioni a media zero, varianza ",
+      {
+       "t": "m",
+       "v": "\\sigma_\\varepsilon^2"
+      },
+      ", indipendenti dal passato. Per ora il livello medio è zero."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      {
+       "t": "m",
+       "v": "\\phi"
+      },
+      " controlla quanto del valore precedente entra in quello successivo. L’innovazione aggiunge informazione nuova."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · generare una traiettoria AR(1)",
+     "file": "058_ar1.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "La condizione ",
+      {
+       "t": "m",
+       "v": "|\\phi|<1"
+      },
+      " ammette una soluzione stazionaria. Occorre considerare anche come parte la simulazione."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 59,
+   "title": "L’effetto di uno shock si attenua",
+   "section": "V · PROCESSI E STAZIONARIETÀ",
+   "recall": [
+    "La persistenza di uno shock dipende da φ. Vicino a uno, il decadimento diventa lento."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "059-1",
+     "w": 274,
+     "h": 119,
+     "src": "assets/lezioni/M09/figure/059-1.svg",
+     "ratio": 0.962
+    },
+    {
+     "t": "math",
+     "v": "\\varepsilon_t=1\\quad\\Longrightarrow\\quad \\text{effetto su }X_{t+k}=\\phi^k.",
+     "col": "L"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Si confrontano due traiettorie identiche, alle quali si aggiunge uno shock unitario in una sola data."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · quantificare la persistenza",
+     "file": "059_impulso.R",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Con ",
+      {
+       "t": "m",
+       "v": "\\phi=0{,}65"
+      },
+      ", dopo quattro passi resta circa il 18% dello shock iniziale. Il decadimento prosegue geometricamente."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Per ",
+      {
+       "t": "m",
+       "v": "-1<\\phi<0"
+      },
+      " l’effetto cambia segno a ogni passo, mentre la sua ampiezza diminuisce."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 60,
+   "title": "La varianza dell’AR(1) in equilibrio",
+   "section": "V · PROCESSI E STAZIONARIETÀ",
+   "recall": [
+    "La varianza del processo combina la variabilità delle innovazioni e la persistenza del passato."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "060-1",
+     "w": 274,
+     "h": 120,
+     "src": "assets/lezioni/M09/figure/060-1.svg",
+     "ratio": 0.962
+    },
+    {
+     "t": "math",
+     "v": "\\begin{aligned} \\gamma(0)&=\\phi^2\\gamma(0)+\\sigma_\\varepsilon^2,\\\\ \\gamma(0)&=\\frac{\\sigma_\\varepsilon^2}{1-\\phi^2}. \\end{aligned}",
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · varianza e persistenza",
+     "file": "060_varianza_ar.R",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "L’innovazione è incorrelata con ",
+      {
+       "t": "m",
+       "v": "X_{t-1}"
+      },
+      ", quindi il termine di covarianza della somma è nullo. La stazionarietà impone la stessa varianza nei due tempi."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "A parità di varianza delle innovazioni, un valore maggiore di ",
+      {
+       "t": "m",
+       "v": "|\\phi|"
+      },
+      " produce una varianza marginale più grande."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 61,
+   "title": "L’ACF teorica dell’AR(1)",
+   "section": "V · PROCESSI E STAZIONARIETÀ",
+   "recall": [
+    "Il segno e la velocità di decadimento dell’ACF descrivono aspetti diversi della memoria."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "061-1",
+     "w": 274,
+     "h": 120,
+     "src": "assets/lezioni/M09/figure/061-1.svg",
+     "ratio": 0.962
+    },
+    {
+     "t": "math",
+     "v": "\\gamma(k)=\\phi\\gamma(k-1)\\ (k\\ge1),\\qquad \\rho(k)=\\phi^{|k|}.",
+     "col": "L"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Tre ACF teoriche di processi AR(1) stazionari."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Un coefficiente positivo genera un decadimento dello stesso segno. Un coefficiente negativo alterna correlazioni positive e negative."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · confrontare tre coefficienti",
+     "file": "061_acf_ar.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Un tratto breve di ACF osservata può assomigliare a più modelli. La forma teorica orienta il confronto."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 62,
+   "title": "L’inizializzazione modifica i primi passi",
+   "section": "V · PROCESSI E STAZIONARIETÀ",
+   "recall": [
+    "Il parametro ammette un processo stazionario, ma una partenza fissata ne modifica la distribuzione iniziale."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "062-1",
+     "w": 274,
+     "h": 120,
+     "src": "assets/lezioni/M09/figure/062-1.svg",
+     "ratio": 0.962
+    },
+    {
+     "t": "math",
+     "v": "\\operatorname{Var}(X_h\\mid X_0=0) =\\sigma_\\varepsilon^2\\frac{1-\\phi^{2h}}{1-\\phi^2}.",
+     "col": "L"
+    },
+    {
+     "t": "small",
+     "c": [
+      "La varianza parte da zero e si avvicina al limite stazionario. ",
+      {
+       "t": "m",
+       "v": "h"
+      },
+      " conta i passi dopo il valore fissato."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · riconoscere il transitorio",
+     "file": "062_inizializzazione.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "L’AR(1) del CSV ha ",
+      {
+       "t": "m",
+       "v": "\\phi=0{,}65"
+      },
+      " e inizia da zero. I primi valori seguono un transitorio: il file non parte dalla distribuzione stazionaria."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 63,
+   "title": "Lo stesso rumore, due memorie diverse",
+   "section": "V · PROCESSI E STAZIONARIETÀ",
+   "recall": [
+    "Una simulazione comparativa dichiara quali elementi sono condivisi e quali cambiano."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "063-1",
+     "w": 274,
+     "h": 120,
+     "src": "assets/lezioni/M09/figure/063-1.svg",
+     "ratio": 0.962
+    },
+    {
+     "t": "small",
+     "c": [
+      "Schema con innovazioni condivise e valori iniziali nulli. Cambia soltanto il coefficiente autoregressivo."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Usare le stesse innovazioni rende più leggibile l’effetto di un parametro. Per stimare una distribuzione servono invece repliche indipendenti."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · isolare l’effetto di φ",
+     "file": "063_rumore_comune.R",
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 64,
+   "title": "Nel random walk gli shock si accumulano",
+   "section": "V · PROCESSI E STAZIONARIETÀ",
+   "recall": [
+    "Un random walk senza deriva può mostrare lunghi tratti crescenti o decrescenti in una singola realizzazione."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "064-1",
+     "w": 274,
+     "h": 112,
+     "src": "assets/lezioni/M09/figure/064-1.svg",
+     "ratio": 0.962
+    },
+    {
+     "t": "math",
+     "v": "X_t=X_{t-1}+\\varepsilon_t =X_0+\\sum_{j=1}^{t}\\varepsilon_j.",
+     "col": "L"
+    },
+    {
+     "t": "small",
+     "c": [
+      {
+       "t": "m",
+       "v": "X_0"
+      },
+      " fissato. Innovazioni indipendenti, a media zero e varianza ",
+      {
+       "t": "m",
+       "v": "\\sigma_\\varepsilon^2"
+      },
+      "."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · costruire i livelli",
+     "file": "064_random_walk.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Ogni innovazione modifica tutti i livelli successivi. La differenza fra due valori consecutivi restituisce l’innovazione."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 65,
+   "title": "La dispersione cresce con il tempo",
+   "section": "V · PROCESSI E STAZIONARIETÀ",
+   "recall": [
+    "Il random walk ha innovazioni con varianza costante, ma livelli con varianza crescente."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "065-1",
+     "w": 274,
+     "h": 120,
+     "src": "assets/lezioni/M09/figure/065-1.svg",
+     "ratio": 0.962
+    },
+    {
+     "t": "math",
+     "v": "\\operatorname{Var}(X_t)=t\\sigma_\\varepsilon^2,\\qquad \\operatorname{SD}(X_t)=\\sqrt t\\,\\sigma_\\varepsilon.",
+     "col": "L"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Curve teoriche a due deviazioni standard. Con innovazioni gaussiane descrivono bande marginali, non simultanee."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · distinguere varianza e deviazione",
+     "file": "065_varianza_rw.R",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Le covarianze tra innovazioni diverse sono nulle. La varianza della somma è quindi la somma delle varianze."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "La distribuzione dei livelli cambia con il tempo. La media costante, da sola, non rende stazionario il random walk."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 66,
+   "title": "La varianza si confronta tra repliche",
+   "section": "V · PROCESSI E STAZIONARIETÀ",
+   "recall": [
+    "Nel confronto tra tempi, la varianza marginale richiede repliche indipendenti allo stesso istante."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "066-1",
+     "w": 274,
+     "h": 122,
+     "src": "assets/lezioni/M09/figure/066-1.svg",
+     "ratio": 0.962
+    },
+    {
+     "t": "math",
+     "v": "\\widehat{\\operatorname{Var}}(X_t) =\\frac{1}{B-1}\\sum_{b=1}^{B} \\bigl(X_t^{(b)}-\\bar X_t\\bigr)^2.",
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Si confrontano le colonne alla stessa riga temporale. La dispersione lungo una singola traiettoria risponde a una domanda diversa."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · stimare la dispersione marginale",
+     "file": "066_repliche.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Poche repliche producono stime instabili. L’esperimento sul sito usa sei traiettorie per rendere visibile l’idea."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 67,
+   "title": "AR(1) e random walk reagiscono diversamente",
+   "section": "V · PROCESSI E STAZIONARIETÀ",
+   "recall": [
+    "Persistenza elevata e radice unitaria possono essere difficili da distinguere in una serie breve."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "067-1",
+     "w": 274,
+     "h": 119,
+     "src": "assets/lezioni/M09/figure/067-1.svg",
+     "ratio": 0.962
+    },
+    {
+     "t": "math",
+     "v": "\\text{AR(1): }\\phi^k\\longrightarrow0, \\qquad\\text{random walk: }1.",
+     "col": "L"
+    },
+    {
+     "t": "lab",
+     "url": "https://marzione00.github.io/Lab_Geo/#laboratorio/m09-stazionarieta",
+     "c": [
+      "Esperimento · Stazionarietà"
+     ],
+     "col": "R",
+     "lab": "m09-stazionarieta"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Nell’AR(1) stazionario, il passato perde peso. Nel random walk, lo shock modifica in modo permanente il livello della traiettoria."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Un AR(1) con ",
+      {
+       "t": "m",
+       "v": "\\phi"
+      },
+      " molto vicino a uno può somigliare a un random walk su campioni brevi. La lunghezza della serie limita la distinzione empirica."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Confrontiamo quindi il grafico, la dipendenza e le ipotesi del modello prima di scegliere una trasformazione."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 68,
+   "title": "Un trend può avere origini diverse",
+   "section": "VI · TREND E TRASFORMAZIONI",
+   "recall": [
+    "Togliere un trend e calcolare differenze sono operazioni con obiettivi diversi."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "068-1",
+     "w": 274,
+     "h": 123,
+     "src": "assets/lezioni/M09/figure/068-1.svg",
+     "ratio": 0.962
+    },
+    {
+     "t": "math",
+     "v": "X_t=a+bt+U_t\\qquad\\text{oppure}\\qquad X_t=X_{t-1}+\\varepsilon_t.",
+     "col": "L"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Nel primo modello ",
+      {
+       "t": "m",
+       "v": "U_t"
+      },
+      " è stazionario. Nel secondo, il livello accumula innovazioni."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Nel trend deterministico, una funzione del tempo descrive il cambiamento della media. Nel random walk, gli shock cambiano la traiettoria futura."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Una linea crescente in un grafico non identifica il meccanismo che l’ha generata. Le due spiegazioni conducono a trasformazioni e interpretazioni differenti."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La scelta deve rispettare le conoscenze sul fenomeno e le caratteristiche del campione."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 69,
+   "title": "Il detrending sottrae un andamento stimato",
+   "section": "VI · TREND E TRASFORMAZIONI",
+   "recall": [
+    "I residui richiedono una nuova diagnosi. La rimozione di un trend non dimostra la stazionarietà."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "069-1",
+     "w": 274,
+     "h": 120,
+     "src": "assets/lezioni/M09/figure/069-1.svg",
+     "ratio": 0.962
+    },
+    {
+     "t": "math",
+     "v": "\\widehat U_t=X_t-(\\widehat a+\\widehat b\\,t).",
+     "col": "L"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Si sottrae una funzione del tempo. I residui restano allineati alle date originali."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · esaminare i residui",
+     "file": "069_detrending.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Nella temperatura resta una forte componente stagionale. Sottrarre una retta non elimina automaticamente la dipendenza o la stagionalità."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 70,
+   "title": "La differenza misura un incremento",
+   "section": "VI · TREND E TRASFORMAZIONI",
+   "recall": [
+    "L’incremento descrive quanto cambia la variabile fra due tempi. La durata determina il significato del confronto."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "070-1",
+     "w": 274,
+     "h": 106,
+     "src": "assets/lezioni/M09/figure/070-1.svg",
+     "ratio": 0.962
+    },
+    {
+     "t": "math",
+     "v": "\\Delta X_t=X_t-X_{t-1}.",
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "10,\\ 13,\\ 12,\\ 16\\quad\\longmapsto\\quad3,\\ -1,\\ 4.",
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · leggere un cambiamento",
+     "file": "070_incrementi.R",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La differenza confronta due posizioni adiacenti. Per interpretarla serve conoscere l’intervallo temporale fra quelle posizioni."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Una differenza mantiene l’unità della variabile. Dividere per la durata definisce invece un tasso di variazione."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 71,
+   "title": "La prima differenza perde una posizione",
+   "section": "VI · TREND E TRASFORMAZIONI",
+   "recall": [
+    "Ogni trasformazione deve aggiornare insieme valori, numero di osservazioni e date."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "071-1",
+     "w": 274,
+     "h": 109,
+     "src": "assets/lezioni/M09/figure/071-1.svg",
+     "ratio": 0.962
+    },
+    {
+     "t": "math",
+     "v": "\\Delta x_2,\\ldots,\\Delta x_n\\quad\\text{contiene }n-1\\text{ valori}.",
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Per la CO",
+      {
+       "t": "m",
+       "v": "_2"
+      },
+      " mensile, il primo incremento riguarda gennaio–febbraio 1985 e viene datato febbraio 1985."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · conservare il calendario",
+     "file": "071_date_differenze.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "La serie iniziale ha 204 mesi. La prima differenza ne conserva 203. Nessuna interpolazione è necessaria sul segmento completo."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 72,
+   "title": "La differenza stagionale confronta due anni",
+   "section": "VI · TREND E TRASFORMAZIONI",
+   "recall": [
+    "Il ritardo stagionale deriva dal calendario e dalla periodicità ipotizzata."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "072-1",
+     "w": 274,
+     "h": 106,
+     "src": "assets/lezioni/M09/figure/072-1.svg",
+     "ratio": 0.962
+    },
+    {
+     "t": "math",
+     "v": "\\Delta_{12}X_t=X_t-X_{t-12}.",
+     "col": "L"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Gennaio si confronta con gennaio dell’anno precedente. La frequenza mensile rende il ritardo 12 interpretabile come un anno."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Una componente esattamente periodica con periodo 12 si annulla nella differenza stagionale. Rimangono il cambiamento del trend e quello del resto."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "S_t-S_{t-12}=0\\quad\\text{se }S_t=S_{t-12}.",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Se forma o ampiezza stagionale cambiano, la cancellazione è incompleta. La serie trasformata richiede una nuova lettura."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 73,
+   "title": "La differenza stagionale in R",
+   "section": "VI · TREND E TRASFORMAZIONI",
+   "recall": [
+    "In diff(), il ritardo e l’ordine della differenza sono parametri distinti."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "073-1",
+     "w": 274,
+     "h": 109,
+     "src": "assets/lezioni/M09/figure/073-1.svg",
+     "ratio": 0.962
+    },
+    {
+     "t": "math",
+     "v": "n=204\\quad\\Longrightarrow\\quad n-12=192.",
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il primo risultato è datato gennaio 1986. La differenza stagionale misura un cambiamento su dodici mesi, espresso in ppm."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · confrontare lo stesso mese",
+     "file": "073_stagionale.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      {
+       "t": "c",
+       "v": "lag = 12"
+      },
+      " indica la distanza fra i termini. ",
+      {
+       "t": "c",
+       "v": "differences = 12"
+      },
+      " chiederebbe dodici differenze consecutive di ordine uno."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 74,
+   "title": "L’operatore ritardo compatta la scrittura",
+   "section": "VI · TREND E TRASFORMAZIONI",
+   "recall": [
+    "Un operatore ritardo descrive come cambiano gli indici temporali."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "074-1",
+     "w": 274,
+     "h": 109,
+     "src": "assets/lezioni/M09/figure/074-1.svg",
+     "ratio": 0.962
+    },
+    {
+     "t": "math",
+     "v": "BX_t=X_{t-1},\\qquad B^{12}X_t=X_{t-12}.",
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\Delta X_t=(1-B)X_t,\\qquad \\Delta_{12}X_t=(1-B^{12})X_t.",
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · verificare la notazione",
+     "file": "074_operatore.R",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      {
+       "t": "m",
+       "v": "B"
+      },
+      " sposta il riferimento temporale di un passo. Il simbolo ",
+      {
+       "t": "m",
+       "v": "1"
+      },
+      " lascia il termine alla sua data."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "La scrittura con operatori permette di sviluppare una trasformazione combinata e controllare tutti i segni."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 75,
+   "title": "La differenza combinata usa quattro date",
+   "section": "VI · TREND E TRASFORMAZIONI",
+   "recall": [
+    "Sviluppare gli operatori rende controllabili segni, date e interpretazione della trasformazione."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "075-1",
+     "w": 274,
+     "h": 106,
+     "src": "assets/lezioni/M09/figure/075-1.svg",
+     "ratio": 0.962
+    },
+    {
+     "t": "math",
+     "v": "\\begin{aligned} (1-B)(1-B^{12})X_t &=X_t-X_{t-1}\\\\ &\\quad-X_{t-12}+X_{t-13}. \\end{aligned}",
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La trasformazione confronta la variazione mensile con la variazione dello stesso intervallo nell’anno precedente."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · comporre due differenze",
+     "file": "075_combinata.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Le due differenze commutano su questa griglia completa. L’allineamento finale rimane parte del risultato."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 76,
+   "title": "Le differenze riducono la numerosità",
+   "section": "VI · TREND E TRASFORMAZIONI",
+   "recall": [
+    "Una trasformazione cambia il campione utilizzabile. Il confronto deve dichiarare l’intervallo comune."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "076-1",
+     "w": 274,
+     "h": 118,
+     "src": "assets/lezioni/M09/figure/076-1.svg",
+     "ratio": 0.962
+    },
+    {
+     "t": "math",
+     "v": "204-1-12=191.",
+     "col": "L"
+    },
+    {
+     "t": "small",
+     "c": [
+      "La differenza combinata inizia a febbraio 1986 e termina a dicembre 2001."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "small",
+     "c": [
+      "I valori iniziali non hanno antecedenti sufficienti. La data del primo risultato dipende dal filtro applicato."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · contare i valori disponibili",
+     "file": "076_numerosita.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Se si vogliono confrontare metodi sullo stesso periodo, occorre prima allineare gli intervalli effettivamente disponibili."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 77,
+   "title": "Le condizioni iniziali consentono di risalire",
+   "section": "VI · TREND E TRASFORMAZIONI",
+   "recall": [
+    "Il registro della trasformazione conserva formule, calendario e condizioni iniziali."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "077-1",
+     "w": 274,
+     "h": 112,
+     "src": "assets/lezioni/M09/figure/077-1.svg",
+     "ratio": 0.962
+    },
+    {
+     "t": "small",
+     "c": [
+      "Le differenze ordinarie perdono un livello iniziale. Le differenze stagionali richiedono un valore iniziale per ciascun mese."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Le differenze conservano il cambiamento relativo. Per ricostruire i livelli occorre mantenere le informazioni iniziali eliminate dal filtro."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · ricostruire i livelli",
+     "file": "077_ricostruzione.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Il dataset originale rimane quindi necessario anche quando l’analisi usa una versione trasformata."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 78,
+   "title": "Differenziare rumore crea dipendenza",
+   "section": "VI · TREND E TRASFORMAZIONI",
+   "recall": [
+    "Una trasformazione può creare una struttura di dipendenza che prima non era presente."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "078-1",
+     "w": 274,
+     "h": 120,
+     "src": "assets/lezioni/M09/figure/078-1.svg",
+     "ratio": 0.962
+    },
+    {
+     "t": "math",
+     "v": "D_t=\\varepsilon_t-\\varepsilon_{t-1},\\qquad D_{t+1}=\\varepsilon_{t+1}-\\varepsilon_t.",
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Due differenze consecutive condividono un’innovazione. Il suo segno cambia fra la prima e la seconda differenza."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Se ",
+      {
+       "t": "m",
+       "v": "\\varepsilon_t"
+      },
+      " è rumore bianco, la serie originale ha covarianze nulle ai ritardi diversi da zero. La differenziazione introduce una covarianza negativa al ritardo uno."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Questo meccanismo permette di riconoscere un possibile effetto di una trasformazione superflua."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 79,
+   "title": "Il valore −1/2 deriva dalla covarianza",
+   "section": "VI · TREND E TRASFORMAZIONI",
+   "recall": [
+    "Per rumore bianco differenziato, la varianza raddoppia e l’ACF al primo ritardo vale −1/2."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "079-1",
+     "w": 274,
+     "h": 119,
+     "src": "assets/lezioni/M09/figure/079-1.svg",
+     "ratio": 0.962
+    },
+    {
+     "t": "math",
+     "v": "\\begin{aligned} \\operatorname{Var}(D_t)&=2\\sigma_\\varepsilon^2,\\\\ \\operatorname{Cov}(D_t,D_{t+1})&=-\\sigma_\\varepsilon^2,\\\\ \\rho_D(1)&=-\\tfrac12. \\end{aligned}",
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La covarianza contiene quattro prodotti. Tre si annullano perché coinvolgono tempi diversi del rumore bianco."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "\\operatorname{Cov}(\\varepsilon_t,-\\varepsilon_t) =-\\sigma_\\varepsilon^2.",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Ai ritardi ",
+      {
+       "t": "m",
+       "v": "|k|>1"
+      },
+      " le due differenze non condividono innovazioni. Le loro covarianze sono quindi nulle."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Il risultato vale per differenze di rumore bianco con varianza finita. Non è una formula universale per ogni serie differenziata."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 80,
+   "title": "Una simulazione controlla il risultato",
+   "section": "VI · TREND E TRASFORMAZIONI",
+   "recall": [
+    "La simulazione verifica un meccanismo noto e aiuta a distinguere teoria ed errore campionario."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "080-1",
+     "w": 274,
+     "h": 119,
+     "src": "assets/lezioni/M09/figure/080-1.svg",
+     "ratio": 0.962
+    },
+    {
+     "t": "small",
+     "c": [
+      "Curva teorica da confrontare con l’ACF campionaria. Il valore osservato oscilla attorno a ",
+      {
+       "t": "m",
+       "v": "-1/2"
+      },
+      "."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Con innovazioni di varianza uno, attendiamo una varianza delle differenze vicina a due e un’ACF al primo ritardo vicina a ",
+      {
+       "t": "m",
+       "v": "-0{,}5"
+      },
+      "."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · verificare con molte osservazioni",
+     "file": "080_sovradifferenza.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Aumentare la numerosità riduce le fluttuazioni della simulazione. Il calcolo teorico chiarisce perché emerge questo valore."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 81,
+   "title": "Un primo ritardo negativo ha più spiegazioni",
+   "section": "VI · TREND E TRASFORMAZIONI",
+   "recall": [
+    "La diagnosi di sovradifferenziazione richiede il confronto con la serie originale e con modelli alternativi."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "081-1",
+     "w": 274,
+     "h": 120,
+     "src": "assets/lezioni/M09/figure/081-1.svg",
+     "ratio": 0.962
+    },
+    {
+     "t": "small",
+     "c": [
+      "Entrambe le ACF iniziano da ",
+      {
+       "t": "m",
+       "v": "\\rho(1)=-0{,}5"
+      },
+      ". I ritardi successivi differiscono."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Un’ACF negativa al primo ritardo può dipendere da una differenziazione superflua oppure dalla dinamica del processo originario."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · confrontare due spiegazioni",
+     "file": "081_alternative.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Occorre conoscere i passaggi già applicati e leggere più ritardi. Un singolo valore non identifica la causa."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 82,
+   "title": "Detrending e differenza lasciano resti diversi",
+   "section": "VI · TREND E TRASFORMAZIONI",
+   "recall": [
+    "La trasformazione va scelta rispetto al modello ipotizzato e alla domanda scientifica."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "082-1",
+     "w": 274,
+     "h": 120,
+     "src": "assets/lezioni/M09/figure/082-1.svg",
+     "ratio": 0.962
+    },
+    {
+     "t": "math",
+     "v": "X_t=a+bt+\\varepsilon_t \\quad\\Longrightarrow\\quad \\Delta X_t=b+\\varepsilon_t-\\varepsilon_{t-1}.",
+     "col": "L"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Con un trend lineare e rumore bianco, la differenza elimina il livello e lascia il coefficiente ",
+      {
+       "t": "m",
+       "v": "b"
+      },
+      ", insieme a rumore differenziato. I residui della retta rispondono a una diversa costruzione."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · confrontare le due operazioni",
+     "file": "082_due_trasformazioni.R",
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 83,
+   "title": "Un registro per le trasformazioni",
+   "section": "VI · TREND E TRASFORMAZIONI",
+   "recall": [
+    "Ogni versione della serie deve conservare una descrizione verificabile della propria costruzione."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "083-1",
+     "w": 274,
+     "h": 118,
+     "src": "assets/lezioni/M09/figure/083-1.svg",
+     "ratio": 0.962
+    },
+    {
+     "t": "small",
+     "c": [
+      "Per una differenza: ritardo, ordine, unità, data iniziale, data finale e valori iniziali da conservare."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il registro permette di leggere un grafico e risalire al file originario. Aiuta anche a evitare confronti involontari fra periodi diversi."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · documentare il campione",
+     "file": "083_registro.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Un filtro centrato richiede inoltre di dichiarare quali valori futuri usa. Questa informazione conta quando si prepara una valutazione temporale."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 84,
+   "title": "ADF e KPSS partono da ipotesi diverse",
+   "section": "VII · DIAGNOSI CON ADF E KPSS",
+   "recall": [
+    "Il significato del p-value dipende dall’ipotesi nulla e dal modello utilizzato per calcolarlo."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "084-1",
+     "w": 274,
+     "h": 118,
+     "src": "assets/lezioni/M09/figure/084-1.svg",
+     "ratio": 0.962
+    },
+    {
+     "t": "small",
+     "c": [
+      "Le ipotesi dipendono dai termini deterministici e dalla correzione della dipendenza adottati nel test."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "ADF considera l’ipotesi di una radice unitaria nella specificazione scelta. KPSS considera la stazionarietà attorno a un livello oppure a un trend deterministico."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Il mancato rifiuto indica che il campione non offre evidenza sufficiente contro l’ipotesi. Non dimostra che l’ipotesi sia vera."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Confrontare i due test aiuta a circoscrivere la diagnosi, purché le specificazioni rispondano alla stessa domanda."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 85,
+   "title": "La regressione ausiliaria dell’ADF",
+   "section": "VII · DIAGNOSI CON ADF E KPSS",
+   "recall": [
+    "La regressione ADF si può stimare con OLS, ma il test della radice unitaria usa un riferimento non standard."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "085-1",
+     "w": 274,
+     "h": 118,
+     "src": "assets/lezioni/M09/figure/085-1.svg",
+     "ratio": 0.962
+    },
+    {
+     "t": "math",
+     "v": "\\Delta X_t=a+bt+\\gamma X_{t-1} +\\sum_{j=1}^{p}\\delta_j\\Delta X_{t-j}+u_t.",
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "H_0:\\gamma=0,\\qquad \\gamma=\\phi-1\\ \\text{nell’AR(1)}.",
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il livello passato serve a valutare la radice unitaria. Le differenze passate descrivono la dinamica di breve periodo dei residui."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "\\tau=\\frac{\\widehat\\gamma} {\\operatorname{SE}(\\widehat\\gamma)}.",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Sotto l’ipotesi di radice unitaria, il riferimento della statistica non è la distribuzione ",
+      {
+       "t": "m",
+       "v": "t"
+      },
+      " ordinaria della regressione. Servono valori critici specifici."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 86,
+   "title": "Costante e trend cambiano la domanda",
+   "section": "VII · DIAGNOSI CON ADF E KPSS",
+   "recall": [
+    "La specificazione deterministica deve accompagnare ogni risultato del test."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "086-1",
+     "w": 274,
+     "h": 113,
+     "src": "assets/lezioni/M09/figure/086-1.svg",
+     "ratio": 0.962
+    },
+    {
+     "t": "math",
+     "v": "\\Delta X_t=a+bt+\\gamma X_{t-1}+\\cdots+u_t.",
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La scelta dei termini deterministici specifica quale andamento può essere presente anche quando si studia la stazionarietà degli scarti."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      {
+       "t": "c",
+       "v": "tseries::adf.test()"
+      },
+      " usa una regressione con costante e trend lineare. Il suo argomento ",
+      {
+       "t": "c",
+       "v": "k"
+      },
+      " controlla le differenze ritardate, senza scegliere questi termini."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "L’ADF semplificato del sito comprende una costante e una differenza ritardata, senza trend lineare. I due calcoli non hanno la stessa specificazione."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 87,
+   "title": "Le differenze ritardate controllano i residui",
+   "section": "VII · DIAGNOSI CON ADF E KPSS",
+   "recall": [
+    "Il numero di ritardi descrive una scelta di modello e influenza l’informazione disponibile per il test."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "087-1",
+     "w": 274,
+     "h": 113,
+     "src": "assets/lezioni/M09/figure/087-1.svg",
+     "ratio": 0.962
+    },
+    {
+     "t": "math",
+     "v": "\\sum_{j=1}^{p}\\delta_j\\Delta X_{t-j}.",
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Pochi ritardi possono lasciare dipendenza nei residui. Molti ritardi consumano osservazioni e aumentano il numero di parametri da stimare."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · variare la correzione",
+     "file": "087_ritardi_adf.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "La sensibilità della conclusione ai ritardi è un risultato da discutere. Scegliere il solo p-value più favorevole altera la domanda iniziale."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 88,
+   "title": "Un ADF eseguito e documentato",
+   "section": "VII · DIAGNOSI CON ADF E KPSS",
+   "recall": [
+    "Un risultato riproducibile comprende la chiamata, la specificazione e gli avvisi numerici."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "088-1",
+     "w": 274,
+     "h": 118,
+     "src": "assets/lezioni/M09/figure/088-1.svg",
+     "ratio": 0.962
+    },
+    {
+     "t": "small",
+     "c": [
+      "La chiamata specifica ",
+      {
+       "t": "m",
+       "v": "k=4"
+      },
+      ". Il riferimento include la costante e il trend previsti da ",
+      {
+       "t": "c",
+       "v": "tseries::adf.test()"
+      },
+      "."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Annotiamo serie utilizzata, intervallo, numerosità, ritardi e termini deterministici. Il p-value acquista significato all’interno di questa descrizione."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · conservare l’output del test",
+     "file": "088_adf.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Un eventuale avviso sui limiti delle tabelle è parte del risultato e deve restare nel resoconto."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 89,
+   "title": "KPSS esamina le somme dei residui",
+   "section": "VII · DIAGNOSI CON ADF E KPSS",
+   "recall": [
+    "KPSS valuta l’accumulo degli scarti rispetto al riferimento deterministico scelto."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "089-1",
+     "w": 274,
+     "h": 120,
+     "src": "assets/lezioni/M09/figure/089-1.svg",
+     "ratio": 0.962
+    },
+    {
+     "t": "math",
+     "v": "S_t=\\sum_{j=1}^{t} e_j,\\qquad \\eta=\\frac{\\sum_{t=1}^{n}S_t^2}{n^2\\widehat\\omega^2}.",
+     "col": "L"
+    },
+    {
+     "t": "small",
+     "c": [
+      {
+       "t": "m",
+       "v": "e_t"
+      },
+      ": scarti da un livello o da un trend. ",
+      {
+       "t": "m",
+       "v": "\\widehat\\omega^2"
+      },
+      ": stima della varianza di lungo periodo."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · visualizzare l’accumulo",
+     "file": "089_somme_parziali.R",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Scarti persistenti dallo stesso lato del riferimento fanno accumulare le somme parziali. La statistica ne misura l’ampiezza, tenendo conto della dipendenza."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 90,
+   "title": "La varianza di lungo periodo usa i ritardi",
+   "section": "VII · DIAGNOSI CON ADF E KPSS",
+   "recall": [
+    "La correzione della dipendenza è parte del test KPSS, non un dettaglio separato dalla statistica."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "090-1",
+     "w": 274,
+     "h": 120,
+     "src": "assets/lezioni/M09/figure/090-1.svg",
+     "ratio": 0.962
+    },
+    {
+     "t": "math",
+     "v": "\\widehat\\omega^2=\\widehat\\gamma_e(0) +2\\sum_{j=1}^{L}\\left(1-\\frac{j}{L+1}\\right) \\widehat\\gamma_e(j).",
+     "col": "L"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Schema della correzione Bartlett: i contributi ai ritardi più lontani ricevono peso minore."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La dipendenza dei residui modifica la variabilità delle somme parziali. La sola varianza istantanea non riassume questo effetto."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "La larghezza ",
+      {
+       "t": "m",
+       "v": "L"
+      },
+      " determina quali autocovarianze entrano nella stima. In ",
+      {
+       "t": "c",
+       "v": "tseries::kpss.test()"
+      },
+      ", ",
+      {
+       "t": "c",
+       "v": "lshort"
+      },
+      " seleziona una regola di troncamento."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La scelta della correzione e la numerosità possono influenzare la diagnosi. Devono comparire insieme al risultato."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 91,
+   "title": "KPSS può riferirsi al livello o al trend",
+   "section": "VII · DIAGNOSI CON ADF E KPSS",
+   "recall": [
+    "Prima di confrontare p-value, occorre confrontare le ipotesi e i termini deterministici."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "091-1",
+     "w": 274,
+     "h": 113,
+     "src": "assets/lezioni/M09/figure/091-1.svg",
+     "ratio": 0.962
+    },
+    {
+     "t": "math",
+     "v": "H_0^{\\rm Level}:X_t=\\mu+U_t,\\qquad H_0^{\\rm Trend}:X_t=a+bt+U_t.",
+     "col": "L"
+    },
+    {
+     "t": "small",
+     "c": [
+      {
+       "t": "m",
+       "v": "U_t"
+      },
+      " stazionario nell’ipotesi nulla. Le due versioni rimuovono riferimenti diversi."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · dichiarare il riferimento",
+     "file": "091_kpss.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Una serie con trend deterministico può essere incompatibile con la versione Level e compatibile con quella Trend. La differenza riguarda l’ipotesi valutata."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 92,
+   "title": "Lettura congiunta dei due test",
+   "section": "VII · DIAGNOSI CON ADF E KPSS",
+   "recall": [
+    "ADF e KPSS forniscono evidenze complementari. La conclusione rimane condizionata al modello e al campione."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "092-1",
+     "w": 274,
+     "h": 125,
+     "src": "assets/lezioni/M09/figure/092-1.svg",
+     "ratio": 0.962
+    },
+    {
+     "t": "small",
+     "c": [
+      "Schema interpretativo, a soglia dichiarata e con specificazioni coerenti. Nessuna casella identifica automaticamente il processo."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il rifiuto ADF con mancato rifiuto KPSS è compatibile con una descrizione stazionaria rispetto al riferimento scelto. Il caso opposto è compatibile con una radice unitaria."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Se entrambi rifiutano, vanno esaminati specificazione, discontinuità e altre forme di non stazionarietà. Se nessuno rifiuta, il campione può discriminare poco."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Grafici, ACF e conoscenza del processo aiutano a interpretare tutti e quattro i casi."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 93,
+   "title": "I limiti dei p-value vanno riportati",
+   "section": "VII · DIAGNOSI CON ADF E KPSS",
+   "recall": [
+    "Un limite tabulato non va presentato come un p-value esatto."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "093-1",
+     "w": 274,
+     "h": 113,
+     "src": "assets/lezioni/M09/figure/093-1.svg",
+     "ratio": 0.962
+    },
+    {
+     "t": "small",
+     "c": [
+      "Limiti illustrati per KPSS. ADF usa anche il limite superiore 0,99. L’avviso precisa la disuguaglianza da riportare."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Se l’avviso segnala un p-value inferiore al minimo tabulato, il valore va riferito come limite superiore. Il caso oltre il massimo richiede la disuguaglianza opposta."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · registrare anche gli avvisi",
+     "file": "093_avvisi.R",
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 94,
+   "title": "La simulazione del sito ha riferimenti propri",
+   "section": "VII · DIAGNOSI CON ADF E KPSS",
+   "recall": [
+    "Il generatore nullo e la statistica devono essere dichiarati insieme quando si costruisce un test per simulazione."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "094-1",
+     "w": 274,
+     "h": 120,
+     "src": "assets/lezioni/M09/figure/094-1.svg",
+     "ratio": 0.962
+    },
+    {
+     "t": "math",
+     "v": "\\widehat p_{\\rm ADF} =\\frac{1+\\#\\{T_b\\leq T_{\\rm obs}\\}}{B+1}.",
+     "col": "L"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Con ",
+      {
+       "t": "m",
+       "v": "B=200"
+      },
+      ", il passo minimo è ",
+      {
+       "t": "m",
+       "v": "1/201\\approx0{,}005"
+      },
+      ". Per KPSS si considera la coda superiore."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "lab",
+     "url": "https://marzione00.github.io/Lab_Geo/#laboratorio/m09-diagnosi",
+     "c": [
+      "Esperimento · diagnosi"
+     ],
+     "col": "R",
+     "lab": "m09-diagnosi"
+    },
+    {
+     "t": "p",
+     "c": [
+      "L’ADF semplificato include una costante e una differenza ritardata. Il riferimento Monte Carlo usa random walk simulati, con la stessa regressione."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "La coda Monte Carlo del KPSS usa rumore IID. Non è una calibrazione generale per ogni processo stazionario dipendente."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "I risultati illustrano come si costruisce un riferimento. Le routine ",
+      {
+       "t": "c",
+       "v": "tseries"
+      },
+      " usano specificazioni e tabelle proprie."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 95,
+   "title": "Una discontinuità può cambiare la diagnosi",
+   "section": "VII · DIAGNOSI CON ADF E KPSS",
+   "recall": [
+    "Le discontinuità richiedono metadati e ipotesi sul processo che possano spiegarle."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "095-1",
+     "w": 274,
+     "h": 120,
+     "src": "assets/lezioni/M09/figure/095-1.svg",
+     "ratio": 0.962
+    },
+    {
+     "t": "math",
+     "v": "X_t=\\mu_1+\\varepsilon_t\\ (t\\leq\\tau), \\qquad X_t=\\mu_2+\\varepsilon_t\\ (t>\\tau).",
+     "col": "L"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Schema di un cambiamento di livello. Una modifica dello strumento può produrre un andamento simile."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · simulare un cambio di livello",
+     "file": "095_cambio_livello.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Un test di radice unitaria non risolve da solo la distinzione fra trend, cambi strutturali e problemi di misura. Un campione breve aggiunge incertezza."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 96,
+   "title": "La diagnosi collega più evidenze",
+   "section": "VII · DIAGNOSI CON ADF E KPSS",
+   "recall": [
+    "La diagnosi scientifica comprende evidenze, assunzioni e limiti della conclusione."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "096-1",
+     "w": 274,
+     "h": 118,
+     "src": "assets/lezioni/M09/figure/096-1.svg",
+     "ratio": 0.962
+    },
+    {
+     "t": "small",
+     "c": [
+      "La conclusione indica la serie esaminata, le trasformazioni già applicate e le alternative ancora plausibili."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Una buona conclusione descrive che cosa sostengono i dati e quali scelte potrebbero modificarla. I risultati numerici restano leggibili insieme ai grafici."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · conservare le scelte",
+     "file": "096_resoconto.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Questa diagnosi prepara la valutazione temporale del modulo successivo. La capacità predittiva richiederà un controllo su osservazioni future."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 97,
+   "title": "Quale trasformazione serve alla CO₂?",
+   "section": "VIII · ANALISI DELLA CO₂",
+   "recall": [
+    "La domanda scientifica viene prima della trasformazione. Ogni alternativa deve avere un significato leggibile."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "097-1",
+     "w": 279,
+     "h": 137,
+     "src": "assets/lezioni/M09/figure/097-1.svg",
+     "ratio": 0.979
+    },
+    {
+     "t": "small",
+     "c": [
+      "Archivio mensile derivato: gennaio 1985–dicembre 2001."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La serie cresce e mostra una forte oscillazione entro l’anno. La scelta della trasformazione dipende da ciò che vogliamo studiare."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Confronteremo livello, cambiamento mensile, cambiamento rispetto allo stesso mese dell’anno precedente e differenza combinata."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Ogni trasformazione modifica significato, numerosità e dipendenza. Il confronto deve conservarne la traccia e non può basarsi soltanto su un p-value."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 98,
+   "title": "La differenza mensile conserva la stagione",
+   "section": "VIII · ANALISI DELLA CO₂",
+   "recall": [
+    "Una differenza ordinaria può ridurre l’andamento di lungo periodo senza rimuovere il ciclo stagionale."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "098-1",
+     "w": 279,
+     "h": 137,
+     "src": "assets/lezioni/M09/figure/098-1.svg",
+     "ratio": 0.979
+    },
+    {
+     "t": "small",
+     "c": [
+      {
+       "t": "m",
+       "v": "\\Delta_1X_t=X_t-X_{t-1}"
+      },
+      ", dal febbraio 1985."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · esaminare il cambiamento mensile",
+     "file": "098_co2_diff1.R",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Una crescita graduale si trasforma in incrementi. La salita e la discesa entro l’anno continuano però a produrre un andamento periodico."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Il valore misura una differenza fra medie mensili consecutive, espressa in ppm."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 99,
+   "title": "La differenza stagionale confronta due anni",
+   "section": "VIII · ANALISI DELLA CO₂",
+   "recall": [
+    "Una differenza a dodici mesi esprime una variazione annuale. Non è una variazione mensile."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "099-1",
+     "w": 279,
+     "h": 137,
+     "src": "assets/lezioni/M09/figure/099-1.svg",
+     "ratio": 0.979
+    },
+    {
+     "t": "small",
+     "c": [
+      {
+       "t": "m",
+       "v": "\\Delta_{12}X_t=X_t-X_{t-12}"
+      },
+      ", dal gennaio 1986."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · confrontare lo stesso mese",
+     "file": "099_co2_diff12.R",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Confrontare lo stesso mese di due anni sottrae una stagione che si ripete identica. Le variazioni del ciclo e della crescita possono rimanere."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "lab",
+     "url": "https://marzione00.github.io/Lab_Geo/#laboratorio/m09-differenze",
+     "c": [
+      "Esperimento · Differenze"
+     ],
+     "col": "R",
+     "lab": "m09-differenze"
+    }
+   ]
+  },
+  {
+   "page": 100,
+   "title": "La differenza combinata cambia ancora la serie",
+   "section": "VIII · ANALISI DELLA CO₂",
+   "recall": [
+    "La differenza combinata può attenuare più strutture e introdurne altre. L’ACF va esaminata di nuovo."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "100-1",
+     "w": 279,
+     "h": 137,
+     "src": "assets/lezioni/M09/figure/100-1.svg",
+     "ratio": 0.979
+    },
+    {
+     "t": "small",
+     "c": [
+      {
+       "t": "m",
+       "v": "\\Delta_1\\Delta_{12}X_t"
+      },
+      ", dal febbraio 1986."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · verificare l’ordine delle differenze",
+     "file": "100_co2_combinata.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Gli operatori lineari commutano sulla stessa serie completa. Il valore confronta due incrementi mensili distanti un anno."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 101,
+   "title": "Ogni trasformazione ha il proprio calendario",
+   "section": "VIII · ANALISI DELLA CO₂",
+   "recall": [
+    "La lunghezza della serie trasformata non basta: bisogna sapere a quali mesi corrispondono i suoi valori."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "101-1",
+     "w": 277,
+     "h": 138,
+     "src": "assets/lezioni/M09/figure/101-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "code",
+     "title": "R · riallineare i risultati alle date",
+     "file": "101_allineare_trasformazioni.R",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Le assenze iniziali indicano valori non definibili con l’archivio disponibile. Le date dei risultati restano quelle dell’ultimo termine coinvolto."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 102,
+   "title": "Il risultato cambia con l’ipotesi",
+   "section": "VIII · ANALISI DELLA CO₂",
+   "recall": [
+    "La soglia convenzionale del 5% va letta insieme a specificazione, grafici e struttura temporale residua."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "102-1",
+     "w": 277,
+     "h": 138,
+     "src": "assets/lezioni/M09/figure/102-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "small",
+     "c": [
+      "P-value realmente calcolati con tseries 0.10-63. Le disuguaglianze conservano gli avvisi sulle tabelle."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Sul livello, ADF rifiuta la radice unitaria nel modello con trend. KPSS rifiuta un livello costante, mentre non rifiuta la stazionarietà attorno a un trend."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Questi esiti non autorizzano a concludere automaticamente che il livello richieda una differenza. Le ipotesi deterministiche cambiano la lettura."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La differenza stagionale produce un quadro meno concorde. La combinata è compatibile con i riferimenti stazionari esaminati, ma ciò non dimostra indipendenza."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 103,
+   "title": "Compatibilità con un test non basta",
+   "section": "VIII · ANALISI DELLA CO₂",
+   "recall": [
+    "Stazionarietà, assenza di correlazione e indipendenza sono proprietà distinte."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "103-1",
+     "w": 279,
+     "h": 140,
+     "src": "assets/lezioni/M09/figure/103-1.svg",
+     "ratio": 0.979
+    },
+    {
+     "t": "code",
+     "title": "R · confrontare la memoria residua",
+     "file": "103_diagnosi_residua.R",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Anche una serie compatibile con la stazionarietà può restare autocorrelata. Una correlazione negativa dopo differenziazione va interpretata nel contesto del processo."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 104,
+   "title": "La trasformazione rimane riproducibile",
+   "section": "VIII · ANALISI DELLA CO₂",
+   "recall": [
+    "Salvare soltanto la serie finale perderebbe le informazioni necessarie per spiegarla e riprodurla."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "104-1",
+     "w": 277,
+     "h": 135,
+     "src": "assets/lezioni/M09/figure/104-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "code",
+     "title": "R · salvare dati e scelte",
+     "file": "104_esportare.R",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il resoconto accompagna il risultato con definizione, provenienza, unità, periodo e controlli effettuati."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 105,
+   "title": "Una conclusione circoscritta ai dati",
+   "section": "VIII · ANALISI DELLA CO₂",
+   "recall": [
+    "Una conclusione scientifica distingue ciò che il campione mostra dalle proprietà che il modello assume."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "105-1",
+     "w": 279,
+     "h": 137,
+     "src": "assets/lezioni/M09/figure/105-1.svg",
+     "ratio": 0.979
+    },
+    {
+     "t": "small",
+     "c": [
+      "La conclusione riguarda il segmento storico e la sua definizione di media mensile."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Nel segmento 1985–2001, la media mensile derivata passa da 344,925 a 371,020 ppm fra il primo e l’ultimo mese. Il grafico mostra crescita e oscillazione stagionale."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Le trasformazioni esaminate modificano entrambe le strutture. I test dipendono dai termini deterministici e non stabiliscono da soli quale rappresentazione usare."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Per un uso predittivo occorrerà confrontare le alternative rispettando l’ordine temporale. La valutazione su dati successivi sarà il tema del modulo seguente."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 106,
+   "title": "Quale informazione conserva la tua serie?",
+   "section": "VIII · ANALISI DELLA CO₂",
+   "recall": [
+    "Il risultato acquista significato quando conserva un legame verificabile con osservazioni, calendario e ipotesi."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "106-1",
+     "w": 277,
+     "h": 138,
+     "src": "assets/lezioni/M09/figure/106-1.svg",
+     "ratio": 0.972
+    },
+    {
+     "t": "small",
+     "c": [
+      "Dati e attività: ",
+      {
+       "t": "a",
+       "h": "#indice",
+       "c": [
+        "GeoStat Lab, M09"
+       ]
+      },
+      ". Documentazione: ",
+      {
+       "t": "a",
+       "h": "https://stat.ethz.ch/R-manual/R-devel/library/stats/html/00Index.html",
+       "c": [
+        "R, stats"
+       ]
+      },
+      " e ",
+      {
+       "t": "a",
+       "h": "https://cran.r-project.org/web/packages/tseries/tseries.pdf",
+       "c": [
+        "tseries"
+       ]
+      },
+      ". Fonti e specificazioni complete accompagnano i sorgenti."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Prima di interpretare una curva trasformata, dobbiamo poter rispondere: quali osservazioni usa, a quali date si riferisce e quale parte del fenomeno rappresenta?"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "Z_t=g_t(X_1,\\ldots,X_n).",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      {
+       "t": "m",
+       "v": "g_t"
+      },
+      " indica la regola applicata alla data ",
+      {
+       "t": "m",
+       "v": "t"
+      },
+      "."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Una buona analisi permette di risalire dal risultato alle scelte che lo hanno prodotto. Le formule, il codice e i diagrammi devono descrivere lo stesso calcolo."
+     ],
+     "col": "R"
+    }
+   ]
+  }
+ ],
+ "code": {
+  "004_date.R": {
+   "code": "# ISO 8601: anno-mese-giorno.\ndate_es <- as.Date(c(\"2001-01-01\",\n                    \"2001-02-01\",\n                    \"2001-03-01\"))\nclass(date_es)\ndiff(date_es)\n# Febbraio e gennaio hanno durate diverse.",
+   "output": "> # ISO 8601: anno-mese-giorno.\n> date_es <- as.Date(c(\"2001-01-01\",\n+                     \"2001-02-01\",\n+                     \"2001-03-01\"))\n> class(date_es)\n[1] \"Date\"\n> diff(date_es)\nTime differences in days\n[1] 31 28\n> # Febbraio e gennaio hanno durate diverse.",
+   "deps": []
+  },
+  "007_archivio.R": {
+   "code": "source(\"setup.R\", encoding = \"UTF-8\")\nrange(wk$data)\nnrow(wk)\nsum(is.na(wk$co2))\n# 2284 date, di cui 59 prive di valore.\nc(osservati = sum(!is.na(wk$co2)),\n  mancanti = sum(is.na(wk$co2)))",
+   "output": "> source(\"setup.R\", encoding = \"UTF-8\")\n> range(wk$data)\n[1] \"1958-03-29\" \"2001-12-29\"\n> nrow(wk)\n[1] 2284\n> sum(is.na(wk$co2))\n[1] 59\n> # 2284 date, di cui 59 prive di valore.\n> c(osservati = sum(!is.na(wk$co2)),\n+   mancanti = sum(is.na(wk$co2)))\nosservati  mancanti \n     2225        59 ",
+   "deps": [],
+   "needs": [
+    "tseries"
+   ]
+  },
+  "008_tabella.R": {
+   "code": "head(d, 5)\nstr(d)\n# Tre ruoli: data, concentrazione, copertura.\nstopifnot(inherits(d$data, \"Date\"),\n  is.numeric(d$co2_ppm),\n  all(d$n_settimane >= 0))",
+   "output": "> head(d, 5)\n        data co2_ppm n_settimane\n1 1985-01-01 344.925           4\n2 1985-02-01 345.875           4\n3 1985-03-01 347.440           5\n4 1985-04-01 348.325           4\n5 1985-05-01 348.825           4\n> str(d)\n'data.frame':\t204 obs. of  3 variables:\n $ data       : Date, format: \"1985-01-01\" \"1985-02-01\" ...\n $ co2_ppm    : num  345 346 347 348 349 ...\n $ n_settimane: int  4 4 5 4 4 5 4 4 4 4 ...\n> # Tre ruoli: data, concentrazione, copertura.\n> stopifnot(inherits(d$data, \"Date\"),\n+   is.numeric(d$co2_ppm),\n+   all(d$n_settimane >= 0))",
+   "deps": []
+  },
+  "009_ordinare.R": {
+   "code": "# L'ordinamento coinvolge l'intera tabella.\nwk <- wk[order(wk$data), ]\nstopifnot(!anyNA(wk$data))\nanyDuplicated(wk$data)\ntable(as.integer(diff(wk$data)))\n# Una differenza in Date restituisce giorni.",
+   "output": "> # L'ordinamento coinvolge l'intera tabella.\n> wk <- wk[order(wk$data), ]\n> stopifnot(!anyNA(wk$data))\n> anyDuplicated(wk$data)\n[1] 0\n> table(as.integer(diff(wk$data)))\n\n   7 \n2283 \n> # Una differenza in Date restituisce giorni.",
+   "deps": []
+  },
+  "010_assenze.R": {
+   "code": "cal_es <- data.frame(\n  data = seq(as.Date(\"2001-01-01\"),\n             by = \"month\", length.out = 8),\n  valore = c(5, 7, 6, NA, 9, 7, 6, 4))\ncal_es[is.na(cal_es$valore), ]\n# Il NA mantiene la posizione di aprile.",
+   "output": "> cal_es <- data.frame(\n+   data = seq(as.Date(\"2001-01-01\"),\n+              by = \"month\", length.out = 8),\n+   valore = c(5, 7, 6, NA, 9, 7, 6, 4))\n> cal_es[is.na(cal_es$valore), ]\n        data valore\n4 2001-04-01     NA\n> # Il NA mantiene la posizione di aprile.",
+   "deps": []
+  },
+  "011_duplicati.R": {
+   "code": "duplicati <- wk[\n  duplicated(wk$data) |\n    duplicated(wk$data, fromLast = TRUE), ]\nnrow(duplicati)\n# Qui il risultato e' zero.\n# Con piu' sensori, controllare data + sensore.",
+   "output": "> duplicati <- wk[\n+   duplicated(wk$data) |\n+     duplicated(wk$data, fromLast = TRUE), ]\n> nrow(duplicati)\n[1] 0\n> # Qui il risultato e' zero.\n> # Con piu' sensori, controllare data + sensore.",
+   "deps": [
+    "009_ordinare.R"
+   ]
+  },
+  "012_griglia.R": {
+   "code": "griglia_es <- data.frame(\n  data = seq(min(cal_es$data), max(cal_es$data),\n             by = \"month\"))\nosservati_es <- cal_es[-4, ]\ncompleto_es <- merge(griglia_es, osservati_es,\n                    by = \"data\", all.x = TRUE)\ncompleto_es",
+   "output": "> griglia_es <- data.frame(\n+   data = seq(min(cal_es$data), max(cal_es$data),\n+              by = \"month\"))\n> osservati_es <- cal_es[-4, ]\n> completo_es <- merge(griglia_es, osservati_es,\n+                     by = \"data\", all.x = TRUE)\n> completo_es\n        data valore\n1 2001-01-01      5\n2 2001-02-01      7\n3 2001-03-01      6\n4 2001-04-01     NA\n5 2001-05-01      9\n6 2001-06-01      7\n7 2001-07-01      6\n8 2001-08-01      4",
+   "deps": [
+    "010_assenze.R"
+   ]
+  },
+  "013_ts.R": {
+   "code": "y <- ts(d$co2_ppm,\n        start = c(1985, 1), frequency = 12)\nstart(y)\nend(y)\nfrequency(y)\nhead(time(y))\n# Il tempo interno e' espresso in anni.",
+   "output": "> y <- ts(d$co2_ppm,\n+         start = c(1985, 1), frequency = 12)\n> start(y)\n[1] 1985    1\n> end(y)\n[1] 2001   12\n> frequency(y)\n[1] 12\n> head(time(y))\n          Jan      Feb      Mar      Apr      May      Jun\n1985 1985.000 1985.083 1985.167 1985.250 1985.333 1985.417\n> # Il tempo interno e' espresso in anni.",
+   "deps": []
+  },
+  "014_controllo_ts.R": {
+   "code": "griglia <- seq(as.Date(\"1985-01-01\"),\n               as.Date(\"2001-12-01\"), by = \"month\")\nstopifnot(identical(d$data, griglia),\n          nrow(d) == 204L,\n          !anyNA(d$co2_ppm),\n          !anyDuplicated(d$data))\n# Solo ora la frequenza descrive il file.",
+   "output": "> griglia <- seq(as.Date(\"1985-01-01\"),\n+                as.Date(\"2001-12-01\"), by = \"month\")\n> stopifnot(identical(d$data, griglia),\n+           nrow(d) == 204L,\n+           !anyNA(d$co2_ppm),\n+           !anyDuplicated(d$data))\n> # Solo ora la frequenza descrive il file.",
+   "deps": []
+  },
+  "016_aggregare.R": {
+   "code": "mese_w <- format(wk$data, \"%Y-%m\")\ngruppi_w <- split(wk$co2, mese_w)\nmedia_m <- vapply(gruppi_w, function(v) {\n  if (all(is.na(v))) NA_real_\n  else mean(v, na.rm = TRUE)\n}, numeric(1))\nn_m <- vapply(gruppi_w, function(v)\n  sum(!is.na(v)), integer(1))\nhead(cbind(media_m, n_m))",
+   "output": "> mese_w <- format(wk$data, \"%Y-%m\")\n> gruppi_w <- split(wk$co2, mese_w)\n> media_m <- vapply(gruppi_w, function(v) {\n+   if (all(is.na(v))) NA_real_\n+   else mean(v, na.rm = TRUE)\n+ }, numeric(1))\n> n_m <- vapply(gruppi_w, function(v)\n+   sum(!is.na(v)), integer(1))\n> head(cbind(media_m, n_m))\n         media_m n_m\n1958-03 316.1000   1\n1958-04 317.2000   4\n1958-05 317.4333   3\n1958-06       NA   0\n1958-07 315.6250   4\n1958-08 314.9500   4",
+   "deps": [
+    "009_ordinare.R"
+   ]
+  },
+  "017_confronto.R": {
+   "code": "pos <- match(format(mon$data, \"%Y-%m\"),\n             names(media_m))\nricostruita <- unname(media_m[pos])\nstopifnot(identical(is.na(ricostruita),\n                    is.na(mon$co2_ppm)))\nscarto <- max(abs(ricostruita - mon$co2_ppm),\n              na.rm = TRUE)\nstopifnot(scarto < 1e-6)\nscarto",
+   "output": "> pos <- match(format(mon$data, \"%Y-%m\"),\n+              names(media_m))\n> ricostruita <- unname(media_m[pos])\n> stopifnot(identical(is.na(ricostruita),\n+                     is.na(mon$co2_ppm)))\n> scarto <- max(abs(ricostruita - mon$co2_ppm),\n+               na.rm = TRUE)\n> stopifnot(scarto < 1e-6)\n> scarto\n[1] 3.333333e-07",
+   "deps": [
+    "009_ordinare.R",
+    "016_aggregare.R"
+   ]
+  },
+  "019_pesi.R": {
+   "code": "medie_es <- c(10, 20)\nconteggi_es <- c(2, 8)\nmean(medie_es)\nweighted.mean(medie_es, conteggi_es)\nmean(rep(medie_es, conteggi_es))\n# Gli ultimi due risultati coincidono.",
+   "output": "> medie_es <- c(10, 20)\n> conteggi_es <- c(2, 8)\n> mean(medie_es)\n[1] 15\n> weighted.mean(medie_es, conteggi_es)\n[1] 18\n> mean(rep(medie_es, conteggi_es))\n[1] 18\n> # Gli ultimi due risultati coincidono.",
+   "deps": []
+  },
+  "020_durate.R": {
+   "code": "valori_es <- c(10, 20)\ndurate_es <- c(1, 3) # ore\nweighted.mean(valori_es, durate_es)\n# Ipotesi: ogni valore rappresenta\n# l'intero intervallo indicato.",
+   "output": "> valori_es <- c(10, 20)\n> durate_es <- c(1, 3) # ore\n> weighted.mean(valori_es, durate_es)\n[1] 17.5\n> # Ipotesi: ogni valore rappresenta\n> # l'intero intervallo indicato.",
+   "deps": []
+  },
+  "021_operatori.R": {
+   "code": "pioggia_es <- c(0, 5, 12, NA, 3)\nc(totale_osservato = sum(pioggia_es, na.rm = TRUE),\n  media_osservata = mean(pioggia_es, na.rm = TRUE),\n  massimo_osservato = max(pioggia_es, na.rm = TRUE),\n  giorni_osservati = sum(!is.na(pioggia_es)))",
+   "output": "> pioggia_es <- c(0, 5, 12, NA, 3)\n> c(totale_osservato = sum(pioggia_es, na.rm = TRUE),\n+   media_osservata = mean(pioggia_es, na.rm = TRUE),\n+   massimo_osservato = max(pioggia_es, na.rm = TRUE),\n+   giorni_osservati = sum(!is.na(pioggia_es)))\n totale_osservato   media_osservata massimo_osservato  giorni_osservati \n               20                 5                12                 4 ",
+   "deps": []
+  },
+  "022_risoluzione.R": {
+   "code": "mese_es <- 1:48\nsegnale_es <- sin(2*pi*mese_es/12) +\n              0.35*sin(2*pi*mese_es/3)\nblocco3 <- (mese_es - 1) %/% 3\nblocco12 <- (mese_es - 1) %/% 12\ntapply(segnale_es, blocco3, mean)\ntapply(segnale_es, blocco12, mean)",
+   "output": "> mese_es <- 1:48\n> segnale_es <- sin(2*pi*mese_es/12) +\n+               0.35*sin(2*pi*mese_es/3)\n> blocco3 <- (mese_es - 1) %/% 3\n> blocco12 <- (mese_es - 1) %/% 12\n> tapply(segnale_es, blocco3, mean)\n         0          1          2          3          4          5          6 \n 0.7886751  0.4553418 -0.7886751 -0.4553418  0.7886751  0.4553418 -0.7886751 \n         7          8          9         10         11         12         13 \n-0.4553418  0.7886751  0.4553418 -0.7886751 -0.4553418  0.7886751  0.4553418 \n        14         15 \n-0.7886751 -0.4553418 \n> tapply(segnale_es, blocco12, mean)\n            0             1             2             3 \n 7.069053e-18 -1.472256e-16  3.192794e-16  5.248820e-16 ",
+   "deps": []
+  },
+  "025_registro.R": {
+   "code": "registro <- data.frame(\n  data = d$data,\n  co2_ppm = d$co2_ppm,\n  n_settimane = d$n_settimane)\nattr(registro, \"definizione\") <-\n  \"Media delle settimane assegnate al mese\"\nhead(registro, 3)\n# Le colonne derivate verranno aggiunte dopo.",
+   "output": "> registro <- data.frame(\n+   data = d$data,\n+   co2_ppm = d$co2_ppm,\n+   n_settimane = d$n_settimane)\n> attr(registro, \"definizione\") <-\n+   \"Media delle settimane assegnate al mese\"\n> head(registro, 3)\n        data co2_ppm n_settimane\n1 1985-01-01 344.925           4\n2 1985-02-01 345.875           4\n3 1985-03-01 347.440           5\n> # Le colonne derivate verranno aggiunte dopo.",
+   "deps": []
+  },
+  "027_componenti.R": {
+   "code": "ricostruita_T <- with(temp,\n  trend_simulato + stagione_simulata +\n    residuo_simulato)\nerr_T <- max(abs(temp$temperatura_C -\n                 ricostruita_T))\nstopifnot(err_T < 2e-8)",
+   "output": "> ricostruita_T <- with(temp,\n+   trend_simulato + stagione_simulata +\n+     residuo_simulato)\n> err_T <- max(abs(temp$temperatura_C -\n+                  ricostruita_T))\n> stopifnot(err_T < 2e-8)",
+   "deps": []
+  },
+  "028_stagione.R": {
+   "code": "# Una linea per ogni anno del segmento.\nyr <- as.integer(format(d$data, \"%Y\"))\nmo <- as.integer(format(d$data, \"%m\"))\nmatplot(1:12, sapply(c(1985, 1992, 2001),\n  function(a) d$co2_ppm[yr == a]),\n  type = \"l\", lty = 1, xlab = \"Mese\",\n  ylab = \"CO2 (ppm)\")",
+   "output": "> # Una linea per ogni anno del segmento.\n> yr <- as.integer(format(d$data, \"%Y\"))\n> mo <- as.integer(format(d$data, \"%m\"))\n> matplot(1:12, sapply(c(1985, 1992, 2001),\n+   function(a) d$co2_ppm[yr == a]),\n+   type = \"l\", lty = 1, xlab = \"Mese\",\n+   ylab = \"CO2 (ppm)\")",
+   "deps": []
+  },
+  "030_media_mobile.R": {
+   "code": "ma3 <- stats::filter(z, rep(1/3, 3),\n                     sides = 2)\nma13 <- stats::filter(z, rep(1/13, 13),\n                      sides = 2)\nplot(z, col = \"grey60\")\nlines(ma3, col = \"#C57E42\")\nlines(ma13, col = \"#7363AA\", lwd = 2)",
+   "output": "> ma3 <- stats::filter(z, rep(1/3, 3),\n+                      sides = 2)\n> ma13 <- stats::filter(z, rep(1/13, 13),\n+                       sides = 2)\n> plot(z, col = \"grey60\")\n> lines(ma3, col = \"#C57E42\")\n> lines(ma13, col = \"#7363AA\", lwd = 2)",
+   "deps": []
+  },
+  "031_bordi.R": {
+   "code": "c(NA_media3 = sum(is.na(ma3)),\n  NA_media13 = sum(is.na(ma13)))\nwhich(is.na(ma13))\n# Con 240 dati completi: 2 NA e 12 NA.\nstopifnot(sum(is.na(ma3)) == 2L,\n          sum(is.na(ma13)) == 12L)",
+   "output": "> c(NA_media3 = sum(is.na(ma3)),\n+   NA_media13 = sum(is.na(ma13)))\n NA_media3 NA_media13 \n         2         12 \n> which(is.na(ma13))\n [1]   1   2   3   4   5   6 235 236 237 238 239 240\n> # Con 240 dati completi: 2 NA e 12 NA.\n> stopifnot(sum(is.na(ma3)) == 2L,\n+           sum(is.na(ma13)) == 12L)",
+   "deps": [
+    "030_media_mobile.R"
+   ]
+  },
+  "032_filtro_causale.R": {
+   "code": "passato13 <- stats::filter(z,\n  rep(1/13, 13), sides = 1)\n# Ogni valore usa presente e 12 mesi precedenti.\nhead(cbind(z, ma13, passato13), 15)",
+   "output": "> passato13 <- stats::filter(z,\n+   rep(1/13, 13), sides = 1)\n> # Ogni valore usa presente e 12 mesi precedenti.\n> head(cbind(z, ma13, passato13), 15)\n                 z     ma13 passato13\nJan 2000  4.000000       NA        NA\nFeb 2000  4.968381       NA        NA\nMar 2000  6.671840       NA        NA\nApr 2000 10.641411       NA        NA\nMay 2000 16.283412       NA        NA\nJun 2000 19.566171       NA        NA\nJul 2000 22.891788 11.64929        NA\nAug 2000 20.806707 11.61035        NA\nSep 2000 17.458652 11.74588        NA\nOct 2000 12.682511 12.14758        NA\nNov 2000  8.877839 12.59573        NA\nDec 2000  4.339688 12.72430        NA\nJan 2001  2.252402 12.80757  11.64929\nFeb 2001  3.493774 12.50869  11.61035\nMar 2001  6.730287 12.14051  11.74588",
+   "deps": [
+    "030_media_mobile.R"
+   ]
+  },
+  "035_loess.R": {
+   "code": "tempo_T <- seq_along(z)\nlo20 <- loess(as.numeric(z) ~ tempo_T,\n              span = 0.20)\nlo60 <- loess(as.numeric(z) ~ tempo_T,\n              span = 0.60)\nhead(cbind(predict(lo20), predict(lo60)))\n# Stesse osservazioni, diverso intorno.",
+   "output": "> tempo_T <- seq_along(z)\n> lo20 <- loess(as.numeric(z) ~ tempo_T,\n+               span = 0.20)\n> lo60 <- loess(as.numeric(z) ~ tempo_T,\n+               span = 0.60)\n> head(cbind(predict(lo20), predict(lo60)))\n         [,1]     [,2]\n[1,] 10.23701 11.69403\n[2,] 10.49901 11.71265\n[3,] 10.74700 11.73119\n[4,] 10.98067 11.74965\n[5,] 11.19968 11.76801\n[6,] 11.40375 11.78626\n> # Stesse osservazioni, diverso intorno.",
+   "deps": []
+  },
+  "036_mediana.R": {
+   "code": "v_es <- c(0, .2, -.1, .1, 6, -.1, .2, 0, .1)\nmed_es <- runmed(v_es, k = 3, endrule = \"keep\")\navg_es <- stats::filter(v_es, rep(1/3, 3))\ncbind(v_es, med_es, avg_es)\n# Una finestra di tre valori.",
+   "output": "> v_es <- c(0, .2, -.1, .1, 6, -.1, .2, 0, .1)\n> med_es <- runmed(v_es, k = 3, endrule = \"keep\")\n> avg_es <- stats::filter(v_es, rep(1/3, 3))\n> cbind(v_es, med_es, avg_es)\nTime Series:\nStart = 1 \nEnd = 9 \nFrequency = 1 \n  v_es med_es     avg_es\n1  0.0    0.0         NA\n2  0.2    0.0 0.03333333\n3 -0.1    0.1 0.06666667\n4  0.1    0.1 2.00000000\n5  6.0    0.1 2.00000000\n6 -0.1    0.2 2.03333333\n7  0.2    0.0 0.03333333\n8  0.0    0.1 0.10000000\n9  0.1    0.1         NA\n> # Una finestra di tre valori.",
+   "deps": []
+  },
+  "037_anomalia.R": {
+   "code": "mese_T <- as.integer(format(temp$data, \"%m\"))\nbase_T <- temp$data >= as.Date(\"2000-01-01\") &\n          temp$data <= as.Date(\"2004-12-01\")\nclima_T <- tapply(temp$temperatura_C[base_T],\n                 mese_T[base_T], mean)\nriferimento_T <- unname(clima_T[mese_T])\nanomalia_T <- temp$temperatura_C - riferimento_T",
+   "output": "> mese_T <- as.integer(format(temp$data, \"%m\"))\n> base_T <- temp$data >= as.Date(\"2000-01-01\") &\n+           temp$data <= as.Date(\"2004-12-01\")\n> clima_T <- tapply(temp$temperatura_C[base_T],\n+                  mese_T[base_T], mean)\n> riferimento_T <- unname(clima_T[mese_T])\n> anomalia_T <- temp$temperatura_C - riferimento_T",
+   "deps": []
+  },
+  "038_stl.R": {
+   "code": "stl_T <- stl(z, s.window = \"periodic\",\n             robust = TRUE)\ncomponenti_T <- stl_T$time.series\nerr_stl <- max(abs(rowSums(componenti_T) -\n                   as.numeric(z)))\nstopifnot(err_stl < 1e-10)\nplot(stl_T)",
+   "output": "> stl_T <- stl(z, s.window = \"periodic\",\n+              robust = TRUE)\n> componenti_T <- stl_T$time.series\n> err_stl <- max(abs(rowSums(componenti_T) -\n+                    as.numeric(z)))\n> stopifnot(err_stl < 1e-10)\n> plot(stl_T)",
+   "deps": []
+  },
+  "039_registro_componenti.R": {
+   "code": "tab_T <- data.frame(\n  data = temp$data,\n  osservata = temp$temperatura_C,\n  riferimento = riferimento_T,\n  anomalia = anomalia_T,\n  resto_STL = componenti_T[, \"remainder\"])\nhead(tab_T, 3)",
+   "output": "> tab_T <- data.frame(\n+   data = temp$data,\n+   osservata = temp$temperatura_C,\n+   riferimento = riferimento_T,\n+   anomalia = anomalia_T,\n+   resto_STL = componenti_T[, \"remainder\"])\n> head(tab_T, 3)\n        data osservata riferimento   anomalia   resto_STL\n1 2000-01-01  4.000000    3.560727  0.4392735  0.03961360\n2 2000-02-01  4.968381    4.751981  0.2164000  0.07895692\n3 2000-03-01  6.671840    7.477557 -0.8057171 -1.07513733",
+   "deps": [
+    "037_anomalia.R",
+    "038_stl.R"
+   ]
+  },
+  "040_lag1.R": {
+   "code": "x40 <- proc$ar1\ncoppie1 <- data.frame(\n  passato = head(x40, -1),\n  presente = tail(x40, -1))\nhead(coppie1)\nnrow(coppie1)\n# 300 valori generano 299 coppie al ritardo 1.",
+   "output": "> x40 <- proc$ar1\n> coppie1 <- data.frame(\n+   passato = head(x40, -1),\n+   presente = tail(x40, -1))\n> head(coppie1)\n     passato   presente\n1  0.0000000  0.7318843\n2  0.7318843 -0.3635376\n3 -0.3635376 -0.0412485\n4 -0.0412485 -0.2825834\n5 -0.2825834 -0.2525773\n6 -0.2525773 -0.8887853\n> nrow(coppie1)\n[1] 299\n> # 300 valori generano 299 coppie al ritardo 1.",
+   "deps": []
+  },
+  "041_lag12.R": {
+   "code": "n41 <- nrow(d)\ncoppie12 <- data.frame(\n  data = d$data[13:n41],\n  passato = head(d$co2_ppm, -12),\n  presente = tail(d$co2_ppm, -12))\nhead(coppie12, 3)\nstopifnot(nrow(coppie12) == 192L)",
+   "output": "> n41 <- nrow(d)\n> coppie12 <- data.frame(\n+   data = d$data[13:n41],\n+   passato = head(d$co2_ppm, -12),\n+   presente = tail(d$co2_ppm, -12))\n> head(coppie12, 3)\n        data passato presente\n1 1986-01-01 344.925  346.250\n2 1986-02-01 345.875  346.825\n3 1986-03-01 347.440  347.740\n> stopifnot(nrow(coppie12) == 192L)",
+   "deps": []
+  },
+  "042_scatter_lag.R": {
+   "code": "plot(coppie1$passato, coppie1$presente,\n     pch = 16, col = \"#1D789080\",\n     xlab = \"Valore precedente\",\n     ylab = \"Valore presente\")\ncor(coppie1$passato, coppie1$presente)",
+   "output": "> plot(coppie1$passato, coppie1$presente,\n+      pch = 16, col = \"#1D789080\",\n+      xlab = \"Valore precedente\",\n+      ylab = \"Valore presente\")\n> cor(coppie1$passato, coppie1$presente)\n[1] 0.6566057",
+   "deps": [
+    "040_lag1.R"
+   ]
+  },
+  "043_cor_vs_acf.R": {
+   "code": "x43 <- c(1, 2, 3, 5, 4)\ncor(head(x43, -1), tail(x43, -1))\nas.numeric(acf(x43, lag.max = 1,\n               plot = FALSE)$acf[2])\n# cor() ricentra separatamente le due colonne.\n# acf() usa la media dell'intera serie.",
+   "output": "> x43 <- c(1, 2, 3, 5, 4)\n> cor(head(x43, -1), tail(x43, -1))\n[1] 0.6803361\n> as.numeric(acf(x43, lag.max = 1,\n+                plot = FALSE)$acf[2])\n[1] 0.4\n> # cor() ricentra separatamente le due colonne.\n> # acf() usa la media dell'intera serie.",
+   "deps": []
+  },
+  "044_acf_manuale.R": {
+   "code": "xc44 <- x43 - mean(x43)\nrho44 <- sum(head(xc44, -1) *\n               tail(xc44, -1)) / sum(xc44^2)\nrho_R <- as.numeric(acf(x43, plot = FALSE)$acf[2])\nstopifnot(abs(rho44 - rho_R) < 1e-12)\nrho44 # 0.4",
+   "output": "> xc44 <- x43 - mean(x43)\n> rho44 <- sum(head(xc44, -1) *\n+                tail(xc44, -1)) / sum(xc44^2)\n> rho_R <- as.numeric(acf(x43, plot = FALSE)$acf[2])\n> stopifnot(abs(rho44 - rho_R) < 1e-12)\n> rho44 # 0.4\n[1] 0.4",
+   "deps": [
+    "043_cor_vs_acf.R"
+   ]
+  },
+  "046_scala_acf.R": {
+   "code": "a46 <- as.numeric(acf(proc$ar1,\n  lag.max = 24, plot = FALSE)$acf)\nb46 <- as.numeric(acf(10*proc$ar1 + 5,\n  lag.max = 24, plot = FALSE)$acf)\nstopifnot(max(abs(a46 - b46)) < 1e-12)",
+   "output": "> a46 <- as.numeric(acf(proc$ar1,\n+   lag.max = 24, plot = FALSE)$acf)\n> b46 <- as.numeric(acf(10*proc$ar1 + 5,\n+   lag.max = 24, plot = FALSE)$acf)\n> stopifnot(max(abs(a46 - b46)) < 1e-12)",
+   "deps": []
+  },
+  "047_leggere_acf.R": {
+   "code": "acf(proc$ar1, lag.max = 24,\n    main = \"AR(1): ritardi in passi\")\nacf(y, lag.max = 24,\n    main = \"CO2: ritardi espressi in anni\")\n# Per y mensile, il ritardo 1 del grafico\n# corrisponde a 12 osservazioni.",
+   "output": "> acf(proc$ar1, lag.max = 24,\n+     main = \"AR(1): ritardi in passi\")\n> acf(y, lag.max = 24,\n+     main = \"CO2: ritardi espressi in anni\")\n> # Per y mensile, il ritardo 1 del grafico\n> # corrisponde a 12 osservazioni.",
+   "deps": [
+    "013_ts.R"
+   ]
+  },
+  "049_bande.R": {
+   "code": "a49 <- as.numeric(acf(proc$rumore_bianco,\n  lag.max = 24, plot = FALSE)$acf)[-1]\nbanda49 <- 1.96 / sqrt(nrow(proc))\nwhich(abs(a49) > banda49)\n# Confronti puntuali, fra loro dipendenti.",
+   "output": "> a49 <- as.numeric(acf(proc$rumore_bianco,\n+   lag.max = 24, plot = FALSE)$acf)[-1]\n> banda49 <- 1.96 / sqrt(nrow(proc))\n> which(abs(a49) > banda49)\n[1] 4\n> # Confronti puntuali, fra loro dipendenti.",
+   "deps": []
+  },
+  "050_na_acf.R": {
+   "code": "# Controllo prima di calcolare l'ACF.\nstopifnot(!anyNA(y))\n# Esempio: un mese rimane NA.\ny50 <- y\ny50[30] <- NA\nsum(complete.cases(head(y50, -1),\n                   tail(y50, -1)))",
+   "output": "> # Controllo prima di calcolare l'ACF.\n> stopifnot(!anyNA(y))\n> # Esempio: un mese rimane NA.\n> y50 <- y\n> y50[30] <- NA\n> sum(complete.cases(head(y50, -1),\n+                    tail(y50, -1)))\n[1] 201",
+   "deps": [
+    "013_ts.R"
+   ]
+  },
+  "051_pacf.R": {
+   "code": "pacf(proc$ar1, lag.max = 24,\n     main = \"Autocorrelazione parziale\")\n# R stima modelli autoregressivi\n# di ordine via via maggiore.",
+   "output": "> pacf(proc$ar1, lag.max = 24,\n+      main = \"Autocorrelazione parziale\")\n> # R stima modelli autoregressivi\n> # di ordine via via maggiore.",
+   "deps": []
+  },
+  "052_acf_pacf_teoria.R": {
+   "code": "# Valori teorici per AR(1), phi = 0.65.\nARMAacf(ar = 0.65, lag.max = 12)\nARMAacf(ar = 0.65, lag.max = 12, pacf = TRUE)",
+   "output": "> # Valori teorici per AR(1), phi = 0.65.\n> ARMAacf(ar = 0.65, lag.max = 12)\n          0           1           2           3           4           5 \n1.000000000 0.650000000 0.422500000 0.274625000 0.178506250 0.116029063 \n          6           7           8           9          10          11 \n0.075418891 0.049022279 0.031864481 0.020711913 0.013462743 0.008750783 \n         12 \n0.005688009 \n> ARMAacf(ar = 0.65, lag.max = 12, pacf = TRUE)\n [1] 0.65 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00",
+   "deps": []
+  },
+  "053_tre_acf.R": {
+   "code": "for (nome in c(\"rumore_bianco\", \"ar1\",\n               \"random_walk\")) {\n  acf(proc[[nome]], lag.max = 24, main = nome)\n}",
+   "output": "> for (nome in c(\"rumore_bianco\", \"ar1\",\n+                \"random_walk\")) {\n+   acf(proc[[nome]], lag.max = 24, main = nome)\n+ }",
+   "deps": []
+  },
+  "056_rumore.R": {
+   "code": "set.seed(19056)\n# Rumore gaussiano IID.\ne56 <- rnorm(300)\nacf(e56, lag.max = 24,\n    main = \"Rumore bianco simulato\")\n# L'ACF campionaria oscilla attorno a zero.\nmean(e56)\nvar(e56)",
+   "output": "> set.seed(19056)\n> # Rumore gaussiano IID.\n> e56 <- rnorm(300)\n> acf(e56, lag.max = 24,\n+     main = \"Rumore bianco simulato\")\n> # L'ACF campionaria oscilla attorno a zero.\n> mean(e56)\n[1] 0.09267148\n> var(e56)\n[1] 0.8238131",
+   "deps": []
+  },
+  "057_dipendenza.R": {
+   "code": "set.seed(19057)\nu57 <- rnorm(10001)\ne57 <- head(u57, -1) * tail(u57, -1)\n# Stessa coppia di tempi, due confronti.\ncor(head(e57, -1), tail(e57, -1))\ncor(head(e57^2, -1), tail(e57^2, -1))",
+   "output": "> set.seed(19057)\n> u57 <- rnorm(10001)\n> e57 <- head(u57, -1) * tail(u57, -1)\n> # Stessa coppia di tempi, due confronti.\n> cor(head(e57, -1), tail(e57, -1))\n[1] -0.00334617\n> cor(head(e57^2, -1), tail(e57^2, -1))\n[1] 0.2211798",
+   "deps": []
+  },
+  "058_ar1.R": {
+   "code": "set.seed(19058)\n# arima.sim gestisce il tratto iniziale.\na58 <- arima.sim(\n  model = list(ar = 0.65), n = 300)\nplot(a58, ylab = \"Valore\",\n     main = \"AR(1), phi = 0.65\")\nacf(a58, lag.max = 24)",
+   "output": "> set.seed(19058)\n> # arima.sim gestisce il tratto iniziale.\n> a58 <- arima.sim(\n+   model = list(ar = 0.65), n = 300)\n> plot(a58, ylab = \"Valore\",\n+      main = \"AR(1), phi = 0.65\")\n> acf(a58, lag.max = 24)",
+   "deps": []
+  },
+  "059_impulso.R": {
+   "code": "# Risposta teorica a un impulso unitario.\nk59 <- 0:12\neffetto59 <- 0.65^k59\ndata.frame(ritardo = k59,\n           effetto = round(effetto59, 4))",
+   "output": "> # Risposta teorica a un impulso unitario.\n> k59 <- 0:12\n> effetto59 <- 0.65^k59\n> data.frame(ritardo = k59,\n+            effetto = round(effetto59, 4))\n   ritardo effetto\n1        0  1.0000\n2        1  0.6500\n3        2  0.4225\n4        3  0.2746\n5        4  0.1785\n6        5  0.1160\n7        6  0.0754\n8        7  0.0490\n9        8  0.0319\n10       9  0.0207\n11      10  0.0135\n12      11  0.0088\n13      12  0.0057",
+   "deps": []
+  },
+  "060_varianza_ar.R": {
+   "code": "phi60 <- c(0, 0.3, 0.65, 0.9)\n# Innovazioni con varianza unitaria.\ndata.frame(phi = phi60,\n  varianza = 1 / (1 - phi60^2))",
+   "output": "> phi60 <- c(0, 0.3, 0.65, 0.9)\n> # Innovazioni con varianza unitaria.\n> data.frame(phi = phi60,\n+   varianza = 1 / (1 - phi60^2))\n   phi varianza\n1 0.00 1.000000\n2 0.30 1.098901\n3 0.65 1.731602\n4 0.90 5.263158",
+   "deps": []
+  },
+  "061_acf_ar.R": {
+   "code": "k61 <- 0:12\n# Curve teoriche, senza errore campionario.\nrho61 <- sapply(c(0.65, -0.65, 0.9),\n               function(p) p^k61)\nmatplot(k61, rho61, type = \"b\",\n        xlab = \"Ritardo\", ylab = \"ACF\")\nabline(h = 0, col = \"grey70\")",
+   "output": "> k61 <- 0:12\n> # Curve teoriche, senza errore campionario.\n> rho61 <- sapply(c(0.65, -0.65, 0.9),\n+                function(p) p^k61)\n> matplot(k61, rho61, type = \"b\",\n+         xlab = \"Ritardo\", ylab = \"ACF\")\n> abline(h = 0, col = \"grey70\")",
+   "deps": []
+  },
+  "062_inizializzazione.R": {
+   "code": "# Il CSV fornito parte da un valore fissato.\nhead(proc[, c(\"passo\", \"ar1\")])\nstopifnot(proc$ar1[1] == 0)\nh62 <- 0:10\nv62 <- (1 - 0.65^(2 * h62)) /\n       (1 - 0.65^2)\ndata.frame(passi = h62, varianza = v62)",
+   "output": "> # Il CSV fornito parte da un valore fissato.\n> head(proc[, c(\"passo\", \"ar1\")])\n  passo        ar1\n1     1  0.0000000\n2     2  0.7318843\n3     3 -0.3635376\n4     4 -0.0412485\n5     5 -0.2825834\n6     6 -0.2525773\n> stopifnot(proc$ar1[1] == 0)\n> h62 <- 0:10\n> v62 <- (1 - 0.65^(2 * h62)) /\n+        (1 - 0.65^2)\n> data.frame(passi = h62, varianza = v62)\n   passi varianza\n1      0 0.000000\n2      1 1.000000\n3      2 1.422500\n4      3 1.601006\n5      4 1.676425\n6      5 1.708290\n7      6 1.721752\n8      7 1.727440\n9      8 1.729844\n10     9 1.730859\n11    10 1.731288",
+   "deps": []
+  },
+  "063_rumore_comune.R": {
+   "code": "set.seed(19063)\ne63 <- rnorm(150)\nar63 <- function(phi) {\n  x <- numeric(length(e63))\n  for (t in 2:length(x))\n    x[t] <- phi * x[t-1] + e63[t]\n  x\n}\n# Le due traiettorie usano lo stesso e63.\nmatplot(cbind(ar63(0.3), ar63(0.9)),\n        type = \"l\", ylab = \"Valore\")",
+   "output": "> set.seed(19063)\n> e63 <- rnorm(150)\n> ar63 <- function(phi) {\n+   x <- numeric(length(e63))\n+   for (t in 2:length(x))\n+     x[t] <- phi * x[t-1] + e63[t]\n+   x\n+ }\n> # Le due traiettorie usano lo stesso e63.\n> matplot(cbind(ar63(0.3), ar63(0.9)),\n+         type = \"l\", ylab = \"Valore\")",
+   "deps": []
+  },
+  "064_random_walk.R": {
+   "code": "set.seed(19064)\ne64 <- rnorm(150)\n# X0 = 0. cumsum conserva gli shock.\nrw64 <- c(0, cumsum(e64))\nplot(0:150, rw64, type = \"l\",\n     xlab = \"Tempo\", ylab = \"X\")\nstopifnot(isTRUE(all.equal(\n  diff(rw64), e64)))",
+   "output": "> set.seed(19064)\n> e64 <- rnorm(150)\n> # X0 = 0. cumsum conserva gli shock.\n> rw64 <- c(0, cumsum(e64))\n> plot(0:150, rw64, type = \"l\",\n+      xlab = \"Tempo\", ylab = \"X\")\n> stopifnot(isTRUE(all.equal(\n+   diff(rw64), e64)))",
+   "deps": []
+  },
+  "065_varianza_rw.R": {
+   "code": "t65 <- c(1, 4, 25, 100)\n# X0 fissato, varianza innovazioni = 1.\ndata.frame(tempo = t65,\n           varianza = t65,\n           deviazione = sqrt(t65))",
+   "output": "> t65 <- c(1, 4, 25, 100)\n> # X0 fissato, varianza innovazioni = 1.\n> data.frame(tempo = t65,\n+            varianza = t65,\n+            deviazione = sqrt(t65))\n  tempo varianza deviazione\n1     1        1          1\n2     4        4          2\n3    25       25          5\n4   100      100         10",
+   "deps": []
+  },
+  "066_repliche.R": {
+   "code": "set.seed(19066)\nB66 <- 2000\n# Ogni colonna usa innovazioni nuove.\nrw66 <- replicate(B66, cumsum(rnorm(100)))\n# Varianza tra repliche, a tempo fissato.\nv66 <- apply(rw66, 1, var)\nround(v66[c(1, 25, 100)], 1)",
+   "output": "> set.seed(19066)\n> B66 <- 2000\n> # Ogni colonna usa innovazioni nuove.\n> rw66 <- replicate(B66, cumsum(rnorm(100)))\n> # Varianza tra repliche, a tempo fissato.\n> v66 <- apply(rw66, 1, var)\n> round(v66[c(1, 25, 100)], 1)\n[1]   1.0  23.8 107.4",
+   "deps": []
+  },
+  "069_detrending.R": {
+   "code": "# Temperatura sintetica: una retta da verificare.\nt69 <- seq_along(z)\nfit69 <- lm(as.numeric(z) ~ t69)\nres69 <- residuals(fit69)\nplot(t69, res69, type = \"l\",\n     xlab = \"Mese\", ylab = \"Residuo\")\nacf(res69, lag.max = 36)",
+   "output": "> # Temperatura sintetica: una retta da verificare.\n> t69 <- seq_along(z)\n> fit69 <- lm(as.numeric(z) ~ t69)\n> res69 <- residuals(fit69)\n> plot(t69, res69, type = \"l\",\n+      xlab = \"Mese\", ylab = \"Residuo\")\n> acf(res69, lag.max = 36)",
+   "deps": []
+  },
+  "070_incrementi.R": {
+   "code": "x70 <- c(10, 13, 12, 16)\ndiff(x70)\n# Il secondo incremento e' negativo.\nstopifnot(identical(diff(x70),\n                    c(3, -1, 4)))",
+   "output": "> x70 <- c(10, 13, 12, 16)\n> diff(x70)\n[1]  3 -1  4\n> # Il secondo incremento e' negativo.\n> stopifnot(identical(diff(x70),\n+                     c(3, -1, 4)))",
+   "deps": []
+  },
+  "071_date_differenze.R": {
+   "code": "dy71 <- diff(y)\n# Ogni differenza assume la data finale.\ntab71 <- data.frame(\n  data = tail(d$data, -1),\n  incremento_ppm = as.numeric(dy71))\nhead(tab71)\nc(n = length(dy71), start(dy71))",
+   "output": "> dy71 <- diff(y)\n> # Ogni differenza assume la data finale.\n> tab71 <- data.frame(\n+   data = tail(d$data, -1),\n+   incremento_ppm = as.numeric(dy71))\n> head(tab71)\n        data incremento_ppm\n1 1985-02-01          0.950\n2 1985-03-01          1.565\n3 1985-04-01          0.885\n4 1985-05-01          0.500\n5 1985-06-01         -0.645\n6 1985-07-01         -1.730\n> c(n = length(dy71), start(dy71))\n   n           \n 203 1985    2 ",
+   "deps": [
+    "013_ts.R"
+   ]
+  },
+  "073_stagionale.R": {
+   "code": "ds73 <- diff(y, lag = 12)\n# Il primo valore confronta due gennaio.\ndata.frame(\n  data = tail(d$data, -12),\n  variazione_annua = as.numeric(ds73))[1:4, ]\nc(start(ds73), end(ds73))\nlength(ds73)",
+   "output": "> ds73 <- diff(y, lag = 12)\n> # Il primo valore confronta due gennaio.\n> data.frame(\n+   data = tail(d$data, -12),\n+   variazione_annua = as.numeric(ds73))[1:4, ]\n        data variazione_annua\n1 1986-01-01            1.325\n2 1986-02-01            0.950\n3 1986-03-01            0.300\n4 1986-04-01            1.200\n> c(start(ds73), end(ds73))\n[1] 1986    1 2001   12\n> length(ds73)\n[1] 192",
+   "deps": [
+    "013_ts.R"
+   ]
+  },
+  "074_operatore.R": {
+   "code": "# Identita' su un vettore numerico.\nv74 <- as.numeric(y)\nmanuale74 <- v74[-1] - head(v74, -1)\nstopifnot(isTRUE(all.equal(\n  manuale74, as.numeric(diff(y)))))",
+   "output": "> # Identita' su un vettore numerico.\n> v74 <- as.numeric(y)\n> manuale74 <- v74[-1] - head(v74, -1)\n> stopifnot(isTRUE(all.equal(\n+   manuale74, as.numeric(diff(y)))))",
+   "deps": [
+    "013_ts.R"
+   ]
+  },
+  "075_combinata.R": {
+   "code": "dc75 <- diff(diff(y, lag = 12))\n# Cambiare l'ordine produce lo stesso filtro.\nalt75 <- diff(diff(y), lag = 12)\nstopifnot(isTRUE(all.equal(dc75, alt75)))\nplot(dc75, ylab = \"Differenza combinata\")\nacf(dc75, lag.max = 36)",
+   "output": "> dc75 <- diff(diff(y, lag = 12))\n> # Cambiare l'ordine produce lo stesso filtro.\n> alt75 <- diff(diff(y), lag = 12)\n> stopifnot(isTRUE(all.equal(dc75, alt75)))\n> plot(dc75, ylab = \"Differenza combinata\")\n> acf(dc75, lag.max = 36)",
+   "deps": [
+    "013_ts.R"
+   ]
+  },
+  "076_numerosita.R": {
+   "code": "# Confronto sul segmento completo.\nforme76 <- list(livelli = y,\n  ordinaria = diff(y),\n  stagionale = diff(y, lag = 12),\n  combinata = diff(diff(y, lag = 12)))\nsapply(forme76, length)\nsapply(forme76, start)",
+   "output": "> # Confronto sul segmento completo.\n> forme76 <- list(livelli = y,\n+   ordinaria = diff(y),\n+   stagionale = diff(y, lag = 12),\n+   combinata = diff(diff(y, lag = 12)))\n> sapply(forme76, length)\n   livelli  ordinaria stagionale  combinata \n       204        203        192        191 \n> sapply(forme76, start)\n     livelli ordinaria stagionale combinata\n[1,]    1985      1985       1986      1986\n[2,]       1         2          1         2",
+   "deps": [
+    "013_ts.R"
+   ]
+  },
+  "077_ricostruzione.R": {
+   "code": "v77 <- as.numeric(y)\nric77 <- c(v77[1],\n           v77[1] + cumsum(diff(v77)))\n# Tolleranza dovuta all'aritmetica numerica.\nmax(abs(ric77 - v77))\nstopifnot(max(abs(ric77 - v77)) < 1e-10)",
+   "output": "> v77 <- as.numeric(y)\n> ric77 <- c(v77[1],\n+            v77[1] + cumsum(diff(v77)))\n> # Tolleranza dovuta all'aritmetica numerica.\n> max(abs(ric77 - v77))\n[1] 0\n> stopifnot(max(abs(ric77 - v77)) < 1e-10)",
+   "deps": [
+    "013_ts.R"
+   ]
+  },
+  "080_sovradifferenza.R": {
+   "code": "set.seed(19080)\ne80 <- rnorm(10000)\nde80 <- diff(e80)\nr80 <- acf(de80, lag.max = 10,\n           plot = FALSE)$acf\nround(c(varianza = var(de80),\n        acf1 = r80[2]), 3)\nacf(de80, lag.max = 10)",
+   "output": "> set.seed(19080)\n> e80 <- rnorm(10000)\n> de80 <- diff(e80)\n> r80 <- acf(de80, lag.max = 10,\n+            plot = FALSE)$acf\n> round(c(varianza = var(de80),\n+         acf1 = r80[2]), 3)\nvarianza     acf1 \n   2.040   -0.502 \n> acf(de80, lag.max = 10)",
+   "deps": []
+  },
+  "081_alternative.R": {
+   "code": "# Due ACF teoriche con lo stesso primo lag.\nlag81 <- 0:8\nacf_diff81 <- c(1, -0.5, rep(0, 7))\nacf_ar81 <- (-0.5)^lag81\ndata.frame(lag = lag81,\n  rumore_differenziato = acf_diff81,\n  ar_negativo = acf_ar81)",
+   "output": "> # Due ACF teoriche con lo stesso primo lag.\n> lag81 <- 0:8\n> acf_diff81 <- c(1, -0.5, rep(0, 7))\n> acf_ar81 <- (-0.5)^lag81\n> data.frame(lag = lag81,\n+   rumore_differenziato = acf_diff81,\n+   ar_negativo = acf_ar81)\n  lag rumore_differenziato ar_negativo\n1   0                  1.0  1.00000000\n2   1                 -0.5 -0.50000000\n3   2                  0.0  0.25000000\n4   3                  0.0 -0.12500000\n5   4                  0.0  0.06250000\n6   5                  0.0 -0.03125000\n7   6                  0.0  0.01562500\n8   7                  0.0 -0.00781250\n9   8                  0.0  0.00390625",
+   "deps": []
+  },
+  "082_due_trasformazioni.R": {
+   "code": "set.seed(19082)\nt82 <- 1:200\nx82 <- 10 + 0.04 * t82 + rnorm(200)\nr82 <- residuals(lm(x82 ~ t82))\nd82 <- diff(x82)\n# Lo stesso input, due resti differenti.\nc(detrend = acf(r82, plot = FALSE)$acf[2],\n  differenza = acf(d82, plot = FALSE)$acf[2])",
+   "output": "> set.seed(19082)\n> t82 <- 1:200\n> x82 <- 10 + 0.04 * t82 + rnorm(200)\n> r82 <- residuals(lm(x82 ~ t82))\n> d82 <- diff(x82)\n> # Lo stesso input, due resti differenti.\n> c(detrend = acf(r82, plot = FALSE)$acf[2],\n+   differenza = acf(d82, plot = FALSE)$acf[2])\n    detrend  differenza \n-0.01719765 -0.50815910 ",
+   "deps": []
+  },
+  "083_registro.R": {
+   "code": "registro83 <- data.frame(\n  serie = c(\"livelli\", \"diff1\", \"diff12\", \"combinata\"),\n  n = sapply(forme76, length),\n  prima_data = as.character(d$data[c(1,2,13,14)]),\n  ultima_data = as.character(tail(d$data, 1)))\nregistro83",
+   "output": "> registro83 <- data.frame(\n+   serie = c(\"livelli\", \"diff1\", \"diff12\", \"combinata\"),\n+   n = sapply(forme76, length),\n+   prima_data = as.character(d$data[c(1,2,13,14)]),\n+   ultima_data = as.character(tail(d$data, 1)))\n> registro83\n               serie   n prima_data ultima_data\nlivelli      livelli 204 1985-01-01  2001-12-01\nordinaria      diff1 203 1985-02-01  2001-12-01\nstagionale    diff12 192 1986-01-01  2001-12-01\ncombinata  combinata 191 1986-02-01  2001-12-01",
+   "deps": [
+    "013_ts.R",
+    "076_numerosita.R"
+   ]
+  },
+  "087_ritardi_adf.R": {
+   "code": "# Analisi di sensibilita', non ricerca del p minimo.\nks87 <- c(1, 4, 8)\nstat87 <- sapply(ks87, function(k) {\n  tseries::adf.test(as.numeric(y),\n                    k = k)$statistic\n})\ndata.frame(k = ks87, statistica = stat87)",
+   "output": "> # Analisi di sensibilita', non ricerca del p minimo.\n> ks87 <- c(1, 4, 8)\n> stat87 <- sapply(ks87, function(k) {\n+   tseries::adf.test(as.numeric(y),\n+                     k = k)$statistic\n+ })\nAvviso: p-value smaller than printed p-value\nAvviso: p-value smaller than printed p-value\n> data.frame(k = ks87, statistica = stat87)\n  k statistica\n1 1 -14.421382\n2 4  -8.743016\n3 8  -2.135077",
+   "deps": [
+    "013_ts.R"
+   ],
+   "needs": [
+    "tseries"
+   ]
+  },
+  "088_adf.R": {
+   "code": "# Pacchetto richiesto dal progetto.\nstopifnot(requireNamespace(\"tseries\",\n                          quietly = TRUE))\nadf88 <- tseries::adf.test(\n  as.numeric(y), k = 4)\nadf88\n# Campi da riportare nel resoconto.\nadf88[c(\"statistic\", \"parameter\",\n        \"p.value\", \"alternative\")]",
+   "output": "> # Pacchetto richiesto dal progetto.\n> stopifnot(requireNamespace(\"tseries\",\n+                           quietly = TRUE))\n> adf88 <- tseries::adf.test(\n+   as.numeric(y), k = 4)\nAvviso: p-value smaller than printed p-value\n> adf88\n\n\tAugmented Dickey-Fuller Test\n\ndata:  as.numeric(y)\nDickey-Fuller = -8.743, Lag order = 4, p-value = 0.01\nalternative hypothesis: stationary\n\n> # Campi da riportare nel resoconto.\n> adf88[c(\"statistic\", \"parameter\",\n+         \"p.value\", \"alternative\")]\n$statistic\nDickey-Fuller \n    -8.743016 \n\n$parameter\nLag order \n        4 \n\n$p.value\n[1] 0.01\n\n$alternative\n[1] \"stationary\"\n",
+   "deps": [
+    "013_ts.R"
+   ],
+   "needs": [
+    "tseries"
+   ]
+  },
+  "089_somme_parziali.R": {
+   "code": "# Versione Level: si sottrae la media.\ne89 <- as.numeric(y) - mean(y)\nS89 <- cumsum(e89)\nplot(S89, type = \"l\", ylab = \"Somma residui\",\n     xlab = \"Mese\")\nabline(h = 0, col = \"grey70\")",
+   "output": "> # Versione Level: si sottrae la media.\n> e89 <- as.numeric(y) - mean(y)\n> S89 <- cumsum(e89)\n> plot(S89, type = \"l\", ylab = \"Somma residui\",\n+      xlab = \"Mese\")\n> abline(h = 0, col = \"grey70\")",
+   "deps": [
+    "013_ts.R"
+   ]
+  },
+  "091_kpss.R": {
+   "code": "kL91 <- tseries::kpss.test(as.numeric(y),\n  null = \"Level\", lshort = TRUE)\nkT91 <- tseries::kpss.test(as.numeric(y),\n  null = \"Trend\", lshort = TRUE)\nkL91\nkT91",
+   "output": "> kL91 <- tseries::kpss.test(as.numeric(y),\n+   null = \"Level\", lshort = TRUE)\nAvviso: p-value smaller than printed p-value\n> kT91 <- tseries::kpss.test(as.numeric(y),\n+   null = \"Trend\", lshort = TRUE)\nAvviso: p-value greater than printed p-value\n> kL91\n\n\tKPSS Test for Level Stationarity\n\ndata:  as.numeric(y)\nKPSS Level = 3.9513, Truncation lag parameter = 4, p-value = 0.01\n\n> kT91\n\n\tKPSS Test for Trend Stationarity\n\ndata:  as.numeric(y)\nKPSS Trend = 0.063692, Truncation lag parameter = 4, p-value = 0.1\n",
+   "deps": [
+    "013_ts.R"
+   ],
+   "needs": [
+    "tseries"
+   ]
+  },
+  "093_avvisi.R": {
+   "code": "w93 <- character()\na93 <- withCallingHandlers(\n  tseries::adf.test(as.numeric(y), k = 4),\n  warning = function(w) {\n    w93 <<- c(w93, conditionMessage(w))\n  })\n# Gli avvisi sono registrati e restano visibili.\nlist(test = a93, avvisi = w93)",
+   "output": "> w93 <- character()\n> a93 <- withCallingHandlers(\n+   tseries::adf.test(as.numeric(y), k = 4),\n+   warning = function(w) {\n+     w93 <<- c(w93, conditionMessage(w))\n+   })\nAvviso: p-value smaller than printed p-value\n> # Gli avvisi sono registrati e restano visibili.\n> list(test = a93, avvisi = w93)\n$test\n\n\tAugmented Dickey-Fuller Test\n\ndata:  as.numeric(y)\nDickey-Fuller = -8.743, Lag order = 4, p-value = 0.01\nalternative hypothesis: stationary\n\n\n$avvisi\n[1] \"p-value smaller than printed p-value\"\n",
+   "deps": [
+    "013_ts.R"
+   ],
+   "needs": [
+    "tseries"
+   ]
+  },
+  "095_cambio_livello.R": {
+   "code": "set.seed(19095)\nx95 <- c(rep(0, 80), rep(2, 80)) + rnorm(160)\nplot(x95, type = \"l\", ylab = \"Valore\")\nabline(v = 80.5, col = \"darkorange\")\n# Consultare i metadati prima dei test.\nc(media_prima = mean(x95[1:80]),\n  media_dopo = mean(x95[81:160]))",
+   "output": "> set.seed(19095)\n> x95 <- c(rep(0, 80), rep(2, 80)) + rnorm(160)\n> plot(x95, type = \"l\", ylab = \"Valore\")\n> abline(v = 80.5, col = \"darkorange\")\n> # Consultare i metadati prima dei test.\n> c(media_prima = mean(x95[1:80]),\n+   media_dopo = mean(x95[81:160]))\nmedia_prima  media_dopo \n  0.1197949   1.9153373 ",
+   "deps": []
+  },
+  "096_resoconto.R": {
+   "code": "resoconto96 <- list(\n  serie = \"CO2 mensile storica, livelli\",\n  periodo = range(d$data),\n  osservazioni = length(y),\n  adf = adf88,\n  kpss_livello = kL91,\n  kpss_trend = kT91)\nresoconto96$periodo",
+   "output": "> resoconto96 <- list(\n+   serie = \"CO2 mensile storica, livelli\",\n+   periodo = range(d$data),\n+   osservazioni = length(y),\n+   adf = adf88,\n+   kpss_livello = kL91,\n+   kpss_trend = kT91)\n> resoconto96$periodo\n[1] \"1985-01-01\" \"2001-12-01\"",
+   "deps": [
+    "013_ts.R",
+    "088_adf.R",
+    "091_kpss.R"
+   ],
+   "needs": [
+    "tseries"
+   ]
+  },
+  "098_co2_diff1.R": {
+   "code": "delta1 <- diff(y)\nplot(delta1, ylab = \"Differenza (ppm)\")\nacf(as.numeric(delta1), lag.max = 24,\n    main = \"Differenza mensile\")\nlength(delta1) # 203 valori",
+   "output": "> delta1 <- diff(y)\n> plot(delta1, ylab = \"Differenza (ppm)\")\n> acf(as.numeric(delta1), lag.max = 24,\n+     main = \"Differenza mensile\")\n> length(delta1) # 203 valori\n[1] 203",
+   "deps": [
+    "013_ts.R"
+   ]
+  },
+  "099_co2_diff12.R": {
+   "code": "delta12 <- diff(y, lag = 12)\nplot(delta12,\n     ylab = \"Differenza rispetto a 12 mesi (ppm)\")\nlength(delta12) # 192 valori\nacf(as.numeric(delta12), lag.max = 24)",
+   "output": "> delta12 <- diff(y, lag = 12)\n> plot(delta12,\n+      ylab = \"Differenza rispetto a 12 mesi (ppm)\")\n> length(delta12) # 192 valori\n[1] 192\n> acf(as.numeric(delta12), lag.max = 24)",
+   "deps": [
+    "013_ts.R"
+   ]
+  },
+  "100_co2_combinata.R": {
+   "code": "deltaC <- diff(diff(y, lag = 12))\nalternativaC <- diff(diff(y), lag = 12)\nstopifnot(max(abs(deltaC - alternativaC)) < 1e-10)\nlength(deltaC) # 191 valori\nplot(deltaC, ylab = \"Differenza combinata (ppm)\")",
+   "output": "> deltaC <- diff(diff(y, lag = 12))\n> alternativaC <- diff(diff(y), lag = 12)\n> stopifnot(max(abs(deltaC - alternativaC)) < 1e-10)\n> length(deltaC) # 191 valori\n[1] 191\n> plot(deltaC, ylab = \"Differenza combinata (ppm)\")",
+   "deps": [
+    "013_ts.R"
+   ]
+  },
+  "101_allineare_trasformazioni.R": {
+   "code": "confronto <- data.frame(\n  data = d$data,\n  livello = as.numeric(y),\n  diff1 = c(NA, as.numeric(delta1)),\n  diff12 = c(rep(NA, 12), as.numeric(delta12)),\n  combinata = c(rep(NA, 13), as.numeric(deltaC)))\nhead(confronto, 15)",
+   "output": "> confronto <- data.frame(\n+   data = d$data,\n+   livello = as.numeric(y),\n+   diff1 = c(NA, as.numeric(delta1)),\n+   diff12 = c(rep(NA, 12), as.numeric(delta12)),\n+   combinata = c(rep(NA, 13), as.numeric(deltaC)))\n> head(confronto, 15)\n         data livello  diff1 diff12 combinata\n1  1985-01-01 344.925     NA     NA        NA\n2  1985-02-01 345.875  0.950     NA        NA\n3  1985-03-01 347.440  1.565     NA        NA\n4  1985-04-01 348.325  0.885     NA        NA\n5  1985-05-01 348.825  0.500     NA        NA\n6  1985-06-01 348.180 -0.645     NA        NA\n7  1985-07-01 346.450 -1.730     NA        NA\n8  1985-08-01 344.300 -2.150     NA        NA\n9  1985-09-01 343.000 -1.300     NA        NA\n10 1985-10-01 342.800 -0.200     NA        NA\n11 1985-11-01 344.220  1.420     NA        NA\n12 1985-12-01 345.575  1.355     NA        NA\n13 1986-01-01 346.250  0.675  1.325        NA\n14 1986-02-01 346.825  0.575  0.950    -0.375\n15 1986-03-01 347.740  0.915  0.300    -0.650",
+   "deps": [
+    "013_ts.R",
+    "098_co2_diff1.R",
+    "099_co2_diff12.R",
+    "100_co2_combinata.R"
+   ]
+  },
+  "103_diagnosi_residua.R": {
+   "code": "varianti <- list(diff1 = delta1,\n                 diff12 = delta12,\n                 combinata = deltaC)\nsapply(varianti, function(v) {\n  a <- as.numeric(acf(as.numeric(v),\n    lag.max = 12, plot = FALSE)$acf)\n  c(lag1 = a[2], lag12 = a[13])\n})",
+   "output": "> varianti <- list(diff1 = delta1,\n+                  diff12 = delta12,\n+                  combinata = deltaC)\n> sapply(varianti, function(v) {\n+   a <- as.numeric(acf(as.numeric(v),\n+     lag.max = 12, plot = FALSE)$acf)\n+   c(lag1 = a[2], lag12 = a[13])\n+ })\n          diff1      diff12  combinata\nlag1  0.7125639  0.83253071 -0.2806780\nlag12 0.8950255 -0.09533192 -0.4011919",
+   "deps": [
+    "013_ts.R",
+    "098_co2_diff1.R",
+    "099_co2_diff12.R",
+    "100_co2_combinata.R"
+   ]
+  },
+  "104_esportare.R": {
+   "code": "dir.create(\"Risultati\", showWarnings = FALSE)\nwrite.csv(confronto,\n  \"Risultati/CO2_trasformazioni.csv\",\n  row.names = FALSE)\nscelte <- list(periodo = range(d$data),\n  frequenza = 12, ritardi = c(1, 12),\n  ADF_k = 4, KPSS_lshort = TRUE)\nsaveRDS(scelte, \"Risultati/scelte.rds\")",
+   "output": "> dir.create(\"Risultati\", showWarnings = FALSE)\n> write.csv(confronto,\n+   \"Risultati/CO2_trasformazioni.csv\",\n+   row.names = FALSE)\n> scelte <- list(periodo = range(d$data),\n+   frequenza = 12, ritardi = c(1, 12),\n+   ADF_k = 4, KPSS_lshort = TRUE)\n> saveRDS(scelte, \"Risultati/scelte.rds\")",
+   "deps": [
+    "013_ts.R",
+    "098_co2_diff1.R",
+    "099_co2_diff12.R",
+    "100_co2_combinata.R",
+    "101_allineare_trasformazioni.R"
+   ]
+  }
+ },
+ "download": "assets/lezioni/M09/Borealis_M09_progetto_R.zip"
+}

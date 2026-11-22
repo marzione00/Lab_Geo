@@ -1,0 +1,1696 @@
+[
+  {
+    "page": 2,
+    "title": "Dalle celle alle grandezze derivate",
+    "section": "I · TERRITORIO E GRIGLIA",
+    "left": "\\PLabel{Il percorso di Tessera}\n{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{8.3cm}p{0.7cm}@{}}\\toprule\n\\textbf{Passaggio} & \\textbf{p.}\\\\\\midrule\n\\hyperlink{slide6}{Definire la geometria raster} & 6\\\\\n\\hyperlink{slide20}{Conservare maschere e dominio} & 20\\\\\n\\hyperlink{slide33}{Cambiare risoluzione e allineare} & 33\\\\\n\\hyperlink{slide49}{Calcolare e verificare le derivate} & 49\\\\\n\\hyperlink{slide67}{Illuminare il rilievo} & 67\\\\\n\\hyperlink{slide77}{Confrontare bande spettrali} & 77\\\\\n\\hyperlink{slide91}{Riassumere zone e dipendenza} & 91\\\\\n\\hyperlink{slide103}{Esportare e rileggere i risultati} & 103\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{Locus ha collegato campioni, posizioni e relazioni spaziali. Tessera segue i valori quando il territorio è rappresentato da una griglia.}\n\\vspace{2.5mm}\n\\PInfo{Il caso guida è un terreno sintetico di 24 righe e 30 colonne. La georeferenziazione del GeoTIFF è fittizia: il file serve a verificare operazioni e convenzioni.}\n\\PBody{I 20 notebook conservano gli identificativi M12\\_N01--M12\\_N20. Ogni attività collega un problema, il codice eseguito e una conclusione circoscritta.}\n\\vspace{2.5mm}\n",
+    "recall": "La geometria della griglia entra nel significato dei valori e delle grandezze derivate.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      2,
+      30
+    ]
+  },
+  {
+    "page": 3,
+    "title": "Dai campioni di Locus alle celle di Tessera",
+    "section": "I · TERRITORIO E GRIGLIA",
+    "left": "\\begin{tikzpicture}[x=1cm,y=1cm]\n\\path[use as bounding box](-.1,-.15) rectangle(9.7,4.8);\n\\node[pFlow,text width=3.7cm,fill=GeoA!7] (a) at(2.1,3.8){M11: campioni e supporti};\n\\node[pFlow,text width=3.7cm,fill=GeoB!7] (b) at(7.3,3.8){M12: celle e geometria};\n\\node[pFlow,text width=3.7cm,fill=GeoA!7] (c) at(2.1,1.2){Copertura e dipendenza};\n\\node[pFlow,text width=3.7cm,fill=GeoB!7] (d) at(7.3,1.2){Scale e misure derivate};\n\\draw[pEdge] (a) -- (b);\n\\draw[pEdge] (a) -- (c);\n\\draw[pEdge] (b) -- (d);\n\\draw[pEdge] (c) -- (d);\n\\end{tikzpicture}\n\\[Z(s)\\quad\\longrightarrow\\quad Z_{ij}\\text{ su una griglia dichiarata}\\]\n",
+    "right": "\\PBody{Un raster organizza il dominio in celle. Il valore di ogni cella può essere una misura, una categoria, una previsione o una sintesi su un supporto.}\n\\vspace{2.5mm}\n\\PInfo{La disposizione regolare facilita il calcolo, ma non rende indipendenti le osservazioni e non garantisce che ogni cella contenga una misura diretta.}\n\\PBody{Coordinate, supporto e provenienza restano necessari anche quando la superficie appare continua sullo schermo.}\n\\vspace{2.5mm}\n",
+    "recall": "La continuità della carta è una proprietà della rappresentazione da interpretare insieme al dato.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      3,
+      11,
+      27
+    ]
+  },
+  {
+    "page": 4,
+    "title": "Quattro domande prima del calcolo",
+    "section": "I · TERRITORIO E GRIGLIA",
+    "left": "{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{4.1cm}p{4.9cm}@{}}\\toprule\n\\textbf{Domanda} & \\textbf{Evidenza da conservare}\\\\\\midrule\nDove si trova ogni cella? & Riferimento, origine, passo e orientamento\\\\\nChe cosa significa il valore? & Variabile, unità, supporto e provenienza\\\\\nQuali celle sono valide? & Maschere, cause di esclusione e dominio\\\\\nCome cambia il risultato? & Metodo, parametri e scala di elaborazione\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{La stessa matrice numerica può essere collocata in luoghi differenti. La stessa immagine può mostrare quote, intensità luminose oppure un indice spettrale.}\n\\vspace{2.5mm}\n\\PInfo{Il progetto conserverà dati, griglia e regole di trasformazione. La verifica finale rileggerà anche i file esportati.}\n\\PBody{La copertina richiama celle e forme del paesaggio. Nelle figure scientifiche ogni colore e ogni misura avranno unità e metodo espliciti.}\n\\vspace{2.5mm}\n",
+    "recall": "Prima dell’algoritmo occorre dichiarare geometria, significato dei valori e dominio valido.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      3,
+      6,
+      30
+    ]
+  },
+  {
+    "page": 5,
+    "title": "Il caso guida: 720 celle di terreno sintetico",
+    "section": "I · TERRITORIO E GRIGLIA",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/01_dem.pdf}\n\\vspace{1.5mm}\n\\PSmall{24 righe, 30 colonne, passo 30 m. I centri locali vanno da 0 a 870 m verso Est e da 0 a 690 m verso Nord.}\n",
+    "right": "\\PBody{Il file contiene quota e appartenenza alle zone didattiche A e B. Le bande spettrali saranno costruite in un esperimento distinto.}\n\\vspace{2.5mm}\n\\PInfo{Le quote non sono misure di un rilievo reale. La collocazione UTM del GeoTIFF è convenzionale e non coincide con i siti di Locus.}\n\\PBody{Il terreno consente di riconoscere errori di orientamento, modifiche della scala e conseguenze del trattamento dei mancanti.}\n\\vspace{2.5mm}\n",
+    "recall": "Un caso sintetico rende verificabili i passaggi senza attribuire ai risultati una provenienza osservativa.",
+    "snippet": null,
+    "notebook": 1,
+    "source": [
+      3
+    ]
+  },
+  {
+    "page": 6,
+    "title": "Il raster conserva valori e geometria",
+    "section": "II · GEOMETRIA RASTER",
+    "left": "{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{4.2cm}p{4.8cm}@{}}\\toprule\n\\textbf{Elemento} & \\textbf{Nel caso guida}\\\\\\midrule\nDimensioni & 24 righe e 30 colonne\\\\\nPasso della griglia & 30 m lungo entrambi gli assi\\\\\nValori & Quote sintetiche in metri\\\\\nGeoreferenziazione & UTM 32N convenzionale, EPSG:32632\\\\\nVariabile categoriale & Zone sintetiche A e B\\\\\nMancanti & Regola NoData dichiarata nel file\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{La matrice raccoglie i valori. Origine, risoluzione, riferimento e orientamento stabiliscono la posizione delle celle.}\n\\vspace{2.5mm}\n\\PInfo{Due oggetti con 720 valori possono rappresentare griglie diverse. Confrontiamo i metadati prima di combinarli.}\n\\PSmall{Gli originali sono conservati con revisione Git e impronte verificabili nel pacchetto.}\n",
+    "recall": "Numero di valori e dimensioni della matrice non identificano da soli un raster.",
+    "snippet": null,
+    "notebook": 1,
+    "source": [
+      3,
+      6
+    ]
+  },
+  {
+    "page": 7,
+    "title": "Righe e colonne diventano posizioni",
+    "section": "II · GEOMETRIA RASTER",
+    "left": "\\includegraphics[width=9.85cm,height=4.65cm,keepaspectratio]{Risultati/Figure/03_celle_centri.pdf}\n\\vspace{1.5mm}\n\\PSmall{Dettaglio del raster locale: croci nei centri, bordi a mezzo passo. La cella centrata in $(0,0)$ si estende da −15 a 15 m sui due assi.}\n\\[x_j=x_0+j\\Delta x,\\qquad y_i=y_0+i\\Delta y\\]\n",
+    "right": "\\PBody{Nella tabella originale gli indici partono da zero. Il centro della cella $(0,0)$ ha coordinate locali $(0,0)$ m.}\n\\vspace{2.5mm}\n\\PInfo{Qui $x$ cresce verso Est e $y$ verso Nord. Una convenzione diversa per le righe richiederebbe un segno diverso nella seconda relazione.}\n\\PBody{La griglia disegnata è uno schema: il dataset completo contiene 24 righe e 30 colonne.}\n\\vspace{2.5mm}\n",
+    "recall": "Gli indici descrivono l’ordine in tabella; le coordinate descrivono la geometria dichiarata.",
+    "snippet": null,
+    "notebook": 1,
+    "source": [
+      4
+    ]
+  },
+  {
+    "page": 8,
+    "title": "Il centro della cella e il suo angolo sono distinti",
+    "section": "II · GEOMETRIA RASTER",
+    "left": "\\begin{tikzpicture}[x=1cm,y=1cm]\n\\path[use as bounding box](-.1,-.15) rectangle(9.7,5.15);\n\\filldraw[fill=GeoA!10,draw=GeoA,line width=1pt](1.3,.9)rectangle(5.3,4.5);\n\\fill[GeoB](1.3,4.5)circle(3.4pt);\n\\fill[GeoA](3.3,2.7)circle(3.4pt);\n\\draw[GeoA,dashed](3.3,.9)--(3.3,4.5);\n\\draw[GeoA,dashed](1.3,2.7)--(5.3,2.7);\n\\draw[<->,draw=Muted](1.3,.55)--node[below,pNote]{$\\Delta x$}(5.3,.55);\n\\draw[<->,draw=Muted](.9,.9)--node[left,pNote]{$\\Delta y$}(.9,4.5);\n\\node[pLabel,anchor=west]at(5.65,4.1){angolo superiore sinistro};\n\\node[pNote,anchor=west]at(5.65,3.55){$(x_{\\min},y_{\\max})$};\n\\node[pLabel,anchor=west]at(5.65,2.55){centro della cella};\n\\node[pNote,anchor=west,text width=3.6cm]at(5.65,1.8){mezzo passo verso Est\\\\mezzo passo verso Sud};\n\\end{tikzpicture}\n",
+    "right": "\\PBody{La georeferenziazione del GeoTIFF parte dall’angolo superiore sinistro della cella in alto a sinistra. Il centro si trova mezzo passo all’interno.}\n\\vspace{2.5mm}\n\\PInfo{Con celle di 30 m, la differenza è 15 m in ciascuna direzione. Confondere angolo e centro sposta l’intera griglia di mezzo pixel.}\n\\PBody{Nel file originale la convenzione è PixelIsArea. Il significato fisico del valore dipende comunque dal prodotto e dalla sua documentazione.}\n\\vspace{2.5mm}\n",
+    "recall": "Origine degli angoli e coordinate dei centri devono essere riconoscibili nei metadati.",
+    "snippet": null,
+    "notebook": 3,
+    "source": [
+      4,
+      6
+    ]
+  },
+  {
+    "page": 9,
+    "title": "La prima riga del GeoTIFF si trova a Nord",
+    "section": "II · GEOMETRIA RASTER",
+    "left": "\\[E_j=E_{\\min}+\\left(j+\\tfrac12\\right)\\Delta x\\]\n\\[N_i=N_{\\max}-\\left(i+\\tfrac12\\right)\\Delta y\\]\n\\PInfo{Indici $i,j$ da zero. Griglia senza rotazione: $E$ cresce verso Est, $N$ verso Nord; il numero di riga aumenta andando verso Sud.}\n",
+    "right": "\\PBody{Il file ha angolo superiore sinistro $(500000,5000000)$ m. Il primo centro è quindi $(500015,4999985)$ m.}\n\\vspace{2.5mm}\n\\PBody{Il segno meno nella coordinata Nord è una conseguenza dell’ordine delle righe. Non indica una distanza fisica negativa.}\n\\vspace{2.5mm}\n\\PSmall{Per griglie ruotate la trasformazione affine comprende anche i termini incrociati fra riga e colonna.}\n",
+    "recall": "La formula dei centri dipende dal punto di origine e dall’orientamento delle righe.",
+    "snippet": null,
+    "notebook": 3,
+    "source": [
+      4,
+      6
+    ]
+  },
+  {
+    "page": 10,
+    "title": "L’estensione comprende celle intere",
+    "section": "II · GEOMETRIA RASTER",
+    "left": "{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{4.1cm}p{4.9cm}@{}}\\toprule\n\\textbf{Limite} & \\textbf{Coordinata UTM convenzionale}\\\\\\midrule\nOvest / Est & 500000 / 500900 m\\\\\nSud / Nord & 4999280 / 5000000 m\\\\\nLarghezza & 30 colonne × 30 m = 900 m\\\\\nAltezza & 24 righe × 30 m = 720 m\\\\\nPrimo centro a Nord-Ovest & 500015 / 4999985 m\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{La distanza fra il primo e l’ultimo centro è inferiore alla dimensione del dominio di un passo intero.}\n\\vspace{2.5mm}\n\\PInfo{Nel piano locale l’estensione è $[-15,885]\\times[-15,705]$ m. I limiti dei centri sono invece $[0,870]\\times[0,690]$ m.}\n",
+    "recall": "Per calcolare l’estensione usiamo i bordi esterni, non soltanto gli estremi delle coordinate dei centri.",
+    "snippet": {
+      "text": "c(righe=nrow(r),colonne=ncol(r))\nterra::res(r)\nas.vector(terra::ext(r))\n",
+      "title": "R · dimensioni e dominio"
+    },
+    "notebook": 3,
+    "source": [
+      6,
+      9
+    ],
+    "code_file": "010_esempio.R"
+  },
+  {
+    "page": 11,
+    "title": "Invertire le righe cambia l’orientamento",
+    "section": "II · GEOMETRIA RASTER",
+    "left": "\\begin{tikzpicture}[x=1cm,y=1cm]\n\\path[use as bounding box](-.1,-.15) rectangle(9.7,5.15);\n\\node[pLabel]at(2.4,4.6){matrice locale};\n\\filldraw[fill=GeoA!13,draw=white](0.6,3.0)rectangle(1.7999999999999998,4.05);\n\\node[pLabel]at(1.2,3.525){1};\n\\filldraw[fill=GeoA!16,draw=white](1.7999999999999998,3.0)rectangle(3.0,4.05);\n\\node[pLabel]at(2.4,3.525){2};\n\\filldraw[fill=GeoA!19,draw=white](3.0,3.0)rectangle(4.2,4.05);\n\\node[pLabel]at(3.6,3.525){3};\n\\filldraw[fill=GeoA!22,draw=white](0.6,1.9500000000000002)rectangle(1.7999999999999998,3.0);\n\\node[pLabel]at(1.2,2.475){4};\n\\filldraw[fill=GeoA!25,draw=white](1.7999999999999998,1.9500000000000002)rectangle(3.0,3.0);\n\\node[pLabel]at(2.4,2.475){5};\n\\filldraw[fill=GeoA!28,draw=white](3.0,1.9500000000000002)rectangle(4.2,3.0);\n\\node[pLabel]at(3.6,2.475){6};\n\\filldraw[fill=GeoA!31,draw=white](0.6,0.9)rectangle(1.7999999999999998,1.9500000000000002);\n\\node[pLabel]at(1.2,1.425){7};\n\\filldraw[fill=GeoA!34,draw=white](1.7999999999999998,0.9)rectangle(3.0,1.9500000000000002);\n\\node[pLabel]at(2.4,1.425){8};\n\\filldraw[fill=GeoA!37,draw=white](3.0,0.9)rectangle(4.2,1.9500000000000002);\n\\node[pLabel]at(3.6,1.425){9};\n\\node[pNote]at(2.4,.4){riga 1: Sud};\n\\node[pLabel]at(7.3,4.6){matrice GeoTIFF};\n\\filldraw[fill=GeoA!31,draw=white](5.5,3.0)rectangle(6.7,4.05);\n\\node[pLabel]at(6.1,3.525){7};\n\\filldraw[fill=GeoA!34,draw=white](6.7,3.0)rectangle(7.9,4.05);\n\\node[pLabel]at(7.3,3.525){8};\n\\filldraw[fill=GeoA!37,draw=white](7.9,3.0)rectangle(9.1,4.05);\n\\node[pLabel]at(8.5,3.525){9};\n\\filldraw[fill=GeoA!22,draw=white](5.5,1.9500000000000002)rectangle(6.7,3.0);\n\\node[pLabel]at(6.1,2.475){4};\n\\filldraw[fill=GeoA!25,draw=white](6.7,1.9500000000000002)rectangle(7.9,3.0);\n\\node[pLabel]at(7.3,2.475){5};\n\\filldraw[fill=GeoA!28,draw=white](7.9,1.9500000000000002)rectangle(9.1,3.0);\n\\node[pLabel]at(8.5,2.475){6};\n\\filldraw[fill=GeoA!13,draw=white](5.5,0.9)rectangle(6.7,1.9500000000000002);\n\\node[pLabel]at(6.1,1.425){1};\n\\filldraw[fill=GeoA!16,draw=white](6.7,0.9)rectangle(7.9,1.9500000000000002);\n\\node[pLabel]at(7.3,1.425){2};\n\\filldraw[fill=GeoA!19,draw=white](7.9,0.9)rectangle(9.1,1.9500000000000002);\n\\node[pLabel]at(8.5,1.425){3};\n\\node[pNote]at(7.3,.4){riga 1: Nord};\n\\draw[pEdge](4.4,2.4)--(5.15,2.4);\n\\end{tikzpicture}\n",
+    "right": "\\PBody{La prima riga della matrice locale rappresenta il margine Sud. La prima riga restituita dal GeoTIFF rappresenta il margine Nord.}\n\\vspace{2.5mm}\n\\PInfo{Il diagramma mostra l’ordine degli elementi in memoria. Per confrontare le quote occorre invertire le righe di una delle due matrici.}\n",
+    "recall": "Media e istogramma non riconoscono l’inversione Nord–Sud: occorrono celle di posizione nota.",
+    "snippet": {
+      "text": "M <- as.matrix(r,wide=TRUE)\nZ_nord <- Z[nrow(Z):1,]\nmax(abs(M-Z_nord))\n",
+      "title": "R · confrontare lo stesso ordine"
+    },
+    "notebook": 2,
+    "source": [
+      5,
+      6
+    ],
+    "code_file": "011_esempio.R"
+  },
+  {
+    "page": 12,
+    "title": "Una griglia completa richiede celle uniche",
+    "section": "II · GEOMETRIA RASTER",
+    "left": "{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{4.3cm}p{4.7cm}@{}}\\toprule\n\\textbf{Controllo} & \\textbf{Problema riconosciuto}\\\\\\midrule\nCoppia riga–colonna unica & Duplicato della stessa cella\\\\\n24 × 30 coppie attese & Cella assente nella tabella\\\\\nPasso di 30 m su ogni asse & Coordinate irregolari\\\\\nOrdinamento esplicito & Riempimento della matrice errato\\\\\nMancanti conservati & Scorrimento dei valori successivi\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{Una riga assente e una riga presente con valore mancante non hanno lo stesso effetto sulla ricostruzione della matrice.}\n\\vspace{2.5mm}\n\\PInfo{Il controllo delle chiavi viene prima di matrix(). Un ordinamento plausibile non basta a garantire che ogni valore occupi la propria cella.}\n\\PBody{Per questo caso rettangolare confrontiamo la tabella con tutte le combinazioni ammesse di riga e colonna.}\n\\vspace{2.5mm}\n",
+    "recall": "La struttura della griglia va verificata prima di trasformare una colonna di valori in una matrice.",
+    "snippet": null,
+    "notebook": 1,
+    "source": [
+      4,
+      5
+    ]
+  },
+  {
+    "page": 13,
+    "title": "L’ordinamento rende riproducibile la ricostruzione",
+    "section": "II · GEOMETRIA RASTER",
+    "left": "\\[Z_{i+1,j+1}=z_{ij},\\quad i=0,\\ldots,23,\\quad j=0,\\ldots,29\\]\n\\PInfo{Gli indici del file partono da zero; quelli della matrice R partono da uno. La corrispondenza esplicita evita uno spostamento di una cella.}\n",
+    "right": "\\PBody{Ordiniamo prima le righe della tabella. Il riempimento per righe segue poi la convenzione locale da Sud verso Nord.}\n\\vspace{2.5mm}\n\\PSmall{La proprietà byrow=TRUE deve essere letta insieme all’ordinamento del file.}\n",
+    "recall": "La stessa procedura deve ricostruire la griglia anche se l’ordine iniziale delle righe cambia.",
+    "snippet": {
+      "text": "d <- d[order(d$riga,d$colonna),]\nstopifnot(nrow(d)==720,\n !anyDuplicated(d[c(\"riga\",\"colonna\")]))\nZ <- matrix(d$quota_m,24,30,byrow=TRUE)\nstopifnot(Z[1,1]==d$quota_m[1])\n",
+      "title": "R · ricostruire e controllare"
+    },
+    "notebook": 1,
+    "source": [
+      5
+    ],
+    "code_file": "013_esempio.R"
+  },
+  {
+    "page": 14,
+    "title": "Un’inversione conserva l’istogramma",
+    "section": "II · GEOMETRIA RASTER",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/02_orientamento.pdf}\n\\vspace{1.5mm}\n\\PSmall{Controllo dei quattro angoli. La posizione dei valori viene confrontata dopo la conversione fra ordine locale e ordine Nord–Sud.}\n",
+    "right": "\\PBody{Confrontare una cella riconoscibile mette alla prova la geometria. La media globale potrebbe restare identica anche con righe o colonne invertite.}\n\\vspace{2.5mm}\n\\PInfo{Il controllo usa identificativi e coordinate, oltre ai valori. La tolleranza numerica deve essere dichiarata separatamente dalla convenzione geometrica.}\n\\PBody{Una mappa apparentemente regolare può conservare un errore sistematico di orientamento.}\n\\vspace{2.5mm}\n",
+    "recall": "La plausibilità visiva acquista valore quando è accompagnata da corrispondenze verificabili.",
+    "snippet": null,
+    "notebook": 2,
+    "source": [
+      5,
+      6
+    ],
+    "layout": "panorama",
+    "figure": "02_orientamento",
+    "caption": "Gli stessi valori sono rappresentati con due ordinamenti: a sinistra la convenzione locale corretta, a destra l’inversione delle righe interpretata erroneamente come locale. Media e distribuzione restano uguali. Il confronto delle celle di posizione nota riconosce l’errore geografico."
+  },
+  {
+    "page": 15,
+    "title": "Un riferimento assegnato non sposta le celle",
+    "section": "II · GEOMETRIA RASTER",
+    "left": "\\begin{tikzpicture}[x=1cm,y=1cm]\n\\path[use as bounding box](-.1,-.15) rectangle(9.7,4.8);\n\\node[pFlow,text width=3.7cm,fill=GeoA!7] (a) at(2.1,3.8){Coordinate e griglia esistenti};\n\\node[pFlow,text width=3.7cm,fill=GeoC!7] (b) at(7.3,3.8){Riferimento dichiarato};\n\\node[pFlow,text width=3.7cm,fill=GeoB!7] (c) at(2.1,1.2){Trasformazione delle posizioni};\n\\node[pFlow,text width=3.7cm,fill=GeoB!7] (d) at(7.3,1.2){Griglia obiettivo e ricampionamento};\n\\draw[pEdge] (a) -- (c);\n\\draw[pEdge] (b) -- (d);\n\\draw[pEdge] (c) -- (d);\n\\end{tikzpicture}\n",
+    "right": "\\PBody{Assegnare un CRS descrive l’interpretazione delle coordinate già presenti. Una riproiezione richiede invece di trasformare le posizioni e scegliere la griglia di uscita.}\n\\vspace{2.5mm}\n\\PInfo{Il GeoTIFF del corso possiede già un riferimento UTM fittizio. Non lo usiamo come prova che il terreno rappresenti una località reale.}\n\\PBody{Per combinare raster servono anche estensione, origine, risoluzione e allineamento compatibili.}\n\\vspace{2.5mm}\n",
+    "recall": "Un codice EPSG comune è necessario in molte operazioni, ma non garantisce la coincidenza delle celle.",
+    "snippet": null,
+    "notebook": 3,
+    "source": [
+      6,
+      13
+    ]
+  },
+  {
+    "page": 16,
+    "title": "Leggere il GeoTIFF conserva i metadati",
+    "section": "II · GEOMETRIA RASTER",
+    "left": "{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{3.4cm}p{5.6cm}@{}}\\toprule\n\\textbf{Proprietà} & \\textbf{Che cosa verificare}\\\\\\midrule\nCRS & Riferimento e unità metriche\\\\\nRisoluzione & Passo di 30 m sui due assi\\\\\nEstensione & Bordi esterni convenzionali\\\\\nTipo numerico & Precisione delle quote\\\\\nNoData & Codice distinto dai valori validi\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{terra restituisce un oggetto SpatRaster che collega valori e geometria. L’apertura del file non richiede necessariamente di caricare tutti i valori in memoria.}\n\\vspace{2.5mm}\n\\PInfo{Il percorso è locale. Il pacchetto include il GeoTIFF originale e ne documenta la natura sintetica.}\n",
+    "recall": "Un file leggibile deve ancora essere confrontato con le caratteristiche attese.",
+    "snippet": {
+      "text": "r <- terra::rast(\"Dati/raster_v3.tif\")\nterra::crs(r,describe=TRUE)\nstopifnot(terra::ncell(r)==720,\n all(terra::res(r)==30))\n",
+      "title": "R · leggere dati e riferimento"
+    },
+    "notebook": 3,
+    "source": [
+      6
+    ],
+    "code_file": "016_esempio.R"
+  },
+  {
+    "page": 17,
+    "title": "Collegare coordinate locali e GeoTIFF",
+    "section": "II · GEOMETRIA RASTER",
+    "left": "\\[E=x_{\\mathrm{locale}}+500015\\]\n\\[N=y_{\\mathrm{locale}}+4999295\\]\n\\PInfo{Questa relazione riguarda i centri delle celle del dataset sintetico. È una traslazione convenzionale, non una proiezione di coordinate geografiche.}\n",
+    "right": "\\PBody{Il centro locale $(0,0)$ m corrisponde alla cella Sud-Ovest del GeoTIFF. Il centro locale $(870,690)$ m corrisponde alla cella Nord-Est.}\n\\vspace{2.5mm}\n\\PBody{La relazione è ricavata dai bordi del file e dal mezzo passo. Verrà riutilizzata per esportare le celle interne senza traslarle.}\n\\vspace{2.5mm}\n",
+    "recall": "La conversione fra griglia locale e file georeferenziato deve conservare le posizioni dei centri.",
+    "snippet": null,
+    "notebook": 3,
+    "source": [
+      4,
+      6,
+      30
+    ]
+  },
+  {
+    "page": 18,
+    "title": "Pixel e supporto della misura",
+    "section": "II · GEOMETRIA RASTER",
+    "left": "{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{4.2cm}p{4.8cm}@{}}\\toprule\n\\textbf{Valore nella cella} & \\textbf{Interpretazione possibile}\\\\\\midrule\nQuota di un DEM & Stima della superficie a una posizione\\\\\nRiflettanza & Segnale riferito al supporto del sensore\\\\\nClasse litologica & Categoria assegnata alla cella\\\\\nMedia di quattro celle & Sintesi su un supporto più grande\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{La cella è una parte della geometria raster. Il supporto fisico o statistico del valore dipende da come il prodotto è stato ottenuto.}\n\\vspace{2.5mm}\n\\PInfo{Nel caso guida le quote sono sintetiche e associate ai centri. L’aggregazione produce una media dei valori: non la confondiamo con una nuova misura sul terreno.}\n\\PBody{Pixel più piccoli e sensori con maggiore capacità di risolvere dettagli sono proprietà da documentare separatamente.}\n\\vspace{2.5mm}\n",
+    "recall": "Per confrontare prodotti diversi servono il significato dei valori e la loro scala di rappresentazione.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      3,
+      11
+    ]
+  },
+  {
+    "page": 19,
+    "title": "Laboratorio: rendere riconoscibile ogni cella",
+    "section": "II · GEOMETRIA RASTER",
+    "left": "\\PLab{https://marzione00.github.io/Lab_Geo/\\#laboratorio/m12-griglia}{Esperimento online · geometria raster}\n{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{4.2cm}p{4.8cm}@{}}\\toprule\n\\textbf{Attività} & \\textbf{Risultato da conservare}\\\\\\midrule\nN01: audit & 720 coppie uniche, passo regolare\\\\\nN02: orientamento & Confronto dei quattro angoli\\\\\nN03: GeoTIFF & Dimensioni, CRS, estensione e risoluzione\\\\\nCorrispondenza & Centri locali e centri georeferenziati\\\\\nConclusione & Natura sintetica e convenzioni esplicite\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{Il primo prodotto del modulo è una scheda della griglia. Deve permettere a un’altra persona di ricostruire dove si trova ciascun valore.}\n\\vspace{2.5mm}\n\\PInfo{Se il controllo degli angoli fallisce, fermiamo la catena di elaborazione: pendenze, indici e sintesi erediteranno la geometria errata.}\n\\PBody{Passiamo ora alle celle escluse e al dominio effettivamente descritto.}\n\\vspace{2.5mm}\n",
+    "recall": "Il controllo iniziale della geometria protegge tutte le elaborazioni successive.",
+    "snippet": null,
+    "notebook": 3,
+    "source": [
+      6,
+      30
+    ]
+  },
+  {
+    "page": 20,
+    "title": "La maschera definisce il dominio disponibile",
+    "section": "III · MASCHERE E DOMINIO",
+    "left": "\\begin{tikzpicture}[x=1cm,y=1cm]\n\\path[use as bounding box](-.1,-.15) rectangle(9.7,5.25);\n\\draw[pAxis](.8,.4)--(8.7,.4)node[right,pNote]{$x$};\n\\draw[pAxis](.8,.4)--(.8,5.0)node[above,pNote]{$y$};\n\\filldraw[fill=GeoA!12,draw=white,line width=1pt](1.3,0.85)rectangle(2.4000000000000004,1.75);\n\\filldraw[fill=GeoA!12,draw=white,line width=1pt](2.4000000000000004,0.85)rectangle(3.5000000000000004,1.75);\n\\filldraw[fill=GeoA!12,draw=white,line width=1pt](3.5,0.85)rectangle(4.6,1.75);\n\\filldraw[fill=GeoA!12,draw=white,line width=1pt](4.6000000000000005,0.85)rectangle(5.700000000000001,1.75);\n\\filldraw[fill=GeoA!12,draw=white,line width=1pt](5.7,0.85)rectangle(6.800000000000001,1.75);\n\\filldraw[fill=GeoA!12,draw=white,line width=1pt](6.8,0.85)rectangle(7.9,1.75);\n\\filldraw[fill=GeoA!12,draw=white,line width=1pt](1.3,1.75)rectangle(2.4000000000000004,2.65);\n\\filldraw[fill=GeoA!12,draw=white,line width=1pt](2.4000000000000004,1.75)rectangle(3.5000000000000004,2.65);\n\\filldraw[fill=GeoC!25,draw=white,line width=1pt](3.5,1.75)rectangle(4.6,2.65);\n\\filldraw[fill=GeoC!25,draw=white,line width=1pt](4.6000000000000005,1.75)rectangle(5.700000000000001,2.65);\n\\filldraw[fill=GeoA!12,draw=white,line width=1pt](5.7,1.75)rectangle(6.800000000000001,2.65);\n\\filldraw[fill=GeoA!12,draw=white,line width=1pt](6.8,1.75)rectangle(7.9,2.65);\n\\filldraw[fill=GeoA!12,draw=white,line width=1pt](1.3,2.65)rectangle(2.4000000000000004,3.55);\n\\filldraw[fill=GeoA!12,draw=white,line width=1pt](2.4000000000000004,2.65)rectangle(3.5000000000000004,3.55);\n\\filldraw[fill=GeoC!25,draw=white,line width=1pt](3.5,2.65)rectangle(4.6,3.55);\n\\filldraw[fill=GeoC!25,draw=white,line width=1pt](4.6000000000000005,2.65)rectangle(5.700000000000001,3.55);\n\\filldraw[fill=GeoA!12,draw=white,line width=1pt](5.7,2.65)rectangle(6.800000000000001,3.55);\n\\filldraw[fill=GeoA!12,draw=white,line width=1pt](6.8,2.65)rectangle(7.9,3.55);\n\\filldraw[fill=GeoA!12,draw=white,line width=1pt](1.3,3.5500000000000003)rectangle(2.4000000000000004,4.45);\n\\filldraw[fill=GeoA!12,draw=white,line width=1pt](2.4000000000000004,3.5500000000000003)rectangle(3.5000000000000004,4.45);\n\\filldraw[fill=GeoA!12,draw=white,line width=1pt](3.5,3.5500000000000003)rectangle(4.6,4.45);\n\\filldraw[fill=GeoA!12,draw=white,line width=1pt](4.6000000000000005,3.5500000000000003)rectangle(5.700000000000001,4.45);\n\\filldraw[fill=GeoA!12,draw=white,line width=1pt](5.7,3.5500000000000003)rectangle(6.800000000000001,4.45);\n\\filldraw[fill=GeoA!12,draw=white,line width=1pt](6.8,3.5500000000000003)rectangle(7.9,4.45);\n\\node[pNote]at(4.6,4.8){schema: sei colonne, quattro righe};\n\\end{tikzpicture}\n\\[m_{ij}=\\begin{cases}1&\\text{cella valida}\\\\0&\\text{cella esclusa}\\end{cases}\\]\n",
+    "right": "\\PBody{Una maschera distingue le celle utilizzabili dalle altre. L’esclusione può dipendere da assenza di misura, qualità insufficiente o scelta del dominio.}\n\\vspace{2.5mm}\n\\PInfo{Conserviamo separatamente i valori e la loro validità. Il colore delle celle escluse deve essere riconoscibile senza confondersi con la scala delle quote.}\n\\PBody{Il motivo della mancanza può essere legato alla morfologia o al fenomeno studiato.}\n\\vspace{2.5mm}\n",
+    "recall": "La maschera appartiene al dato e condiziona l’interpretazione delle sue sintesi.",
+    "snippet": null,
+    "notebook": 4,
+    "source": [
+      7,
+      25
+    ]
+  },
+  {
+    "page": 21,
+    "title": "NoData e quota zero hanno significati diversi",
+    "section": "III · MASCHERE E DOMINIO",
+    "left": "{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{4.0cm}p{5.0cm}@{}}\\toprule\n\\textbf{Stato} & \\textbf{Interpretazione}\\\\\\midrule\nQuota 0 m & Valore fisico valido nel riferimento verticale\\\\\nNA in R & Valore mancante nel calcolo\\\\\nNoData nel file & Codice riservato alla mancanza\\\\\nCella fuori dominio & Posizione esclusa dalla domanda\\\\\nValore non valido & Misura respinta secondo un criterio\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{Il GeoTIFF originale dichiara il valore $-9999$ come NoData. terra lo interpreta come mancante, non come una quota da usare nelle medie.}\n\\vspace{2.5mm}\n\\PInfo{Una codifica mancante deve essere compatibile con l’intervallo dei valori validi. La stessa sentinella non è automaticamente adatta a ogni variabile.}\n\\PBody{Un terreno a quota zero può essere pianeggiante o inclinato: lo zero non indica assenza di informazione.}\n\\vspace{2.5mm}\n",
+    "recall": "La validità della cella deve essere verificata prima di interpretare il suo numero.",
+    "snippet": null,
+    "notebook": 4,
+    "source": [
+      7
+    ]
+  },
+  {
+    "page": 22,
+    "title": "Ventiquattro celle escluse restano localizzabili",
+    "section": "III · MASCHERE E DOMINIO",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/04_maschera_nodata.pdf}\n\\vspace{1.5mm}\n\\PSmall{Finestra esclusa: indici originali riga 4–7 e colonna 9–14. La maschera contiene 24 celle.}\n",
+    "right": "\\PBody{In R gli indici corrispondenti sono righe 5–8 e colonne 10–15. Il controllo del numero di celle rende esplicita la conversione.}\n\\vspace{2.5mm}\n\\PInfo{Le quote disponibili conservano la scala cromatica della carta iniziale. La mancanza è rappresentata con un colore separato.}\n",
+    "recall": "Conservare la posizione delle celle escluse evita che la maschera diventi un semplice conteggio.",
+    "snippet": {
+      "text": "Zm <- Z\nZm[5:8,10:15] <- NA_real_\nstopifnot(sum(is.na(Zm))==24)\ncopertura <- mean(is.finite(Zm))\n",
+      "title": "R · maschera dichiarata"
+    },
+    "notebook": 4,
+    "source": [
+      7
+    ],
+    "code_file": "022_esempio.R"
+  },
+  {
+    "page": 23,
+    "title": "La copertura accompagna ogni media",
+    "section": "III · MASCHERE E DOMINIO",
+    "left": "\\[c=\\frac{696}{720}\\approx0{,}9667\\]\n\\[\\overline z_{\\mathrm{disp}}=\\frac{\\sum_{ij}m_{ij}z_{ij}}{\\sum_{ij}m_{ij}}\\]\n\\PInfo{La notazione della somma si riferisce ai valori validi: nel codice selezioniamo esplicitamente le celle disponibili prima di calcolare la media.}\n",
+    "right": "\\PBody{La media dei disponibili descrive le celle rimaste. Il suo trasferimento al dominio completo richiederebbe informazioni sul processo di mancanza.}\n\\vspace{2.5mm}\n\\PBody{La copertura del 96,67\\% non dimostra che le celle osservate siano rappresentative della parte esclusa.}\n\\vspace{2.5mm}\n\\PSmall{Il dataset completo ci permette di confrontare le due medie come esperimento didattico.}\n",
+    "recall": "Numero di celle valide, loro posizione e causa di esclusione devono accompagnare il risultato.",
+    "snippet": null,
+    "notebook": 4,
+    "source": [
+      7,
+      8
+    ]
+  },
+  {
+    "page": 24,
+    "title": "Sostituire i mancanti con zero altera il risultato",
+    "section": "III · MASCHERE E DOMINIO",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/05_effetto_zero.pdf}\n\\vspace{1.5mm}\n\\PSmall{Confronto fra terreno completo, celle disponibili e sostituzione impropria con zero. Le quantità hanno domini e significati diversi.}\n",
+    "right": "\\PBody{La sostituzione aggiunge quote che non sono state osservate. Nel terreno del caso guida introduce valori molto inferiori alle quote circostanti.}\n\\vspace{2.5mm}\n\\PInfo{Il risultato numerico è calcolabile, ma la procedura cambia la variabile e la superficie rappresentata.}\n",
+    "recall": "Una scelta di codifica non deve introdurre valori fisici inventati nelle statistiche.",
+    "snippet": {
+      "text": "Zzero <- Zm\nZzero[is.na(Zzero)] <- 0\nc(completa=mean(Z),\n disponibile=mean(Zm,na.rm=TRUE),\n sostituita=mean(Zzero))\n",
+      "title": "R · confronto dei significati"
+    },
+    "notebook": 4,
+    "source": [
+      7
+    ],
+    "code_file": "024_esempio.R"
+  },
+  {
+    "page": 25,
+    "title": "Ritagliare seleziona una parte del territorio",
+    "section": "III · MASCHERE E DOMINIO",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/06_ritaglio.pdf}\n\\vspace{1.5mm}\n\\PSmall{Selezione dei centri con 300 ≤ x ≤ 600 m e 180 ≤ y ≤ 510 m: 132 celle, pari a 11,88 ha nella griglia locale.}\n",
+    "right": "\\PBody{La finestra contiene una parte diversa della morfologia. La sua media non risponde alla stessa domanda della media dell’intero dominio.}\n\\vspace{2.5mm}\n\\PInfo{Dichiariamo se il criterio riguarda i centri o l’intersezione con i bordi delle celle. Per confini irregolari le regole possono dare risultati diversi.}\n",
+    "recall": "Il ritaglio è una scelta geografica da documentare insieme alla sintesi.",
+    "snippet": {
+      "text": "sel <- with(d,x_m>=300 & x_m<=600 &\n                  y_m>=180 & y_m<=510)\nstopifnot(sum(sel)==132)\nmean(d$quota_m[sel])\n",
+      "title": "R · dominio dei centri"
+    },
+    "notebook": 5,
+    "source": [
+      8
+    ],
+    "code_file": "025_esempio.R"
+  },
+  {
+    "page": 26,
+    "title": "Ritaglio e maschera hanno ruoli distinti",
+    "section": "III · MASCHERE E DOMINIO",
+    "left": "\\begin{tikzpicture}[x=1cm,y=1cm]\n\\path[use as bounding box](-.1,-.15) rectangle(9.7,4.8);\n\\node[pFlow,text width=3.7cm,fill=GeoA!7] (a) at(2.1,3.8){Raster di partenza};\n\\node[pFlow,text width=3.7cm,fill=GeoB!7] (b) at(7.3,3.8){Finestra rettangolare};\n\\node[pFlow,text width=3.7cm,fill=GeoC!7] (c) at(2.1,1.2){Criterio di inclusione};\n\\node[pFlow,text width=3.7cm,fill=GeoA!7] (d) at(7.3,1.2){Celle valide nel dominio};\n\\draw[pEdge] (a) -- (b);\n\\draw[pEdge] (a) -- (c);\n\\draw[pEdge] (b) -- (d);\n\\draw[pEdge] (c) -- (d);\n\\end{tikzpicture}\n",
+    "right": "\\PBody{Il ritaglio riduce l’estensione rettangolare. Una maschera può escludere celle al suo interno e descrivere un dominio irregolare.}\n\\vspace{2.5mm}\n\\PInfo{La superficie del rettangolo esterno e la superficie valida non sono necessariamente uguali. Le riportiamo separatamente.}\n\\PBody{Una geometria di ritaglio che attraversa celle richiede una regola di inclusione o un peso frazionario esplicito.}\n\\vspace{2.5mm}\n",
+    "recall": "Dimensione del file, estensione geometrica e superficie valida descrivono proprietà differenti.",
+    "snippet": null,
+    "notebook": 5,
+    "source": [
+      8,
+      9
+    ]
+  },
+  {
+    "page": 27,
+    "title": "Dal conteggio delle celle agli ettari",
+    "section": "III · MASCHERE E DOMINIO",
+    "left": "\\includegraphics[width=9.85cm,height=4.65cm,keepaspectratio]{Risultati/Figure/07_superficie_zone.pdf}\n\\vspace{1.5mm}\n\\PSmall{Area piana dei domini: 720, 696, 24 e 132 celle rispettivamente.}\n\\[a=\\Delta x\\,\\Delta y=900\\ \\mathrm{m}^2=0{,}09\\ \\mathrm{ha}\\]\n",
+    "right": "\\PBody{Il prodotto dei passi misura l’area piana della cella. La somma delle aree valide quantifica la copertura discretizzata.}\n\\vspace{2.5mm}\n\\PInfo{Questa area è planimetrica. Non è l’area reale della superficie inclinata del terreno.}\n",
+    "recall": "La stessa parola «superficie» deve essere accompagnata dalla geometria a cui si riferisce.",
+    "snippet": {
+      "text": "area_cella_ha <-\n prod(terra::res(r))/1e4\nc(totale=720*area_cella_ha,\n valida=696*area_cella_ha)\n",
+      "title": "R · area piana della griglia"
+    },
+    "notebook": 6,
+    "source": [
+      9
+    ],
+    "code_file": "027_esempio.R"
+  },
+  {
+    "page": 28,
+    "title": "Una griglia in gradi richiede un calcolo di area",
+    "section": "III · MASCHERE E DOMINIO",
+    "left": "\\[A_{\\mathrm{valida}}=\\sum_{k\\in V}a_k\\]\n\\[\\overline z_A=\\frac{\\sum_{k\\in V}a_k z_k}{\\sum_{k\\in V}a_k}\\]\n\\PInfo{$a_k$ è l’area rappresentata dalla cella valida $k$. La media assume che i valori siano appropriati alla sintesi su quelle aree.}\n",
+    "right": "\\PBody{Uguali intervalli angolari non definiscono celle di uguale area sulla Terra. Anche una proiezione può introdurre distorsioni di area.}\n\\vspace{2.5mm}\n\\PBody{Nel caso locale metrico usiamo l’area piana. Un’analisi geografica reale deve scegliere una misura di area coerente con il riferimento e con la domanda.}\n\\vspace{2.5mm}\n\\PSmall{La funzione terra::cellSize permette di calcolare aree tenendo conto della collocazione geografica; la scelta va documentata.}\n",
+    "recall": "La media semplice delle celle coincide con una media di area solo quando i pesi appropriati sono uguali.",
+    "snippet": null,
+    "notebook": 6,
+    "source": [
+      9,
+      26
+    ]
+  },
+  {
+    "page": 29,
+    "title": "Le maschere si combinano conservando le cause",
+    "section": "III · MASCHERE E DOMINIO",
+    "left": "{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{4.1cm}p{4.9cm}@{}}\\toprule\n\\textbf{Criterio} & \\textbf{Informazione da registrare}\\\\\\midrule\nValore disponibile & Assenza della misura\\\\\nQualità ammessa & Nuvole, saturazione o altro criterio\\\\\nDominio scelto & Inclusione territoriale\\\\\nCalcolo definito & Vicinato o denominatore valido\\\\\nMaschera finale & Intersezione dei criteri necessari\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{La maschera complessiva può essere una congiunzione logica. Conservare i singoli motivi consente di capire perché una cella è stata esclusa.}\n\\vspace{2.5mm}\n\\PInfo{Quando calcoliamo una derivata, servono anche i vicini richiesti. Una cella con quota valida può avere una pendenza non calcolabile.}\n\\PBody{Le esclusioni introdotte dal metodo devono essere distinte dalle mancanze del dato originale.}\n\\vspace{2.5mm}\n",
+    "recall": "La tracciabilità della maschera spiega come cambia il dominio lungo la catena di elaborazione.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      7,
+      17,
+      25
+    ]
+  },
+  {
+    "page": 30,
+    "title": "Una cella mancante può influenzare i vicini",
+    "section": "III · MASCHERE E DOMINIO",
+    "left": "\\begin{tikzpicture}[x=1cm,y=1cm]\n\\path[use as bounding box](-.1,-.15) rectangle(9.7,5.3);\n\\filldraw[fill=GeoA!9,draw=Rule](2.1,0.6)rectangle(3.6500000000000004,2.0);\n\\filldraw[fill=GeoA!9,draw=Rule](3.6500000000000004,0.6)rectangle(5.2,2.0);\n\\filldraw[fill=GeoA!9,draw=Rule](5.2,0.6)rectangle(6.75,2.0);\n\\filldraw[fill=GeoA!9,draw=Rule](2.1,2.0)rectangle(3.6500000000000004,3.4);\n\\filldraw[fill=GeoB!18,draw=Rule](3.6500000000000004,2.0)rectangle(5.2,3.4);\n\\filldraw[fill=GeoA!9,draw=Rule](5.2,2.0)rectangle(6.75,3.4);\n\\filldraw[fill=GeoA!9,draw=Rule](2.1,3.4)rectangle(3.6500000000000004,4.8);\n\\filldraw[fill=GeoA!9,draw=Rule](3.6500000000000004,3.4)rectangle(5.2,4.8);\n\\filldraw[fill=GeoA!9,draw=Rule](5.2,3.4)rectangle(6.75,4.8);\n\\node[pLabel]at(4.425,2.7){$z_{ij}$};\n\\node[pLabel]at(5.975,2.7){$z_{i,j+1}$};\n\\node[pLabel]at(2.875,2.7){$z_{i,j-1}$};\n\\node[pLabel]at(4.425,4.1){$z_{i+1,j}$};\n\\node[pLabel]at(4.425,1.3){$z_{i-1,j}$};\n\\draw[pEdge](7.1,1)--(7.1,4.6)node[above,pNote]{Nord};\n\\draw[<->,Muted](2.875,.2)--node[below,pNote]{$2\\Delta x$}(5.975,.2);\n\\end{tikzpicture}\n",
+    "right": "\\PBody{Il calcolo centrato utilizza quattro quote adiacenti. Se una di esse manca, la derivata richiesta non è disponibile.}\n\\vspace{2.5mm}\n\\PInfo{Adottiamo un criterio esplicito: centro valido e quattro vicini validi. Il bordo esterno richiede una convenzione separata.}\n\\PBody{Riempire automaticamente i buchi cambia il metodo e introduce un modello di interpolazione. La decisione deve essere motivata prima delle derivate.}\n\\vspace{2.5mm}\n",
+    "recall": "Il dominio di una grandezza derivata dipende dal vicinato necessario a calcolarla.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      7,
+      14,
+      17
+    ]
+  },
+  {
+    "page": 31,
+    "title": "Una sintesi riproducibile dichiara il denominatore",
+    "section": "III · MASCHERE E DOMINIO",
+    "left": "{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{4.2cm}p{4.8cm}@{}}\\toprule\n\\textbf{Quantità} & \\textbf{Denominatore}\\\\\\midrule\nCopertura per numero & Celle ammesse nella griglia di riferimento\\\\\nMedia dei disponibili & Celle valide utilizzate\\\\\nMedia per area & Somma delle aree rappresentate\\\\\nFrazione di una classe & Dominio valido definito\\\\\nDensità territoriale & Area coerente con gli eventi contati\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{Una percentuale o una media possono cambiare perché cambiano i valori, il dominio oppure entrambi.}\n\\vspace{2.5mm}\n\\PInfo{Nel confronto fra prodotti riportiamo i conteggi e usiamo, quando serve, una maschera comune. Confrontiamo così lo stesso insieme di celle.}\n\\PBody{Una mappa dei mancanti è spesso più informativa di una sola percentuale di copertura.}\n\\vspace{2.5mm}\n",
+    "recall": "Il denominatore fa parte della definizione scientifica della statistica.",
+    "snippet": null,
+    "notebook": 6,
+    "source": [
+      7,
+      9,
+      26
+    ]
+  },
+  {
+    "page": 32,
+    "title": "Laboratorio: conservare il dominio osservato",
+    "section": "III · MASCHERE E DOMINIO",
+    "left": "\\PLab{https://marzione00.github.io/Lab_Geo/\\#laboratorio/m12-maschere}{Esperimento online · maschere e superficie}\n{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{4.2cm}p{4.8cm}@{}}\\toprule\n\\textbf{Attività} & \\textbf{Controllo}\\\\\\midrule\nN04: NoData & 24 celle mancanti, zero distinto\\\\\nN05: ritaglio & 132 centri inclusi nella finestra\\\\\nN06: area & 900 m² per cella nel piano\\\\\nConsegna & Quote, maschera e copertura\\\\\nInterpretazione & Dominio al quale si riferisce la media\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{La consegna permette di ricostruire le esclusioni e il loro effetto. Ogni confronto conserva la definizione del dominio.}\n\\vspace{2.5mm}\n\\PInfo{Passare a una nuova risoluzione cambierà il modo in cui le celle rappresentano quel dominio. La maschera dovrà seguire anche questa trasformazione.}\n",
+    "recall": "Le celle escluse devono rimanere riconoscibili dopo ogni passaggio.",
+    "snippet": null,
+    "notebook": 6,
+    "source": [
+      7,
+      8,
+      9,
+      30
+    ]
+  },
+  {
+    "page": 33,
+    "title": "Cambiare griglia richiede di scegliere l’operazione",
+    "section": "IV · RISOLUZIONE E ALLINEAMENTO",
+    "left": "{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{3.6cm}p{5.4cm}@{}}\\toprule\n\\textbf{Operazione} & \\textbf{Scopo}\\\\\\midrule\nAggregare & Riassumere gruppi di celle\\\\\nDisaggregare & Suddividere la geometria delle celle\\\\\nRicampionare & Stimare valori su una griglia diversa\\\\\nRiproiettare & Trasformare il riferimento e definire l’uscita\\\\\nRitagliare & Selezionare un’estensione\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{Le operazioni possono produrre immagini simili ma hanno significati differenti. Esplicitiamo sempre griglia di partenza, griglia di arrivo e regola per i valori.}\n\\vspace{2.5mm}\n\\PInfo{La geometria obiettivo include passo, origine, estensione e CRS. Un numero di righe e colonne non è sufficiente.}\n\\PBody{Il metodo dipende anche dal tipo di variabile: quota continua, categoria o quantità da conservare.}\n\\vspace{2.5mm}\n",
+    "recall": "La trasformazione della griglia e quella dei valori devono essere documentate insieme.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      10,
+      11,
+      12,
+      13
+    ]
+  },
+  {
+    "page": 34,
+    "title": "Quattro celle diventano una media",
+    "section": "IV · RISOLUZIONE E ALLINEAMENTO",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/08_aggregazione.pdf}\n\\vspace{1.5mm}\n\\PSmall{Confronto fra griglia originale da 30 m e aggregazione 2×2 da 60 m. Scala delle quote comune.}\n",
+    "right": "\\PBody{I blocchi sono completi e allineati con l’origine. Ogni nuovo valore riassume quattro quote; il numero di celle passa da 720 a 180.}\n\\vspace{2.5mm}\n\\PInfo{Il dominio esterno resta lo stesso. Il valore del blocco rappresenta una media dei quattro valori, con perdita di dettaglio locale.}\n",
+    "recall": "Una cella aggregata ha un supporto diverso da quello dei valori di partenza.",
+    "snippet": null,
+    "notebook": 7,
+    "source": [
+      10
+    ],
+    "layout": "panorama",
+    "figure": "08_aggregazione",
+    "caption": "Griglia da 30 m: 24×30 celle. Aggregazione 2×2: 12×15 medie su celle da 60 m. Estensione e scala cromatica restano comuni. La media globale si conserva perché ogni blocco completo comprende quattro valori con uguale peso; estremi e dettaglio morfologico possono cambiare."
+  },
+  {
+    "page": 35,
+    "title": "La conservazione della media deriva dai pesi",
+    "section": "IV · RISOLUZIONE E ALLINEAMENTO",
+    "left": "\\[\\overline z_b=\\frac14\\sum_{k\\in b}z_k\\]\n\\[\\frac1{180}\\sum_{b=1}^{180}\\overline z_b\n       =\\frac1{720}\\sum_{k=1}^{720}z_k\\]\n\\PInfo{La relazione vale per 180 blocchi completi, ciascuno formato da quattro celle con lo stesso peso.}\n",
+    "right": "\\PBody{Il risultato è un’identità algebrica. Non dimostra che le distribuzioni o le forme locali del terreno restino uguali.}\n\\vspace{2.5mm}\n\\PSmall{Verifichiamo separatamente media, intervallo dei valori, risoluzione ed estensione.}\n",
+    "recall": "La media globale si conserva perché ogni valore di partenza riceve lo stesso peso finale.",
+    "snippet": {
+      "text": "r60 <- terra::aggregate(r,fact=2,fun=mean)\nm30 <- mean(terra::values(r))\nm60 <- mean(terra::values(r60))\nstopifnot(terra::ncell(r60)==180,\n abs(m30-m60)<1e-9)\n",
+      "title": "R · aggregare e verificare"
+    },
+    "notebook": 7,
+    "source": [
+      10
+    ],
+    "code_file": "035_esempio.R"
+  },
+  {
+    "page": 36,
+    "title": "I blocchi con mancanti possono avere pesi diversi",
+    "section": "IV · RISOLUZIONE E ALLINEAMENTO",
+    "left": "\\[\\overline z_{\\mathrm{disp}}\n =\\frac{\\sum_b n_b\\,\\overline z_b}{\\sum_b n_b}\\]\n{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{3.8cm}p{2.2cm}p{2.7cm}@{}}\\toprule\n\\textbf{Blocco} & \\textbf{Valori validi} & \\textbf{Media}\\\\\\midrule\nA & 1 & 10\\\\\nB & 3 & 20\\\\\nMedia dei quattro valori & 4 & 17,5\\\\\nMedia semplice dei blocchi & 2 blocchi & 15\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{Dopo na.rm=TRUE, due medie di blocco possono riassumere quantità diverse di celle valide. La loro media semplice cambia i pesi.}\n\\vspace{2.5mm}\n\\PInfo{Pesare per $n_b$ ricostruisce la media dei disponibili. Per inferire la media del dominio completo occorrono ulteriori ipotesi sulla mancanza.}\n",
+    "recall": "Il conteggio delle celle valide deve accompagnare il valore di ogni blocco.",
+    "snippet": {
+      "text": "nb <- c(1,3); mb <- c(10,20)\nc(per_cella=weighted.mean(mb,nb),\n per_blocco=mean(mb))\n",
+      "title": "R · due pesature"
+    },
+    "notebook": 7,
+    "source": [
+      10
+    ],
+    "code_file": "036_esempio.R"
+  },
+  {
+    "page": 37,
+    "title": "Un massimo aggregato descrive una scala diversa",
+    "section": "IV · RISOLUZIONE E ALLINEAMENTO",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/09_perdita_estremi.pdf}\n\\vspace{1.5mm}\n\\PSmall{Minimo, media e massimo prima e dopo l’aggregazione. Le differenze sono calcolate sullo stesso dominio.}\n",
+    "right": "\\PBody{La media di un blocco è compresa fra i suoi valori estremi. Di conseguenza il massimo delle medie non può superare il massimo originale.}\n\\vspace{2.5mm}\n\\PInfo{Una cima stretta può attenuarsi nella griglia aggregata. La sua minore quota rappresentata non implica un cambiamento del terreno.}\n\\PBody{Le differenze dipendono da come le forme si collocano rispetto ai blocchi e dalla scala scelta.}\n\\vspace{2.5mm}\n",
+    "recall": "La perdita di dettaglio morfologico può essere rilevante anche quando la media globale rimane identica.",
+    "snippet": null,
+    "notebook": 7,
+    "source": [
+      10,
+      11
+    ]
+  },
+  {
+    "page": 38,
+    "title": "Più celle memorizzate non aggiungono misure",
+    "section": "IV · RISOLUZIONE E ALLINEAMENTO",
+    "left": "\\[n_{\\mathrm{nuovo}}=n_{\\mathrm{origine}}\n \\left(\\frac{\\Delta_{\\mathrm{origine}}}{\\Delta_{\\mathrm{nuovo}}}\\right)^2\\]\n\\PInfo{Relazione per celle quadrate sullo stesso dominio, con suddivisione compatibile. Da 30 a 10 m, il conteggio cresce di un fattore nove.}\n",
+    "right": "\\PBody{La disaggregazione può copiare i valori oppure un ricampionamento può interpolarli. In entrambi i casi il dato originario resta quello della griglia di partenza.}\n\\vspace{2.5mm}\n\\PBody{Una rappresentazione più fitta può essere utile per allineare prodotti, ma non giustifica interpretazioni a una nuova scala di misura.}\n\\vspace{2.5mm}\n\\PSmall{Dimensione del pixel in uscita e capacità di risolvere strutture vicine devono restare distinte.}\n",
+    "recall": "Una griglia più fitta descrive una scelta di rappresentazione e di calcolo.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      11
+    ]
+  },
+  {
+    "page": 39,
+    "title": "Interpolare una superficie continua",
+    "section": "IV · RISOLUZIONE E ALLINEAMENTO",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/12_ricampionamento_continuo.pdf}\n\\vspace{1.5mm}\n\\PSmall{Confronto di regole di ricampionamento sullo stesso campo e sulla stessa griglia obiettivo.}\n",
+    "right": "\\PBody{Il vicino più prossimo seleziona un valore esistente. L’interpolazione combina valori circostanti secondo una regola dichiarata.}\n\\vspace{2.5mm}\n\\PInfo{La superficie più liscia può essere utile per una variabile continua, ma la sua accuratezza richiede un riferimento di verifica.}\n\\PBody{Ai bordi e vicino ai mancanti bisogna controllare quali contributi sono disponibili.}\n\\vspace{2.5mm}\n",
+    "recall": "Il metodo di ricampionamento deve essere coerente con la variabile e con il compito.",
+    "snippet": null,
+    "notebook": 8,
+    "source": [
+      12
+    ],
+    "layout": "panorama",
+    "figure": "12_ricampionamento_continuo",
+    "caption": "Griglia originale da 30 m e griglie di uscita da 15 m, ottenute con vicino più prossimo e interpolazione bilineare realmente eseguiti in terra. Il numero di celle e la levigatezza cambiano; le misure disponibili restano quelle del raster originale. Bordi e mancanti richiedono regole esplicite."
+  },
+  {
+    "page": 40,
+    "title": "La combinazione bilineare usa pesi geometrici",
+    "section": "IV · RISOLUZIONE E ALLINEAMENTO",
+    "left": "\\begin{tikzpicture}[x=1cm,y=1cm]\n\\path[use as bounding box](-.1,-.15) rectangle(9.7,5.65);\n\\draw[GeoA,line width=1pt](1.2,1)rectangle(7.8,4.3);\n\\foreach \\x/\\y in {1.2/1,7.8/1,1.2/4.3,7.8/4.3}{\\fill[GeoA](\\x,\\y)circle(3.2pt);}\n\\fill[GeoB](3.8,2.2)circle(3.8pt);\n\\draw[GeoB,dashed](3.8,1)--(3.8,4.3);\n\\draw[GeoB,dashed](1.2,2.2)--(7.8,2.2);\n\\node[pNote]at(1.2,.45){$(1-u)(1-v)$};\n\\node[pNote]at(7.8,.45){$u(1-v)$};\n\\node[pNote]at(1.2,4.8){$(1-u)v$};\n\\node[pNote]at(7.8,4.8){$uv$};\n\\node[pLabel,anchor=west]at(4.1,2.55){bersaglio $(u,v)$};\n\\node[pNote]at(4.7,5.35){schema bilineare fra quattro centri};\n\\end{tikzpicture}\n\\[\\widehat z=(1-u)(1-v)z_{00}+u(1-v)z_{10}\n                 +(1-u)vz_{01}+uvz_{11}\\]\n",
+    "right": "\\PBody{Nello schema, $u$ e $v$ sono posizioni relative comprese fra zero e uno. I quattro pesi sono non negativi e sommano a uno.}\n\\vspace{2.5mm}\n\\PInfo{È un modello locale di interpolazione fra quattro centri. Nel software specifichiamo il metodo effettivo e controlliamo anche bordi, mancanti e cambiamenti di scala.}\n\\PBody{La formula conserva una costante e riproduce un piano all’interno del rettangolo.}\n\\vspace{2.5mm}\n",
+    "recall": "I pesi rendono verificabili le proprietà della regola di interpolazione.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      12
+    ]
+  },
+  {
+    "page": 41,
+    "title": "Le categorie richiedono regole proprie",
+    "section": "IV · RISOLUZIONE E ALLINEAMENTO",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/13_ricampionamento_classi.pdf}\n\\vspace{1.5mm}\n\\PSmall{Le categorie 1 e 2 rappresentano classi nominali. Il valore interpolato 1,5 non identifica una terza classe valida.}\n",
+    "right": "\\PBody{Una carta litologica richiede una regola che conservi il significato delle categorie, come il vicino più prossimo o una sintesi modale dichiarata.}\n\\vspace{2.5mm}\n\\PInfo{Il risultato dipende anche dalle regole di pareggio e dalla posizione dei confini rispetto alle celle.}\n\\PBody{Il fatto che i codici siano numerici non autorizza a trattarli come una scala quantitativa.}\n\\vspace{2.5mm}\n",
+    "recall": "La scelta del metodo segue il significato della variabile, non il formato numerico della colonna.",
+    "snippet": null,
+    "notebook": 8,
+    "source": [
+      12
+    ]
+  },
+  {
+    "page": 42,
+    "title": "Quale proprietà deve conservarsi?",
+    "section": "IV · RISOLUZIONE E ALLINEAMENTO",
+    "left": "{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{4.0cm}p{5.0cm}@{}}\\toprule\n\\textbf{Variabile} & \\textbf{Domanda da verificare}\\\\\\midrule\nQuota o temperatura & La regola ricostruisce una grandezza continua?\\\\\nQuantità totale per cella & La somma si conserva sul dominio?\\\\\nDensità per unità di area & Il peso considera l’area rappresentata?\\\\\nCategoria nominale & I codici restano appartenenti alle classi?\\\\\nMaschera di validità & Che cosa rende valida una cella di uscita?\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{Una media è adatta a riassumere alcuni campi intensivi. Una quantità totale per cella richiede di considerare come viene distribuita o sommata.}\n\\vspace{2.5mm}\n\\PInfo{Prima dell’operazione scegliamo una proprietà controllabile: media, somma, intervallo, appartenenza o copertura.}\n\\PBody{La stessa procedura non conserva automaticamente tutte queste proprietà.}\n\\vspace{2.5mm}\n",
+    "recall": "Un controllo di conservazione deve essere scelto in funzione della quantità scientifica.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      10,
+      12
+    ]
+  },
+  {
+    "page": 43,
+    "title": "Stessa forma della matrice, origine diversa",
+    "section": "IV · RISOLUZIONE E ALLINEAMENTO",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/14_origini_15m.pdf}\n\\vspace{1.5mm}\n\\PSmall{Due griglie di passo 30 m traslate di 15 m lungo Est. Le dimensioni delle matrici coincidono; i centri no.}\n",
+    "right": "\\PBody{Una sottrazione per indice associa luoghi differenti. Il problema può restare poco visibile quando il campo varia gradualmente.}\n\\vspace{2.5mm}\n\\PInfo{Prima di combinare bande o epoche confrontiamo CRS, estensione, risoluzione e origine.}\n",
+    "recall": "La compatibilità degli array deve essere verificata anche nella geometria territoriale.",
+    "snippet": {
+      "text": "origine_A <- c(500000,5000000)\norigine_B <- origine_A+c(15,0)\n(origine_B-origine_A)/30\n",
+      "title": "R · spostamento in pixel"
+    },
+    "notebook": 19,
+    "source": [
+      13
+    ],
+    "code_file": "043_esempio.R"
+  },
+  {
+    "page": 44,
+    "title": "La griglia obiettivo rende esplicito l’allineamento",
+    "section": "IV · RISOLUZIONE E ALLINEAMENTO",
+    "left": "\\begin{tikzpicture}[x=1cm,y=1cm]\n\\path[use as bounding box](-.1,-.15) rectangle(9.7,4.8);\n\\node[pFlow,text width=3.7cm,fill=GeoA!7] (a) at(2.1,3.8){Raster da trasformare};\n\\node[pFlow,text width=3.7cm,fill=GeoB!7] (b) at(7.3,3.8){Griglia obiettivo dichiarata};\n\\node[pFlow,text width=3.7cm,fill=GeoC!7] (c) at(2.1,1.2){Metodo coerente con i valori};\n\\node[pFlow,text width=3.7cm,fill=GeoA!7] (d) at(7.3,1.2){Valori e geometria verificati};\n\\draw[pEdge] (a) -- (c);\n\\draw[pEdge] (b) -- (d);\n\\draw[pEdge] (c) -- (d);\n\\end{tikzpicture}\n",
+    "right": "\\PBody{Il ricampionamento trasferisce i valori sulla geometria del modello di riferimento. Se cambia il CRS, occorre una riproiezione.}\n\\vspace{2.5mm}\n\\PInfo{Conserviamo la griglia obiettivo nel progetto. Controlliamo anche maschere e significato dei valori.}\n",
+    "recall": "Una griglia comune è una decisione del progetto che deve poter essere ricostruita.",
+    "snippet": {
+      "text": "r_shift <- terra::shift(r,dx=15)\nterra::compareGeom(r,r_shift,\n                   stopOnError=FALSE)\nr_align <- terra::resample(r_shift,r,\n method=\"bilinear\")\n",
+      "title": "R · allineare una griglia"
+    },
+    "notebook": 19,
+    "source": [
+      13
+    ],
+    "code_file": "044_esempio.R"
+  },
+  {
+    "page": 45,
+    "title": "Lo scarto prodotto da mezzo pixel",
+    "section": "IV · RISOLUZIONE E ALLINEAMENTO",
+    "left": "\\includegraphics[width=9.85cm,height=4.4cm,keepaspectratio]{Risultati/Figure/15_allineamento_errori.pdf}\n\\vspace{1.5mm}\n\\PSmall{Stessi valori attribuiti a una griglia spostata di 15 m verso Est e poi riallineati: scarto dalla superficie originale.}\n\\[f(x-\\delta,y)-f(x,y)\\approx-\\delta\\,f_x(x,y)\\]\n",
+    "right": "\\PBody{Spostare la georeferenziazione dei valori verso Est costruisce un campo traslato. La differenza può derivare dalla geometria anziché da un cambiamento del terreno.}\n\\vspace{2.5mm}\n\\PInfo{Sul piano $f=ax+by+c$ lo scarto interno è $-a\\delta$. Vicino ai bordi intervengono anche le regole del ricampionamento.}\n",
+    "recall": "La verifica geometrica viene prima dell’interpretazione delle mappe di cambiamento.",
+    "snippet": {
+      "text": "a <- 0.12; delta <- 15\nscarto_atteso <- -a*delta\nstopifnot(abs(scarto_atteso+1.8)<1e-12)\n",
+      "title": "R · effetto noto della traslazione"
+    },
+    "notebook": 19,
+    "source": [
+      13,
+      15
+    ],
+    "code_file": "045_esempio.R"
+  },
+  {
+    "page": 46,
+    "title": "Il passo cambia il campionamento",
+    "section": "IV · RISOLUZIONE E ALLINEAMENTO",
+    "left": "",
+    "right": "",
+    "recall": "Per isolare l’effetto della risoluzione manteniamo fissi campo, dominio e regola di campionamento.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      11,
+      17,
+      30
+    ],
+    "layout": "panorama",
+    "figure": "10_risoluzioni_analitiche",
+    "caption": "Esperimento analitico separato dal raster originale: stesso campo e dominio di 900×600 m, griglie di 10, 30 e 100 m. I valori sono valutati secondo la regola documentata nel codice; non sono nuove misure del terreno del corso. La scala cromatica comune rende confrontabile il dettaglio rappresentato."
+  },
+  {
+    "page": 47,
+    "title": "Prima aggregare o prima derivare?",
+    "section": "IV · RISOLUZIONE E ALLINEAMENTO",
+    "left": "\\begin{tikzpicture}[x=1cm,y=1cm]\n\\path[use as bounding box](-.1,-.15) rectangle(9.7,4.8);\n\\node[pFlow,text width=3.7cm,fill=GeoA!7] (a) at(2.1,3.8){Quote a 30 m};\n\\node[pFlow,text width=3.7cm,fill=GeoB!7] (b) at(7.3,3.8){Medie delle quote a 60 m};\n\\node[pFlow,text width=3.7cm,fill=GeoA!7] (c) at(2.1,1.2){Pendenze a 30 m, poi media};\n\\node[pFlow,text width=3.7cm,fill=GeoB!7] (d) at(7.3,1.2){Pendenze calcolate a 60 m};\n\\draw[pEdge] (a) -- (b);\n\\draw[pEdge] (a) -- (c);\n\\draw[pEdge] (b) -- (d);\n\\end{tikzpicture}\n\\[\\overline{\\alpha(z_{30})}\\ \\ne\\\n       \\alpha(\\overline z_{60})\\quad\\text{in generale}\\]\n",
+    "right": "\\PBody{Una derivata calcolata dopo l’aggregazione usa un campo più liscio e un passo diverso. La media di pendenze già calcolate riassume invece una grandezza non lineare.}\n\\vspace{2.5mm}\n\\PInfo{Non assumiamo l’uguaglianza dei due risultati. Li confrontiamo sul dominio valido comune, considerando anche i bordi.}\n\\PBody{La scala del DEM deve accompagnare la carta delle pendenze e ogni confronto fra prodotti.}\n\\vspace{2.5mm}\n",
+    "recall": "Il metodo deve specificare sia l’operazione sia l’ordine in cui viene applicata.",
+    "snippet": null,
+    "notebook": 7,
+    "source": [
+      10,
+      17,
+      30
+    ]
+  },
+  {
+    "page": 48,
+    "title": "Laboratorio: trasformare la griglia con un controllo",
+    "section": "IV · RISOLUZIONE E ALLINEAMENTO",
+    "left": "\\PLab{https://marzione00.github.io/Lab_Geo/\\#laboratorio/m12-ricampionamento}{Esperimento online · aggregare e ricampionare}\n\\PLab{https://marzione00.github.io/Lab_Geo/\\#laboratorio/m12-allineamento}{Esperimento online · allineamento}\n{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{4.2cm}p{4.8cm}@{}}\\toprule\n\\textbf{Attività} & \\textbf{Verifica}\\\\\\midrule\nN07: aggregazione & 180 blocchi completi, media conservata\\\\\nN08: metodo & Quote continue e categorie distinte\\\\\nN19: origine & Traslazione di mezzo pixel riconosciuta\\\\\nApprofondimento & Risoluzioni 10, 30 e 100 m\\\\\nConsegna & Geometria obiettivo, metodo e maschere\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{La trasformazione deve produrre un oggetto interpretabile e controllabile. Una figura più gradevole non basta a stabilire la qualità del dato.}\n\\vspace{2.5mm}\n\\PInfo{Le prossime sezioni useranno la griglia originale da 30 m per le differenze centrate, salvo esperimenti di sensibilità esplicitamente indicati.}\n",
+    "recall": "La trasformazione è riuscita quando valori, geometria e proprietà attese risultano coerenti.",
+    "snippet": null,
+    "notebook": 19,
+    "source": [
+      10,
+      11,
+      12,
+      13,
+      30
+    ]
+  },
+  {
+    "page": 49,
+    "title": "La morfometria deriva misure dalla geometria",
+    "section": "V · MORFOMETRIA",
+    "left": "{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{3.8cm}p{5.2cm}@{}}\\toprule\n\\textbf{Grandezza} & \\textbf{Domanda}\\\\\\midrule\nQuota & Quanto è alta la superficie nel riferimento?\\\\\nGradiente & Come cambia la quota lungo gli assi?\\\\\nPendenza & Qual è la massima inclinazione locale?\\\\\nEsposizione & Verso quale azimut scende il terreno?\\\\\nOmbreggiatura & Come appare con una luce scelta?\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{Il valore derivato dipende dalla superficie rappresentata e dalla regola numerica. La risoluzione entra attraverso le distanze fra celle.}\n\\vspace{2.5mm}\n\\PInfo{Useremo prima un piano con soluzione nota, poi il terreno sintetico del corso. Questo separa il controllo del codice dall’interpretazione della morfologia.}\n\\PBody{La carta finale conserverà algoritmo, unità, passo e trattamento dei margini.}\n\\vspace{2.5mm}\n",
+    "recall": "Una misura morfometrica è il risultato di dati geometrici e di un procedimento dichiarato.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      14,
+      15,
+      16,
+      17
+    ]
+  },
+  {
+    "page": 50,
+    "title": "Il gradiente misura variazioni orientate della quota",
+    "section": "V · MORFOMETRIA",
+    "left": "\\begin{tikzpicture}[x=1cm,y=1cm]\n\\path[use as bounding box](-.1,-.15) rectangle(9.7,5.3);\n\\filldraw[fill=GeoA!9,draw=Rule](2.1,0.6)rectangle(3.6500000000000004,2.0);\n\\filldraw[fill=GeoA!9,draw=Rule](3.6500000000000004,0.6)rectangle(5.2,2.0);\n\\filldraw[fill=GeoA!9,draw=Rule](5.2,0.6)rectangle(6.75,2.0);\n\\filldraw[fill=GeoA!9,draw=Rule](2.1,2.0)rectangle(3.6500000000000004,3.4);\n\\filldraw[fill=GeoB!18,draw=Rule](3.6500000000000004,2.0)rectangle(5.2,3.4);\n\\filldraw[fill=GeoA!9,draw=Rule](5.2,2.0)rectangle(6.75,3.4);\n\\filldraw[fill=GeoA!9,draw=Rule](2.1,3.4)rectangle(3.6500000000000004,4.8);\n\\filldraw[fill=GeoA!9,draw=Rule](3.6500000000000004,3.4)rectangle(5.2,4.8);\n\\filldraw[fill=GeoA!9,draw=Rule](5.2,3.4)rectangle(6.75,4.8);\n\\node[pLabel]at(4.425,2.7){$z_{ij}$};\n\\node[pLabel]at(5.975,2.7){$z_{i,j+1}$};\n\\node[pLabel]at(2.875,2.7){$z_{i,j-1}$};\n\\node[pLabel]at(4.425,4.1){$z_{i+1,j}$};\n\\node[pLabel]at(4.425,1.3){$z_{i-1,j}$};\n\\draw[pEdge](7.1,1)--(7.1,4.6)node[above,pNote]{Nord};\n\\draw[<->,Muted](2.875,.2)--node[below,pNote]{$2\\Delta x$}(5.975,.2);\n\\end{tikzpicture}\n\\[\\nabla z=\\left(\\frac{\\partial z}{\\partial x},\n                       \\frac{\\partial z}{\\partial y}\\right)\\]\n",
+    "right": "\\PBody{La componente lungo Est descrive come cambia la quota muovendosi su quell’asse. La componente lungo Nord usa l’orientamento geografico corrispondente.}\n\\vspace{2.5mm}\n\\PInfo{Il segno contiene informazione: una componente positiva indica salita nella direzione positiva dell’asse.}\n\\PBody{La norma del gradiente e la sua direzione descrivono proprietà diverse. La pendenza non conserva da sola l’esposizione.}\n\\vspace{2.5mm}\n",
+    "recall": "Il gradiente deve essere interpretato insieme agli assi e alle loro unità.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      14,
+      18
+    ]
+  },
+  {
+    "page": 51,
+    "title": "Le differenze centrate usano due passi",
+    "section": "V · MORFOMETRIA",
+    "left": "\\[g_x=\\frac{z_{i,j+1}-z_{i,j-1}}{2\\Delta x}\\]\n\\[g_y=\\frac{z_{i+1,j}-z_{i-1,j}}{2\\Delta y}\\]\n\\PInfo{Matrice locale con righe crescenti verso Nord. Per $\\Delta x=\\Delta y=30$ m il denominatore è 60 m.}\n",
+    "right": "\\PBody{I due valori confrontati si trovano ai lati del centro. La loro distanza è doppia rispetto al passo della griglia.}\n\\vspace{2.5mm}\n\\PSmall{Conserviamo soltanto le righe e colonne interne, dove entrambi i vicini sono disponibili.}\n",
+    "recall": "Il denominatore è una distanza geometrica, non un parametro da scegliere per adattare il risultato.",
+    "snippet": {
+      "text": "gx <- (Z[2:23,3:30]-\n       Z[2:23,1:28])/60\ngy <- (Z[3:24,2:29]-\n       Z[1:22,2:29])/60\n",
+      "title": "R · derivate nella matrice locale"
+    },
+    "notebook": 9,
+    "source": [
+      14
+    ],
+    "code_file": "051_esempio.R"
+  },
+  {
+    "page": 52,
+    "title": "Quote e distanze devono avere unità coerenti",
+    "section": "V · MORFOMETRIA",
+    "left": "\\[[g_x]=\\frac{[\\mathrm{quota}]}{[\\mathrm{distanza}]}\\]\n{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{4.2cm}p{4.8cm}@{}}\\toprule\n\\textbf{Configurazione} & \\textbf{Conseguenza}\\\\\\midrule\nQuota e assi in metri & Rapporto adimensionale\\\\\nQuota in piedi, assi in metri & Conversione necessaria\\\\\nAssi in gradi & Distanza metrica da ricostruire\\\\\nPassi diversi su x e y & Denominatori distinti\\\\\nEsagerazione verticale & Inclinazione rappresentata modificata\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{La tangente dell’angolo di pendenza è un rapporto fra lunghezze espresse nella stessa unità.}\n\\vspace{2.5mm}\n\\PInfo{Il caso guida usa metri per quote e coordinate. Un DEM geografico richiede un algoritmo che tenga conto delle distanze sulla Terra.}\n\\PBody{Una trasformazione dei soli valori per migliorare la visualizzazione non deve entrare implicitamente nei calcoli scientifici.}\n\\vspace{2.5mm}\n",
+    "recall": "L’unità della derivata deriva dalle unità dei dati, che devono essere verificate prima del calcolo.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      14,
+      16
+    ]
+  },
+  {
+    "page": 53,
+    "title": "Un piano fornisce una soluzione di riferimento",
+    "section": "V · MORFOMETRIA",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/16_piano_noto.pdf}\n\\vspace{1.5mm}\n\\PSmall{Piano sintetico $z=900+0{,}12x+0{,}08y$. Il gradiente esatto è noto in tutto il dominio.}\n",
+    "right": "\\PBody{Le derivate sono costanti: 0,12 lungo Est e 0,08 lungo Nord. Il livello iniziale 900 m non cambia l’inclinazione.}\n\\vspace{2.5mm}\n\\PInfo{La soluzione analitica è disponibile prima di eseguire il programma. Può quindi riconoscere errori nel passo, nel segno o nell’ordine degli assi.}\n",
+    "recall": "Una verifica utile confronta il codice con un risultato noto indipendentemente.",
+    "snippet": {
+      "text": "P <- outer((0:23)*30,(0:29)*30,\n function(y,x)900+0.12*x+0.08*y)\ng_atteso <- sqrt(0.12^2+0.08^2)\natan(g_atteso)*180/pi\n",
+      "title": "R · piano e pendenza attesa"
+    },
+    "notebook": 9,
+    "source": [
+      15
+    ],
+    "code_file": "053_esempio.R"
+  },
+  {
+    "page": 54,
+    "title": "Il controllo confronta entrambe le componenti",
+    "section": "V · MORFOMETRIA",
+    "left": "\\[\\max|g_x-0{,}12|<10^{-12}\\]\n\\[\\max|g_y-0{,}08|<10^{-12}\\]\n\\PInfo{La tolleranza riconosce l’aritmetica in virgola mobile. Il confronto riguarda tutte le celle interne, non soltanto la media.}\n",
+    "right": "\\PBody{Un errore di orientamento può cambiare il segno della componente Nord lasciando invariata la norma del gradiente.}\n\\vspace{2.5mm}\n\\PSmall{Per questo controlliamo le componenti prima dell’angolo di pendenza.}\n",
+    "recall": "Verificare soltanto la norma può nascondere un errore di direzione.",
+    "snippet": {
+      "text": "px <- (P[2:23,3:30]-P[2:23,1:28])/60\npy <- (P[3:24,2:29]-P[1:22,2:29])/60\nstopifnot(max(abs(px-0.12))<1e-12,\n          max(abs(py-0.08))<1e-12)\n",
+      "title": "R · prova numerica indipendente"
+    },
+    "notebook": 9,
+    "source": [
+      15
+    ],
+    "code_file": "054_esempio.R"
+  },
+  {
+    "page": 55,
+    "title": "Gli errori costruiti mostrano che cosa controllare",
+    "section": "V · MORFOMETRIA",
+    "left": "{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{4.7cm}p{4.3cm}@{}}\\toprule\n\\textbf{Errore introdotto} & \\textbf{Effetto sul piano}\\\\\\midrule\nUsare $\\Delta$ invece di $2\\Delta$ & Componenti raddoppiate\\\\\nInvertire Nord e Sud & Segno della componente Nord invertito\\\\\nScambiare gli assi & Componenti scambiate\\\\\nAggiungere una costante alle quote & Gradiente invariato\\\\\nMoltiplicare le quote per un fattore & Gradiente moltiplicato per quel fattore\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{Queste trasformazioni rendono esplicito il comportamento atteso. Una verifica deve fallire quando introduciamo un errore che pretende di riconoscere.}\n\\vspace{2.5mm}\n\\PInfo{L’angolo è l’arcotangente della norma: raddoppiare il gradiente non raddoppia esattamente l’angolo.}\n\\PBody{Una volta superate le prove note, applichiamo il calcolo al rilievo articolato.}\n\\vspace{2.5mm}\n",
+    "recall": "Le proprietà geometriche aiutano a progettare controlli che distinguono errori e cambiamenti legittimi.",
+    "snippet": null,
+    "notebook": 9,
+    "source": [
+      14,
+      15,
+      16
+    ]
+  },
+  {
+    "page": 56,
+    "title": "La precisione dipende da passo e regolarità",
+    "section": "V · MORFOMETRIA",
+    "left": "\\includegraphics[width=9.85cm,height=4.55cm,keepaspectratio]{Risultati/Figure/11_sensibilita_pendenza.pdf}\n\\vspace{1.5mm}\n\\PSmall{Esperimento analitico: RMSE della pendenza alle tre risoluzioni, sullo stesso dominio fisico valido di 28 ha.}\n\\[\\frac{f(x+h)-f(x-h)}{2h}=f'(x)+O(h^2)\\]\n",
+    "right": "\\PBody{Un passo più piccolo riduce l’errore di discretizzazione di una superficie regolare, ma le differenze possono amplificare il rumore delle quote.}\n\\vspace{2.5mm}\n\\PBody{Con un DEM già misurato, interpolare a una griglia più fine non equivale a ottenere nuove quote più precise.}\n\\vspace{2.5mm}\n\\PSmall{Il confronto fra scale deve distinguere errore del metodo, risoluzione del dato e variabilità della misura.}\n",
+    "recall": "La scelta del passo è legata sia alla geometria sia alla qualità dell’informazione disponibile.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      11,
+      14,
+      15
+    ]
+  },
+  {
+    "page": 57,
+    "title": "Il gradiente conserva segno e direzione",
+    "section": "V · MORFOMETRIA",
+    "left": "",
+    "right": "",
+    "recall": "Le due componenti devono essere lette insieme prima di ricavare pendenza ed esposizione.",
+    "snippet": null,
+    "notebook": 10,
+    "source": [
+      14,
+      17,
+      18
+    ],
+    "layout": "panorama",
+    "figure": "17_gradienti_xy",
+    "caption": "Componenti Est e Nord delle differenze centrate sul raster originale da 30 m. La scala e il segno descrivono la salita lungo ciascun asse; gli assi delle carte mantengono la convenzione locale. I margini esclusi dal calcolo non rappresentano terreno piano."
+  },
+  {
+    "page": 58,
+    "title": "La pendenza è la norma del gradiente trasformata",
+    "section": "V · MORFOMETRIA",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/18_gradiente_pendenza.pdf}\n\\vspace{1.5mm}\n\\PSmall{Il rapporto di massima salita $g$ e l’angolo $\\alpha$ sono collegati dall’arcotangente.}\n\\[g=\\sqrt{g_x^2+g_y^2},\\qquad \\alpha=\\arctan g\\]\n",
+    "right": "\\PBody{Il gradiente indica la direzione della massima salita locale. La sua norma è il rapporto fra incremento verticale e distanza orizzontale.}\n\\vspace{2.5mm}\n\\PInfo{L’angolo perde l’informazione sulla direzione. Due versanti opposti possono avere la stessa pendenza.}\n",
+    "recall": "La pendenza sintetizza l’intensità dell’inclinazione, mentre l’esposizione ne descrive la direzione.",
+    "snippet": {
+      "text": "g <- sqrt(gx^2+gy^2)\nslope_deg <- atan(g)*180/pi\nslope_pct <- 100*g\n",
+      "title": "R · due rappresentazioni"
+    },
+    "notebook": 10,
+    "source": [
+      16
+    ],
+    "code_file": "058_esempio.R"
+  },
+  {
+    "page": 59,
+    "title": "Gradi e percentuale non sono una scala lineare",
+    "section": "V · MORFOMETRIA",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/20_gradi_percentuale.pdf}\n\\vspace{1.5mm}\n\\PSmall{45° corrispondono al 100\\%; oltre 45° la percentuale supera 100 senza contraddizione.}\n\\[p_{\\%}=100\\tan\\alpha\\]\n",
+    "right": "\\PBody{La percentuale misura il dislivello per cento unità di distanza orizzontale. L’angolo misura l’inclinazione geometrica.}\n\\vspace{2.5mm}\n\\PInfo{Una soglia espressa in gradi va convertita prima di applicarla a una carta in percentuale.}\n",
+    "recall": "Le unità delle carte di pendenza devono essere esplicite prima di ogni confronto.",
+    "snippet": {
+      "text": "angoli <- c(0,15,30,45,60)\ndata.frame(gradi=angoli,\n percento=100*tan(angoli*pi/180))\n",
+      "title": "R · conversione non lineare"
+    },
+    "notebook": 10,
+    "source": [
+      16
+    ],
+    "code_file": "059_esempio.R"
+  },
+  {
+    "page": 60,
+    "title": "La carta delle pendenze conserva il metodo",
+    "section": "V · MORFOMETRIA",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/19_pendenza_mappa.pdf}\n\\vspace{1.5mm}\n\\PSmall{Differenze centrate con quattro vicini; passo 30 m; pendenza in gradi; 22×28 celle interne.}\n",
+    "right": "\\PBody{Le variazioni cromatiche rappresentano la misura derivata secondo il metodo dichiarato. Non sono direttamente la quota o la luminosità del terreno.}\n\\vspace{2.5mm}\n\\PInfo{Per confrontare due carte manteniamo uguali unità e scala cromatica, verificando anche algoritmo, risoluzione e maschere.}\n\\PBody{Le aree di pendenza elevata possono essere sensibili alla risoluzione e alla rappresentazione delle discontinuità.}\n\\vspace{2.5mm}\n",
+    "recall": "La legenda rende leggibile la misura; la didascalia rende ricostruibile il procedimento.",
+    "snippet": null,
+    "notebook": 10,
+    "source": [
+      17
+    ]
+  },
+  {
+    "page": 61,
+    "title": "Il bordo non ha tutti i vicini richiesti",
+    "section": "V · MORFOMETRIA",
+    "left": "\\[n_{\\mathrm{interno}}=(24-2)(30-2)=616\\]\n\\[n_{\\mathrm{bordo}}=720-616=104\\]\n\\PInfo{Con la convenzione adottata, le 104 celle esterne ricevono NA nella carta completa delle derivate. La loro quota originale resta disponibile.}\n",
+    "right": "\\PBody{Le differenze centrate richiedono un valore da entrambi i lati. Sul bordo uno dei due manca.}\n\\vspace{2.5mm}\n\\PBody{Un altro algoritmo potrebbe usare differenze unilaterali o valori oltre il dominio. Sarebbe una scelta diversa da dichiarare e verificare.}\n\\vspace{2.5mm}\n",
+    "recall": "Uno zero di pendenza significa piano: non deve essere usato per codificare una derivata non calcolata.",
+    "snippet": {
+      "text": "stopifnot(identical(dim(gx),c(22L,28L)))\nc(celle_interne=length(gx),\n celle_bordo=length(Z)-length(gx))\n",
+      "title": "R · conteggio del dominio"
+    },
+    "notebook": 10,
+    "source": [
+      17
+    ],
+    "code_file": "061_esempio.R"
+  },
+  {
+    "page": 62,
+    "title": "La maschera si estende alle derivate",
+    "section": "V · MORFOMETRIA",
+    "left": "",
+    "right": "",
+    "recall": "La maschera dell’output deriva sia dalla validità dei dati sia dalle richieste dell’algoritmo.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      7,
+      14,
+      17
+    ],
+    "layout": "panorama",
+    "figure": "21_bordo_maschera",
+    "caption": "Il confronto separa il bordo esterno dal vicinato delle celle mancanti. Per le derivate del caso mascherato richiediamo centro valido e quattro vicini validi. La carta delle esclusioni documenta il motivo per cui una quota disponibile può non avere una pendenza calcolabile."
+  },
+  {
+    "page": 63,
+    "title": "L’esposizione indica la discesa",
+    "section": "V · MORFOMETRIA",
+    "left": "\\begin{tikzpicture}[x=1cm,y=1cm]\n\\path[use as bounding box](-.1,-.15) rectangle(9.7,5.65);\n\\draw[Rule,line width=1pt](4.7,2.7)circle(1.8);\n\\draw[pAxis](2.4,2.7)--(7,2.7);\n\\draw[pAxis](4.7,.4)--(4.7,5);\n\\node[pLabel]at(4.7,5.3){N: $0^\\circ$};\n\\node[pLabel]at(7.8,2.7){E: $90^\\circ$};\n\\node[pLabel]at(4.7,.05){S: $180^\\circ$};\n\\node[pLabel]at(1.5,2.7){O: $270^\\circ$};\n\\draw[-{Latex},GeoA,line width=1.6pt](4.7,2.7)--(5.95,3.95);\n\\draw[-{Latex},GeoB,line width=1.6pt](4.7,2.7)--(3.45,1.45);\n\\node[pNote,anchor=west]at(6.05,4.1){salita: $\\nabla z$};\n\\node[pNote,anchor=east]at(3.35,1.25){discesa: $-\\nabla z$};\n\\end{tikzpicture}\n\\[\\theta=\\operatorname{atan2}(-g_x,-g_y)\\bmod2\\pi\\]\n",
+    "right": "\\PBody{Assumiamo Est come asse $x$ e Nord come asse $y$. L’azimut cresce in senso orario dal Nord.}\n\\vspace{2.5mm}\n\\PInfo{La direzione di discesa è opposta al gradiente. La funzione atan2 distingue i quadranti e richiede l’ordine delle componenti indicato.}\n\\PSmall{La conversione in gradi moltiplica per $180/\\pi$. I valori prossimi a 0° e 360° rappresentano direzioni vicine.}\n",
+    "recall": "Il segno del gradiente e la convenzione dell’azimut devono essere coerenti.",
+    "snippet": null,
+    "notebook": 11,
+    "source": [
+      18
+    ]
+  },
+  {
+    "page": 64,
+    "title": "Su un piano orizzontale la direzione è indeterminata",
+    "section": "V · MORFOMETRIA",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/22_aspect.pdf}\n\\vspace{1.5mm}\n\\PSmall{Esposizione in gradi, azimut orario dal Nord. La scala cromatica è circolare; il trattamento delle celle piane è esplicito.}\n",
+    "right": "\\PBody{Quando il gradiente è nullo, la superficie non ha una direzione preferita di discesa. Mascheriamo quelle direzioni.}\n\\vspace{2.5mm}\n\\PInfo{Alcuni software restituiscono un valore convenzionale. Per esempio terra documenta 90° sui piani: non va interpretato come un’esposizione reale verso Est.}\n",
+    "recall": "La mancanza di una direzione fisica deve essere distinta da un azimut numericamente valido.",
+    "snippet": {
+      "text": "aspect_deg <-\n (atan2(-gx,-gy)*180/pi)%%360\naspect_deg[g<1e-12] <- NA_real_\n",
+      "title": "R · direzioni e celle piane"
+    },
+    "notebook": 11,
+    "source": [
+      18
+    ],
+    "code_file": "064_esempio.R"
+  },
+  {
+    "page": 65,
+    "title": "Le direzioni richiedono una media circolare",
+    "section": "V · MORFOMETRIA",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/23_media_circolare.pdf}\n\\vspace{1.5mm}\n\\PSmall{359° e 1° sono prossimi al Nord. La media aritmetica vale 180°; la media circolare riconosce la vicinanza.}\n\\[\\overline\\theta=\\operatorname{atan2}(\\overline S,\\overline C),\n \\qquad \\overline R=\\sqrt{\\overline C^2+\\overline S^2}\\]\n",
+    "right": "\\PBody{Calcoliamo le medie di seno e coseno. La risultante $\\overline R$ descrive la concentrazione delle direzioni.}\n\\vspace{2.5mm}\n\\PInfo{Quando $\\overline R$ è quasi zero, la direzione media è instabile o indeterminata. Riportiamo entrambe le quantità.}\n",
+    "recall": "Una sintesi angolare deve riconoscere la circolarità e dichiarare la concentrazione.",
+    "snippet": {
+      "text": "th <- c(359,1)*pi/180\nS <- mean(sin(th)); C <- mean(cos(th))\nmedia_circolare(c(359,1))\n",
+      "title": "R · media e concentrazione"
+    },
+    "notebook": 11,
+    "source": [
+      19
+    ],
+    "code_file": "065_esempio.R"
+  },
+  {
+    "page": 66,
+    "title": "Il confronto con terra richiede lo stesso algoritmo",
+    "section": "V · MORFOMETRIA",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/24_confronto_terra.pdf}\n\\vspace{1.5mm}\n\\PSmall{Confronto con un algoritmo dichiarato di terra. Differenze numeriche e differenze di metodo sono valutate separatamente.}\n",
+    "right": "\\PBody{terra usa otto vicini per impostazione predefinita. Per confrontare le nostre differenze centrate specifichiamo quattro vicini e le stesse unità.}\n\\vspace{2.5mm}\n\\PInfo{La gestione di bordo, mancanti e piani deve restare esplicita. Una coincidenza sul piano noto non garantisce uguaglianza per tutti i terreni.}\n",
+    "recall": "Un confronto fra software è interpretabile quando le convenzioni e il compito coincidono.",
+    "snippet": {
+      "text": "s_terra <- terra::terrain(r,\n v=\"slope\",neighbors=4,\n unit=\"degrees\")\nterra::global(s_terra,\"range\",na.rm=TRUE)\n",
+      "title": "R · algoritmo esplicito"
+    },
+    "notebook": 10,
+    "source": [
+      14,
+      15,
+      17
+    ],
+    "code_file": "066_esempio.R"
+  },
+  {
+    "page": 67,
+    "title": "L’ombreggiatura combina superficie e luce",
+    "section": "VI · LUCE E RILIEVO",
+    "left": "\\[L=\\max(0,\\mathbf n\\cdot\\boldsymbol\\ell),\n       \\qquad \\|\\mathbf n\\|=\\|\\boldsymbol\\ell\\|=1\\]\n\\begin{tikzpicture}[x=1cm,y=1cm]\n\\path[use as bounding box](-.1,-.15) rectangle(9.7,4.3);\n\\node[pFlow,text width=3.7cm,fill=GeoA!7] (a) at(2.1,3.4){Geometria del terreno};\n\\node[pFlow,text width=3.7cm,fill=GeoB!7] (b) at(7.3,3.4){Direzione della luce};\n\\node[pFlow,text width=3.7cm,fill=GeoA!7] (c) at(2.1,0.9){Normale alla superficie};\n\\node[pFlow,text width=3.7cm,fill=GeoC!7] (d) at(7.3,0.9){Intensità locale};\n\\draw[pEdge] (a) -- (c);\n\\draw[pEdge] (b) -- (d);\n\\draw[pEdge] (c) -- (d);\n\\end{tikzpicture}\n",
+    "right": "\\PBody{Il modello lambertiano locale associa maggiore intensità alle facce orientate verso la sorgente. I contributi negativi vengono posti a zero.}\n\\vspace{2.5mm}\n\\PInfo{Il risultato è una rappresentazione dipendente dalla luce scelta. Non è una nuova misura di quota o riflettanza.}\n\\PBody{La normalizzazione dei vettori rende l’intensità confrontabile nell’intervallo da zero a uno.}\n\\vspace{2.5mm}\n",
+    "recall": "La luce è un parametro della rappresentazione che deve accompagnare l’immagine.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      20
+    ]
+  },
+  {
+    "page": 68,
+    "title": "Azimut e altezza definiscono il vettore della luce",
+    "section": "VI · LUCE E RILIEVO",
+    "left": "\\[\\mathbf n=\\frac{(-g_x,-g_y,1)}\n                        {\\sqrt{1+g_x^2+g_y^2}}\\]\n\\[\\boldsymbol\\ell=\n       (\\cos h\\sin A,\\;\\cos h\\cos A,\\;\\sin h)\\]\n\\PInfo{$A$: azimut orario dal Nord. $h$: altezza sopra l’orizzonte. Quote e coordinate devono avere unità coerenti.}\n",
+    "right": "\\PBody{La componente verticale della luce cresce con l’altezza. Le componenti orizzontali ne descrivono la provenienza geografica.}\n\\vspace{2.5mm}\n\\PBody{Su un terreno orizzontale $\\mathbf n=(0,0,1)$ e l’intensità è $\\sin h$, indipendente dall’azimut.}\n\\vspace{2.5mm}\n\\PSmall{Questo è un controllo analitico utile per riconoscere uno scambio fra altezza e angolo zenitale.}\n",
+    "recall": "Le convenzioni angolari devono essere dichiarate prima di tradurre la geometria in una formula.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      20,
+      21
+    ]
+  },
+  {
+    "page": 69,
+    "title": "Spostare la luce cambia la carta, a quote invariate",
+    "section": "VI · LUCE E RILIEVO",
+    "left": "",
+    "right": "",
+    "recall": "Confrontare più illuminazioni aiuta a distinguere la forma del terreno dall’effetto della rappresentazione.",
+    "snippet": null,
+    "notebook": 12,
+    "source": [
+      21,
+      22
+    ],
+    "layout": "panorama",
+    "figure": "25_hillshade_confronto",
+    "caption": "Stesso terreno e stesse derivate, azimut 315° e 135°, altezza 45°, esagerazione verticale unitaria. La scala dell’intensità resta fissata fra 0 e 1. Le differenze derivano dalla direzione della luce; non rappresentano un cambiamento della morfologia."
+  },
+  {
+    "page": 70,
+    "title": "Il prodotto scalare rende verificabile il calcolo",
+    "section": "VI · LUCE E RILIEVO",
+    "left": "\\[L=\\max\\left(0,\n \\frac{-g_x\\ell_x-g_y\\ell_y+\\ell_z}\n      {\\sqrt{1+g_x^2+g_y^2}}\\right)\\]\n\\PInfo{Il modello usa la normale orientata verso l’alto. Conserviamo righe e colonne della matrice lungo tutta l’operazione.}\n",
+    "right": "\\PBody{Il codice usa radianti nelle funzioni trigonometriche e mantiene le matrici prima dello zero in pmax, preservandone gli attributi.}\n\\vspace{2.5mm}\n\\PSmall{La corrispondenza fra indice della matrice e posizione geografica viene verificata insieme ai valori.}\n",
+    "recall": "La correttezza numerica deve conservare anche l’ordine delle celle.",
+    "snippet": {
+      "text": "A <- 315*pi/180; h <- 45*pi/180\nluce <- c(cos(h)*sin(A),\n cos(h)*cos(A),sin(h))\nL315 <- pmax((-gx*luce[1]-gy*luce[2]+\n luce[3])/sqrt(1+gx^2+gy^2),0)\nstopifnot(identical(dim(L315),dim(gx)))\n",
+      "title": "R · luce da Nord-Ovest"
+    },
+    "notebook": 12,
+    "source": [
+      20,
+      21
+    ],
+    "code_file": "070_esempio.R"
+  },
+  {
+    "page": 71,
+    "title": "Un profilo mostra l’effetto dell’illuminazione",
+    "section": "VI · LUCE E RILIEVO",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/26_illuminazione_profilo.pdf}\n\\vspace{1.5mm}\n\\PSmall{Intensità lungo un profilo del terreno al variare della luce. Quote e geometria restano fisse.}\n",
+    "right": "\\PBody{Il massimo della luminosità non deve coincidere con la massima quota. Dipende dall’orientamento della superficie rispetto alla sorgente.}\n\\vspace{2.5mm}\n\\PInfo{Una scala cromatica identica permette di leggere il cambiamento senza introdurre un ulteriore effetto di riscalatura.}\n\\PBody{Un profilo collega le differenze visive ai valori e alle convenzioni geometriche del calcolo.}\n\\vspace{2.5mm}\n",
+    "recall": "Il colore di un hillshade descrive l’illuminazione modellata, non l’altitudine.",
+    "snippet": null,
+    "notebook": 12,
+    "source": [
+      21,
+      22
+    ]
+  },
+  {
+    "page": 72,
+    "title": "L’ombra locale non include tutti gli ostacoli",
+    "section": "VI · LUCE E RILIEVO",
+    "left": "{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{4.4cm}p{4.6cm}@{}}\\toprule\n\\textbf{Nel modello locale} & \\textbf{Richiede un modello ulteriore}\\\\\\midrule\nNormale della cella & Ombre proiettate da rilievi lontani\\\\\nDirezione della sorgente & Occlusione lungo l’orizzonte\\\\\nIntensità da prodotto scalare & Luce diffusa e riflessioni\\\\\nTaglio dei valori negativi & Proprietà radiometriche del materiale\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{Il calcolo locale usa l’orientamento della superficie nella cella. Non esamina automaticamente tutto il percorso dei raggi luminosi nel paesaggio.}\n\\vspace{2.5mm}\n\\PInfo{La copertina è un rendering tridimensionale con illuminazione della scena. Le figure di hillshade adottano invece il modello scientifico esplicitato qui.}\n\\PBody{La distinzione permette di usare correttamente entrambi i prodotti.}\n\\vspace{2.5mm}\n",
+    "recall": "Un’immagine di rilievo deve essere interpretata secondo il modello con cui è stata prodotta.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      20
+    ]
+  },
+  {
+    "page": 73,
+    "title": "L’esagerazione verticale modifica le normali",
+    "section": "VI · LUCE E RILIEVO",
+    "left": "\\[z^*=kz,\\qquad \\nabla z^*=k\\nabla z\\]\n\\[\\alpha^*=\\arctan\\left(k\\sqrt{g_x^2+g_y^2}\\right),\n       \\qquad k>0\\]\n\\PInfo{La trasformazione può accentuare le forme nella visualizzazione. Non rappresenta una nuova misura delle quote.}\n",
+    "right": "\\PBody{Le pendenze apparenti e l’illuminazione cambiano perché cambia l’orientamento delle normali.}\n\\vspace{2.5mm}\n\\PBody{Nel caso principale l’esagerazione è pari a uno. Le eventuali varianti dichiarano il fattore usato e restano distinte dai dati originali.}\n\\vspace{2.5mm}\n",
+    "recall": "I parametri che modificano la percezione del rilievo devono essere registrati nella didascalia.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      21
+    ]
+  },
+  {
+    "page": 74,
+    "title": "I controlli della luce usano casi noti",
+    "section": "VI · LUCE E RILIEVO",
+    "left": "{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{4.2cm}p{4.8cm}@{}}\\toprule\n\\textbf{Caso} & \\textbf{Risultato atteso}\\\\\\midrule\nVettori unitari & Prodotto scalare fra −1 e 1\\\\\nTaglio locale & Intensità compresa fra 0 e 1\\\\\nTerreno orizzontale & Intensità $\\sin h$\\\\\nLuce zenitale & Intensità $1/\\sqrt{1+g^2}$\\\\\nCambio del solo azimut & Quote e pendenze invariate\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{Questi controlli sono indipendenti dalla plausibilità visiva della carta. Una superficie ben ombreggiata potrebbe comunque usare una convenzione angolare errata.}\n\\vspace{2.5mm}\n\\PInfo{Verifichiamo anche la dimensione della matrice e l’associazione delle intensità con le coordinate delle celle.}\n",
+    "recall": "Le identità geometriche forniscono controlli riproducibili per la rappresentazione.",
+    "snippet": {
+      "text": "stopifnot(all(L315>=0 & L315<=1))\nL_piano <- sin(45*pi/180)\nstopifnot(\n abs(L_piano-sqrt(0.5))<1e-12)\n",
+      "title": "R · limiti e piano orizzontale"
+    },
+    "notebook": 12,
+    "source": [
+      20,
+      21,
+      22
+    ],
+    "code_file": "074_esempio.R"
+  },
+  {
+    "page": 75,
+    "title": "Rappresentare la variabile dichiarata",
+    "section": "VI · LUCE E RILIEVO",
+    "left": "{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{3.5cm}p{5.5cm}@{}}\\toprule\n\\textbf{Carta} & \\textbf{Scala e parametri da leggere}\\\\\\midrule\nQuota & Metri e riferimento verticale\\\\\nPendenza & Gradi o percentuale, algoritmo\\\\\nEsposizione & Azimut e convenzione circolare\\\\\nHillshade & Intensità, azimut, altezza e fattore verticale\\\\\nComposizione grafica & Canali, trasparenze e trasformazioni\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{Le rappresentazioni possono essere sovrapposte per facilitare l’interpretazione. Ogni componente conserva però un significato distinto.}\n\\vspace{2.5mm}\n\\PInfo{Quote, curve di livello e più illuminazioni aiutano a verificare una forma suggerita dalla percezione visiva.}\n\\PBody{Le didascalie devono consentire di ricostruire il prodotto anche senza vedere il codice.}\n\\vspace{2.5mm}\n",
+    "recall": "La leggibilità di una carta comprende sia la legenda sia la spiegazione di come è stata costruita.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      17,
+      18,
+      20,
+      21,
+      22
+    ]
+  },
+  {
+    "page": 76,
+    "title": "Laboratorio: verificare forma e rappresentazione",
+    "section": "VI · LUCE E RILIEVO",
+    "left": "\\PLab{https://marzione00.github.io/Lab_Geo/\\#laboratorio/m12-pendenza}{Esperimento online · gradiente e pendenza}\n\\PLab{https://marzione00.github.io/Lab_Geo/\\#laboratorio/m12-hillshade}{Esperimento online · illuminazione}\n{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{4.1cm}p{4.9cm}@{}}\\toprule\n\\textbf{Attività} & \\textbf{Controllo}\\\\\\midrule\nN09: piano noto & Componenti 0,12 e 0,08\\\\\nN10: pendenza & Gradi, percentuale, bordo\\\\\nN11: esposizione & Azimut, piani e media circolare\\\\\nN12: hillshade & Stesso terreno, luci differenti\\\\\nConsegna & Metodo e dominio valido delle derivate\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{Il percorso collega formule, casi noti e carte del terreno. Ogni immagine deriva da un calcolo verificabile.}\n\\vspace{2.5mm}\n\\PInfo{La sezione successiva usa la stessa attenzione alla geometria per confrontare bande spettrali e costruire un indice.}\n",
+    "recall": "La rappresentazione del rilievo è affidabile quando parametri e verifiche rimangono accessibili.",
+    "snippet": null,
+    "notebook": 12,
+    "source": [
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      30
+    ]
+  },
+  {
+    "page": 77,
+    "title": "Le bande collegano posizione e risposta spettrale",
+    "section": "VII · BANDE E INDICI",
+    "left": "\\begin{tikzpicture}[x=1cm,y=1cm]\n\\path[use as bounding box](-.1,-.15) rectangle(9.7,5.35);\n\\filldraw[fill=GeoA!13,draw=GeoA](.8,1.05)--(5.8,1.05)--(8,2.45)--(3,2.45)--cycle;\n\\filldraw[fill=GeoB!15,draw=GeoB](.8,2.2)--(5.8,2.2)--(8,3.6)--(3,3.6)--cycle;\n\\filldraw[fill=GeoC!14,draw=GeoC](.8,3.35)--(5.8,3.35)--(8,4.75)--(3,4.75)--cycle;\n\\draw[Muted,dashed](3,2.45)--(3,4.75);\n\\draw[Muted,dashed](5.8,1.05)--(5.8,3.35);\n\\node[pNote,anchor=west]at(8.1,4.7){banda 3};\n\\node[pNote,anchor=west]at(8.1,3.55){banda 2};\n\\node[pNote,anchor=west]at(8.1,2.4){banda 1};\n\\node[pLabel]at(4.7,.35){stessa geometria, valori e metadati distinti};\n\\end{tikzpicture}\n",
+    "right": "\\PBody{Una banda associa un valore a ciascuna cella per una parte dello spettro e per una specifica acquisizione. La geometria deve restare collegata ai metadati radiometrici.}\n\\vspace{2.5mm}\n\\PInfo{Il modulo usa due bande sintetiche, rosso e vicino infrarosso. Non sono immagini satellitari reali e non consentono una classificazione ecologica del territorio.}\n\\PBody{Il caso serve a verificare allineamento, trasformazioni numeriche e comportamento dell’indice.}\n\\vspace{2.5mm}\n",
+    "recall": "Prima del rapporto fra bande verifichiamo geometria, unità e qualità dei valori.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      23
+    ]
+  },
+  {
+    "page": 78,
+    "title": "Due bande sintetiche sulla stessa griglia",
+    "section": "VII · BANDE E INDICI",
+    "left": "",
+    "right": "",
+    "recall": "La combinazione fra bande richiede che i valori confrontati rappresentino posizioni e supporti compatibili.",
+    "snippet": null,
+    "notebook": 13,
+    "source": [
+      23
+    ],
+    "layout": "panorama",
+    "figure": "27_bande_R_NIR",
+    "caption": "Rosso e vicino infrarosso sono costruiti matematicamente sulla griglia locale. Le carte riportano la stessa geometria; le scale dei valori e la natura sintetica sono esplicite. L’indice verrà calcolato soltanto dopo il controllo della corrispondenza fra le celle."
+  },
+  {
+    "page": 79,
+    "title": "Il caso sintetico rende verificabili i valori",
+    "section": "VII · BANDE E INDICI",
+    "left": "\\[R(y)=0{,}20+0{,}05\\cos\\!\\left(\\frac{y}{150\\ \\mathrm m}\\right)\\]\n\\[N(x)=0{,}40+0{,}10\\sin\\!\\left(\\frac{x}{180\\ \\mathrm m}\\right)\\]\n\\PInfo{$R$ e $N$ rappresentano riflettanze sintetiche adimensionali. Gli argomenti delle funzioni trigonometriche sono adimensionali.}\n",
+    "right": "\\PBody{I valori sono positivi e variano in modo controllato. L’assenza di un denominatore nullo si può verificare direttamente.}\n\\vspace{2.5mm}\n\\PSmall{Le funzioni definiscono l’esperimento didattico; non sono un modello fisico della vegetazione o di una litologia.}\n",
+    "recall": "La provenienza sintetica consente di conoscere le proprietà del dato prima di applicare l’indice.",
+    "snippet": {
+      "text": "R_band <- 0.2+0.05*cos(d$y_m/150)\nNIR <- 0.4+0.1*sin(d$x_m/180)\nstopifnot(all(R_band>=0),all(NIR>=0))\n",
+      "title": "R · costruire le due bande"
+    },
+    "notebook": 13,
+    "source": [
+      23
+    ],
+    "code_file": "079_esempio.R"
+  },
+  {
+    "page": 80,
+    "title": "L’indice normalizzato misura un contrasto relativo",
+    "section": "VII · BANDE E INDICI",
+    "left": "\\[I=\\frac{N-R}{N+R}\\]\n\\[N\\ge0,\\ R\\ge0,\\ N+R>0\\quad\\Longrightarrow\\quad -1\\le I\\le1\\]\n\\PInfo{La formula coincide con quella dell’NDVI quando $N$ e $R$ sono bande appropriate di vicino infrarosso e rosso. Qui resta un indice di bande sintetiche.}\n",
+    "right": "\\PBody{Il numeratore descrive la differenza, il denominatore la normalizza rispetto alla somma. Il risultato non ha unità fisica.}\n\\vspace{2.5mm}\n\\PSmall{La normalizzazione non sostituisce le verifiche radiometriche o geometriche.}\n",
+    "recall": "Un rapporto acquista significato scientifico dalle variabili che contiene e dalle condizioni del calcolo.",
+    "snippet": {
+      "text": "indice <- (NIR-R_band)/(NIR+R_band)\nstopifnot(all(is.finite(indice)),\n          all(abs(indice)<=1))\n",
+      "title": "R · indice e condizioni"
+    },
+    "notebook": 13,
+    "source": [
+      23
+    ],
+    "code_file": "080_esempio.R"
+  },
+  {
+    "page": 81,
+    "title": "Lo stesso indice può derivare da valori diversi",
+    "section": "VII · BANDE E INDICI",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/29_spettro_indice.pdf}\n\\vspace{1.5mm}\n\\PSmall{Confronto fra valori delle bande e indice normalizzato: il rapporto sintetizza il contrasto e perde parte dell’informazione originaria.}\n",
+    "right": "\\PBody{Le coppie $(R,N)=(0{,}2,0{,}4)$ e $(0{,}1,0{,}2)$ producono entrambe $I=1/3$. La somma delle bande è però diversa.}\n\\vspace{2.5mm}\n\\PInfo{Conserviamo quindi le bande e gli indicatori di qualità insieme all’indice. Un valore isolato non ricostruisce il segnale di partenza.}\n\\PBody{L’interpretazione dipende dal prodotto, dal supporto e dalle condizioni di acquisizione.}\n\\vspace{2.5mm}\n",
+    "recall": "Un indice è una sintesi: il suo uso richiede di riconoscere quale informazione viene conservata.",
+    "snippet": null,
+    "notebook": 13,
+    "source": [
+      23
+    ]
+  },
+  {
+    "page": 82,
+    "title": "Un fattore comune si cancella, un offset no",
+    "section": "VII · BANDE E INDICI",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/31_scaling_offset.pdf}\n\\vspace{1.5mm}\n\\PSmall{Bande sintetiche codificate con scala e offset: indice applicato ai numeri memorizzati e indice dopo la conversione.}\n\\[\\frac{cN-cR}{cN+cR}=\\frac{N-R}{N+R},\\qquad c>0\\]\n",
+    "right": "\\PBody{Il rapporto è invariato se entrambe le bande sono moltiplicate per lo stesso fattore positivo. Un termine additivo comune modifica invece il denominatore.}\n\\vspace{2.5mm}\n\\PInfo{Le conversioni dei valori memorizzati devono seguire i metadati del prodotto. Fattori differenti fra bande non si cancellano in generale.}\n",
+    "recall": "La normalizzazione non autorizza a ignorare scale e offset radiometrici.",
+    "snippet": {
+      "text": "I0 <- (NIR-R_band)/(NIR+R_band)\nI2 <- (2*NIR-2*R_band)/(2*NIR+2*R_band)\nstopifnot(max(abs(I0-I2))<1e-12)\n",
+      "title": "R · invarianza verificabile"
+    },
+    "notebook": null,
+    "source": [
+      23
+    ],
+    "code_file": "082_esempio.R"
+  },
+  {
+    "page": 83,
+    "title": "L’allineamento delle bande precede l’algebra",
+    "section": "VII · BANDE E INDICI",
+    "left": "{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{4.0cm}p{5.0cm}@{}}\\toprule\n\\textbf{Controllo} & \\textbf{Motivo}\\\\\\midrule\nStesso riferimento & Posizioni espresse nello stesso sistema\\\\\nStessi centri & Rapporto fra valori dello stesso luogo\\\\\nSupporto compatibile & Confronto della stessa scala spaziale\\\\\nAcquisizione documentata & Interpretazione delle differenze temporali\\\\\nQualità e maschere & Esclusione dei valori non utilizzabili\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{Due bande con la stessa forma di matrice possono essere traslate. Il rapporto sarebbe numericamente calcolabile, ma combinerebbe luoghi diversi.}\n\\vspace{2.5mm}\n\\PInfo{Il controllo di mezzo pixel studiato in precedenza vale anche qui. Dopo un eventuale ricampionamento conserviamo metodo e griglia obiettivo.}\n\\PBody{Le maschere devono essere combinate sullo stesso insieme di posizioni.}\n\\vspace{2.5mm}\n",
+    "recall": "La compatibilità numerica degli array non basta per definire un indice geograficamente coerente.",
+    "snippet": null,
+    "notebook": 19,
+    "source": [
+      13,
+      23
+    ]
+  },
+  {
+    "page": 84,
+    "title": "Un denominatore piccolo amplifica le perturbazioni",
+    "section": "VII · BANDE E INDICI",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/30_denominatore.pdf}\n\\vspace{1.5mm}\n\\PSmall{Sensibilità del rapporto quando la somma delle bande si avvicina a zero. Le soglie appartengono al protocollo dichiarato.}\n",
+    "right": "\\PBody{Un valore finito può essere instabile. Piccole variazioni delle bande possono produrre grandi variazioni del rapporto quando la loro somma è piccola.}\n\\vspace{2.5mm}\n\\PInfo{La soglia va scelta rispetto a precisione e rumore dei dati. Il valore $10^{-6}$ usato nell’esercizio è una convenzione didattica, non una soglia universale.}\n\\PBody{Il risultato deve conservare anche le celle escluse dal criterio.}\n\\vspace{2.5mm}\n",
+    "recall": "La validità numerica e la stabilità del risultato sono proprietà da controllare separatamente.",
+    "snippet": null,
+    "notebook": 14,
+    "source": [
+      24
+    ]
+  },
+  {
+    "page": 85,
+    "title": "Le derivate descrivono la sensibilità dell’indice",
+    "section": "VII · BANDE E INDICI",
+    "left": "\\[\\frac{\\partial I}{\\partial N}=\\frac{2R}{(N+R)^2},\n       \\qquad\n       \\frac{\\partial I}{\\partial R}=-\\frac{2N}{(N+R)^2}\\]\n\\[\\delta I\\approx\n      \\frac{\\partial I}{\\partial N}\\delta N+\n      \\frac{\\partial I}{\\partial R}\\delta R\\]\n\\PInfo{Approssimazione locale al primo ordine, dove il denominatore è diverso da zero e le perturbazioni sono piccole.}\n",
+    "right": "\\PBody{Le due componenti possono avere effetti opposti. La sensibilità dipende dalla somma e dai valori delle singole bande.}\n\\vspace{2.5mm}\n\\PBody{Per quantificare l’incertezza servono anche variabilità e covarianza degli errori delle bande. La formula dell’indice, da sola, non le fornisce.}\n\\vspace{2.5mm}\n",
+    "recall": "La stabilità del rapporto deve essere discussa rispetto alle perturbazioni plausibili dei dati.",
+    "snippet": null,
+    "notebook": 14,
+    "source": [
+      24
+    ]
+  },
+  {
+    "page": 86,
+    "title": "La soglia viene applicata prima della divisione",
+    "section": "VII · BANDE E INDICI",
+    "left": "{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{1.8cm}p{2.0cm}p{2.5cm}p{1.8cm}@{}}\\toprule\n\\textbf{R} & \\textbf{N} & \\textbf{Somma} & \\textbf{Uso}\\\\\\midrule\n0,2 & 0,4 & 0,6 & sì\\\\\n0 & 0 & 0 & no\\\\\n$10^{-10}$ & $2\\cdot10^{-10}$ & $3\\cdot10^{-10}$ & no\\\\\n0,3 & 0,2 & 0,5 & sì\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{Il criterio evita la divisione nelle celle escluse. Quelle celle rimangono mancanti, con una causa documentata.}\n\\vspace{2.5mm}\n\\PInfo{Abbassare la soglia per ottenere più valori finiti non garantisce un risultato più informativo.}\n",
+    "recall": "La maschera deve essere una scelta esplicita del calcolo, applicata in modo riproducibile.",
+    "snippet": {
+      "text": "R0 <- c(.2,0,1e-10,.3)\nN0 <- c(.4,0,2e-10,.2)\nok0 <- N0+R0>1e-6\nItoy <- rep(NA_real_,4)\nItoy[ok0] <- (N0[ok0]-R0[ok0])/\n              (N0[ok0]+R0[ok0])\n",
+      "title": "R · maschera prima del rapporto"
+    },
+    "notebook": 14,
+    "source": [
+      25
+    ],
+    "code_file": "086_esempio.R"
+  },
+  {
+    "page": 87,
+    "title": "La maschera dell’indice combina le condizioni",
+    "section": "VII · BANDE E INDICI",
+    "left": "\\[m=m_{\\mathrm{geometria}}\\,\n          m_{\\mathrm{qualità}}\\,\n          m_{\\mathrm{valori}}\\,\n          m_{\\mathrm{denominatore}}\\]\n\\PInfo{Gli indicatori valgono zero o uno. Il prodotto corrisponde alla congiunzione delle condizioni necessarie.}\n",
+    "right": "\\PBody{Distinguiamo valore non finito, qualità non ammessa e somma insufficiente. La maschera finale identifica dove l’indice è utilizzabile.}\n\\vspace{2.5mm}\n\\PSmall{Nel caso sintetico principale tutte le bande sono valide; il notebook N14 costruisce i casi problematici.}\n",
+    "recall": "Le cause di esclusione devono essere conservate prima della loro combinazione.",
+    "snippet": {
+      "text": "okI <- is.finite(R_band) &\n is.finite(NIR) & (R_band+NIR>1e-6)\nIval <- rep(NA_real_,length(NIR))\nIval[okI] <- (NIR[okI]-R_band[okI])/\n              (NIR[okI]+R_band[okI])\n",
+      "title": "R · dominio valido dell’indice"
+    },
+    "notebook": 14,
+    "source": [
+      25
+    ],
+    "code_file": "087_esempio.R"
+  },
+  {
+    "page": 88,
+    "title": "Una scala leggibile per l’indice",
+    "section": "VII · BANDE E INDICI",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/28_indice_normalizzato.pdf}\n\\vspace{1.5mm}\n\\PSmall{Indice delle bande sintetiche sulla griglia locale. La legenda dichiara la natura adimensionale e l’intervallo rappresentato.}\n",
+    "right": "\\PBody{Il colore mostra il contrasto fra le bande. Nel caso costruito non identifica automaticamente vegetazione, litologia o qualità ambientale.}\n\\vspace{2.5mm}\n\\PInfo{Per confrontare due carte usiamo scale cromatiche coerenti e riportiamo le differenze nelle maschere.}\n\\PBody{Le bande originali e i parametri del calcolo accompagnano l’esportazione dell’indice.}\n\\vspace{2.5mm}\n",
+    "recall": "La carta deve distinguere il valore calcolato dalle interpretazioni che richiederebbero ulteriori dati.",
+    "snippet": null,
+    "notebook": 13,
+    "source": [
+      23,
+      25
+    ]
+  },
+  {
+    "page": 89,
+    "title": "I controlli devono riconoscere dati incoerenti",
+    "section": "VII · BANDE E INDICI",
+    "left": "{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{4.4cm}p{4.6cm}@{}}\\toprule\n\\textbf{Prova} & \\textbf{Aspettativa}\\\\\\midrule\n$N=R>0$ & Indice zero\\\\\n$R=0,\\ N>0$ & Indice uno\\\\\n$N=0,\\ R>0$ & Indice meno uno\\\\\nEntrambe le bande nulle & Cella esclusa\\\\\nBande non negative e somma positiva & Indice fra −1 e 1\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{Valori fuori dall’intervallo teorico richiedono di esaminare le condizioni sulle bande. Non li correggiamo automaticamente con un taglio arbitrario.}\n\\vspace{2.5mm}\n\\PInfo{Anche un indice nell’intervallo può essere sbagliato se le bande sono disallineate o hanno unità incompatibili.}\n",
+    "recall": "I controlli numerici verificano condizioni precise e non sostituiscono l’esame dei metadati.",
+    "snippet": {
+      "text": "stopifnot(sum(is.na(Itoy))==2,\n abs(Itoy[1]-1/3)<1e-12,\n abs(Itoy[4]+0.2)<1e-12)\n",
+      "title": "R · casi di risultato noto"
+    },
+    "notebook": 14,
+    "source": [
+      23,
+      24,
+      25
+    ],
+    "code_file": "089_esempio.R"
+  },
+  {
+    "page": 90,
+    "title": "Consegna: indice e condizioni",
+    "section": "VII · BANDE E INDICI",
+    "left": "\\PLab{https://marzione00.github.io/Lab_Geo/\\#laboratorio/m12-indici}{Esperimento online · bande e indice}\n{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{4.3cm}p{4.7cm}@{}}\\toprule\n\\textbf{Attività} & \\textbf{Evidenza}\\\\\\midrule\nN13: bande sintetiche & Formule, geometria e valori\\\\\nN14: denominatore & Soglia e celle escluse\\\\\nControllo algebrico & Casi noti e fattore comune\\\\\nControllo geografico & Corrispondenza delle celle\\\\\nConsegna & Indice, maschera e provenienza\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{La relazione deve rendere chiaro che cosa rappresenta il rapporto e quali condizioni lo rendono utilizzabile.}\n\\vspace{2.5mm}\n\\PInfo{Le sintesi territoriali successive conserveranno la maschera, il dominio e i pesi: il passaggio a una tabella non elimina la struttura spaziale.}\n",
+    "recall": "Un indice riproducibile include le condizioni che permettono di calcolarlo e interpretarlo.",
+    "snippet": null,
+    "notebook": 14,
+    "source": [
+      23,
+      24,
+      25,
+      30
+    ]
+  },
+  {
+    "page": 91,
+    "title": "Le zone cambiano l’unità della tabella",
+    "section": "VIII · SINTESI TERRITORIALI",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/32_zone.pdf}\n\\vspace{1.5mm}\n\\PSmall{Zone didattiche A e B sullo stesso terreno: 360 celle per zona, ciascuna di area piana 0,09 ha.}\n",
+    "right": "\\PBody{Una sintesi zonale produce una riga per regione. I valori riassumono insiemi di celle definiti da una regola di appartenenza.}\n\\vspace{2.5mm}\n\\PInfo{A e B sono convenzioni del caso sintetico. Non rappresentano gruppi sperimentali assegnati casualmente né unità geologiche osservate.}\n\\PBody{Conserviamo numerosità, area e copertura insieme alla statistica.}\n\\vspace{2.5mm}\n",
+    "recall": "Passare dalle celle alle zone cambia l’unità statistica e il significato della riga.",
+    "snippet": null,
+    "notebook": 15,
+    "source": [
+      26
+    ]
+  },
+  {
+    "page": 92,
+    "title": "Media e dispersione nella stessa zona",
+    "section": "VIII · SINTESI TERRITORIALI",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/33_sintesi_zonali.pdf}\n\\vspace{1.5mm}\n\\PSmall{Sintesi delle quote nelle due zone: livello, dispersione e numerosità devono essere letti insieme.}\n",
+    "right": "\\PBody{La media descrive il livello delle quote. La dispersione descrive la variabilità interna; la copertura identifica il dominio disponibile.}\n\\vspace{2.5mm}\n\\PInfo{La differenza fra le zone riflette la loro collocazione sul terreno sintetico. Non viene interpretata come effetto causale dell’etichetta.}\n",
+    "recall": "Una tabella zonale deve conservare gli elementi necessari a ricostruire il bersaglio della sintesi.",
+    "snippet": {
+      "text": "zm <- aggregate(quota_m~unita,d,mean)\nzn <- table(d$unita)\nstopifnot(sum(zn)==720)\nzm\n",
+      "title": "R · livello e conteggi"
+    },
+    "notebook": 15,
+    "source": [
+      26
+    ],
+    "code_file": "092_esempio.R"
+  },
+  {
+    "page": 93,
+    "title": "La media del territorio richiede pesi coerenti",
+    "section": "VIII · SINTESI TERRITORIALI",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/34_pesi_aree.pdf}\n\\vspace{1.5mm}\n\\PSmall{Dopo la maschera restano 336 celle in A e 360 in B. Pesare per area osservata ricostruisce la media delle 696 celle disponibili.}\n\\[\\overline z_A=\\frac{\\sum_b A_b\\,\\overline z_b}{\\sum_b A_b}\\]\n",
+    "right": "\\PBody{Con zone della stessa area e copertura completa, media semplice delle medie e media per area coincidono. Non è una proprietà generale.}\n\\vspace{2.5mm}\n\\PInfo{La formula richiede che le medie zonali rappresentino le aree assegnate. Una copertura incompleta può richiedere un trattamento aggiuntivo.}\n\\PBody{La definizione dei pesi segue la domanda scientifica.}\n\\vspace{2.5mm}\n",
+    "recall": "Il peso di una zona deve essere dichiarato insieme alla popolazione o al territorio che rappresenta.",
+    "snippet": null,
+    "notebook": 15,
+    "source": [
+      9,
+      26
+    ]
+  },
+  {
+    "page": 94,
+    "title": "La copertura può differire fra le zone",
+    "section": "VIII · SINTESI TERRITORIALI",
+    "left": "{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{3.0cm}p{3.2cm}p{2.4cm}@{}}\\toprule\n\\textbf{Zona} & \\textbf{Celle disponibili} & \\textbf{Copertura}\\\\\\midrule\nA dopo la maschera & 336 su 360 & 93,33\\%\\\\\nB dopo la maschera & 360 su 360 & 100\\%\\\\\nIntero dominio & 696 su 720 & 96,67\\%\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{La finestra mancante cade interamente nella zona A. La stessa percentuale globale nasconde quindi una distribuzione geografica asimmetrica delle esclusioni.}\n\\vspace{2.5mm}\n\\PInfo{Confrontiamo medie zonali e coperture prima di interpretare la differenza fra A e B.}\n",
+    "recall": "La copertura globale deve essere accompagnata dalla sua distribuzione nel territorio.",
+    "snippet": {
+      "text": "okZ <- with(d,!(riga %in% 4:7 &\n                 colonna %in% 9:14))\ntable(d$unita[okZ])/table(d$unita)\n",
+      "title": "R · copertura per zona"
+    },
+    "notebook": 15,
+    "source": [
+      7,
+      26
+    ],
+    "code_file": "094_esempio.R"
+  },
+  {
+    "page": 95,
+    "title": "Molti pixel non sono molte repliche indipendenti",
+    "section": "VIII · SINTESI TERRITORIALI",
+    "left": "{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{4.2cm}p{4.8cm}@{}}\\toprule\n\\textbf{Conteggio} & \\textbf{Significato}\\\\\\midrule\n720 celle & Dimensione della griglia\\\\\n64,8 ettari & Area piana del dominio\\\\\n2 zone & Unità della tabella aggregata\\\\\n12 blocchi didattici & Unità dello schema di ricampionamento\\\\\nRepliche indipendenti & Proprietà del disegno o del modello\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{La continuità della superficie crea relazioni fra celle vicine. Un test che tratta ogni pixel come una replica indipendente richiederebbe una giustificazione specifica.}\n\\vspace{2.5mm}\n\\PInfo{La differenza descrittiva fra le quote di A e B è calcolabile. L’inferenza su un processo o su altri territori richiede ipotesi ulteriori.}\n\\PBody{Le categorie del conteggio non devono essere confuse fra loro.}\n\\vspace{2.5mm}\n",
+    "recall": "La numerosità del file non determina automaticamente la quantità di informazione indipendente.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      26,
+      27,
+      28
+    ]
+  },
+  {
+    "page": 96,
+    "title": "Le differenze a distanza descrivono due scale",
+    "section": "VIII · SINTESI TERRITORIALI",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/35_differenze30_300.pdf}\n\\vspace{1.5mm}\n\\PSmall{Differenze longitudinali a 30 m e 300 m: 696 e 480 coppie rispettivamente, costruite nella stessa superficie.}\n",
+    "right": "\\PBody{Le coppie possono condividere celle e risentono della tendenza del terreno. Il confronto descrive come cambia il campo a due separazioni.}\n\\vspace{2.5mm}\n\\PInfo{Non presentiamo i contributi come repliche indipendenti né il confronto come un test causale.}\n",
+    "recall": "La distanza delle coppie e il loro riuso delle celle devono accompagnare la statistica.",
+    "snippet": {
+      "text": "d30 <- as.vector(Z[,2:30]-Z[,1:29])\nd300 <- as.vector(Z[,11:30]-Z[,1:20])\nstopifnot(length(d30)==696,\n          length(d300)==480)\nc(mean(abs(d30)),mean(abs(d300)))\n",
+      "title": "R · due separazioni spaziali"
+    },
+    "notebook": 16,
+    "source": [
+      27
+    ],
+    "code_file": "096_esempio.R"
+  },
+  {
+    "page": 97,
+    "title": "La varianza della media include le covarianze",
+    "section": "VIII · SINTESI TERRITORIALI",
+    "left": "\\[\\operatorname{Var}(\\overline Z)\n =\\frac1{n^2}\\sum_i\\sum_j\\operatorname{Cov}(Z_i,Z_j)\\]\n\\[=\\frac1{n^2}\\left\\{\\sum_i\\operatorname{Var}(Z_i)\n       +2\\sum_{i<j}\\operatorname{Cov}(Z_i,Z_j)\\right\\}\\]\n\\PInfo{La relazione riguarda variabili aleatorie. Una superficie sintetica completamente nota ha una media finita calcolabile senza errore di campionamento.}\n",
+    "right": "\\PBody{Per discutere l’incertezza su un processo o su territori non osservati serve un modello o un disegno che definisca la variabilità.}\n\\vspace{2.5mm}\n\\PBody{Il rapporto fra numero di celle e precisione non dipende soltanto dalla varianza marginale. Le covarianze possono contribuire in modo sostanziale.}\n\\vspace{2.5mm}\n",
+    "recall": "L’incertezza va riferita a un bersaglio e a un meccanismo di variazione espliciti.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      27
+    ]
+  },
+  {
+    "page": 98,
+    "title": "Il ricampionamento a blocchi dichiara nuove unità",
+    "section": "VIII · SINTESI TERRITORIALI",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/36_blocchi12.pdf}\n\\vspace{1.5mm}\n\\PSmall{Dodici blocchi contigui: 6 righe e 10 colonne ciascuno, 60 celle e 5,4 ha di area piana per blocco.}\n",
+    "right": "\\PBody{Calcoliamo la media di ciascun blocco. Ricampioniamo poi dodici medie con reinserimento per ottenere una nuova media complessiva.}\n\\vspace{2.5mm}\n\\PInfo{I blocchi sono completi ed equiponderati: la media delle dodici medie coincide con quella delle 720 quote.}\n",
+    "recall": "Lo schema di ricampionamento deve essere descritto nella geometria e nei pesi.",
+    "snippet": {
+      "text": "stopifnot(length(block_means)==12,\n abs(mean(block_means)-mean(Z))<1e-10)\nmean(block_means)\n",
+      "title": "R · controllare il bersaglio"
+    },
+    "notebook": 17,
+    "source": [
+      28
+    ],
+    "code_file": "098_esempio.R"
+  },
+  {
+    "page": 99,
+    "title": "Due distribuzioni da ricampionamento",
+    "section": "VIII · SINTESI TERRITORIALI",
+    "left": "",
+    "right": "",
+    "recall": "Aumentare le repliche rende più preciso il calcolo dello schema scelto, non rende automaticamente valido lo schema.",
+    "snippet": null,
+    "notebook": 17,
+    "source": [
+      28
+    ],
+    "layout": "panorama",
+    "figure": "37_bootstrap300_1999",
+    "caption": "Dodici medie di blocco ricampionate con reinserimento. La serie di 300 repliche usa i numeri uniformi comuni del laboratorio originale; quella di 1999 usa il seme documentato della figura originale. I quantili descrivono queste distribuzioni condizionate allo schema. Il numero di repliche cambia la precisione Monte Carlo, non giustifica le ipotesi inferenziali."
+  },
+  {
+    "page": 100,
+    "title": "Il bersaglio guida la scelta dei blocchi",
+    "section": "VIII · SINTESI TERRITORIALI",
+    "left": "\\[\\overline Z^*=\\frac1{12}\\sum_{b=1}^{12}\\overline Z_{J_b},\n \\qquad J_b\\overset{\\mathrm{iid}}{\\sim}\\operatorname{Unif}\\{1,\\ldots,12\\}\\]\n\\PInfo{L’indipendenza riguarda le estrazioni degli indici nello schema bootstrap. Non dimostra che i dodici blocchi del terreno siano indipendenti o scambiabili.}\n",
+    "right": "\\PBody{Blocchi vicini possono restare dipendenti. Un gradiente può rendere le loro distribuzioni diverse.}\n\\vspace{2.5mm}\n\\PBody{Nel caso didattico i quantili sono un’analisi di sensibilità allo schema, non un intervallo con copertura garantita per una popolazione geografica non definita.}\n\\vspace{2.5mm}\n",
+    "recall": "Le ipotesi del ricampionamento devono essere motivate rispetto a dipendenza, tendenza e popolazione.",
+    "snippet": null,
+    "notebook": 17,
+    "source": [
+      28
+    ]
+  },
+  {
+    "page": 101,
+    "title": "Cambia l’unità, cambia il risultato",
+    "section": "VIII · SINTESI TERRITORIALI",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/38_bootstrap_confronto.pdf}\n\\vspace{1.5mm}\n\\PSmall{Confronto fra schemi di ricampionamento. Le distribuzioni riflettono la scelta delle unità e delle ipotesi.}\n",
+    "right": "\\PBody{Ricampionare singole celle rompe le relazioni locali. Ricampionare blocchi conserva parte della struttura, ma introduce scelte su forma, dimensione e disposizione.}\n\\vspace{2.5mm}\n\\PInfo{Un intervallo più ampio non è automaticamente corretto. La validità richiede che il meccanismo rappresenti l’incertezza del compito.}\n\\PBody{I registri conservano parametri, semi e quantili per rendere verificabile la sensibilità.}\n\\vspace{2.5mm}\n",
+    "recall": "Il confronto fra schemi serve a esaminare le assunzioni, non a scegliere il risultato più conveniente.",
+    "snippet": null,
+    "notebook": 17,
+    "source": [
+      27,
+      28
+    ]
+  },
+  {
+    "page": 102,
+    "title": "Laboratorio: collegare sintesi, dominio e ipotesi",
+    "section": "VIII · SINTESI TERRITORIALI",
+    "left": "\\PLab{https://marzione00.github.io/Lab_Geo/\\#laboratorio/m12-zone}{Esperimento online · sintesi zonali}\n{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{4.1cm}p{4.9cm}@{}}\\toprule\n\\textbf{Attività} & \\textbf{Evidenza}\\\\\\midrule\nN15: zone & Medie, dispersione, conteggi e copertura\\\\\nN16: distanze & Coppie a 30 e 300 m\\\\\nN17: blocchi & Geometria e regola di ricampionamento\\\\\nConfronto & Sensibilità alle unità scelte\\\\\nConclusione & Bersaglio e limiti dell’inferenza\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{La tabella finale mantiene il legame con la mappa. Ogni media indica quali celle rappresenta e con quali pesi.}\n\\vspace{2.5mm}\n\\PInfo{Il processo di esportazione conserverà queste decisioni insieme ai raster e ai risultati numerici.}\n",
+    "recall": "Una sintesi territoriale resta scientificamente leggibile quando conserva dominio, unità e assunzioni.",
+    "snippet": null,
+    "notebook": 17,
+    "source": [
+      26,
+      27,
+      28,
+      30
+    ]
+  },
+  {
+    "page": 103,
+    "title": "La memoria cresce con celle, bande e precisione",
+    "section": "IX · CONSEGNA E VERIFICA",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/39_memoria.pdf}\n\\vspace{1.5mm}\n\\PSmall{Dimensione teorica dei valori numerici. File compresso, oggetti in memoria e copie temporanee hanno costi differenti.}\n\\[B=n_r\\,n_c\\,n_b\\,q\\]\n",
+    "right": "\\PBody{$q$ è il numero di byte per valore. Dimezzare il passo su entrambi gli assi quadruplica le celle sullo stesso dominio.}\n\\vspace{2.5mm}\n\\PInfo{La formula conta soltanto i valori: non include metadati, maschere, indici e copie temporanee. Aprire un SpatRaster non carica automaticamente tutti i pixel.}\n",
+    "recall": "La strategia di memoria deve essere dimensionata prima di materializzare grandi array.",
+    "snippet": {
+      "text": "nr <- 10000; nc <- 10000; nb <- 4\nbyte_valori <- nr*nc*nb*8\nc(GB=byte_valori/1e9,\n GiB=byte_valori/1024^3)\n",
+      "title": "R · stima senza allocazione"
+    },
+    "notebook": 18,
+    "source": [
+      29
+    ],
+    "code_file": "103_esempio.R"
+  },
+  {
+    "page": 104,
+    "title": "Leggere una finestra conserva ordine e posizioni",
+    "section": "IX · CONSEGNA E VERIFICA",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/40_finestra_halo.pdf}\n\\vspace{1.5mm}\n\\PSmall{La finestra centrale contiene 6×8 celle. Il contorno aggiuntivo permette di calcolare le derivate senza perdere i vicini.}\n",
+    "right": "\\PBody{Leggiamo 48 valori dal GeoTIFF e li confrontiamo con le stesse celle della matrice completa.}\n\\vspace{2.5mm}\n\\PSmall{Questo riferimento completo è praticabile sul piccolo dataset didattico.}\n",
+    "recall": "Una lettura parziale deve restituire gli stessi valori e lo stesso ordine della porzione corrispondente.",
+    "snippet": {
+      "text": "terra::readStart(r)\nwin <- terra::readValues(r,row=5,\n nrows=6,col=10,ncols=8,mat=FALSE)\nterra::readStop(r)\nattesi <- as.vector(t(M[5:10,10:17]))\nstopifnot(length(win)==48,\n max(abs(win-attesi))<1e-10)\n",
+      "title": "R · finestra realmente letta"
+    },
+    "notebook": 18,
+    "source": [
+      29
+    ],
+    "code_file": "104_esempio.R"
+  },
+  {
+    "page": 105,
+    "title": "Le operazioni locali richiedono un bordo di lettura",
+    "section": "IX · CONSEGNA E VERIFICA",
+    "left": "\\begin{tikzpicture}[x=1cm,y=1cm]\n\\path[use as bounding box](-.1,-.15) rectangle(9.7,5.7);\n\\filldraw[fill=GeoB!23,draw=white](1.0,0.65)rectangle(1.65,1.1800000000000002);\n\\filldraw[fill=GeoB!23,draw=white](1.65,0.65)rectangle(2.3,1.1800000000000002);\n\\filldraw[fill=GeoB!23,draw=white](2.3,0.65)rectangle(2.9499999999999997,1.1800000000000002);\n\\filldraw[fill=GeoB!23,draw=white](2.95,0.65)rectangle(3.6,1.1800000000000002);\n\\filldraw[fill=GeoB!23,draw=white](3.6,0.65)rectangle(4.25,1.1800000000000002);\n\\filldraw[fill=GeoB!23,draw=white](4.25,0.65)rectangle(4.9,1.1800000000000002);\n\\filldraw[fill=GeoB!23,draw=white](4.9,0.65)rectangle(5.550000000000001,1.1800000000000002);\n\\filldraw[fill=GeoB!23,draw=white](5.55,0.65)rectangle(6.2,1.1800000000000002);\n\\filldraw[fill=GeoB!23,draw=white](6.2,0.65)rectangle(6.8500000000000005,1.1800000000000002);\n\\filldraw[fill=GeoB!23,draw=white](6.8500000000000005,0.65)rectangle(7.500000000000001,1.1800000000000002);\n\\filldraw[fill=GeoB!23,draw=white](1.0,1.1800000000000002)rectangle(1.65,1.7100000000000002);\n\\filldraw[fill=GeoA!17,draw=white](1.65,1.1800000000000002)rectangle(2.3,1.7100000000000002);\n\\filldraw[fill=GeoA!17,draw=white](2.3,1.1800000000000002)rectangle(2.9499999999999997,1.7100000000000002);\n\\filldraw[fill=GeoA!17,draw=white](2.95,1.1800000000000002)rectangle(3.6,1.7100000000000002);\n\\filldraw[fill=GeoA!17,draw=white](3.6,1.1800000000000002)rectangle(4.25,1.7100000000000002);\n\\filldraw[fill=GeoA!17,draw=white](4.25,1.1800000000000002)rectangle(4.9,1.7100000000000002);\n\\filldraw[fill=GeoA!17,draw=white](4.9,1.1800000000000002)rectangle(5.550000000000001,1.7100000000000002);\n\\filldraw[fill=GeoA!17,draw=white](5.55,1.1800000000000002)rectangle(6.2,1.7100000000000002);\n\\filldraw[fill=GeoA!17,draw=white](6.2,1.1800000000000002)rectangle(6.8500000000000005,1.7100000000000002);\n\\filldraw[fill=GeoB!23,draw=white](6.8500000000000005,1.1800000000000002)rectangle(7.500000000000001,1.7100000000000002);\n\\filldraw[fill=GeoB!23,draw=white](1.0,1.71)rectangle(1.65,2.24);\n\\filldraw[fill=GeoA!17,draw=white](1.65,1.71)rectangle(2.3,2.24);\n\\filldraw[fill=GeoA!17,draw=white](2.3,1.71)rectangle(2.9499999999999997,2.24);\n\\filldraw[fill=GeoA!17,draw=white](2.95,1.71)rectangle(3.6,2.24);\n\\filldraw[fill=GeoA!17,draw=white](3.6,1.71)rectangle(4.25,2.24);\n\\filldraw[fill=GeoA!17,draw=white](4.25,1.71)rectangle(4.9,2.24);\n\\filldraw[fill=GeoA!17,draw=white](4.9,1.71)rectangle(5.550000000000001,2.24);\n\\filldraw[fill=GeoA!17,draw=white](5.55,1.71)rectangle(6.2,2.24);\n\\filldraw[fill=GeoA!17,draw=white](6.2,1.71)rectangle(6.8500000000000005,2.24);\n\\filldraw[fill=GeoB!23,draw=white](6.8500000000000005,1.71)rectangle(7.500000000000001,2.24);\n\\filldraw[fill=GeoB!23,draw=white](1.0,2.24)rectangle(1.65,2.7700000000000005);\n\\filldraw[fill=GeoA!17,draw=white](1.65,2.24)rectangle(2.3,2.7700000000000005);\n\\filldraw[fill=GeoA!17,draw=white](2.3,2.24)rectangle(2.9499999999999997,2.7700000000000005);\n\\filldraw[fill=GeoA!17,draw=white](2.95,2.24)rectangle(3.6,2.7700000000000005);\n\\filldraw[fill=GeoA!17,draw=white](3.6,2.24)rectangle(4.25,2.7700000000000005);\n\\filldraw[fill=GeoA!17,draw=white](4.25,2.24)rectangle(4.9,2.7700000000000005);\n\\filldraw[fill=GeoA!17,draw=white](4.9,2.24)rectangle(5.550000000000001,2.7700000000000005);\n\\filldraw[fill=GeoA!17,draw=white](5.55,2.24)rectangle(6.2,2.7700000000000005);\n\\filldraw[fill=GeoA!17,draw=white](6.2,2.24)rectangle(6.8500000000000005,2.7700000000000005);\n\\filldraw[fill=GeoB!23,draw=white](6.8500000000000005,2.24)rectangle(7.500000000000001,2.7700000000000005);\n\\filldraw[fill=GeoB!23,draw=white](1.0,2.77)rectangle(1.65,3.3);\n\\filldraw[fill=GeoA!17,draw=white](1.65,2.77)rectangle(2.3,3.3);\n\\filldraw[fill=GeoA!17,draw=white](2.3,2.77)rectangle(2.9499999999999997,3.3);\n\\filldraw[fill=GeoA!17,draw=white](2.95,2.77)rectangle(3.6,3.3);\n\\filldraw[fill=GeoA!17,draw=white](3.6,2.77)rectangle(4.25,3.3);\n\\filldraw[fill=GeoA!17,draw=white](4.25,2.77)rectangle(4.9,3.3);\n\\filldraw[fill=GeoA!17,draw=white](4.9,2.77)rectangle(5.550000000000001,3.3);\n\\filldraw[fill=GeoA!17,draw=white](5.55,2.77)rectangle(6.2,3.3);\n\\filldraw[fill=GeoA!17,draw=white](6.2,2.77)rectangle(6.8500000000000005,3.3);\n\\filldraw[fill=GeoB!23,draw=white](6.8500000000000005,2.77)rectangle(7.500000000000001,3.3);\n\\filldraw[fill=GeoB!23,draw=white](1.0,3.3000000000000003)rectangle(1.65,3.83);\n\\filldraw[fill=GeoA!17,draw=white](1.65,3.3000000000000003)rectangle(2.3,3.83);\n\\filldraw[fill=GeoA!17,draw=white](2.3,3.3000000000000003)rectangle(2.9499999999999997,3.83);\n\\filldraw[fill=GeoA!17,draw=white](2.95,3.3000000000000003)rectangle(3.6,3.83);\n\\filldraw[fill=GeoA!17,draw=white](3.6,3.3000000000000003)rectangle(4.25,3.83);\n\\filldraw[fill=GeoA!17,draw=white](4.25,3.3000000000000003)rectangle(4.9,3.83);\n\\filldraw[fill=GeoA!17,draw=white](4.9,3.3000000000000003)rectangle(5.550000000000001,3.83);\n\\filldraw[fill=GeoA!17,draw=white](5.55,3.3000000000000003)rectangle(6.2,3.83);\n\\filldraw[fill=GeoA!17,draw=white](6.2,3.3000000000000003)rectangle(6.8500000000000005,3.83);\n\\filldraw[fill=GeoB!23,draw=white](6.8500000000000005,3.3000000000000003)rectangle(7.500000000000001,3.83);\n\\filldraw[fill=GeoB!23,draw=white](1.0,3.83)rectangle(1.65,4.36);\n\\filldraw[fill=GeoA!17,draw=white](1.65,3.83)rectangle(2.3,4.36);\n\\filldraw[fill=GeoA!17,draw=white](2.3,3.83)rectangle(2.9499999999999997,4.36);\n\\filldraw[fill=GeoA!17,draw=white](2.95,3.83)rectangle(3.6,4.36);\n\\filldraw[fill=GeoA!17,draw=white](3.6,3.83)rectangle(4.25,4.36);\n\\filldraw[fill=GeoA!17,draw=white](4.25,3.83)rectangle(4.9,4.36);\n\\filldraw[fill=GeoA!17,draw=white](4.9,3.83)rectangle(5.550000000000001,4.36);\n\\filldraw[fill=GeoA!17,draw=white](5.55,3.83)rectangle(6.2,4.36);\n\\filldraw[fill=GeoA!17,draw=white](6.2,3.83)rectangle(6.8500000000000005,4.36);\n\\filldraw[fill=GeoB!23,draw=white](6.8500000000000005,3.83)rectangle(7.500000000000001,4.36);\n\\filldraw[fill=GeoB!23,draw=white](1.0,4.36)rectangle(1.65,4.890000000000001);\n\\filldraw[fill=GeoB!23,draw=white](1.65,4.36)rectangle(2.3,4.890000000000001);\n\\filldraw[fill=GeoB!23,draw=white](2.3,4.36)rectangle(2.9499999999999997,4.890000000000001);\n\\filldraw[fill=GeoB!23,draw=white](2.95,4.36)rectangle(3.6,4.890000000000001);\n\\filldraw[fill=GeoB!23,draw=white](3.6,4.36)rectangle(4.25,4.890000000000001);\n\\filldraw[fill=GeoB!23,draw=white](4.25,4.36)rectangle(4.9,4.890000000000001);\n\\filldraw[fill=GeoB!23,draw=white](4.9,4.36)rectangle(5.550000000000001,4.890000000000001);\n\\filldraw[fill=GeoB!23,draw=white](5.55,4.36)rectangle(6.2,4.890000000000001);\n\\filldraw[fill=GeoB!23,draw=white](6.2,4.36)rectangle(6.8500000000000005,4.890000000000001);\n\\filldraw[fill=GeoB!23,draw=white](6.8500000000000005,4.36)rectangle(7.500000000000001,4.890000000000001);\n\\draw[GeoA,line width=1pt](1.65,1.18)rectangle(6.85,4.36);\n\\node[pLabel]at(4.3,5.35){leggere anche i vicini della finestra};\n\\node[pNote,anchor=west]at(7.9,3.7){nucleo\\\\48 celle};\n\\node[pNote,anchor=west]at(7.9,1.7){bordo\\\\32 celle};\n\\end{tikzpicture}\n",
+    "right": "\\PBody{Per calcolare le differenze centrate sulle 6×8 celle richieste, leggiamo anche una cella di contorno: una finestra di 8×10, pari a 80 valori.}\n\\vspace{2.5mm}\n\\PInfo{Calcoliamo sul dominio allargato e conserviamo soltanto il nucleo. La dimensione del contorno dipende dal vicinato dell’algoritmo.}\n\\PBody{Il confronto con il calcolo completo verifica che la strategia per finestre non introduca discontinuità artificiali.}\n\\vspace{2.5mm}\n",
+    "recall": "Ridurre la memoria deve preservare i vicinati necessari al procedimento scientifico.",
+    "snippet": null,
+    "notebook": 18,
+    "source": [
+      14,
+      29
+    ]
+  },
+  {
+    "page": 106,
+    "title": "Geometria della pendenza esportata",
+    "section": "IX · CONSEGNA E VERIFICA",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/41_export_pendenze.pdf}\n\\vspace{1.5mm}\n\\PSmall{Griglia completa con 104 celle di bordo NoData. Il riquadro identifica il prodotto interno di 22×28 celle, con passo 30 m.}\n",
+    "right": "\\PBody{Il prodotto interno contiene 616 valori. Il prodotto completo conserva invece la griglia 24×30 e 104 celle di bordo NoData.}\n\\vspace{2.5mm}\n\\PInfo{La geometria viene costruita dai centri e dai mezzi passi. Esportare la sola matrice senza questi metadati perderebbe la collocazione.}\n",
+    "recall": "Il raster derivato deve rappresentare gli stessi luoghi ai quali il calcolo si riferisce.",
+    "snippet": {
+      "text": "r_out <- raster_locale(slope_deg,\n x[2:29],y[2:23])\nstopifnot(terra::ncell(r_out)==616,\n all(terra::res(r_out)==30))\n",
+      "title": "R · ricostruire il raster interno"
+    },
+    "notebook": 20,
+    "source": [
+      30
+    ],
+    "code_file": "106_esempio.R"
+  },
+  {
+    "page": 107,
+    "title": "Il GeoTIFF conserva geometria e NoData",
+    "section": "IX · CONSEGNA E VERIFICA",
+    "left": "{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{3.8cm}p{5.2cm}@{}}\\toprule\n\\textbf{Elemento} & \\textbf{Scelta della consegna}\\\\\\midrule\nVariabile & Pendenza in gradi\\\\\nAlgoritmo & Differenze centrate, quattro vicini\\\\\nRiferimento & EPSG:32632, collocazione fittizia\\\\\nTipo numerico & FLOAT64 / FLT8S\\\\\nNoData & −9999, distinto dai valori validi\\\\\nAccompagnamento & CSV, metadati e verifiche\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{Scriviamo esplicitamente formato numerico e codice mancante. Il GeoTIFF mantiene la geometria, mentre la documentazione conserva il significato scientifico.}\n\\vspace{2.5mm}\n\\PSmall{Il percorso mostrato è locale e separato dagli originali.}\n",
+    "recall": "Il file esportato è una parte della consegna: metodo, unità e provenienza devono accompagnarlo.",
+    "snippet": {
+      "text": "file_tif <- file.path(\"Risultati\",\n \"pendenze_slide.tif\")\nterra::writeRaster(r_out,file_tif,\n overwrite=TRUE,datatype=\"FLT8S\",\n NAflag=-9999,gdal=\"COMPRESS=NONE\")\n",
+      "title": "R · scrittura verificabile"
+    },
+    "notebook": 20,
+    "source": [
+      30
+    ],
+    "code_file": "107_esempio.R"
+  },
+  {
+    "page": 108,
+    "title": "Rileggere verifica ciò che verrà consegnato",
+    "section": "IX · CONSEGNA E VERIFICA",
+    "left": "\\includegraphics[width=9.85cm,height=5.25cm,keepaspectratio]{Risultati/Figure/42_controllo_roundtrip.pdf}\n\\vspace{1.5mm}\n\\PSmall{Confronto fra valori prima della scrittura e dopo la rilettura, insieme ai controlli della geometria e della maschera.}\n",
+    "right": "\\PBody{Controlliamo numero di celle, CRS, risoluzione, estensione, NoData e valori. La sola presenza del file non verifica il contenuto.}\n\\vspace{2.5mm}\n\\PInfo{Per il prodotto completo verifichiamo anche le 104 celle di bordo mancanti e la corrispondenza delle 616 celle interne.}\n",
+    "recall": "Il controllo finale deve riguardare il file effettivamente destinato alla consegna.",
+    "snippet": {
+      "text": "rr <- terra::rast(file_tif)\nstopifnot(terra::compareGeom(r_out,rr),\n max(abs(terra::values(rr)-\n         terra::values(r_out)))<1e-10)\n",
+      "title": "R · rilettura e confronto"
+    },
+    "notebook": 20,
+    "source": [
+      30
+    ],
+    "code_file": "108_esempio.R"
+  },
+  {
+    "page": 109,
+    "title": "I 20 notebook seguono le decisioni della lezione",
+    "section": "IX · CONSEGNA E VERIFICA",
+    "left": "{\\fontsize{10.2}{13.1}\\selectfont\\renewcommand{\\arraystretch}{1.45}\\begin{tabular}{@{}p{2.2cm}p{4.9cm}p{1.6cm}@{}}\\toprule\n\\textbf{Notebook} & \\textbf{Tema} & \\textbf{Slide}\\\\\\midrule\nN01–N03 & Griglia, orientamento, GeoTIFF & 5–19\\\\\nN04–N06 & Maschere, dominio e area & 20–32\\\\\nN07–N08, N19 & Aggregazione e allineamento & 33–48\\\\\nN09–N11 & Derivate, pendenza e direzione & 49–66\\\\\nN12 & Illuminazione del rilievo & 67–76\\\\\nN13–N14 & Bande e indice normalizzato & 77–90\\\\\nN15–N17 & Zone, dipendenza e blocchi & 91–102\\\\\nN18, N20 & Finestre ed esportazione & 103–108\\\\\n\\bottomrule\\end{tabular}}\n",
+    "right": "\\PBody{Ogni notebook combina domanda, codice eseguito, risultati e interpretazione. Le risorse necessarie alla lettura sono incorporate negli HTML.}\n\\vspace{2.5mm}\n\\PInfo{I collegamenti nei piè di pagina aprono le attività nell’archivio estratto. Il formato R Markdown permette di modificare e rieseguire il lavoro.}\n\\PBody{Per studiare: dichiarare il risultato atteso, ricostruire il controllo e spiegare quale errore sarebbe in grado di riconoscere.}\n\\vspace{2.5mm}\n",
+    "recall": "Il codice serve a rendere controllabile l’argomento scientifico, dalla geometria al risultato.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      30
+    ]
+  },
+  {
+    "page": 110,
+    "title": "Griglia, metodo e significato restano collegati",
+    "section": "IX · CONSEGNA E VERIFICA",
+    "left": "\\begin{tikzpicture}[x=1cm,y=1cm]\n\\path[use as bounding box](-.1,-.15) rectangle(9.7,4.8);\n\\node[pFlow,text width=3.7cm,fill=GeoA!7] (a) at(2.1,3.8){Geometria e supporto};\n\\node[pFlow,text width=3.7cm,fill=GeoB!7] (b) at(7.3,3.8){Valori e maschere};\n\\node[pFlow,text width=3.7cm,fill=GeoC!7] (c) at(2.1,1.2){Metodo e scala};\n\\node[pFlow,text width=3.7cm,fill=GeoA!7] (d) at(7.3,1.2){Risultato e verifica};\n\\draw[pEdge] (a) -- (b);\n\\draw[pEdge] (a) -- (c);\n\\draw[pEdge] (b) -- (d);\n\\draw[pEdge] (c) -- (d);\n\\end{tikzpicture}\n\\PSmall{Riferimenti: documentazione \\href{https://rspatial.github.io/terra/}{terra}, \\href{https://gdal.org/en/stable/tutorials/geotransforms_tut.html}{GDAL}, \\href{https://www.usgs.gov/landsat-missions/landsat-normalized-difference-vegetation-index}{USGS}. Fonti, versioni e verifiche complete accompagnano il pacchetto.}\n",
+    "right": "\\PBody{Una buona analisi raster conserva il legame fra la posizione delle celle, il significato dei valori e le trasformazioni applicate.}\n\\vspace{2.5mm}\n\\PInfo{Prima di interpretare un risultato, chiedere: cambierebbe con un’altra risoluzione, una maschera diversa o un altro metodo?}\n\\PBody{La consegna finale rende riconoscibili le scelte e permette di ripetere i controlli sui dati esportati.}\n\\vspace{2.5mm}\n",
+    "recall": "La geometria della griglia condiziona il significato delle misure che ricaviamo dal territorio.",
+    "snippet": null,
+    "notebook": null,
+    "source": [
+      30
+    ]
+  }
+]

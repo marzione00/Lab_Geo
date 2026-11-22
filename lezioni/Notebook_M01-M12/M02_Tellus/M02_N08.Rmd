@@ -1,0 +1,135 @@
+---
+title: "Applicare una sintesi a pi\u00f9 variabili"
+subtitle: "M02_N08 \u00b7 Tellus"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come riassumiamo più colonne numeriche mantenendo visibili unità, dati validi e casi con informazioni insufficienti?
+
+## Obiettivi
+
+- Definire una sintesi robusta a mancanti e valori non finiti.
+- Applicare la stessa funzione a più colonne senza mescolare le grandezze.
+
+**Prima di iniziare.** Saper eseguire una cella R e riconoscere vettori, assegnamenti e nomi di colonne.
+
+**Dati e unità.** La tabella sintetica contiene massa in g, volume in cm³ e densità derivata in g/cm³ per 24 provini. Piccoli vettori costruiti verificano i casi con un solo valore valido o nessuno.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M02_N08/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M02_N08")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(2008)
+```
+
+## 1. Specificare cosa significa disponibile
+
+La funzione considera utilizzabili soltanto valori finiti e restituisce sempre lo stesso insieme di campi. Una media richiede almeno un valore; una deviazione standard campionaria richiede almeno due. Dichiarare questi casi evita risultati non spiegati.
+
+```{r passo_01}
+sintesi_numerica <- function(x) {
+  stopifnot(is.numeric(x))
+  validi <- x[is.finite(x)]
+  n <- length(validi)
+  c(n_totale = length(x), n_valido = n,
+    media = if (n > 0L) mean(validi) else NA_real_,
+    sd = if (n > 1L) sd(validi) else NA_real_)
+}
+print(sintesi_numerica(c(4, 5, NA_real_, Inf)))
+```
+
+**Lettura del risultato.** Il denominatore valido riguarda ciascuna variabile separatamente. Escludere NA e infinito rende calcolabile la sintesi, ma non corregge le cause della loro presenza e non giustifica automaticamente un confronto fra colonne con disponibilità diverse.
+
+## 2. Applicare la funzione alle misure
+
+Selezioniamo esplicitamente le colonne numeriche pertinenti e applichiamo la funzione con lapply. La lista dei risultati viene trasformata in tabella; aggiungiamo le unità per impedire che medie numericamente simili siano lette come grandezze confrontabili.
+
+```{r passo_02}
+# Ogni esecuzione riparte dal CSV condiviso, senza modificare il file.
+d <- carica_dati("campioni_modulo1.csv", stringsAsFactors = FALSE)
+stopifnot(nrow(d) == 24L, !anyDuplicated(d$id))
+
+stopifnot(all(is.finite(d$massa_g)), all(d$massa_g > 0),
+          all(is.finite(d$volume_cm3)), all(d$volume_cm3 > 0))
+d$densita_g_cm3 <- d$massa_g / d$volume_cm3
+
+campi <- c("massa_g", "volume_cm3", "densita_g_cm3")
+risultati <- lapply(d[campi], sintesi_numerica)
+matrice <- do.call(rbind, risultati)
+tabella <- data.frame(variabile = rownames(matrice), matrice, row.names = NULL)
+unita <- c(massa_g = "g", volume_cm3 = "cm^3", densita_g_cm3 = "g/cm^3")
+tabella$unita <- unname(unita[tabella$variabile])
+print(tabella)
+stopifnot(all(tabella$n_totale == nrow(d)))
+```
+
+**Lettura del risultato.** Ogni riga riassume una variabile, non un provino. La stessa funzione garantisce campi omogenei, mentre la colonna unità preserva le differenze fisiche. Una media fra le tre medie mescolerebbe grandezze incompatibili.
+
+## 3. Verificare i casi limite
+
+Una funzione riutilizzabile deve avere un comportamento definito anche fuori dal dataset iniziale. Proviamo nessun valore disponibile, un solo valore e due valori uguali: sono situazioni diverse che devono produrre risultati distinguibili.
+
+```{r passo_03}
+casi <- list(nessuno = c(NA_real_, Inf), uno = c(3, NA_real_), due = c(3, 3))
+controlli <- do.call(rbind, lapply(casi, sintesi_numerica))
+print(controlli)
+stopifnot(is.na(controlli["nessuno", "media"]))
+stopifnot(is.na(controlli["uno", "sd"]))
+stopifnot(controlli["due", "sd"] == 0)
+```
+
+**Lettura del risultato.** Una deviazione standard non disponibile con un solo valore non equivale a zero. Zero è invece corretto per due valori identici: la funzione mantiene distinta l'assenza di informazione dalla dispersione osservata nulla.
+
+## Variante svolta
+
+Inserire una massa mancante in una copia e osservare quali denominatori cambiano.
+
+```{r variante}
+copia <- d
+copia$massa_g[1] <- NA_real_
+copia$densita_g_cm3 <- copia$massa_g / copia$volume_cm3
+print(do.call(rbind, lapply(copia[campi], sintesi_numerica)))
+```
+
+La massa mancante rende mancante anche la densità derivata, mentre il volume rimane disponibile. L'esempio mostra perché il numero valido deve essere riportato per ciascuna variabile, senza riutilizzare un unico denominatore generale.
+
+## Errore da riconoscere
+
+Sostituire una deviazione standard non calcolabile con zero suggerisce una precisione inesistente. I casi con dati insufficienti restano NA e vengono spiegati attraverso la numerosità valida.
+
+## Risposta alla domanda
+
+Una sintesi comune rende confrontabile la struttura della tabella, mentre unità e denominatori mantengono distinto il significato delle variabili. I casi limite verificano che la funzione resti interpretabile anche con dati incompleti.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M02_N08` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M02/M02_N08.R).

@@ -1,0 +1,142 @@
+---
+title: "Valutazione progressiva interna al train"
+subtitle: "M10_N05 · Futura"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Come si confrontano previsioni senza aprire il test finale?
+
+## Obiettivi
+
+- Ripetere la stima a origini crescenti.
+- Confrontare SARIMA e riferimento stagionale.
+- Conservare origine e orizzonte per ogni errore.
+
+**Prima di iniziare.** Sono richiesti vettori, tabelle e funzioni R di base. I blocchi vanno eseguiti in ordine. Il notebook è autonomo rispetto agli altri.
+
+**Dati e unità.** CO₂ storica: 204 mesi da gennaio 1985 a dicembre 2001, concentrazione in ppm. Le medie derivano dalle osservazioni settimanali attribuite al mese della data, secondo la convenzione del corso. Sono dati storici, distinti da una serie mensile ufficiale e da una misura attuale. Il protocollo usa 168 mesi per l’adattamento (1985–1998) e 36 per il test (1999–2001).
+
+## Preparazione
+
+Aprire il progetto autonomo di Futura o quello generale del corso. I calcoli usano R base e stats. Gli output del notebook vanno in `Risultati/M10_N05/`; i CSV originali restano invariati.
+
+```{r preparazione}
+# Trova la cartella M10 dal progetto autonomo o dal progetto generale.
+.gs_cerca <- normalizePath(getwd(),winslash="/",mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca,
+    file.path(.gs_cerca,"M10_Futura"),
+    file.path(.gs_cerca,"03_Notebook_svolti","M10_Futura"),
+    file.path(.gs_cerca,"M10","03_Notebook_svolti","M10_Futura"))
+  .gs_ok <- file.exists(file.path(.gs_candidati,"M10_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati,"R","funzioni_notebook.R"))
+  if(any(.gs_ok)) { .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]; break }
+  .gs_padre <- dirname(.gs_cerca)
+  if(.gs_padre==.gs_cerca) stop("Aprire il progetto M10_Futura o quello generale dei notebook.")
+  .gs_cerca <- .gs_padre
+}
+source(file.path(.gs_modulo,"R","funzioni_notebook.R"),local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo,"M10_N05")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88,digits=6)
+if(requireNamespace("knitr",quietly=TRUE)) {
+  knitr::opts_chunk$set(echo=TRUE,error=FALSE,warning=TRUE,message=TRUE,
+    fig.width=8,fig.height=5,dpi=150,fig.align="center")
+}
+set.seed(10005)
+```
+
+## 1. Il disegno resta dentro il train
+
+Le origini 120, 132 e 144 corrispondono a dicembre 1994, 1995 e 1996. Ogni previsione copre i dodici mesi successivi, tutti anteriori al test finale.
+
+```{r passo_01}
+c2 <- prepara_co2(carica_dati("co2_1985_2001.csv"))
+train <- c2$train; test <- c2$test; h <- c2$h
+ origini <- c(120L,132L,144L)
+ data.frame(origine=origini,data_origine=c2$dati$data[origini],
+            primo_bersaglio=c2$dati$data[origini+1],
+            ultimo_bersaglio=c2$dati$data[origini+12])
+ stopifnot(all(origini+12<=length(train)))
+```
+
+**Lettura del risultato.** Il disegno separa scelta del modello e test finale. Le tre origini sono poche: la loro sintesi è un confronto didattico, con variabilità che va mostrata.
+
+## 2. Ogni origine richiede una nuova stima
+
+Per ciascuna origine la funzione riceve soltanto il passato disponibile. I 36 bersagli interni non sono i 36 mesi del test 1999–2001.
+
+```{r passo_02}
+dettaglio <- do.call(rbind,lapply(origini,function(o) {
+  tr <- ts(as.numeric(train)[1:o],start=c(1985,1),frequency=12)
+  obs <- as.numeric(train)[(o+1):(o+12)]
+  mod <- stima_sarima(tr)
+  pr <- as.numeric(predict(mod,n.ahead=12)$pred)
+  sn <- as.numeric(tail(tr,12))
+  data.frame(origine=o,h=1:12,osservato=obs,SARIMA=pr,Stagionale=sn)
+}))
+cv <- do.call(rbind,lapply(split(dettaglio,dettaglio$origine),function(d) {
+  data.frame(origine=d$origine[1],RMSE_SARIMA=metriche(d$osservato,d$SARIMA)["RMSE"],
+             RMSE_Stagionale=metriche(d$osservato,d$Stagionale)["RMSE"])
+}))
+rownames(cv) <- NULL
+cv
+```
+
+**Lettura del risultato.** La graduatoria può variare con l’origine. Tutti i metodi devono affrontare gli stessi bersagli per rendere equo il confronto.
+
+## 3. Il registro rende verificabile la procedura
+
+Salviamo sia la sintesi per origine sia le singole previsioni, così da poter ricalcolare metriche e controllare i confini temporali.
+
+```{r passo_03}
+write.csv(dettaglio,percorso_risultati("previsioni_CV.csv"),row.names=FALSE)
+write.csv(cv,percorso_risultati("metriche_CV.csv"),row.names=FALSE)
+stile_grafico()
+matplot(cv$origine,cv[,c("RMSE_SARIMA","RMSE_Stagionale")],type="b",pch=c(19,17),
+  lty=1,col=palette_geo[1:2],xlab="Indice origine",ylab="RMSE a 12 mesi (ppm)",
+  main="Validazione interna al train")
+legend("topleft",c("SARIMA","Stagionale"),col=palette_geo[1:2],pch=c(19,17),lty=1,bty="n")
+```
+
+**Lettura del risultato.** Il grafico mantiene visibile la variabilità fra origini. Una media unica perderebbe questa parte dell’evidenza.
+
+## Variante svolta
+
+**Una quarta origine.** Aggiungere l’origine 156, con verifica nei mesi 157–168 ancora interni al train.
+
+```{r variante}
+o <- 156L
+tr <- ts(as.numeric(train)[1:o],start=c(1985,1),frequency=12)
+obs <- as.numeric(train)[157:168]
+pr <- as.numeric(predict(stima_sarima(tr),n.ahead=12)$pred)
+rbind(SARIMA=metriche(obs,pr),Stagionale=metriche(obs,tail(tr,12)))
+```
+
+Il protocollo esteso aggiunge un confronto possibile senza toccare il test. Dichiarare la variante evita di confonderla con le tre origini del laboratorio originale.
+
+## Errore da riconoscere
+
+Stimare una sola volta sui 168 mesi e chiamare «validazione interna» le previsioni retrospettive delle origini precedenti.
+
+## Risposta alla domanda
+
+La valutazione progressiva ricostruisce ciò che era disponibile a ogni origine. La stima si ripete e il test finale resta separato dalla scelta del modello.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M10_N05` di [GeoStat Lab M10](https://marzione00.github.io/Lab_Geo/#indice). Il [codice originale del laboratorio](https://github.com/marzione00/Lab_Geo/blob/649f7cc577b96bd1044d81e78a2f530813e4f96b/materiali/laboratori/M10/M10_N05.R) è conservato anche in `R/Originali_corso`. Gli ampliamenti e le varianti sono identificati nella mappa allegata.
+
+Documentazione dei metodi: [R stats, arima](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/arima.html), [predict.Arima](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/predict.arima.html), [Box.test](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/box.test.html) e [p.adjust](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/p.adjust.html).

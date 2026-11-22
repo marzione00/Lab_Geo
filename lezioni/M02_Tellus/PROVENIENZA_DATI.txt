@@ -1,0 +1,100 @@
+TELLUS — DATI, MODELLI E CONVENZIONI
+18 novembre 2026
+
+Il materiale usa gli esempi didattici pubblicati dall'autore in Lab_Geo:
+https://github.com/marzione00/Lab_Geo/tree/main/materiali/dati
+Il modulo di riferimento è M02, R e gestione dei dati:
+https://marzione00.github.io/Lab_Geo/#modulo-M02
+
+I CSV sono copie dei contenuti recuperati dal repository. Non sono nuove
+osservazioni raccolte sul territorio. I controlli e le trasformazioni del
+progetto producono oggetti derivati e conservano i file iniziali.
+Provenienza_fonti.json registra URL, SHA dei blob Git e SHA256 delle copie.
+
+1. CAMPIONI
+campioni_modulo1.csv: 24 provini, 6 stazioni, 4 provini per stazione.
+Colonne: id; affioramento; stazione; massa_g; volume_cm3; alterazione.
+La densità massa_g/volume_cm3 è espressa in g/cm^3. Le unità nel nome della
+colonna documentano la convenzione, ma R non esegue un controllo dimensionale.
+Alterazione contiene le categorie bassa, media e alta; l'ordine va dichiarato
+quando si crea un fattore ordinato.
+
+2. FOSSILI CON ANOMALIE DIDATTICHE
+fossili_da_controllare.csv: 25 registrazioni, separatore punto e virgola.
+Le tre misure sono diametro_tot_um, diametro_int_um, diaframma_um, in micrometri.
+Il testo mescola punto e virgola decimale. Le anomalie introdotte comprendono:
+- diametro esterno ND in F002;
+- diametro interno 12 maggiore dell'esterno in F003;
+- diametro esterno negativo in F004;
+- spazi e minuscole nella categoria di F005;
+- diaframma assente in F006;
+- seconda copia esatta della registrazione F007, alla riga 25.
+Le segnalazioni si sovrappongono: F004 viola due controlli numerici.
+Un ID ripetuto e una copia esatta sono proprietà distinte. Due righe hanno
+ID F007; duplicated() identifica una ricorrenza aggiuntiva.
+
+setup.R legge fossili_raw come testo e conserva riga_origine. La funzione
+prepara_fossili() restituisce una copia con misure convertite e flag logici.
+La copia mantiene tutte le 25 righe; nessuna viene eliminata automaticamente.
+Il criterio utilizzabile richiede le tre misure positive e D_int<=D_tot,
+una categoria riconosciuta e l'assenza di un duplicato esatto aggiuntivo.
+Con questo criterio restano 20 righe. Il criterio usabile_geometria richiede
+solo D_tot>0 e 0<=D_int<=D_tot, la categoria e la stessa regola sui duplicati:
+restano 21 righe, compresa F006. È una scelta esplicita relativa all'analisi.
+
+Il grafico geometria_fossili.pdf usa tutte le 24 coppie di diametri finite,
+anche la coppia duplicata F007 che si sovrappone graficamente alla prima.
+Evidenzia solo le due coppie incompatibili con i vincoli geometrici,
+F003 e F004. La bisettrice è il limite D_int=D_tot, non una retta stimata.
+Gli assi hanno la stessa unità e la stessa scala.
+
+3. FOSSILI COMPLETI SIMULATI
+fossili_simulati.csv: 160 righe, 80 Rounded e 80 Spiky. È la tabella completa
+del caso sintetico; il file con anomalie è un esercizio separato che riprende
+alcune registrazioni e ne altera intenzionalmente il contenuto.
+Il CSV contiene anche spessore_um e rapporto_int_tot di riferimento.
+
+4. CENSURA
+censura_esempio.csv contiene quattro registrazioni: 0,12 e 0,08 osservati,
+<0,05 censurato, ND mancante. Il file distingue testo_originale,
+valore_osservato, limite e stato. L'unità non è dichiarata nel CSV:
+nel materiale viene trattato come esempio numerico.
+Un limite non è una misura puntuale; il simbolo di censura viene conservato.
+
+5. MICROSONDA SIMULATA
+microsonda_simulata.csv contiene 75 analisi: 25 per ciascuna fase generatrice
+ol, cpx e spl. Le sei colonne SiO2,MgO,FeO,CaO,Al2O3,Cr2O3 sono percentuali
+in massa. totale_wt è la somma originale, mg_num la frazione molare fornita
+come riferimento nel caso didattico.
+Il controllo 98--102% in massa appartiene all'esercizio e non è una regola
+universale di validità analitica. Il file contiene 69 totali in quell'intervallo
+e 6 totali inferiori, con valori 90,6 o 92,4 introdotti nel modello didattico.
+Un totale accettato non basta a certificare la qualità dell'analisi.
+
+La chiusura a 100 cambia il denominatore: x_j diventa 100*x_j/sum(x).
+Si deve conservare anche il totale prima della normalizzazione. Essa non
+ripristina elementi non misurati e non corregge una misura erronea.
+
+Nel rapporto molare si usano 40,304 g/mol per MgO e 71,844 g/mol per FeO,
+coerentemente con il laboratorio. La frazione è
+X_Mg=(MgO/40,304)/(MgO/40,304+FeO/71,844).
+Il CSV mg_num usa 0--1. Nella presentazione si dichiara Mg#=100*X_Mg quando
+si usa la scala 0--100. Il ferro è trattato come equivalente FeO nel calcolo;
+il solo contenuto della tabella non determina la ripartizione Fe2+/Fe3+.
+Con 40 parti MgO e 10 parti FeO il rapporto in massa è 0,8 e X_Mg≈0,877002.
+
+6. ESPERIMENTI NEL BROWSER
+I dieci esperimenti m02-* usano altri piccoli dataset sintetici, definiti
+nei loro script. I nomi, i parametri e i limiti sono riportati in LAB_MAP.txt.
+Tellus_laboratori.R riproduce i calcoli in R di base. Le anteprime del sito
+sono state confrontate numericamente con i risultati delle funzioni.
+Il codice ufficiale completo degli esperimenti comprende invece anche
+grafici ggplot2 e dipendenze per l'applicazione web.
+
+7. VERIFICA E RIPRODUZIONE
+Il codice è stato eseguito con R 4.6.0 tramite WebR 0.6.1. Gli script didattici
+usano solo funzioni distribuite con R e leggono CSV locali.
+Verifica_dati_Tellus.R controlla i conteggi e i calcoli dei CSV.
+Verifica_laboratori.R produce Risultati_attesi_laboratori.csv.
+Genera_figure_Tellus.R ricostruisce le figure dai file archiviati.
+Il generatore scrive in Risorse/Figure quando esiste Risorse, altrimenti Figure.

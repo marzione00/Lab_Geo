@@ -1,0 +1,125 @@
+---
+title: "Una funzione, un argomento, un risultato"
+subtitle: "M01_N02 \u00b7 Terra"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come si ottiene una densità con R e come si conserva il suo significato quando si cambia unità di misura?
+
+## Obiettivi
+
+- Leggere gli argomenti di una funzione e l'operatore di divisione.
+- Distinguere valore calcolato, valore visualizzato e conversione di unità.
+
+**Prima di iniziare.** Saper eseguire una cella R e riconoscere vettori, assegnamenti e nomi di colonne.
+
+**Dati e unità.** Il primo esempio usa il provino sintetico C01: massa 107,2 g e volume 40 cm³. Gli altri valori sono piccoli esempi costruiti per verificare le operazioni.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M01_N02/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M01_N02")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(1002)
+```
+
+## 1. Dalla formula all'assegnamento
+
+La relazione densità = massa / volume diventa un'espressione R. Assegnare nomi che contengono le unità rende leggibile il calcolo e permette di controllare quale grandezza compare al numeratore e quale al denominatore.
+
+```{r passo_01}
+massa_g <- 107.2
+volume_cm3 <- 40
+densita_g_cm3 <- massa_g / volume_cm3
+print(massa_g)
+print(volume_cm3)
+print(densita_g_cm3)
+stopifnot(abs(densita_g_cm3 - 2.68) < 1e-12)
+```
+
+**Lettura del risultato.** L'operatore / divide i valori. Il controllo confronta il risultato con 2,68 usando una tolleranza, adatta ai numeri memorizzati in virgola mobile. La formula presuppone un volume positivo e una massa riferita allo stesso provino.
+
+## 2. Arrotondare soltanto la presentazione
+
+Una funzione riceve argomenti e restituisce un risultato. Con round indichiamo esplicitamente digits. Conserviamo anche il valore completo, perché un arrotondamento prematuro può alterare calcoli successivi o far apparire uguali misure differenti.
+
+```{r passo_02}
+valore_completo <- 121.95 / 45
+visualizzato <- round(valore_completo, digits = 1)
+confronto <- data.frame(completo = valore_completo,
+                       visualizzato = visualizzato)
+print(confronto)
+errore_presentazione <- visualizzato - valore_completo
+print(errore_presentazione)
+```
+
+**Lettura del risultato.** Il valore visualizzato ha meno cifre; la misura non è diventata più precisa. L'errore di presentazione quantifica soltanto la differenza introdotta dal formato scelto e non rappresenta l'incertezza sperimentale della densità.
+
+## 3. Convertire e ritornare all'unità iniziale
+
+Poiché un grammo vale un millesimo di chilogrammo e un centimetro cubo un milionesimo di metro cubo, il fattore complessivo è mille. Verifichiamo il ritorno all'unità originale per controllare il verso della conversione.
+
+```{r passo_03}
+densita_kg_m3 <- densita_g_cm3 * 1000
+ritorno_g_cm3 <- densita_kg_m3 / 1000
+print(data.frame(g_cm3 = densita_g_cm3, kg_m3 = densita_kg_m3))
+stopifnot(isTRUE(all.equal(ritorno_g_cm3, densita_g_cm3)))
+masse_g <- c(107.2, 121.95, 132.5)
+volumi_cm3 <- c(40, 45, 50)
+print(masse_g / volumi_cm3)
+```
+
+**Lettura del risultato.** La conversione cambia il numero e il nome dell'unità, mantenendo la stessa grandezza fisica. Nell'ultima divisione R abbina i vettori per posizione: le tre masse devono corrispondere ai tre volumi nello stesso ordine.
+
+## Variante svolta
+
+Controllare che raddoppiare massa e volume lasci invariata la densità.
+
+```{r variante}
+densita_iniziale <- masse_g / volumi_cm3
+densita_raddoppio <- (2 * masse_g) / (2 * volumi_cm3)
+print(data.frame(iniziale = densita_iniziale, raddoppio = densita_raddoppio))
+stopifnot(isTRUE(all.equal(densita_iniziale, densita_raddoppio)))
+```
+
+L'uguaglianza deriva dalla semplificazione del fattore comune. È un controllo della relazione matematica, non una prova che due provini reali di dimensioni diverse abbiano necessariamente la stessa composizione.
+
+## Errore da riconoscere
+
+Convertire soltanto l'etichetta senza convertire il valore produce un risultato fisicamente errato. Conservare l'unità nel nome della variabile aiuta a riconoscere questo errore.
+
+## Risposta alla domanda
+
+Il calcolo restituisce una densità controllabile, una conversione reversibile e una presentazione arrotondata separata. La correttezza numerica rimane distinta dalla qualità delle misure sperimentali.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M01_N02` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M01/M01_N02.R).

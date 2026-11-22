@@ -1,0 +1,126 @@
+---
+title: "Dichiarare prima il confronto predittivo"
+subtitle: "M10_N11 · Futura"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+La regressione migliora la previsione rispetto alla media del train?
+
+## Obiettivi
+
+- Riprodurre lo split dichiarato.
+- Stimare usando soltanto il train.
+- Confrontare modello e riferimento sugli stessi individui.
+
+**Prima di iniziare.** Sono richiesti vettori, tabelle e funzioni R di base. I blocchi vanno eseguiti in ordine. Il notebook è autonomo rispetto agli altri.
+
+**Dati e unità.** 160 fossili sintetici del corso. Diametri e spessore sono espressi in micrometri. Il diametro interno deriva dal totale meno due volte lo spessore, entro l’arrotondamento del CSV. Il test contiene ogni quinta riga: 32 individui, separati dai 128 usati per stimare. È un protocollo didattico su dati già noti, non una validazione prospettica.
+
+## Preparazione
+
+Aprire il progetto autonomo di Futura o quello generale del corso. I calcoli usano R base e stats. Gli output del notebook vanno in `Risultati/M10_N11/`; i CSV originali restano invariati.
+
+```{r preparazione}
+# Trova la cartella M10 dal progetto autonomo o dal progetto generale.
+.gs_cerca <- normalizePath(getwd(),winslash="/",mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca,
+    file.path(.gs_cerca,"M10_Futura"),
+    file.path(.gs_cerca,"03_Notebook_svolti","M10_Futura"),
+    file.path(.gs_cerca,"M10","03_Notebook_svolti","M10_Futura"))
+  .gs_ok <- file.exists(file.path(.gs_candidati,"M10_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati,"R","funzioni_notebook.R"))
+  if(any(.gs_ok)) { .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]; break }
+  .gs_padre <- dirname(.gs_cerca)
+  if(.gs_padre==.gs_cerca) stop("Aprire il progetto M10_Futura o quello generale dei notebook.")
+  .gs_cerca <- .gs_padre
+}
+source(file.path(.gs_modulo,"R","funzioni_notebook.R"),local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo,"M10_N11")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88,digits=6)
+if(requireNamespace("knitr",quietly=TRUE)) {
+  knitr::opts_chunk$set(echo=TRUE,error=FALSE,warning=TRUE,message=TRUE,
+    fig.width=8,fig.height=5,dpi=150,fig.align="center")
+}
+set.seed(10011)
+```
+
+## 1. Gli identificativi fissano la separazione
+
+Il laboratorio conserva ogni quinta riga nel test. Questo disegno deterministico dipende dall’ordine del file e non equivale a un campionamento casuale.
+
+```{r passo_01}
+f <- carica_dati("fossili_simulati.csv")
+s <- prepara_fossili(f); tr <- s$train; te <- s$test
+data.frame(insieme=c("Train","Test"),n=c(nrow(tr),nrow(te)))
+stopifnot(nrow(tr)==128L,nrow(te)==32L,!any(tr$id %in% te$id))
+table(insieme=ifelse(f$id %in% te$id,"Test","Train"),morfotipo=f$morfotipo)
+```
+
+**Lettura del risultato.** La tabella dei morfotipi descrive la composizione degli insiemi. Le prestazioni restano legate a questa divisione didattica.
+
+## 2. Stima e riferimento usano la stessa informazione
+
+La regressione usa soltanto il diametro totale. Il riferimento è costante e pari alla media dei diametri interni del train.
+
+```{r passo_02}
+mod <- lm(diametro_int_um~diametro_tot_um,data=tr)
+prev <- as.numeric(predict(mod,newdata=te))
+base <- rep(mean(tr$diametro_int_um),nrow(te))
+data.frame(termine=names(coef(mod)),stima=as.numeric(coef(mod)))
+head(data.frame(id=te$id,osservato=te$diametro_int_um,regressione=prev,baseline=base),4)
+```
+
+**Lettura del risultato.** Il valore della baseline non deve usare i diametri interni del test. Una stima corretta dei parametri non implica automaticamente un buon risultato sui nuovi casi.
+
+## 3. Il confronto conserva unità e campione
+
+Calcoliamo perdite sui medesimi 32 individui e salviamo la tabella.
+
+```{r passo_03}
+confronto <- rbind(Media_train=metriche(te$diametro_int_um,base),
+                    Regressione=metriche(te$diametro_int_um,prev))
+confronto
+write.csv(confronto,percorso_risultati("metriche_fossili.csv"))
+```
+
+**Lettura del risultato.** Le metriche sono in micrometri. Il confronto quantifica il contributo predittivo del diametro totale entro questa simulazione.
+
+## Variante svolta
+
+**La mediana come riferimento.** La mediana del train offre un ulteriore riferimento costante, naturale per una perdita assoluta.
+
+```{r variante}
+med <- rep(median(tr$diametro_int_um),nrow(te))
+rbind(Media=metriche(te$diametro_int_um,base),
+      Mediana=metriche(te$diametro_int_um,med))
+```
+
+La variante amplia la discussione della perdita. Non trasforma il test già esaminato in un nuovo campione indipendente.
+
+## Errore da riconoscere
+
+Calcolare la baseline sull’intero dataset o scegliere il predittore dopo aver misurato il suo vantaggio nel test.
+
+## Risposta alla domanda
+
+Il confronto è interpretabile quando informazioni disponibili, individui del test e metrica restano gli stessi. Il legame geometrico e la natura sintetica delimitano la conclusione.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M10_N11` di [GeoStat Lab M10](https://marzione00.github.io/Lab_Geo/#indice). Il [codice originale del laboratorio](https://github.com/marzione00/Lab_Geo/blob/649f7cc577b96bd1044d81e78a2f530813e4f96b/materiali/laboratori/M10/M10_N11.R) è conservato anche in `R/Originali_corso`. Gli ampliamenti e le varianti sono identificati nella mappa allegata.
+
+Documentazione dei metodi: [R stats, arima](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/arima.html), [predict.Arima](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/predict.arima.html), [Box.test](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/box.test.html) e [p.adjust](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/p.adjust.html).

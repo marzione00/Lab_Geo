@@ -1,0 +1,762 @@
+[
+  {
+    "title": "Audit della griglia: celle uniche e passo",
+    "question": "Quali controlli distinguono una griglia completa da una tabella con lo stesso numero di righe?",
+    "objectives": [
+      "Verificare unicità delle celle e indici da zero.",
+      "Controllare entrambi i passi e la completezza della griglia.",
+      "Distinguere centri, estensione e numerosità."
+    ],
+    "data": "Il raster è interamente sintetico: 24 righe × 30 colonne, 720 celle quadrate di lato 30 m. Nel CSV riga e colonna partono da zero; x_m = 30 × colonna e y_m = 30 × riga indicano i centri nel piano locale. La riga 0 è a Sud; la riga 23 è a Nord. Le quote sono in metri sintetici. I dati non descrivono un rilievo reale.",
+    "steps": [
+      {
+        "title": "Una riga identifica una cella",
+        "text": "L’audit originale controlla 720 celle e unicità della coppia riga-colonna. Aggiungiamo intervalli, coordinate e completezza.",
+        "code": "d <- carica_dati(\"raster_v3.csv\")\naudit_raster(d)\nd <- d[order(d$riga,d$colonna),]\nZ <- matrice_quote(d)\n controlli <- data.frame(controllo=c(\"720 celle\",\"Coppie uniche\",\"24 righe\",\"30 colonne\",\n   \"x coerente\",\"y coerente\"),esito=c(nrow(d)==720L,!anyDuplicated(d[c(\"riga\",\"colonna\")]),\n   setequal(d$riga,0:23),setequal(d$colonna,0:29),all(d$x_m==30*d$colonna),all(d$y_m==30*d$riga)))\n controlli\n stopifnot(all(controlli$esito))",
+        "reading": "Contare le righe non basta: un duplicato e una cella mancante possono compensarsi. La chiave della cella è la coppia di indici."
+      },
+      {
+        "title": "Il passo si controlla su due assi",
+        "text": "Una griglia regolare richiede passi coerenti in x e in y. I limiti dei centri differiscono dai bordi esterni delle celle.",
+        "code": "dx <- unique(diff(sort(unique(d$x_m))));dy <- unique(diff(sort(unique(d$y_m))))\nrisultato <- data.frame(asse=c(\"x\",\"y\"),centro_min=c(min(d$x_m),min(d$y_m)),\n  centro_max=c(max(d$x_m),max(d$y_m)),passo_m=c(dx,dy),\n  bordo_min=c(min(d$x_m)-dx/2,min(d$y_m)-dy/2),\n  bordo_max=c(max(d$x_m)+dx/2,max(d$y_m)+dy/2))\nrisultato\nstopifnot(length(dx)==1L,length(dy)==1L,dx==30,dy==30)",
+        "reading": "Il dominio delle celle misura 900 × 720 m, anche se la distanza fra i centri estremi è 870 × 690 m. Non confondiamo queste due estensioni."
+      },
+      {
+        "title": "La carta accompagna il controllo tabellare",
+        "text": "Mostriamo le quote sulla griglia e conserviamo le verifiche. La mappa usa le coordinate dei centri.",
+        "code": "mappa_matrice(Z,titolo=\"720 celle: centri su una griglia regolare\")\nwrite.csv(controlli,percorso_risultati(\"audit_griglia.csv\"),row.names=FALSE)\nwrite.csv(risultato,percorso_risultati(\"geometria_locale.csv\"),row.names=FALSE)",
+        "reading": "Il disegno è una rappresentazione del campo sintetico. La regolarità apparente non sostituisce l’audit degli indici e delle unità."
+      }
+    ],
+    "variant": {
+      "title": "Stesso numero di righe, griglia incompleta",
+      "text": "Sostituire l’ultima riga con una copia della prima senza cambiare il CSV.",
+      "code": "errata <- d;errata[nrow(errata),] <- errata[1,]\nesito <- data.frame(righe=nrow(errata),celle_distinte=nrow(unique(errata[c(\"riga\",\"colonna\")])),\n  occorrenze_duplicate=sum(duplicated(errata[c(\"riga\",\"colonna\")])|\n    duplicated(errata[c(\"riga\",\"colonna\")],fromLast=TRUE)))\nesito\nstopifnot(esito$righe==720L,esito$celle_distinte==719L)",
+      "reading": "La tabella conserva 720 righe ma perde una cella distinta. L’identità precede qualsiasi sintesi."
+    },
+    "error": "Usare il numero di righe come unico controllo oppure trattare il range dei centri come estensione delle celle.",
+    "answer": "Una griglia verificabile conserva chiave, completezza, passo, unità e convenzione dei centri. Qui 720 celle coprono 900 × 720 m nel piano metrico sintetico."
+  },
+  {
+    "title": "Orientamento: nord e sud nella matrice",
+    "question": "Quale elemento della matrice corrisponde all’angolo Sud-Ovest?",
+    "objectives": [
+      "Ricostruire la matrice dopo un ordinamento esplicito.",
+      "Collegare indici R e indici originali da zero.",
+      "Riconoscere un ribaltamento Nord-Sud."
+    ],
+    "data": "Il raster è interamente sintetico: 24 righe × 30 colonne, 720 celle quadrate di lato 30 m. Nel CSV riga e colonna partono da zero; x_m = 30 × colonna e y_m = 30 × riga indicano i centri nel piano locale. La riga 0 è a Sud; la riga 23 è a Nord. Le quote sono in metri sintetici. I dati non descrivono un rilievo reale.",
+    "steps": [
+      {
+        "title": "Gli indici del CSV e quelli di R differiscono di uno",
+        "text": "La prima riga della matrice rappresenta y=0; image riceve la trasposta perché il suo primo indice corrisponde all’asse x.",
+        "code": "d <- carica_dati(\"raster_v3.csv\")\naudit_raster(d)\nd <- d[order(d$riga,d$colonna),]\nZ <- matrice_quote(d)\n angoli <- data.frame(angolo=c(\"SO\",\"SE\",\"NO\",\"NE\"),riga_csv=c(0,0,23,23),\n   colonna_csv=c(0,29,0,29),quota_m=c(Z[1,1],Z[1,30],Z[24,1],Z[24,30]))\n angoli\n stopifnot(Z[1,1]==d$quota_m[d$riga==0&d$colonna==0],\n   Z[24,30]==d$quota_m[d$riga==23&d$colonna==29])",
+        "reading": "Riga 1 in R e riga 0 nel CSV descrivono la stessa fascia meridionale. La corrispondenza deriva dalle coordinate, non dal solo modo di stampare la matrice."
+      },
+      {
+        "title": "La mappa usa x e y dichiarati",
+        "text": "La carta mantiene il Sud in basso e il Nord in alto. Il raster viene disegnato usando centri crescenti su entrambi gli assi.",
+        "code": "mappa_matrice(Z,titolo=\"Matrice locale: prima riga a Sud\")\ndata.frame(riga_R=c(1,24),riga_CSV=c(0,23),y_m=c(0,690))",
+        "reading": "La matrice stampata a schermo ha la prima riga in alto; questo non stabilisce il Nord. L’orientamento della carta è definito dal legame fra indici e coordinate."
+      },
+      {
+        "title": "Un ribaltamento conserva le statistiche marginali",
+        "text": "Confrontiamo la stessa matrice con le righe invertite. Media e massimo da soli non riconoscono l’errore.",
+        "code": "invertita <- Z[nrow(Z):1,]\nconfronto <- data.frame(matrice=c(\"Corretta\",\"Righe invertite\"),\n  media=c(mean(Z),mean(invertita)),massimo=c(max(Z),max(invertita)),\n  quota_SO=c(Z[1,1],invertita[1,1]))\nconfronto\nstopifnot(mean(Z)==mean(invertita),max(abs(Z-invertita))>0)\nwrite.csv(angoli,percorso_risultati(\"angoli.csv\"),row.names=FALSE)\nwrite.csv(confronto,percorso_risultati(\"controllo_orientamento.csv\"),row.names=FALSE)",
+        "reading": "Un istogramma può restare identico mentre ogni quota cambia posizione. L’audit deve associare i valori alle celle."
+      }
+    ],
+    "variant": {
+      "title": "Riordinare le righe del file non cambia la geometria",
+      "text": "Rovesciare l’ordine delle righe della tabella e ricostruire la matrice ordinando gli indici.",
+      "code": "mescolata <- d[nrow(d):1,]\nricostruita <- matrice_quote(mescolata)\ndata.frame(massimo_scarto=max(abs(ricostruita-Z)),\n  errore_senza_ordine=max(abs(matrix(mescolata$quota_m,24,byrow=TRUE)-Z)))\nstopifnot(identical(ricostruita,Z))",
+      "reading": "La posizione delle righe nella tabella non è la chiave spaziale. L’ordinamento esplicito rende l’operazione riproducibile."
+    },
+    "error": "Confondere la prima riga stampata della matrice con il Nord oppure verificare l’orientamento usando soltanto media e istogramma.",
+    "answer": "Nel CSV la riga zero è a Sud; nella matrice locale è la riga R numero uno. La trasposta nell’immagine e il ribaltamento necessario per terra risolvono problemi diversi e devono essere espliciti."
+  },
+  {
+    "title": "GeoTIFF: leggere valori e georeferenziazione",
+    "question": "Il GeoTIFF contiene soltanto quote o anche una geometria da verificare?",
+    "objectives": [
+      "Leggere il GeoTIFF reale con terra.",
+      "Controllare risoluzione, estensione, CRS e centri.",
+      "Verificare l’orientamento confrontando tutte le quote con il CSV."
+    ],
+    "data": "Il raster è interamente sintetico: 24 righe × 30 colonne, 720 celle quadrate di lato 30 m. Nel CSV riga e colonna partono da zero; x_m = 30 × colonna e y_m = 30 × riga indicano i centri nel piano locale. La riga 0 è a Sud; la riga 23 è a Nord. Le quote sono in metri sintetici. I dati non descrivono un rilievo reale. Il GeoTIFF originale porta EPSG:32632, UTM zona 32 Nord, con georeferenziazione fittizia: corner Nord-Ovest E=500000, N=5000000; passo 30 m, PixelIsArea. I centri corrispondono a E=x_m+500015 e N=y_m+4999295. Le righe del TIFF procedono da Nord a Sud, al contrario della matrice locale.",
+    "steps": [
+      {
+        "title": "Lettura effettiva del file",
+        "text": "Apriamo il TIFF originale immutato. L’etichetta EPSG appartiene al caso sintetico e non certifica un rilievo reale.",
+        "code": "d <- carica_dati(\"raster_v3.csv\")\naudit_raster(d)\nd <- d[order(d$riga,d$colonna),]\nZ <- matrice_quote(d)\nrichiedi_terra()\nr <- terra::rast(percorso_dati(\"raster_v3.tif\"))\n geometria <- data.frame(righe=nrow(r),colonne=ncol(r),celle=terra::ncell(r),\n   dx=terra::res(r)[1],dy=terra::res(r)[2],\n   xmin=terra::xmin(r),xmax=terra::xmax(r),ymin=terra::ymin(r),ymax=terra::ymax(r))\n geometria\n terra::crs(r,describe=TRUE)[,c(\"name\",\"authority\",\"code\")]\n stopifnot(terra::ncell(r)==720L,all(terra::res(r)==30),\n   max(abs(as.vector(terra::ext(r))-c(500000,500900,4999280,5000000)))<1e-9)",
+        "reading": "La griglia è 24 × 30, con celle di 30 m. Il corner Nord-Ovest non coincide con il centro della prima cella."
+      },
+      {
+        "title": "I centri verificano il mezzo pixel",
+        "text": "Le prime celle nel TIFF stanno sul bordo settentrionale. Confrontiamo i loro centri con la trasformazione dichiarata del piano locale.",
+        "code": "celle <- c(1,30,691,720)\ncentri <- terra::xyFromCell(r,celle)\nrisultato <- data.frame(cella_TIFF=celle,E=centri[,1],N=centri[,2],\n  x_locale=centri[,1]-500015,y_locale=centri[,2]-4999295)\nrisultato\nstopifnot(identical(as.numeric(centri[1,]),c(500015,4999985)))",
+        "reading": "Il centro della prima cella TIFF è E=500015, N=4999985 e corrisponde al centro locale x=0, y=690. Il mezzo pixel conta su entrambi gli assi."
+      },
+      {
+        "title": "Tutte le quote tornano nelle celle corrette",
+        "text": "terra restituisce le righe dall’alto verso il basso. Le invertiamo per ricostruire la matrice locale dal Sud verso il Nord.",
+        "code": "letto <- matrice_locale(r)\nerrore <- max(abs(letto-Z))\ndata.frame(massimo_scarto_m=errore,terra=as.character(packageVersion(\"terra\")))\nstopifnot(errore<1e-10)\nmappa_matrice(letto,titolo=\"GeoTIFF riletto: orientamento locale verificato\")\nwrite.csv(geometria,percorso_risultati(\"geometria_GeoTIFF.csv\"),row.names=FALSE)\nwrite.csv(risultato,percorso_risultati(\"centri_GeoTIFF.csv\"),row.names=FALSE)\nwriteLines(terra::crs(r),percorso_risultati(\"CRS_fittizio.wkt\"))",
+        "reading": "La verifica cella per cella è più forte del confronto della media. I valori FLOAT64 del TIFF e quelli del CSV risultano confrontabili senza trasformare il CRS."
+      }
+    ],
+    "variant": {
+      "title": "Omettere il ribaltamento",
+      "text": "Confrontare direttamente la matrice Nord-Sud di terra con quella locale Sud-Nord.",
+      "code": "nord_sud <- terra::as.matrix(r,wide=TRUE)\ndata.frame(scarto_errato_m=max(abs(nord_sud-Z)),\n  scarto_corretto_m=max(abs(nord_sud[24:1,]-Z)),\n  media_invariata=abs(mean(nord_sud)-mean(Z))<1e-10)\nstopifnot(max(abs(nord_sud-Z))>0)",
+      "reading": "Il controllo sbagliato può conservare la media. L’identità delle celle va verificata insieme alla georeferenziazione."
+    },
+    "error": "Interpretare il corner come centro oppure attribuire al raster una collocazione reale perché possiede EPSG:32632.",
+    "answer": "Un GeoTIFF unisce valori, numero di celle, risoluzione, origine, CRS e convenzione di orientamento. Qui la georeferenziazione è fittizia; il confronto con il CSV verifica la costruzione del file, non la sua corrispondenza a un territorio reale."
+  },
+  {
+    "title": "NoData non è quota zero",
+    "question": "Che cosa cambia quando una quota mancante viene sostituita da zero?",
+    "objectives": [
+      "Costruire la maschera originale di 24 celle.",
+      "Separare copertura e media dei dati disponibili.",
+      "Quantificare l’effetto della sostituzione con zero."
+    ],
+    "data": "Il raster è interamente sintetico: 24 righe × 30 colonne, 720 celle quadrate di lato 30 m. Nel CSV riga e colonna partono da zero; x_m = 30 × colonna e y_m = 30 × riga indicano i centri nel piano locale. La riga 0 è a Sud; la riga 23 è a Nord. Le quote sono in metri sintetici. I dati non descrivono un rilievo reale.",
+    "steps": [
+      {
+        "title": "La maschera è dichiarata con indici R",
+        "text": "Conserviamo esattamente la maschera del laboratorio originale: righe R 5:8 e colonne R 10:15, cioè indici CSV 4:7 e 9:14.",
+        "code": "d <- carica_dati(\"raster_v3.csv\")\naudit_raster(d)\nd <- d[order(d$riga,d$colonna),]\nZ <- matrice_quote(d)\n mascherata <- Z;mascherata[5:8,10:15] <- NA_real_\n errata <- mascherata;errata[is.na(errata)] <- 0\n risultato <- data.frame(celle_totali=length(Z),celle_mancanti=sum(is.na(mascherata)),\n   copertura=mean(!is.na(mascherata)),media_disponibili=mean(mascherata,na.rm=TRUE),\n   media_zero=mean(errata))\n risultato\n stopifnot(sum(is.na(mascherata))==24L)",
+        "reading": "NA significa quota non disponibile. Zero è invece una quota numerica e partecipa alla media."
+      },
+      {
+        "title": "Il denominatore della media cambia",
+        "text": "La media degli osservati usa 696 celle. La versione con zero divide la stessa somma per tutte le 720 celle.",
+        "code": "osservati <- sum(!is.na(mascherata))\ndata.frame(n_disponibili=osservati,n_totale=length(Z),\n  rapporto_medie=mean(errata)/mean(mascherata,na.rm=TRUE),\n  copertura=osservati/length(Z),\n  differenza_dalla_media_completa=mean(mascherata,na.rm=TRUE)-mean(Z))\nstopifnot(abs(mean(errata)-mean(mascherata,na.rm=TRUE)*osservati/length(Z))<1e-10)",
+        "reading": "Il rapporto fra le due medie coincide qui con la copertura, perché i valori mancanti sono stati sostituiti tutti con zero. La media disponibile può comunque differire da quella dell’intero dominio."
+      },
+      {
+        "title": "Il bianco indica assenza, non quota bassa",
+        "text": "Disegniamo la maschera conservando la scala delle quote originali.",
+        "code": "mappa_matrice(mascherata,titolo=\"24 celle senza dato: il bianco resta assenza\",limiti=range(Z))\nwrite.csv(risultato,percorso_risultati(\"effetto_NoData.csv\"),row.names=FALSE)\nwrite.csv(data.frame(riga=rep(0:23,each=30),colonna=rep(0:29,24),\n  disponibile=as.vector(t(!is.na(mascherata)))),percorso_risultati(\"maschera.csv\"),row.names=FALSE)",
+        "reading": "Una palette che usa un colore esplicito per NA rende visibile la copertura. La maschera deve viaggiare con il risultato."
+      }
+    ],
+    "variant": {
+      "title": "Una perdita concentrata in quota cambia la media disponibile",
+      "text": "Rimuovere in memoria il decile superiore e confrontare copertura e media.",
+      "code": "selettiva <- Z;selettiva[Z>quantile(Z,.9)] <- NA_real_\ndata.frame(caso=c(\"Completo\",\"Maschera rettangolare\",\"Decile alto escluso\"),\n  copertura=c(1,mean(!is.na(mascherata)),mean(!is.na(selettiva))),\n  media=c(mean(Z),mean(mascherata,na.rm=TRUE),mean(selettiva,na.rm=TRUE)))",
+      "reading": "Una copertura elevata non garantisce una media rappresentativa se le celle mancanti seguono un meccanismo legato ai valori."
+    },
+    "error": "Ricodificare NA come zero o riportare una media senza indicare quante celle contribuiscono.",
+    "answer": "NoData descrive un’assenza. La media dei disponibili, la copertura e il meccanismo della maschera rispondono a domande diverse e vanno riportati insieme."
+  },
+  {
+    "title": "Ritagliare significa cambiare dominio",
+    "question": "La media di una finestra risponde alla stessa domanda della media dell’intero raster?",
+    "objectives": [
+      "Applicare il ritaglio originale ai centri.",
+      "Contare celle e area del nuovo dominio.",
+      "Esplicitare l’inclusione dei bordi."
+    ],
+    "data": "Il raster è interamente sintetico: 24 righe × 30 colonne, 720 celle quadrate di lato 30 m. Nel CSV riga e colonna partono da zero; x_m = 30 × colonna e y_m = 30 × riga indicano i centri nel piano locale. La riga 0 è a Sud; la riga 23 è a Nord. Le quote sono in metri sintetici. I dati non descrivono un rilievo reale.",
+    "steps": [
+      {
+        "title": "La finestra è una regola sui centri",
+        "text": "Selezioniamo x fra 300 e 600 m e y fra 180 e 510 m, estremi inclusi.",
+        "code": "d <- carica_dati(\"raster_v3.csv\")\naudit_raster(d)\nd <- d[order(d$riga,d$colonna),]\nZ <- matrice_quote(d)\n dentro <- d$x_m>=300 & d$x_m<=600 & d$y_m>=180 & d$y_m<=510\n risultato <- data.frame(dominio=c(\"Intero\",\"Finestra\"),n=c(nrow(d),sum(dentro)),\n   media=c(mean(d$quota_m),mean(d$quota_m[dentro])),\n   area_ha=c(nrow(d),sum(dentro))*900/10000)\n risultato\n stopifnot(sum(dentro)==132L)",
+        "reading": "La finestra contiene 11 colonne e 12 righe di centri. La sintesi riguarda quelle 132 celle, non l’intero dominio."
+      },
+      {
+        "title": "I bordi delle celle superano i centri estremi",
+        "text": "Se includiamo interamente le celle selezionate, la loro unione ha limiti spostati di mezzo pixel rispetto al rettangolo dei centri.",
+        "code": "x <- range(d$x_m[dentro]);y <- range(d$y_m[dentro])\ndata.frame(asse=c(\"x\",\"y\"),centro_min=c(x[1],y[1]),centro_max=c(x[2],y[2]),\n  bordo_min=c(x[1],y[1])-15,bordo_max=c(x[2],y[2])+15)\nstopifnot((diff(x)+30)*(diff(y)+30)==sum(dentro)*900)",
+        "reading": "Qui la selezione è per centro e attribuisce l’intera cella. Un ritaglio geometrico con frazioni di cella sarebbe un’altra operazione."
+      },
+      {
+        "title": "Il dominio escluso rimane riconoscibile",
+        "text": "Mostriamo soltanto i valori selezionati sulla geometria originale.",
+        "code": "vista <- Z;vista[!matrix(dentro,24,byrow=TRUE)] <- NA_real_\nmappa_matrice(vista,titolo=\"Finestra: 132 celle selezionate per centro\",limiti=range(Z))\nwrite.csv(risultato,percorso_risultati(\"confronto_domini.csv\"),row.names=FALSE)\nwrite.csv(d[dentro,],percorso_risultati(\"celle_finestra.csv\"),row.names=FALSE)",
+        "reading": "Le celle bianche sono fuori dalla selezione, non quote uguali a zero. La media della finestra non corregge né sostituisce quella del dominio completo."
+      }
+    ],
+    "variant": {
+      "title": "Cambiare le disuguaglianze cambia la popolazione di celle",
+      "text": "Usare estremi strettamente interni e confrontare numerosità e media.",
+      "code": "stretto <- d$x_m>300 & d$x_m<600 & d$y_m>180 & d$y_m<510\ndata.frame(regola=c(\"Inclusiva\",\"Stretta\"),n=c(sum(dentro),sum(stretto)),\n  media=c(mean(d$quota_m[dentro]),mean(d$quota_m[stretto])))\nstopifnot(sum(stretto)==90L)",
+      "reading": "Le celle sui bordi sono una parte concreta del risultato. La regola di inclusione deve essere riproducibile."
+    },
+    "error": "Confrontare medie di domini diversi senza dichiarare selezione, bordi e denominatore.",
+    "answer": "Ritagliare cambia il dominio della domanda. Numero di celle, area, regola di inclusione e coordinate della finestra rendono interpretabile la nuova media."
+  },
+  {
+    "title": "Area delle celle: dal conteggio agli ettari",
+    "question": "Quando un conteggio di celle può diventare un’area in ettari?",
+    "objectives": [
+      "Usare area proiettata di 30 × 30 m.",
+      "Collegare classi, conteggi e area totale.",
+      "Distinguere area planimetrica e superficie inclinata."
+    ],
+    "data": "Il raster è interamente sintetico: 24 righe × 30 colonne, 720 celle quadrate di lato 30 m. Nel CSV riga e colonna partono da zero; x_m = 30 × colonna e y_m = 30 × riga indicano i centri nel piano locale. La riga 0 è a Sud; la riga 23 è a Nord. Le quote sono in metri sintetici. I dati non descrivono un rilievo reale.",
+    "steps": [
+      {
+        "title": "Ogni cella rappresenta 900 metri quadrati nel piano",
+        "text": "Le classi sintetiche A e B partizionano le 720 celle. La conversione in ettari usa 10000 m² per ettaro.",
+        "code": "d <- carica_dati(\"raster_v3.csv\")\naudit_raster(d)\nd <- d[order(d$riga,d$colonna),]\nZ <- matrice_quote(d)\n n <- table(d$unita)\n risultato <- data.frame(unita=names(n),celle=as.numeric(n),\n   area_m2=as.numeric(n)*30*30,area_ha=as.numeric(n)*30*30/10000)\n risultato\n stopifnot(sum(risultato$celle)==720L,abs(sum(risultato$area_ha)-64.8)<1e-10)",
+        "reading": "Le aree si riferiscono al piano della griglia metrica sintetica. Non sono superfici topografiche corrette per l’inclinazione."
+      },
+      {
+        "title": "Il controllo globale chiude il conteggio",
+        "text": "La somma per classi deve coincidere con l’area del rettangolo esterno delle celle.",
+        "code": "controllo <- data.frame(area_conteggio_m2=sum(risultato$area_m2),\n  area_estensione_m2=(870-0+30)*(690-0+30),\n  quota_area=sum(risultato$area_ha))\ncontrollo\nstopifnot(controllo$area_conteggio_m2==controllo$area_estensione_m2)",
+        "reading": "Il controllo funziona perché non ci sono celle sovrapposte o mancanti nella partizione. Una mappa con frazioni di cella richiederebbe pesi di area."
+      },
+      {
+        "title": "Confrontare le aree delle classi",
+        "text": "L’asse verticale riporta ettari, non numero di osservazioni indipendenti.",
+        "code": "stile_grafico()\nbp <- barplot(risultato$area_ha,names.arg=risultato$unita,col=palette_geo[1:2],\n  ylim=c(0,max(risultato$area_ha)*1.2),xlab=\"Unita sintetica\",ylab=\"Area planimetrica (ha)\",\n  main=\"Dal conteggio delle celle all'area\")\ntext(bp,risultato$area_ha,labels=round(risultato$area_ha,2),pos=3)\nwrite.csv(risultato,percorso_risultati(\"aree_classi.csv\"),row.names=FALSE)",
+        "reading": "Una classe più estesa comprende più area, ma non dimostra maggiore variabilità o maggiore informazione indipendente."
+      }
+    ],
+    "variant": {
+      "title": "Stesso conteggio, passo differente",
+      "text": "Calcolare l’area di 720 celle con lato 15, 30 e 60 m; poi conservare il dominio riducendo il conteggio a 180 celle da 60 m.",
+      "code": "data.frame(lato_m=c(15,30,60),celle=720,area_ha=720*c(15,30,60)^2/10000)\ndata.frame(griglia=c(\"30 m\",\"60 m aggregata\"),celle=c(720,180),\n  area_ha=c(720*30^2,180*60^2)/10000)",
+      "reading": "Il conteggio da solo non è un’area. Quando si aggrega 2 × 2 conservando il dominio, il numero di celle cala ma l’area totale rimane costante."
+    },
+    "error": "Moltiplicare un conteggio per 900 senza verificare passo e unità, oppure chiamare superficie del terreno l’area proiettata.",
+    "answer": "Il conteggio diventa area quando conosciamo la geometria e la copertura delle celle. In questa griglia regolare completa, 720 × 900 m² corrispondono a 64,8 ettari planimetrici."
+  },
+  {
+    "title": "Aggregazione 2×2 e conservazione della media",
+    "question": "Perché una media aggregata 2 × 2 può conservare la media globale ma perdere estremi?",
+    "objectives": [
+      "Aggregare blocchi completi di quattro celle.",
+      "Verificare media, range e nuovo passo.",
+      "Mostrare il ruolo delle numerosità con NoData."
+    ],
+    "data": "Il raster è interamente sintetico: 24 righe × 30 colonne, 720 celle quadrate di lato 30 m. Nel CSV riga e colonna partono da zero; x_m = 30 × colonna e y_m = 30 × riga indicano i centri nel piano locale. La riga 0 è a Sud; la riga 23 è a Nord. Le quote sono in metri sintetici. I dati non descrivono un rilievo reale.",
+    "steps": [
+      {
+        "title": "Il nuovo supporto contiene quattro celle originali",
+        "text": "Ogni valore aggregato è la media di un blocco 2 × 2. I centri dei nuovi blocchi partono da 15 m.",
+        "code": "d <- carica_dati(\"raster_v3.csv\")\naudit_raster(d)\nd <- d[order(d$riga,d$colonna),]\nZ <- matrice_quote(d)\n ag <- aggrega_blocchi(Z,2,2);A <- ag$media\n risultato <- data.frame(griglia=c(\"30 m\",\"60 m\"),celle=c(length(Z),length(A)),\n   media=c(mean(Z),mean(A)),minimo=c(min(Z),min(A)),massimo=c(max(Z),max(A)))\n risultato\n stopifnot(identical(dim(A),c(12L,15L)),all(ag$numero==4L),\n   abs(mean(Z)-mean(A))<1e-10,min(A)>=min(Z),max(A)<=max(Z))",
+        "reading": "La media globale si conserva perché tutti i blocchi hanno lo stesso numero di celle della stessa area. Gli estremi locali vengono attenuati dalla media."
+      },
+      {
+        "title": "Il dominio resta lo stesso, il supporto cambia",
+        "text": "Confrontiamo coordinate dei centri e bordi dell’aggregato.",
+        "code": "xa <- seq(15,855,60);ya <- seq(15,675,60)\ndata.frame(asse=c(\"x\",\"y\"),primo_centro=c(xa[1],ya[1]),\n  ultimo_centro=c(tail(xa,1),tail(ya,1)),bordo_min=c(xa[1],ya[1])-30,\n  bordo_max=c(tail(xa,1),tail(ya,1))+30)\nstopifnot(length(A)*60^2==length(Z)*30^2)",
+        "reading": "Aggregazione e interpolazione non sono sinonimi. Il nuovo valore riassume un supporto più ampio, pur coprendo lo stesso dominio."
+      },
+      {
+        "title": "La carta aggregata usa la scala originale",
+        "text": "Conserviamo la stessa legenda per mostrare la perdita di dettaglio.",
+        "code": "mappa_matrice(A,xa,ya,titolo=\"Aggregazione 2 x 2: 180 celle da 60 m\",limiti=range(Z))\nwrite.csv(risultato,percorso_risultati(\"confronto_aggregazione.csv\"),row.names=FALSE)\nwrite.csv(data.frame(x_m=rep(xa,12),y_m=rep(ya,each=15),quota_media_m=as.vector(t(A))),\n  percorso_risultati(\"celle_60m.csv\"),row.names=FALSE)",
+        "reading": "Più o meno pixel sullo schermo non cambiano questo supporto. Il confronto conserva unità e scala cromatica."
+      }
+    ],
+    "variant": {
+      "title": "Un blocco con tre celle disponibili pesa quanto gli altri?",
+      "text": "Rimuovere una sola quota dal primo blocco e confrontare media semplice e media pesata dei blocchi.",
+      "code": "incompleta <- Z;incompleta[1,1] <- NA_real_\na_na <- aggrega_blocchi(incompleta,2,2)\nconfronto <- data.frame(media_celle=mean(incompleta,na.rm=TRUE),\n  media_blocchi=mean(a_na$media),media_pesata=weighted.mean(a_na$media,a_na$numero))\nconfronto\nstopifnot(abs(confronto$media_celle-confronto$media_pesata)<1e-10)",
+      "reading": "Con numerosità diverse, la media semplice dei blocchi assegna lo stesso peso a blocchi con quantità di dati diverse. I pesi ripristinano la media delle celle disponibili, non necessariamente quella dell’intero territorio."
+    },
+    "error": "Generalizzare la conservazione della media a blocchi incompleti senza pesi o interpretare l’aggregato come nuova misura al centro.",
+    "answer": "L’aggregazione 2 × 2 conserva la media qui perché i blocchi sono completi ed equiponderati. Cambia il supporto dei valori e attenua gli estremi; NoData e aree differenti richiedono una regola di ponderazione esplicita."
+  },
+  {
+    "title": "Quote continue e classi discrete richiedono ricampionamenti diversi",
+    "question": "Perché una quota continua e un codice di classe non si ricampionano con la stessa regola?",
+    "objectives": [
+      "Riprodurre l’esempio monodimensionale originale.",
+      "Eseguire resample di terra su classi e quote.",
+      "Controllare codici ammissibili e geometria del bersaglio."
+    ],
+    "data": "Il raster è interamente sintetico: 24 righe × 30 colonne, 720 celle quadrate di lato 30 m. Nel CSV riga e colonna partono da zero; x_m = 30 × colonna e y_m = 30 × riga indicano i centri nel piano locale. La riga 0 è a Sud; la riga 23 è a Nord. Le quote sono in metri sintetici. I dati non descrivono un rilievo reale. Il GeoTIFF originale porta EPSG:32632, UTM zona 32 Nord, con georeferenziazione fittizia: corner Nord-Ovest E=500000, N=5000000; passo 30 m, PixelIsArea. I centri corrispondono a E=x_m+500015 e N=y_m+4999295. Le righe del TIFF procedono da Nord a Sud, al contrario della matrice locale.",
+    "steps": [
+      {
+        "title": "Il codice di classe non è una misura continua",
+        "text": "Conserviamo l’esempio originale con codici 1,1,2,2. L’interpolazione lineare può produrre 1,5, che non è una classe.",
+        "code": "d <- carica_dati(\"raster_v3.csv\")\naudit_raster(d)\nd <- d[order(d$riga,d$colonna),]\nZ <- matrice_quote(d)\n x <- c(0,30,60,90);classe <- c(1,1,2,2);q <- seq(0,90,15)\n lineare <- approx(x,classe,xout=q)$y\n vicino <- vapply(q,function(v) classe[which.min(abs(x-v))],numeric(1))\n risultato <- data.frame(x=q,lineare_ERRATO=lineare,vicino=vicino)\n risultato\n stopifnot(any(!lineare %in% c(1,2)),all(vicino %in% c(1,2)))",
+        "reading": "Nel piccolo esempio which.min risolve gli eventuali pareggi con la prima posizione. Il numero 1,5 non acquisisce significato soltanto perché è fra due codici."
+      },
+      {
+        "title": "Ricampionamento reale con terra",
+        "text": "Trasliamo di mezzo pixel il bersaglio in x. Confrontiamo bilinear e near su un raster di classi, e bilinear sulle quote continue.",
+        "code": "richiedi_terra();r <- terra::rast(percorso_dati(\"raster_v3.tif\"))\ncodici <- as.numeric(factor(d$unita,levels=sort(unique(d$unita))))\nrc <- raster_da_matrice(matrix(codici,24,byrow=TRUE),r)\nbersaglio <- terra::shift(terra::rast(r),dx=15,dy=0)\ncl_lin <- terra::resample(rc,bersaglio,method=\"bilinear\")\ncl_near <- terra::resample(rc,bersaglio,method=\"near\")\nquote_lin <- terra::resample(r,bersaglio,method=\"bilinear\")\na <- as.numeric(terra::values(cl_lin));b <- as.numeric(terra::values(cl_near))\nprova <- data.frame(metodo=c(\"Classi bilinear\",\"Classi near\",\"Quote bilinear\"),\n  celle_valide=c(sum(is.finite(a)),sum(is.finite(b)),sum(is.finite(terra::values(quote_lin)))),\n  codici_non_ammessi=c(sum(is.finite(a)&!a %in% c(1,2)),sum(is.finite(b)&!b %in% c(1,2)),NA))\nprova\nstopifnot(any(is.finite(a)&!a %in% c(1,2)),all(b[is.finite(b)] %in% c(1,2)))",
+        "reading": "terra esegue davvero entrambi i metodi. I codici near restano ammissibili, ma ciò non garantisce conservazione delle aree delle classi. Il bersaglio traslato può anche cambiare la copertura."
+      },
+      {
+        "title": "Il grafico rende visibile il valore inesistente",
+        "text": "L’esempio monodimensionale permette di leggere i numeri senza confonderli con una nuova classe.",
+        "code": "stile_grafico()\nplot(q,lineare,type=\"b\",pch=19,col=palette_geo[2],ylim=c(.8,2.2),\n  xlab=\"Posizione (m)\",ylab=\"Codice numerico della classe\",main=\"Interpolare un codice crea categorie inesistenti\")\nlines(q,vicino,type=\"b\",pch=17,col=palette_geo[1]);abline(h=c(1,2),col=\"grey75\",lty=3)\nlegend(\"topleft\",c(\"Lineare: errato per classi\",\"Vicino: codici validi\"),\n  col=palette_geo[c(2,1)],pch=c(19,17),lty=1,bty=\"n\",cex=.8)\nwrite.csv(risultato,percorso_risultati(\"esempio_1D.csv\"),row.names=FALSE)\nwrite.csv(prova,percorso_risultati(\"resample_terra.csv\"),row.names=FALSE)",
+        "reading": "Per un valore continuo l’interpolazione è una regola numerica da giustificare; per un’etichetta discreta può violare perfino l’insieme dei valori consentiti."
+      }
+    ],
+    "variant": {
+      "title": "Ricampionare sulla griglia identica",
+      "text": "Usare near sulle quote con bersaglio uguale all’originale e confrontare tutte le celle. Dichiarare una tolleranza di 10⁻⁴ m per il percorso numerico di ricampionamento.",
+      "code": "identico <- terra::resample(r,r,method=\"near\")\nerrore <- max(abs(terra::values(identico)-terra::values(r)),na.rm=TRUE)\ntolleranza <- 1e-4\ndata.frame(stessa_geometria=terra::compareGeom(identico,r,stopOnError=FALSE),\n  errore_m=errore,tolleranza_m=tolleranza)\nstopifnot(errore<tolleranza)",
+      "reading": "Nel runtime distribuito il percorso di ricampionamento introduce un piccolo arrotondamento coerente con precisione interna float32. La geometria identica non garantisce identità bit per bit. Un successivo file FLOAT64 non recupererebbe precisione già persa; questo controllo non valida metodi su griglie differenti."
+    },
+    "error": "Usare bilinear sui codici di una classe oppure chiamare informazione nuova i pixel prodotti dal ricampionamento.",
+    "answer": "Il metodo dipende dal significato della variabile. Near conserva i codici discreti; bilinear può essere una scelta per campi continui, ma modifica valori e supporto. Geometria del bersaglio, copertura e scopo restano parte del risultato."
+  },
+  {
+    "title": "Derivata su un piano noto: prova del codice",
+    "question": "Come si verifica una derivata numerica usando un piano di cui conosciamo il risultato?",
+    "objectives": [
+      "Costruire il piano analitico originale.",
+      "Verificare gx e gy su 616 celle interne.",
+      "Controllare denominatore e unità."
+    ],
+    "data": "Il raster è interamente sintetico: 24 righe × 30 colonne, 720 celle quadrate di lato 30 m. Nel CSV riga e colonna partono da zero; x_m = 30 × colonna e y_m = 30 × riga indicano i centri nel piano locale. La riga 0 è a Sud; la riga 23 è a Nord. Le quote sono in metri sintetici. I dati non descrivono un rilievo reale.",
+    "steps": [
+      {
+        "title": "Un caso con risposta nota",
+        "text": "Il piano sintetico è z(x,y)=900+0,12x+0,08y. Le pendenze parziali attese sono note prima del calcolo.",
+        "code": "d <- carica_dati(\"raster_v3.csv\")\naudit_raster(d)\nd <- d[order(d$riga,d$colonna),]\nZ <- matrice_quote(d)\n P <- outer((0:23)*30,(0:29)*30,function(y,x) 900+.12*x+.08*y)\n gx <- (P[2:23,3:30]-P[2:23,1:28])/60\n gy <- (P[3:24,2:29]-P[1:22,2:29])/60\n risultato <- data.frame(componente=c(\"gx\",\"gy\"),atteso=c(.12,.08),\n   media=c(mean(gx),mean(gy)),errore_max=c(max(abs(gx-.12)),max(abs(gy-.08))))\n risultato\n stopifnot(all(risultato$errore_max<1e-12),length(gx)==616L)",
+        "reading": "La differenza usa i centri a destra e a sinistra, separati da 60 m. Il bordo viene escluso perché manca uno dei due vicini."
+      },
+      {
+        "title": "Confrontare la funzione di servizio con la formula",
+        "text": "La funzione usata negli altri notebook deve riprodurre il calcolo esplicito del piano.",
+        "code": "prova <- gradienti_centrali(P)\ndata.frame(celle_interne=length(prova$gx),bordo_escluso=length(P)-length(prova$gx),\n  errore_gx=max(abs(prova$gx-gx)),errore_gy=max(abs(prova$gy-gy)))\nstopifnot(max(abs(prova$gx-gx))<1e-12,max(abs(prova$gy-gy))<1e-12)",
+        "reading": "Un test analitico rivela errori di segno, assi o denominatore. Non dimostra che i dati reali siano privi di errore o che un modello di superficie sia adeguato."
+      },
+      {
+        "title": "Il piano mantiene gradienti costanti",
+        "text": "Disegniamo il caso sintetico e salviamo gli scarti rispetto ai valori attesi.",
+        "code": "mappa_matrice(P,titolo=\"Piano noto: gx=0.12, gy=0.08\")\nwrite.csv(risultato,percorso_risultati(\"prova_derivate.csv\"),row.names=FALSE)",
+        "reading": "La superficie cresce verso Est e verso Nord. Le due componenti della derivata sono rapporti fra metri verticali e metri orizzontali."
+      }
+    ],
+    "variant": {
+      "title": "Sbagliare la distanza fra i vicini raddoppia il risultato",
+      "text": "Usare 30 m nel denominatore al posto di 60 m e riconoscere l’errore.",
+      "code": "errata <- (P[2:23,3:30]-P[2:23,1:28])/30\ndata.frame(gx_corretto=mean(gx),gx_errato=mean(errata),rapporto=mean(errata)/mean(gx))\nstopifnot(abs(mean(errata)-.24)<1e-12)",
+      "reading": "La distanza della differenza centrale è due volte il passo. La forma regolare della mappa non rende visibile da sola un errore di scala."
+    },
+    "error": "Dividere per un solo passo, scambiare gx e gy o attribuire derivata ai bordi senza una regola specifica.",
+    "answer": "Un piano noto fornisce un controllo indipendente: le 616 celle interne devono restituire 0,12 e 0,08 entro la tolleranza numerica dichiarata. Derivate e unità si verificano prima dell’interpretazione geomorfologica."
+  },
+  {
+    "title": "Pendenza in gradi e in percentuale",
+    "question": "Una pendenza di 45 gradi coincide con il 45 per cento?",
+    "objectives": [
+      "Calcolare il modulo del gradiente interno.",
+      "Distinguere angolo in gradi e rapporto percentuale.",
+      "Conservare le coordinate delle 616 celle valide."
+    ],
+    "data": "Il raster è interamente sintetico: 24 righe × 30 colonne, 720 celle quadrate di lato 30 m. Nel CSV riga e colonna partono da zero; x_m = 30 × colonna e y_m = 30 × riga indicano i centri nel piano locale. La riga 0 è a Sud; la riga 23 è a Nord. Le quote sono in metri sintetici. I dati non descrivono un rilievo reale.",
+    "steps": [
+      {
+        "title": "Dal gradiente a due unità di pendenza",
+        "text": "Le differenze centrali producono due rapporti adimensionali. Angolo e percentuale derivano dallo stesso modulo g, con trasformazioni diverse.",
+        "code": "d <- carica_dati(\"raster_v3.csv\")\naudit_raster(d)\nd <- d[order(d$riga,d$colonna),]\nZ <- matrice_quote(d)\n g <- gradienti_centrali(Z)\n risultato <- data.frame(x_m=rep((1:28)*30,22),y_m=rep((1:22)*30,each=28),\n   gradi=as.vector(t(g$gradi)),percento=as.vector(t(g$percento)))\n summary(risultato[c(\"gradi\",\"percento\")])\n stopifnot(nrow(risultato)==616L,all(risultato$gradi>=0&risultato$gradi<90))",
+        "reading": "La relazione è angolo = arctan(g) e percentuale = 100g. Le due colonne non sono intercambiabili."
+      },
+      {
+        "title": "Tre valori di riferimento controllano la conversione",
+        "text": "Usiamo angoli noti e verifichiamo il percorso inverso.",
+        "code": "angoli <- c(0,10,45)\nconversione <- data.frame(gradi=angoli,percento=100*tan(angoli*pi/180))\nconversione\nerrore <- max(abs(atan(risultato$percento/100)*180/pi-risultato$gradi))\ndata.frame(errore_ritorno_gradi=errore)\nstopifnot(abs(conversione$percento[3]-100)<1e-10,errore<1e-10)",
+        "reading": "45 gradi corrispondono al 100 per cento. La percentuale può superare 100; non è una probabilità."
+      },
+      {
+        "title": "L’istogramma dichiara l’unità",
+        "text": "Il grafico riguarda le sole celle interne su cui la derivata centrale è definita.",
+        "code": "stile_grafico()\nhist(risultato$gradi,breaks=20,col=palette_geo[1],border=\"white\",\n  xlab=\"Pendenza (gradi)\",ylab=\"Numero di celle interne\",main=\"Pendenza sintetica: 616 celle interne\")\nwrite.csv(risultato,percorso_risultati(\"pendenze_interne.csv\"),row.names=FALSE)\nwrite.csv(conversione,percorso_risultati(\"conversione_unita.csv\"),row.names=FALSE)",
+        "reading": "Le celle sono spazialmente dipendenti. Le barre descrivono una distribuzione di valori, non 616 repliche indipendenti."
+      }
+    ],
+    "variant": {
+      "title": "Conservare le unità del piano analitico",
+      "text": "Verificare la pendenza di un piano con gradiente (0,12; 0,08).",
+      "code": "modulo <- sqrt(.12^2+.08^2)\ndata.frame(modulo=modulo,gradi=atan(modulo)*180/pi,percento=100*modulo)",
+      "reading": "Un caso analitico aiuta a riconoscere valori impossibili o conversioni mancanti, ma non quantifica da solo l’errore del DEM."
+    },
+    "error": "Confondere gradi e percentuale, dimenticare radianti o trattare tutte le celle interne come repliche indipendenti.",
+    "answer": "La pendenza in gradi è un angolo; quella percentuale è cento volte il dislivello per unità di distanza orizzontale. Entrambe richiedono unità coerenti e una regola esplicita per i bordi."
+  },
+  {
+    "title": "Esposizione e statistiche circolari",
+    "question": "Come si media una direzione vicina al passaggio fra 359 e 0 gradi?",
+    "objectives": [
+      "Riprodurre il caso originale 359° e 1°.",
+      "Usare seno, coseno e lunghezza della risultante.",
+      "Riconoscere quando una direzione media è indefinita."
+    ],
+    "data": "Il raster è interamente sintetico: 24 righe × 30 colonne, 720 celle quadrate di lato 30 m. Nel CSV riga e colonna partono da zero; x_m = 30 × colonna e y_m = 30 × riga indicano i centri nel piano locale. La riga 0 è a Sud; la riga 23 è a Nord. Le quote sono in metri sintetici. I dati non descrivono un rilievo reale.",
+    "steps": [
+      {
+        "title": "La media aritmetica perde la circolarità",
+        "text": "Due direzioni quasi settentrionali non hanno come direzione media il Sud.",
+        "code": "d <- carica_dati(\"raster_v3.csv\")\naudit_raster(d)\nd <- d[order(d$riga,d$colonna),]\nZ <- matrice_quote(d)\n a <- c(359,1);radiani <- a*pi/180\n media <- media_circolare(a)\n risultato <- data.frame(arimetica=mean(a),circolare=unname(media[\"media_gradi\"]),\n   risultante=unname(media[\"risultante\"]))\n risultato\n stopifnot(abs(risultato$circolare)<1e-8,risultato$risultante>.99)",
+        "reading": "La media circolare somma vettori unitari e ne legge la direzione. Il nome arimetica nella tabella originale è conservato; il valore è la media aritmetica."
+      },
+      {
+        "title": "L’esposizione del terreno richiede anche una pendenza",
+        "text": "Calcoliamo l’azimut di discesa dal gradiente. Usiamo Nord=0° e senso orario; le celle quasi piatte non hanno una direzione affidabile.",
+        "code": "g <- gradienti_centrali(Z)\nsoglia <- 1e-8\nesposizione <- g$azimut_discesa;esposizione[g$modulo<=soglia] <- NA_real_\ndata.frame(celle_interne=length(esposizione),direzioni_valide=sum(is.finite(esposizione)),\n  minimo= min(esposizione,na.rm=TRUE),massimo=max(esposizione,na.rm=TRUE),\n  soglia_gradiente=soglia)\nstopifnot(all(esposizione[is.finite(esposizione)]>=0 & esposizione[is.finite(esposizione)]<360))",
+        "reading": "L’esposizione è l’azimut della discesa, calcolato con atan2(-gx,-gy). La convenzione e il trattamento delle celle piatte devono accompagnare i valori."
+      },
+      {
+        "title": "Leggere le due medie sul cerchio",
+        "text": "Il grafico mostra la differenza geometrica tra media lineare e media circolare.",
+        "code": "stile_grafico();par(mar=c(2,2,3,2))\ntheta <- seq(0,2*pi,length.out=361)\nplot(sin(theta),cos(theta),type=\"l\",asp=1,axes=FALSE,xlim=c(-1.3,1.3),ylim=c(-1.3,1.3),\n  xlab=\"\",ylab=\"\",col=\"grey70\",main=\"359 e 1 gradi: due direzioni vicine al Nord\")\npoints(sin(radiani),cos(radiani),pch=19,col=palette_geo[1])\narrows(0,0,0,.9,length=.12,lwd=2,col=palette_geo[1])\narrows(0,0,0,-.9,length=.12,lwd=2,col=palette_geo[2])\ntext(c(-.42,.42),c(1.05,1.05),c(\"359 gradi\",\"1 grado\"),cex=.85)\ntext(.05,.52,\"Circolare: 0\",pos=4,col=palette_geo[1],cex=.85)\ntext(.05,-.52,\"Aritmetica: 180\",pos=4,col=palette_geo[2],cex=.85)\ntext(c(0,1.15,0,-1.15),c(1.25,0,-1.2,0),c(\"N\",\"E\",\"S\",\"O\"))\nwrite.csv(risultato,percorso_risultati(\"media_angoli.csv\"),row.names=FALSE)",
+        "reading": "Le due osservazioni sono quasi coincidenti a Nord. Il valore aritmetico 180° indica invece una direzione opposta."
+      }
+    ],
+    "variant": {
+      "title": "Due direzioni opposte non definiscono una media stabile",
+      "text": "Usare 0° e 180° e controllare la lunghezza della risultante.",
+      "code": "opposte <- media_circolare(c(0,180))\nopposte\nstopifnot(is.na(opposte[\"media_gradi\"]),opposte[\"risultante\"]<1e-8)",
+      "reading": "Quando la risultante è quasi zero, l’angolo numerico ottenuto da atan2 è instabile. La convenzione qui restituisce NA, evitando una direzione senza sostegno geometrico."
+    },
+    "error": "Mediare direttamente gli angoli o interpretare l’esposizione di una cella piatta come una direzione fisica ben definita.",
+    "answer": "Le direzioni si sintetizzano sul cerchio. Occorre dichiarare Nord, senso di rotazione, risultante e regola per valori piatti o angoli che si compensano."
+  },
+  {
+    "title": "Hillshade: cambiare luce senza cambiare terreno",
+    "question": "Cambiare la luce modifica il rilievo o soltanto la sua rappresentazione?",
+    "objectives": [
+      "Conservare pendenza e esposizione del terreno.",
+      "Calcolare due illuminazioni con azimut opposti.",
+      "Verificare la formula con il prodotto fra normale e luce."
+    ],
+    "data": "Il raster è interamente sintetico: 24 righe × 30 colonne, 720 celle quadrate di lato 30 m. Nel CSV riga e colonna partono da zero; x_m = 30 × colonna e y_m = 30 × riga indicano i centri nel piano locale. La riga 0 è a Sud; la riga 23 è a Nord. Le quote sono in metri sintetici. I dati non descrivono un rilievo reale.",
+    "steps": [
+      {
+        "title": "La superficie rimane fissa",
+        "text": "Usiamo le 616 celle interne e altezza solare di 45°. Cambia soltanto l’azimut della sorgente luminosa.",
+        "code": "d <- carica_dati(\"raster_v3.csv\")\naudit_raster(d)\nd <- d[order(d$riga,d$colonna),]\nZ <- matrice_quote(d)\n g <- gradienti_centrali(Z)\n h1 <- hillshade_esplicito(g$gx,g$gy,315,45)\n h2 <- hillshade_esplicito(g$gx,g$gy,135,45)\n risultato <- data.frame(azimut=c(315,135),altezza=45,media=c(mean(h1),mean(h2)),\n   minimo=c(min(h1),min(h2)),massimo=c(max(h1),max(h2)))\n risultato\n stopifnot(identical(dim(h1),c(22L,28L)),all(h1>=0&h1<=1),all(h2>=0&h2<=1))",
+        "reading": "L’intensità modellata va da 0 a 1. Non è una nuova quota e non è una misura radiometrica osservata."
+      },
+      {
+        "title": "Una seconda formulazione verifica segni e assi",
+        "text": "Il prodotto della normale unitaria con il vettore della luce deve coincidere con la formula basata su pendenza ed esposizione.",
+        "code": "errori <- vapply(c(315,135),function(az) {\n  luce <- c(sin(az*pi/180)*cos(pi/4),cos(az*pi/180)*cos(pi/4),sin(pi/4))\n  attesa <- (-g$gx*luce[1]-g$gy*luce[2]+luce[3])/sqrt(1+g$gx^2+g$gy^2)\n  attesa[attesa<0] <- 0\n  max(abs(hillshade_esplicito(g$gx,g$gy,az,45)-attesa))\n},numeric(1))\ndata.frame(azimut=c(315,135),errore_massimo=errori)\nstopifnot(all(errori<1e-12))",
+        "reading": "Questo controllo protegge la convenzione dell’azimut. Il modello considera illuminazione locale; non calcola ombre portate da rilievi lontani."
+      },
+      {
+        "title": "Due luci, una scala di intensità comune",
+        "text": "Le due carte usano la stessa scala 0–1, così la differenza dipende dall’illuminazione dichiarata.",
+        "code": "op <- par(no.readonly=TRUE);layout(matrix(1:3,nrow=1),widths=c(4,4,.7))\nfor(k in 1:2) {\n  stile_grafico();par(mar=c(4.2,4,3,.4),cex=.8)\n  image((1:28)*30,(1:22)*30,t(list(h1,h2)[[k]]),asp=1,col=gray.colors(40,start=0,end=1),\n    zlim=c(0,1),xlab=\"x locale (m)\",ylab=\"y locale (m)\",main=paste(\"Azimut\",c(315,135)[k]),useRaster=TRUE)\n}\npar(mar=c(4.2,0,3,2.7));plot.new();plot.window(xlim=c(0,1),ylim=c(0,1))\nbr <- seq(0,1,length.out=41)\nrect(0,head(br,-1),.5,tail(br,-1),col=gray.colors(40,start=0,end=1),border=NA)\naxis(4,at=c(0,.5,1),las=1);mtext(\"I\",side=3,line=.5)\nlayout(1);par(op)\nwrite.csv(risultato,percorso_risultati(\"illuminazioni.csv\"),row.names=FALSE)",
+        "reading": "Il contrasto visivo può cambiare molto senza che il DEM cambi. Un hillshade non sostituisce legenda delle quote, orientamento o controlli del terreno."
+      }
+    ],
+    "variant": {
+      "title": "Cambiare anche l’altezza della luce",
+      "text": "Confrontare 20° e 70° mantenendo azimut 315° e verificare la stessa formulazione vettoriale.",
+      "code": "verifica <- lapply(c(20,70),function(alt) {\n  h <- hillshade_esplicito(g$gx,g$gy,315,alt)\n  luce <- c(sin(315*pi/180)*cos(alt*pi/180),cos(315*pi/180)*cos(alt*pi/180),sin(alt*pi/180))\n  attesa <- (-g$gx*luce[1]-g$gy*luce[2]+luce[3])/sqrt(1+g$gx^2+g$gy^2)\n  attesa[attesa<0] <- 0\n  data.frame(altezza=alt,media=mean(h),errore=max(abs(h-attesa)))\n})\nverifica <- do.call(rbind,verifica);verifica\nstopifnot(all(verifica$errore<1e-12))",
+      "reading": "La prova con altezze diverse da 45° distingue correttamente seno e coseno dell’altezza luminosa."
+    },
+    "error": "Interpretare i chiari e gli scuri come variazioni di quota o come una misura della riflettanza del terreno.",
+    "answer": "L’hillshade è una rappresentazione condizionata a luce, convenzioni e modello di illuminazione. La topografia resta fissa; l’intensità cambia con azimut e altezza solare."
+  },
+  {
+    "title": "Bande sintetiche e indice normalizzato",
+    "question": "Che cosa misura un indice normalizzato costruito da due bande sintetiche?",
+    "objectives": [
+      "Riprodurre le due bande del laboratorio.",
+      "Controllare denominatore, intervallo e geometria.",
+      "Separare formula e interpretazione fisica."
+    ],
+    "data": "Il raster è interamente sintetico: 24 righe × 30 colonne, 720 celle quadrate di lato 30 m. Nel CSV riga e colonna partono da zero; x_m = 30 × colonna e y_m = 30 × riga indicano i centri nel piano locale. La riga 0 è a Sud; la riga 23 è a Nord. Le quote sono in metri sintetici. I dati non descrivono un rilievo reale.",
+    "steps": [
+      {
+        "title": "Le bande sono dichiarate e sintetiche",
+        "text": "Il rosso varia con y e il NIR con x, secondo le formule originali. Non sono bande acquisite da un sensore.",
+        "code": "d <- carica_dati(\"raster_v3.csv\")\naudit_raster(d)\nd <- d[order(d$riga,d$colonna),]\nZ <- matrice_quote(d)\n rosso <- .2+.05*cos(d$y_m/150)\n nir <- .4+.1*sin(d$x_m/180)\n indice <- (nir-rosso)/(nir+rosso)\n risultato <- data.frame(riga=d$riga,colonna=d$colonna,rosso=rosso,NIR=nir,indice=indice)\n head(risultato,6)\n data.frame(minimo=min(indice),massimo=max(indice),denominatore_min=min(nir+rosso))\n stopifnot(all(nir+rosso>0),all(abs(indice)<=1))",
+        "reading": "Con bande non negative e somma positiva, la formula restituisce valori fra −1 e 1. Questa proprietà algebrica non identifica da sola vegetazione, litologia o qualità ambientale."
+      },
+      {
+        "title": "Il rapporto normalizza una differenza",
+        "text": "Confrontiamo differenza, somma e indice su alcune celle esplicite.",
+        "code": "ii <- c(1,30,361,720)\ndata.frame(riga=d$riga[ii],colonna=d$colonna[ii],differenza=nir[ii]-rosso[ii],\n  somma=nir[ii]+rosso[ii],indice=indice[ii])\nstopifnot(max(abs(indice*(nir+rosso)-(nir-rosso)))<1e-12)",
+        "reading": "Un indice è una trasformazione deterministica delle bande. I suoi valori non sono osservazioni indipendenti aggiuntive."
+      },
+      {
+        "title": "La mappa conserva la geometria delle bande",
+        "text": "Le due bande sono allineate per costruzione. L’indice mantiene le stesse celle e la stessa maschera.",
+        "code": "mappa_matrice(matrix(indice,24,byrow=TRUE),titolo=\"Indice da bande sintetiche allineate\",\n  unita=\"Indice\",limiti=c(-1,1),colori=colorRampPalette(c(\"#985052\",\"#F3F0DF\",\"#1D7890\"))(40))\nwrite.csv(risultato,percorso_risultati(\"bande_e_indice.csv\"),row.names=FALSE)",
+        "reading": "La scala −1–1 esplicita l’intervallo algebrico. Il nome di una formula non basta per attribuire ai dati una calibrazione fisica."
+      }
+    ],
+    "variant": {
+      "title": "Un fattore comune si cancella, un offset comune no",
+      "text": "Moltiplicare entrambe le bande per 100 e poi aggiungere 0,1 a entrambe; confrontare gli indici.",
+      "code": "scalato <- (100*nir-100*rosso)/(100*nir+100*rosso)\noffset <- ((nir+.1)-(rosso+.1))/((nir+.1)+(rosso+.1))\ndata.frame(errore_fattore_comune=max(abs(scalato-indice)),\n  variazione_offset=max(abs(offset-indice)))\nstopifnot(max(abs(scalato-indice))<1e-12,max(abs(offset-indice))>0)",
+      "reading": "L’invarianza a un fattore comune non rende irrilevante la calibrazione. Offset, scale differenti, maschere e disallineamento possono modificare il risultato."
+    },
+    "error": "Interpretare l’indice sintetico come una diagnosi ambientale reale o combinare bande senza controllare allineamento e calibrazione.",
+    "answer": "Il rapporto normalizzato sintetizza due bande definite sulle stesse celle. Le proprietà algebriche sono verificabili; il significato fisico richiede informazioni sul sensore, sulle bande, sulla calibrazione e sulla maschera."
+  },
+  {
+    "title": "Denominatore piccolo: maschera dichiarata",
+    "question": "Quando il denominatore è troppo piccolo, qual è la regola del calcolo?",
+    "objectives": [
+      "Conservare la soglia originale di 10⁻⁶.",
+      "Distinguere zero esatto e denominatore piccolo.",
+      "Verificare la sensibilità e documentare la maschera."
+    ],
+    "data": "Il raster è interamente sintetico: 24 righe × 30 colonne, 720 celle quadrate di lato 30 m. Nel CSV riga e colonna partono da zero; x_m = 30 × colonna e y_m = 30 × riga indicano i centri nel piano locale. La riga 0 è a Sud; la riga 23 è a Nord. Le quote sono in metri sintetici. I dati non descrivono un rilievo reale.",
+    "steps": [
+      {
+        "title": "Una regola prima del rapporto",
+        "text": "Usiamo i quattro casi originali. L’indice è calcolato solo se la somma supera 10⁻⁶ nelle unità delle bande.",
+        "code": "d <- carica_dati(\"raster_v3.csv\")\naudit_raster(d)\nd <- d[order(d$riga,d$colonna),]\nZ <- matrice_quote(d)\n rosso <- c(.2,0,1e-10,.3);nir <- c(.4,0,2e-10,.2)\n den <- nir+rosso;soglia <- 1e-6;ok <- den>soglia\n indice <- rep(NA_real_,4);indice[ok] <- (nir[ok]-rosso[ok])/den[ok]\n risultato <- data.frame(caso=1:4,rosso=rosso,NIR=nir,denominatore=den,\n   usato=ok,indice=indice)\n risultato\n stopifnot(sum(is.na(indice))==2L)",
+        "reading": "Il terzo caso avrebbe un rapporto finito, ma la sua scala assoluta è troppo piccola rispetto alla soglia dichiarata. La maschera non riguarda soltanto le divisioni per zero."
+      },
+      {
+        "title": "Un piccolo errore assoluto può diventare grande nel rapporto",
+        "text": "Nel caso piccolo aggiungiamo 10⁻¹⁰ alla sola banda rossa e confrontiamo gli indici non mascherati.",
+        "code": "originale_piccolo <- (nir[3]-rosso[3])/(nir[3]+rosso[3])\nperturbato <- (nir[3]-(rosso[3]+1e-10))/(nir[3]+rosso[3]+1e-10)\ndata.frame(indice_non_mascherato=originale_piccolo,indice_perturbato=perturbato,\n  variazione=perturbato-originale_piccolo,perturbazione_assoluta=1e-10)",
+        "reading": "Il calcolo è algebricamente definito ma sensibile. Una soglia ha senso rispetto alle unità, alla precisione e alla qualità delle bande."
+      },
+      {
+        "title": "NA resta riconoscibile nella rappresentazione",
+        "text": "La figura distingue valori calcolati e casi esclusi. Nessun valore mancante è sostituito da zero.",
+        "code": "stile_grafico()\nplot(1:4,rep(NA_real_,4),type=\"n\",xlim=c(.5,4.5),ylim=c(-.4,.6),xaxt=\"n\",\n  xlab=\"Caso originale\",ylab=\"Indice normalizzato\",main=\"Maschera del denominatore: due casi esclusi\")\nrect(c(1.7,2.7),-.4,c(2.3,3.3),.6,col=\"#EDF0F1\",border=NA)\naxis(1,at=1:4);abline(h=0,col=\"grey70\",lty=3)\npoints(which(ok),indice[ok],pch=19,cex=1.3,col=palette_geo[1])\ntext(which(!ok),rep(.1,sum(!ok)),\"NA\",col=palette_geo[2])\nwrite.csv(risultato,percorso_risultati(\"maschera_denominatore.csv\"),row.names=FALSE,na=\"\")",
+        "reading": "NA indica la decisione della maschera. Il simbolo non rappresenta un indice pari a zero."
+      }
+    ],
+    "variant": {
+      "title": "Cambiare soglia cambia la copertura",
+      "text": "Ripetere la regola con tre soglie e contare i casi ammessi, senza scegliere la soglia dal risultato più favorevole.",
+      "code": "soglie <- c(1e-12,1e-6,.1)\ndata.frame(soglia=soglie,ammessi=vapply(soglie,function(t) sum(den>t),integer(1)))",
+      "reading": "La soglia più piccola ammette il caso numericamente sensibile. La scelta va motivata con unità e qualità del dato, non con l’aspetto della carta."
+    },
+    "error": "Dividere sempre e correggere dopo i risultati oppure usare una soglia senza dichiararne unità e conseguenza sulla copertura.",
+    "answer": "La regola del denominatore fa parte della definizione operativa dell’indice. Valori, soglia e maschera devono essere conservati insieme; la presenza di un numero finito non garantisce stabilità."
+  },
+  {
+    "title": "Statistiche zonali e nuovo livello della tabella",
+    "question": "Dopo una statistica zonale, che cosa rappresenta una riga della tabella?",
+    "objectives": [
+      "Conservare media, dispersione e numero di celle per unità.",
+      "Verificare la media globale con i pesi corretti.",
+      "Distinguere dispersione e incertezza della media."
+    ],
+    "data": "Il raster è interamente sintetico: 24 righe × 30 colonne, 720 celle quadrate di lato 30 m. Nel CSV riga e colonna partono da zero; x_m = 30 × colonna e y_m = 30 × riga indicano i centri nel piano locale. La riga 0 è a Sud; la riga 23 è a Nord. Le quote sono in metri sintetici. I dati non descrivono un rilievo reale.",
+    "steps": [
+      {
+        "title": "Le celle vengono riassunte per unità",
+        "text": "Ogni riga della nuova tabella descrive la classe A o B, non una cella.",
+        "code": "d <- carica_dati(\"raster_v3.csv\")\naudit_raster(d)\nd <- d[order(d$riga,d$colonna),]\nZ <- matrice_quote(d)\n gruppi <- split(d$quota_m,d$unita)\n risultato <- do.call(rbind,lapply(names(gruppi),function(u) data.frame(unita=u,\n   media=mean(gruppi[[u]]),sd=sd(gruppi[[u]]),n=length(gruppi[[u]]))))\n rownames(risultato) <- NULL\n risultato\n stopifnot(sum(risultato$n)==720L)",
+        "reading": "La deviazione standard descrive la dispersione delle quote nelle celle della zona. Non è un errore standard della media e non presume indipendenza spaziale."
+      },
+      {
+        "title": "Ricostruire la media delle celle richiede i conteggi",
+        "text": "La media delle medie zonali può differire dalla media delle 720 celle se le zone hanno estensione diversa.",
+        "code": "controllo <- data.frame(media_celle=mean(d$quota_m),media_zone=mean(risultato$media),\n  media_zone_pesata=weighted.mean(risultato$media,risultato$n))\ncontrollo\nstopifnot(abs(controllo$media_celle-controllo$media_zone_pesata)<1e-10)",
+        "reading": "Con celle della stessa area, il numero di celle è il peso planimetrico. La media semplice delle zone risponde invece a una domanda che attribuisce lo stesso peso a ogni zona."
+      },
+      {
+        "title": "Mostrare la distribuzione prima di ridurla a una media",
+        "text": "Il boxplot descrive mediana e dispersione; il rombo indica la media zonale calcolata.",
+        "code": "stile_grafico()\nboxplot(quota_m~unita,data=d,col=palette_geo[1:2],xlab=\"Unita sintetica\",ylab=\"Quota (m)\",\n  main=\"Distribuzione delle quote per zona\")\npoints(seq_len(nrow(risultato)),risultato$media,pch=18,cex=1.3,col=\"#15283E\")\nlegend(\"topleft\",\"Rombo: media zonale\",pch=18,col=\"#15283E\",bty=\"n\",cex=.8)\nwrite.csv(risultato,percorso_risultati(\"statistiche_zonali.csv\"),row.names=FALSE)\nwrite.csv(controllo,percorso_risultati(\"controllo_pesi_zonali.csv\"),row.names=FALSE)",
+        "reading": "Questa figura non è un test tra campioni indipendenti. Le distribuzioni riguardano due porzioni del campo sintetico."
+      }
+    ],
+    "variant": {
+      "title": "La copertura si controlla per zona",
+      "text": "Mascherare le prime 20 celle di A in memoria e riportare la copertura delle due zone.",
+      "code": "copia <- d;ii <- which(copia$unita==\"A\")[1:20];copia$quota_m[ii] <- NA_real_\ndo.call(rbind,lapply(split(copia$quota_m,copia$unita),function(v)\n  data.frame(totali=length(v),disponibili=sum(is.finite(v)),copertura=mean(is.finite(v)),\n    media_disponibili=mean(v,na.rm=TRUE))))",
+      "reading": "Una copertura globale può nascondere perdite concentrate in una zona. Il numero di celle disponibili deve accompagnare ogni statistica."
+    },
+    "error": "Mescolare righe di celle e righe di zone, omettere i conteggi o usare sd/√n senza un modello della dipendenza.",
+    "answer": "Una sintesi zonale cambia il livello della tabella. Unità, numero di celle, copertura e dispersione consentono di interpretare la media e scegliere pesi coerenti con la domanda."
+  },
+  {
+    "title": "Dipendenza: differenze a 30 e 300 metri",
+    "question": "Le differenze fra celle a 30 e 300 metri hanno la stessa distribuzione?",
+    "objectives": [
+      "Conservare le coppie orizzontali originali.",
+      "Contare le coppie e descrivere le differenze assolute.",
+      "Riconoscere trend, direzione e riuso delle celle."
+    ],
+    "data": "Il raster è interamente sintetico: 24 righe × 30 colonne, 720 celle quadrate di lato 30 m. Nel CSV riga e colonna partono da zero; x_m = 30 × colonna e y_m = 30 × riga indicano i centri nel piano locale. La riga 0 è a Sud; la riga 23 è a Nord. Le quote sono in metri sintetici. I dati non descrivono un rilievo reale.",
+    "steps": [
+      {
+        "title": "Due distanze, stessa direzione",
+        "text": "Costruiamo le differenze orizzontali: una colonna e dieci colonne di distanza.",
+        "code": "d <- carica_dati(\"raster_v3.csv\")\naudit_raster(d)\nd <- d[order(d$riga,d$colonna),]\nZ <- matrice_quote(d)\n breve <- as.vector(Z[,2:30]-Z[,1:29])\n lunga <- as.vector(Z[,11:30]-Z[,1:20])\n risultato <- data.frame(distanza_m=c(30,300),direzione=\"Est-Ovest\",coppie=c(length(breve),length(lunga)),\n   media_abs=c(mean(abs(breve)),mean(abs(lunga))),mediana_abs=c(median(abs(breve)),median(abs(lunga))))\n risultato\n stopifnot(length(breve)==696L,length(lunga)==480L)",
+        "reading": "Le due distanze usano numerosità e porzioni di griglia diverse. Molte coppie condividono una cella e non sono repliche indipendenti."
+      },
+      {
+        "title": "Separare differenza firmata e dissimilarità",
+        "text": "La media firmata può riflettere un gradiente verso Est; la media assoluta riassume una dissimilarità.",
+        "code": "data.frame(distanza_m=c(30,300),media_firmata=c(mean(breve),mean(lunga)),\n  sd_differenze=c(sd(breve),sd(lunga)),media_quadratica=c(mean(breve^2),mean(lunga^2)))",
+        "reading": "Differenze più grandi a distanza maggiore non dimostrano da sole una legge di covarianza: trend e orientamento possono contribuire."
+      },
+      {
+        "title": "La figura mantiene conteggi e unità",
+        "text": "Le barre rappresentano metri di differenza assoluta media, senza barre di errore che fingano indipendenza delle coppie.",
+        "code": "stile_grafico()\nbp <- barplot(risultato$media_abs,names.arg=paste(risultato$distanza_m,\"m\"),col=palette_geo[1:2],\n  ylim=c(0,max(risultato$media_abs)*1.22),xlab=\"Separazione Est-Ovest\",ylab=\"Differenza assoluta media (m)\",\n  main=\"Distanza e differenze fra celle\")\ntext(bp,risultato$media_abs,labels=paste0(\"n=\",risultato$coppie),pos=3,cex=.8)\nwrite.csv(risultato,percorso_risultati(\"differenze_spaziali.csv\"),row.names=FALSE)",
+        "reading": "La carta e le direzioni del rilievo completano il confronto; il conteggio delle coppie non misura il numero di informazioni indipendenti."
+      }
+    ],
+    "variant": {
+      "title": "Cambiare direzione mantenendo le distanze",
+      "text": "Ripetere il confronto lungo Nord-Sud.",
+      "code": "nord30 <- as.vector(Z[2:24,]-Z[1:23,])\nnord300 <- as.vector(Z[11:24,]-Z[1:14,])\ndata.frame(distanza_m=c(30,300),direzione=\"Nord-Sud\",coppie=c(length(nord30),length(nord300)),\n  media_abs=c(mean(abs(nord30)),mean(abs(nord300))))\nstopifnot(length(nord30)==690L,length(nord300)==420L)",
+      "reading": "Una differenza fra direzioni è descrittiva. Prima di attribuirla ad anisotropia della componente residua occorre discutere il trend e il dominio."
+    },
+    "error": "Interpretare tutte le differenze come indipendenti oppure dedurre una covarianza stazionaria dal solo confronto di due distanze.",
+    "answer": "La distanza entra nella dissimilarità, ma la sintesi dipende anche da direzione, dominio e trend. Le coppie sono costruite riusando le stesse celle e richiedono un’interpretazione coerente."
+  },
+  {
+    "title": "Bootstrap di blocchi: un’ipotesi esplicita",
+    "question": "Che cosa assume un bootstrap che ricampiona dodici blocchi del raster?",
+    "objectives": [
+      "Riprodurre i 12 blocchi originali di 6 × 10 celle.",
+      "Usare le 300 repliche determinate dal file u.",
+      "Interpretare i quantili come dimostrazione condizionata alle ipotesi."
+    ],
+    "data": "Il raster è interamente sintetico: 24 righe × 30 colonne, 720 celle quadrate di lato 30 m. Nel CSV riga e colonna partono da zero; x_m = 30 × colonna e y_m = 30 × riga indicano i centri nel piano locale. La riga 0 è a Sud; la riga 23 è a Nord. Le quote sono in metri sintetici. I dati non descrivono un rilievo reale.",
+    "steps": [
+      {
+        "title": "La replica campiona blocchi, non singole celle",
+        "text": "I blocchi sono disgiunti, completi e di uguale dimensione: 60 celle, cioè 5,4 ettari ciascuno.",
+        "code": "d <- carica_dati(\"raster_v3.csv\")\naudit_raster(d)\nd <- d[order(d$riga,d$colonna),]\nZ <- matrice_quote(d)\n v <- numeric(12);k <- 1L\n for(i in 1:4) for(j in 1:3) {\n   v[k] <- mean(Z[((i-1)*6+1):(i*6),((j-1)*10+1):(j*10)])\n   k <- k+1L\n }\n data.frame(blocco=1:12,media=v,celle=60)\n stopifnot(abs(mean(v)-mean(Z))<1e-10)",
+        "reading": "L’uguaglianza delle medie deriva dal bilanciamento dei blocchi. La geometria del blocco definisce quanta dipendenza locale si conserva nel ricampionamento."
+      },
+      {
+        "title": "Il protocollo originale usa uniformi salvate",
+        "text": "Ogni replica seleziona 12 blocchi con reinserimento. I primi 3600 valori u determinano le 300 repliche.",
+        "code": "casuali <- carica_dati(\"casuali_comuni_v3.csv\");u <- casuali$u\nstopifnot(length(u)>=3600L,all(u[1:3600]>=0 & u[1:3600]<1))\nix <- matrix(floor(u[1:3600]*12)+1,300,byrow=TRUE)\nb <- apply(ix,1,function(i) mean(v[i]))\nq <- quantile(b,c(.025,.975),type=7)\nrisultato <- data.frame(media=mean(v),basso=unname(q[1]),alto=unname(q[2]),\n  repliche=length(b),blocchi=length(v),sd_repliche=sd(b))\nrisultato\nstopifnot(length(b)==300L,all(ix>=1&ix<=12))",
+        "reading": "I quantili descrivono il meccanismo di ricampionamento scelto. Non garantiscono copertura del 95%: con soli 12 blocchi, trend e scambiabilità dubbia, l’interpretazione inferenziale richiede cautela motivata."
+      },
+      {
+        "title": "La distribuzione è condizionata ai blocchi osservati",
+        "text": "Il grafico distingue media della griglia e quantili bootstrap. Il titolo non li presenta come intervallo garantito.",
+        "code": "stile_grafico()\nhist(b,breaks=20,col=palette_geo[1],border=\"white\",xlab=\"Media dei blocchi ricampionati (m)\",\n  ylab=\"Numero di repliche\",main=\"Bootstrap a blocchi: distribuzione condizionata\")\nabline(v=mean(v),col=palette_geo[2],lwd=2);abline(v=q,col=palette_geo[3],lty=2,lwd=2)\nlegend(\"topright\",c(\"Media della griglia\",\"Quantili 2.5% e 97.5%\"),\n  col=palette_geo[c(2,3)],lty=c(1,2),bty=\"n\",cex=.75)\nwrite.csv(risultato,percorso_risultati(\"bootstrap_blocchi.csv\"),row.names=FALSE)\nwrite.csv(data.frame(replica=1:300,media=b),percorso_risultati(\"repliche_blocchi.csv\"),row.names=FALSE)",
+        "reading": "Il campo finito di 720 celle è completamente noto in questo esercizio. L’uso del bootstrap è didattico: una vera inferenza deve prima specificare il parametro, il campionamento o il modello aleatorio."
+      }
+    ],
+    "variant": {
+      "title": "Cambiare l’unità di ricampionamento cambia la domanda",
+      "text": "Con un nuovo seme esplicito, ricampionare singole celle come confronto di meccanismi, senza dichiararle indipendenti.",
+      "code": "set.seed(20261117)\ncelle <- as.vector(Z)\niid <- replicate(300,mean(celle[sample.int(length(celle),length(celle),replace=TRUE)]))\nconfronto <- data.frame(schema=c(\"Blocchi originali\",\"Singole celle: ipotesi iid\"),\n  sd_repliche=c(sd(b),sd(iid)),basso=c(unname(q[1]),unname(quantile(iid,.025))),\n  alto=c(unname(q[2]),unname(quantile(iid,.975))))\nconfronto\nwrite.csv(confronto,percorso_risultati(\"confronto_meccanismi_bootstrap.csv\"),row.names=FALSE)",
+      "reading": "Lo schema iid distrugge la struttura spaziale. Una differenza fra gli intervalli non dimostra quale abbia copertura corretta; rende visibile la dipendenza dalle ipotesi."
+    },
+    "error": "Chiamare automaticamente intervallo di confidenza al 95% i quantili di 300 repliche o presumere che il ricampionamento a blocchi risolva qualsiasi trend.",
+    "answer": "Il bootstrap a blocchi è un meccanismo esplicito che conserva la struttura entro i blocchi e ne ricampiona le medie. Le sue proprietà inferenziali dipendono da parametro, blocchi, dipendenza e scambiabilità; qui è una dimostrazione condizionata, non una garanzia di copertura."
+  },
+  {
+    "title": "Finestre di lettura e memoria",
+    "question": "Come si legge una finestra del GeoTIFF senza confondere indici e orientamento?",
+    "objectives": [
+      "Eseguire readStart, readValues e readStop di terra.",
+      "Verificare le 48 celle originali contro la matrice completa.",
+      "Distinguere una prova su file piccolo da una strategia per grandi raster."
+    ],
+    "data": "Il raster è interamente sintetico: 24 righe × 30 colonne, 720 celle quadrate di lato 30 m. Nel CSV riga e colonna partono da zero; x_m = 30 × colonna e y_m = 30 × riga indicano i centri nel piano locale. La riga 0 è a Sud; la riga 23 è a Nord. Le quote sono in metri sintetici. I dati non descrivono un rilievo reale. Il GeoTIFF originale porta EPSG:32632, UTM zona 32 Nord, con georeferenziazione fittizia: corner Nord-Ovest E=500000, N=5000000; passo 30 m, PixelIsArea. I centri corrispondono a E=x_m+500015 e N=y_m+4999295. Le righe del TIFF procedono da Nord a Sud, al contrario della matrice locale.",
+    "steps": [
+      {
+        "title": "Una finestra usa gli indici del TIFF",
+        "text": "Le righe R 5:10 e le colonne R 10:17 del TIFF individuano 6 × 8 celle. Le righe procedono da Nord a Sud.",
+        "code": "d <- carica_dati(\"raster_v3.csv\")\naudit_raster(d)\nd <- d[order(d$riga,d$colonna),]\nZ <- matrice_quote(d)\nrichiedi_terra()\nr <- terra::rast(percorso_dati(\"raster_v3.tif\"))\n leggi_finestra <- function(r,row,nrows,col,ncols) {\n   terra::readStart(r)\n   on.exit(terra::readStop(r))\n   terra::readValues(r,row=row,nrows=nrows,col=col,ncols=ncols,mat=FALSE)\n }\n win <- leggi_finestra(r,5,6,10,8)\n data.frame(valori=length(win),minimo=min(win),massimo=max(win),media=mean(win))\n stopifnot(length(win)==48L)",
+        "reading": "La lettura è effettiva sul file. on.exit garantisce la chiusura anche se una successiva operazione nella funzione fallisce."
+      },
+      {
+        "title": "Il confronto con la matrice completa è un controllo",
+        "text": "Per questo piccolo esercizio carichiamo anche l’intera matrice e verifichiamo ordinamento e valori.",
+        "code": "M <- terra::as.matrix(r,wide=TRUE)\nattesi <- as.vector(t(M[5:10,10:17]))\nrisultato <- data.frame(n=length(win),errore=max(abs(win-attesi)),\n  bytes_valori_finestra=as.numeric(object.size(win)),bytes_matrice=as.numeric(object.size(M)))\nrisultato\nstopifnot(risultato$errore<1e-10)",
+        "reading": "La matrice completa serve qui per verificare il risultato. Queste misure di object.size non includono cache GDAL, processi o memoria totale e non sono un benchmark di I/O."
+      },
+      {
+        "title": "La finestra torna nel piano locale",
+        "text": "Per la carta invertiamo le sei righe della finestra. I suoi centri sono x=270…480 m e y=420…570 m.",
+        "code": "W <- matrix(win,nrow=6,ncol=8,byrow=TRUE)\nmappa_matrice(W[6:1,],seq(270,480,30),seq(420,570,30),\n  titolo=\"Finestra letta dal GeoTIFF: 48 celle\",limiti=range(Z))\nwrite.csv(risultato,percorso_risultati(\"audit_finestra.csv\"),row.names=FALSE)\nwrite.csv(data.frame(ordine=seq_along(win),quota_m=win),percorso_risultati(\"valori_finestra.csv\"),row.names=FALSE)",
+        "reading": "Una finestra di lettura seleziona un sottoinsieme senza cambiare i valori. Le coordinate restano necessarie per collegare quel sottoinsieme alla griglia."
+      }
+    ],
+    "variant": {
+      "title": "Due finestre coprono l’intero raster",
+      "text": "Leggere separatamente le metà settentrionale e meridionale e ricostruire la media globale con i conteggi.",
+      "code": "nord <- leggi_finestra(r,1,12,1,30)\nsud <- leggi_finestra(r,13,12,1,30)\nmedia_finestre <- weighted.mean(c(mean(nord),mean(sud)),c(length(nord),length(sud)))\ndata.frame(n_nord=length(nord),n_sud=length(sud),media_finestre=media_finestre,\n  media_intera=mean(M),scarto=abs(media_finestre-mean(M)))\nstopifnot(length(nord)+length(sud)==720L,abs(media_finestre-mean(M))<1e-10)",
+      "reading": "L’elaborazione a finestre può accumulare somme e conteggi. Derivate e filtri richiederebbero anche un margine di vicini attorno a ciascuna finestra."
+    },
+    "error": "Scambiare le righe del CSV e del TIFF, chiamare prova di memoria un confronto di object.size o ignorare i margini necessari ai filtri.",
+    "answer": "La lettura a finestre controlla quanti valori vengono materializzati per operazione. Una verifica corretta confronta celle e orientamento; il trattamento di filtri, bordi e NoData resta parte dell’algoritmo."
+  },
+  {
+    "title": "Stessa forma, origini diverse",
+    "question": "Due raster con la stessa forma e lo stesso passo sono necessariamente allineati?",
+    "objectives": [
+      "Costruire due geometrie terra traslate di mezzo pixel.",
+      "Controllare estensione, centri e origine.",
+      "Eseguire un ricampionamento esplicito e verificarne il bersaglio."
+    ],
+    "data": "Il raster è interamente sintetico: 24 righe × 30 colonne, 720 celle quadrate di lato 30 m. Nel CSV riga e colonna partono da zero; x_m = 30 × colonna e y_m = 30 × riga indicano i centri nel piano locale. La riga 0 è a Sud; la riga 23 è a Nord. Le quote sono in metri sintetici. I dati non descrivono un rilievo reale. Il GeoTIFF originale porta EPSG:32632, UTM zona 32 Nord, con georeferenziazione fittizia: corner Nord-Ovest E=500000, N=5000000; passo 30 m, PixelIsArea. I centri corrispondono a E=x_m+500015 e N=y_m+4999295. Le righe del TIFF procedono da Nord a Sud, al contrario della matrice locale.",
+    "steps": [
+      {
+        "title": "La traslazione cambia la posizione delle celle",
+        "text": "Usiamo il GeoTIFF originale e una copia spostata di 15 m verso Est. Quote e dimensioni restano uguali in memoria.",
+        "code": "d <- carica_dati(\"raster_v3.csv\")\naudit_raster(d)\nd <- d[order(d$riga,d$colonna),]\nZ <- matrice_quote(d)\nrichiedi_terra()\nr <- terra::rast(percorso_dati(\"raster_v3.tif\"))\n spostato <- terra::shift(r,dx=15,dy=0)\n risultato <- data.frame(stessa_forma=nrow(r)==nrow(spostato)&ncol(r)==ncol(spostato),\n   stesso_passo=all(terra::res(r)==terra::res(spostato)),\n   stessa_geometria=terra::compareGeom(r,spostato,stopOnError=FALSE),\n   shift_pixel=(terra::xmin(spostato)-terra::xmin(r))/terra::res(r)[1])\n risultato\n data.frame(raster=c(\"Originale\",\"Spostato\"),xmin=c(terra::xmin(r),terra::xmin(spostato)),\n   xmax=c(terra::xmax(r),terra::xmax(spostato)))\n stopifnot(risultato$stessa_forma,risultato$stesso_passo,!risultato$stessa_geometria,\n   risultato$shift_pixel==.5)",
+        "reading": "Dimensioni uguali permettono operazioni elemento per elemento che possono essere geograficamente sbagliate. La posizione dei centri è una parte del dato."
+      },
+      {
+        "title": "Allineare significa scegliere una nuova regola numerica",
+        "text": "Ricampioniamo realmente la copia traslata sulla griglia originale con bilinear. Il bersaglio torna uguale, i valori possono cambiare.",
+        "code": "riallineato <- terra::resample(spostato,r,method=\"bilinear\")\nv0 <- as.numeric(terra::values(r));v1 <- as.numeric(terra::values(riallineato))\nvalidi <- is.finite(v0)&is.finite(v1)\naudit <- data.frame(geometria_target=terra::compareGeom(r,riallineato,stopOnError=FALSE),\n  coppie_valide=sum(validi),media_scarto_m=mean(v1[validi]-v0[validi]),\n  massimo_scarto_m=max(abs(v1[validi]-v0[validi])))\naudit\nstopifnot(audit$geometria_target,audit$coppie_valide>0)",
+        "reading": "Il ricampionamento corregge la compatibilità delle griglie secondo una regola dichiarata. Non recupera informazioni indipendenti che la traslazione abbia reso indisponibili."
+      },
+      {
+        "title": "Il mezzo pixel diventa visibile nei centri",
+        "text": "Mostriamo sei centri effettivi delle due geometrie in coordinate relative al corner del riquadro.",
+        "code": "celle <- c(1:3,31:33)\na <- terra::xyFromCell(r,celle);b <- terra::xyFromCell(spostato,celle)\na <- sweep(a,2,c(500000,4999940),\"-\");b <- sweep(b,2,c(500000,4999940),\"-\")\nstile_grafico()\nplot(a,type=\"n\",asp=1,xlim=c(-5,115),ylim=c(-5,90),\n  xlab=\"E relativo al corner (m)\",ylab=\"N relativo al riquadro (m)\",\n  main=\"Stesse dimensioni: centri traslati di 15 m\")\nfor(x in seq(0,90,30)) segments(x,0,x,60,col=\"#B6CDD5\")\nfor(y in seq(0,60,30)) segments(0,y,90,y,col=\"#B6CDD5\")\narrows(a[,1],a[,2],b[,1],b[,2],length=.07,col=\"grey55\")\npoints(a,pch=19,col=palette_geo[1]);points(b,pch=17,col=palette_geo[2])\nlegend(\"topleft\",c(\"Originale\",\"Traslato\"),pch=c(19,17),col=palette_geo[1:2],bty=\"n\",cex=.8)\nwrite.csv(risultato,percorso_risultati(\"disallineamento.csv\"),row.names=FALSE)\nwrite.csv(audit,percorso_risultati(\"ricampionamento.csv\"),row.names=FALSE)",
+        "reading": "Il disegno usa centri estratti da terra, non coordinate inventate per suggerire uno spostamento."
+      }
+    ],
+    "variant": {
+      "title": "Anche una traslazione intera cambia l’estensione",
+      "text": "Spostare di 30 m e controllare che la forma e il passo non bastino ancora.",
+      "code": "intero <- terra::shift(r,dx=30,dy=0)\ndata.frame(shift_pixel=(terra::xmin(intero)-terra::xmin(r))/30,\n  stessa_geometria=terra::compareGeom(r,intero,stopOnError=FALSE),\n  stesso_passo=all(terra::res(r)==terra::res(intero)))\nstopifnot(!terra::compareGeom(r,intero,stopOnError=FALSE))",
+      "reading": "La coincidenza della griglia periodica non implica uguaglianza del dominio. Prima di combinare raster servono anche estensione e corrispondenza delle celle."
+    },
+    "error": "Sommare raster perché hanno lo stesso numero di righe e colonne o chiamare allineamento la sola assegnazione di un CRS.",
+    "answer": "La compatibilità richiede CRS, passo, origine, estensione e orientamento coerenti. Ricampionare è un’operazione esplicita sul valore, non una semplice modifica dell’etichetta."
+  },
+  {
+    "title": "Consegna delle pendenze interne",
+    "question": "Come si consegnano le 616 pendenze interne mantenendo geometria, orientamento e NoData?",
+    "objectives": [
+      "Scrivere e rileggere il CSV originale delle celle interne.",
+      "Esportare GeoTIFF reali con terra.",
+      "Verificare valori, CRS, risoluzione, centri e maschera di bordo."
+    ],
+    "data": "Il raster è interamente sintetico: 24 righe × 30 colonne, 720 celle quadrate di lato 30 m. Nel CSV riga e colonna partono da zero; x_m = 30 × colonna e y_m = 30 × riga indicano i centri nel piano locale. La riga 0 è a Sud; la riga 23 è a Nord. Le quote sono in metri sintetici. I dati non descrivono un rilievo reale. Il GeoTIFF originale porta EPSG:32632, UTM zona 32 Nord, con georeferenziazione fittizia: corner Nord-Ovest E=500000, N=5000000; passo 30 m, PixelIsArea. I centri corrispondono a E=x_m+500015 e N=y_m+4999295. Le righe del TIFF procedono da Nord a Sud, al contrario della matrice locale.",
+    "steps": [
+      {
+        "title": "Il CSV mantiene le coordinate delle celle interne",
+        "text": "La differenza centrale esclude una fascia di una cella su ciascun lato. I 616 valori sono ordinati da Sud a Nord nel CSV.",
+        "code": "d <- carica_dati(\"raster_v3.csv\")\naudit_raster(d)\nd <- d[order(d$riga,d$colonna),]\nZ <- matrice_quote(d)\nrichiedi_terra()\nr <- terra::rast(percorso_dati(\"raster_v3.tif\"))\n g <- gradienti_centrali(Z);s <- g$gradi\n risultato <- data.frame(x_m=rep((1:28)*30,22),y_m=rep((1:22)*30,each=28),\n   pendenza_gradi=as.vector(t(s)))\n file_csv <- percorso_risultati(\"pendenze.csv\")\n write.csv(risultato,file_csv,row.names=FALSE)\n csv_letto <- read.csv(file_csv)\n data.frame(celle=nrow(csv_letto),minimo=min(csv_letto$pendenza_gradi),\n   massimo=max(csv_letto$pendenza_gradi),errore_roundtrip=max(abs(csv_letto$pendenza_gradi-risultato$pendenza_gradi)))\n stopifnot(nrow(csv_letto)==616L,all(is.finite(csv_letto$pendenza_gradi)),\n   max(abs(csv_letto$pendenza_gradi-risultato$pendenza_gradi))<1e-10)",
+        "reading": "Le coordinate interne sono x=30…840 m e y=30…660 m. Le quote originarie e le pendenze hanno unità differenti."
+      },
+      {
+        "title": "Due GeoTIFF esplicitano il bordo",
+        "text": "Il file principale è 22 × 28, ristretto alle celle interne. Il secondo conserva 24 × 30 celle, con 104 celle di bordo NoData. I valori sono materializzati prima della scrittura.",
+        "code": "completo <- matrix(NA_real_,24,30);completo[2:23,2:29] <- s\nr_completo <- raster_da_matrice(completo,r);names(r_completo) <- \"pendenza_gradi\"\nmodello_interno <- terra::crop(terra::rast(r),terra::ext(500030,500870,4999310,4999970))\nr_interno <- raster_da_matrice(s,modello_interno);names(r_interno) <- \"pendenza_gradi\"\nfile_interno <- percorso_risultati(\"pendenze_interne.tif\")\nfile_bordo <- percorso_risultati(\"pendenze_con_bordo_NoData.tif\")\nterra::writeRaster(r_interno,file_interno,overwrite=TRUE,datatype=\"FLT8S\",NAflag=-9999,gdal=\"COMPRESS=NONE\")\nterra::writeRaster(r_completo,file_bordo,overwrite=TRUE,datatype=\"FLT8S\",NAflag=-9999,gdal=\"COMPRESS=NONE\")\ndata.frame(file=c(basename(file_interno),basename(file_bordo)),\n  righe=c(nrow(r_interno),nrow(r_completo)),colonne=c(ncol(r_interno),ncol(r_completo)),\n  celle_valide=c(sum(is.finite(s)),sum(is.finite(completo))),\n  celle_NoData=c(sum(is.na(s)),sum(is.na(completo))))",
+        "reading": "La georeferenziazione fittizia viene ereditata senza attribuirle realtà geografica. Nel TIFF le righe sono ribaltate rispetto al CSV; il valore NoData scritto è −9999, distinto da una pendenza nulla."
+      },
+      {
+        "title": "Rilettura e verifica cella per cella",
+        "text": "Riapriamo entrambi i file con terra. Il controllo riguarda geometria, centro di riferimento, orientamento, maschera e valori.",
+        "code": "letto <- terra::rast(file_interno);bordo <- terra::rast(file_bordo)\nvalori <- matrice_locale(letto);valori_bordo <- matrice_locale(bordo)\ncentri <- terra::xyFromCell(letto,c(1,terra::ncell(letto)))\naudit <- data.frame(controllo=c(\"Geometria interna\",\"Geometria completa\",\"Risoluzione 30m\",\n  \"616 valori interni\",\"104 NoData bordo\",\"Maschera esatta\",\"Valori interni\",\"Valori completi\",\n  \"Centro NW corretto\",\"Centro SE corretto\"),\n  esito=c(terra::compareGeom(letto,r_interno,stopOnError=FALSE),\n    terra::compareGeom(bordo,r,stopOnError=FALSE),all(terra::res(letto)==30),\n    sum(is.finite(valori))==616L,sum(is.na(valori_bordo))==104L,\n    identical(is.na(valori_bordo),is.na(completo)),max(abs(valori-s))<1e-10,\n    max(abs(valori_bordo-completo),na.rm=TRUE)<1e-10,\n    max(abs(centri[1,]-c(500045,4999955)))<1e-9,\n    max(abs(centri[2,]-c(500855,4999325)))<1e-9))\naudit\nstopifnot(all(audit$esito))\ncrs_letto <- terra::crs(letto,describe=TRUE)[,c(\"name\",\"authority\",\"code\")]\ncrs_letto\ninfo_interno <- terra::describe(file_interno,print=FALSE)\ninfo_bordo <- terra::describe(file_bordo,print=FALSE)\ntag_NoData <- data.frame(file=c(basename(file_interno),basename(file_bordo)),\n  sentinel_meno9999=c(any(grepl(\"NoData Value=-9999\",info_interno,fixed=TRUE)),\n    any(grepl(\"NoData Value=-9999\",info_bordo,fixed=TRUE))))\ntag_NoData\nstopifnot(all(as.character(crs_letto$code)==\"32632\"),all(tag_NoData$sentinel_meno9999))\nwriteLines(info_interno,percorso_risultati(\"GDAL_pendenze_interne.txt\"))\nwriteLines(info_bordo,percorso_risultati(\"GDAL_pendenze_con_bordo.txt\"))\nwrite.csv(tag_NoData,percorso_risultati(\"audit_tag_NoData.csv\"),row.names=FALSE)\nwrite.csv(audit,percorso_risultati(\"audit_consegna.csv\"),row.names=FALSE)\nwriteLines(c(\"DATI SINTETICI; georeferenziazione UTM fittizia EPSG32632.\",\n  \"CSV: 616 centri locali, righe da Sud a Nord, pendenza in gradi.\",\n  \"GeoTIFF interno: 22x28, passo 30 m, corner NW 500030/4999970.\",\n  \"GeoTIFF completo: 24x30, 104 celle di bordo NoData; NAflag=-9999, FLT8S.\",\n  \"Centri: E=x_locale+500015, N=y_locale+4999295. TIFF da Nord a Sud.\",\n  paste(\"terra\",packageVersion(\"terra\"))),percorso_risultati(\"scheda_consegna.txt\"))\nmappa_matrice(valori,(1:28)*30,(1:22)*30,titolo=\"Pendenze GeoTIFF rilette: 616 celle\",unita=\"Gradi\")",
+        "reading": "Un file che si apre non è necessariamente corretto. La verifica deve includere il CRS, non soltanto forma e valori; compareGeom controlla anche il riferimento geografico dei file prodotti."
+      }
+    ],
+    "variant": {
+      "title": "L’errore di orientamento conserva media e istogramma",
+      "text": "Confrontare la matrice terra senza ribaltamento con la matrice locale e verificare che la media non lo riconosca.",
+      "code": "sbagliata <- terra::as.matrix(letto,wide=TRUE)\ndata.frame(scarto_senza_ribaltamento=max(abs(sbagliata-s)),\n  media_invariata=abs(mean(sbagliata)-mean(s))<1e-10,\n  scarto_corretto=max(abs(sbagliata[nrow(sbagliata):1,]-s)))\nstopifnot(max(abs(sbagliata-s))>0)",
+      "reading": "La consegna corretta mantiene la corrispondenza cella per cella. I controlli del solo range, della media o del numero di celle non bastano."
+    },
+    "error": "Consegnare soltanto una matrice senza georeferenziazione, confondere bordo NoData con pendenza zero o dimenticare il ribaltamento Nord-Sud.",
+    "answer": "La consegna comprende CSV, GeoTIFF interno, GeoTIFF con bordo NoData e una scheda. La rilettura reale con terra verifica 616 pendenze, 104 celle di bordo assenti, orientamento e geometria fittizia dichiarata."
+  }
+]

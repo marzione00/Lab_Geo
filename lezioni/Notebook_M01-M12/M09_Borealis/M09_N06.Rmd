@@ -1,0 +1,135 @@
+---
+title: "Media mobile centrata e rivolta al passato"
+subtitle: "M09_N06 \u00b7 Borealis"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Quali osservazioni servono per calcolare uno smoothing al tempo t?
+
+## Obiettivi
+
+- Usare filter con sides diversi.
+- Controllare le posizioni incomplete.
+- Verificare le finestre nel calendario.
+
+**Prima di iniziare.** Lettura di CSV, vettori, indicizzazione e funzioni di base in R. I blocchi vanno eseguiti nell’ordine all’interno del singolo notebook.
+
+**Dati e unità.** Archivio storico CO₂ 1958–2001, copia del dataset settimanale statsmodels attribuito a Keeling, Whorf e CDIAC. Le concentrazioni sono espresse in ppm. Le medie mensili del corso derivano dai valori settimanali assegnati al mese della data e differiscono per definizione da una serie mensile ufficiale.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Borealis oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M09_Borealis` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M09_Borealis/Risultati/M09_N06/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M09_Borealis"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M09_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M09_Borealis o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M09_N06")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(9006)
+```
+
+## 1. Due finestre della stessa larghezza
+
+Una finestra centrata di tredici mesi usa sei valori precedenti, il presente e sei successivi. Una finestra rivolta al passato usa il presente e i dodici precedenti. Le due definizioni producono risultati diversi.
+
+```{r passo_01}
+d <- carica_dati("co2_1985_2001.csv")
+d$data <- as.Date(d$data)
+d <- d[order(d$data), ]
+attese <- seq(as.Date("1985-01-01"), as.Date("2001-12-01"), by="month")
+stopifnot(identical(d$data, attese), !anyNA(d$co2_ppm))
+y <- ts(d$co2_ppm, start=c(1985,1), frequency=12)
+centrata <- stats::filter(y, rep(1/13,13), sides=2)
+passata <- stats::filter(y, rep(1/13,13), sides=1)
+c(NA_centrata=sum(is.na(centrata)),NA_passata=sum(is.na(passata)))
+head(data.frame(data=d$data,centrata=as.numeric(centrata),
+ passata=as.numeric(passata)),15)
+```
+
+**Lettura del risultato.** Entrambe perdono dodici posizioni complessive. Nella centrata gli NA si dividono fra inizio e fine; nella finestra passata si concentrano all’inizio.
+
+## 2. Osservare il ritardo
+
+La finestra passata reagisce dopo un cambiamento perché combina la misura recente con quelle precedenti. Il confronto mantiene visibili i dati originali.
+
+```{r passo_02}
+plot(d$data,as.numeric(y),type="l",col="grey70",
+ xlab="Data",ylab="CO2 (ppm)")
+lines(d$data,as.numeric(centrata),col="#087C74",lwd=2)
+lines(d$data,as.numeric(passata),col="#C57E42",lwd=2)
+legend("topleft",c("Osservazioni","Centrata","Solo presente e passato"),
+ col=c("grey70","#087C74","#C57E42"),lty=1,bty="n",cex=.8)
+```
+
+**Lettura del risultato.** Il diverso allineamento temporale spiega parte dello scarto fra le curve. Una curva più vicina al valore corrente non è automaticamente una previsione migliore.
+
+## 3. Verificare a mano una posizione
+
+Controlliamo il mese numero 50. Il valore centrato richiede i mesi da 44 a 56; il valore rivolto al passato usa quelli da 38 a 50.
+
+```{r passo_03}
+i <- 50L
+c(centrata_R=centrata[i],centrata_manual=mean(y[(i-6):(i+6)]),
+ passata_R=passata[i],passata_manual=mean(y[(i-12):i]))
+data.frame(finestra=c("centrata","passata"),
+ prima=c(as.character(d$data[i-6]),as.character(d$data[i-12])),
+ ultima=c(as.character(d$data[i+6]),as.character(d$data[i])))
+```
+
+**Lettura del risultato.** Il calcolo manuale coincide con filter. La data finale della finestra rivela immediatamente se è stata usata informazione futura rispetto al mese i.
+
+## Variante svolta
+
+Confrontare le finestre centrate da tre e tredici mesi.
+
+```{r variante}
+corta <- stats::filter(y,rep(1/3,3),sides=2)
+plot(d$data,as.numeric(corta),type="l",col="#7363AA",
+ xlab="Data",ylab="CO2 (ppm)")
+lines(d$data,as.numeric(centrata),col="#087C74",lwd=2)
+```
+
+La finestra corta conserva maggiormente l’oscillazione annuale. Quella lunga attenua anche parte della struttura stagionale.
+
+## Errore da riconoscere
+
+Calcolare una media centrata su tutto il file prima di valutare previsioni a una data passata: i valori futuri possono entrare nella preparazione dei dati.
+
+## Risposta alla domanda
+
+La larghezza, l’allineamento e la regola ai bordi definiscono la media mobile. Una trasformazione predittiva deve rispettare l’informazione disponibile al momento della previsione.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M09_N06` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M09/M09_N06.R).

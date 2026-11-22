@@ -17,6 +17,7 @@ export function hardenBuild(out) {
     'assets/briefing.css',
     'assets/audio.js',
     ...fs.readdirSync(path.join(out, 'assets/content')).map(f => 'assets/content/' + f),
+    ...fs.readdirSync(path.join(out, 'assets/lessons')).map(f => 'assets/lessons/' + f),
   ];
   fs.writeFileSync(
     path.join(out, 'assets/integrity.js'),
@@ -60,6 +61,7 @@ export function hardenBuild(out) {
   };
   visit(path.join(out, 'materiali'));
   visit(path.join(out, 'percorso'));
+  if (fs.existsSync(path.join(out, 'notebook'))) visit(path.join(out, 'notebook'));
   const headers = { ...securityHeaders, 'Strict-Transport-Security': 'max-age=31536000' };
   delete headers['Content-Security-Policy'];
   fs.writeFileSync(

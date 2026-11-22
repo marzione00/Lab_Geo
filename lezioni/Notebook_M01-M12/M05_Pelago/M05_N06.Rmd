@@ -1,0 +1,127 @@
+---
+title: "Intervallo di Student"
+subtitle: "M05_N06 \u00b7 Pelago"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come si costruisce un intervallo di confidenza per la media e quali ipotesi sostengono il calcolo?
+
+## Obiettivi
+
+- Ricostruire l'intervallo di Student.
+- Verificare il risultato mediante una funzione R.
+
+**Prima di iniziare.** Vettori, indicizzazione, media, varianza e grafici di base in R.
+
+**Dati e unità.** Diametri totali dei fossili sintetici Rounded, in micrometri; consideriamo le ottanta osservazioni come indipendenti.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M05_N06/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M05_N06")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(5006)
+```
+
+## 1. Separare stima e incertezza
+
+Un intervallo per la media richiede la stima centrale, l'errore standard e un quantile adatto. La procedura di Student è esatta per osservazioni indipendenti normali con varianza ignota; con altri modelli la sua accuratezza va valutata, non assunta dal solo numero di righe.
+
+```{r passo_01}
+dati <- carica_dati("fossili_simulati.csv")
+x <- dati$diametro_tot_um[dati$morfotipo == "Rounded"]
+stopifnot(all(is.finite(x)), length(x) > 1)
+n <- length(x)
+stima <- mean(x)
+se <- sd(x) / sqrt(n)
+alpha <- 0.05
+print(c(n = n, media_um = stima, SE_um = se))
+```
+
+**Lettura del risultato.** La stima esprime una dimensione media in micrometri. L'errore standard quantifica la variabilità stimata della media fra campioni indipendenti ottenuti con lo stesso disegno.
+
+## 2. Costruire l'intervallo a mano
+
+Il quantile bilaterale lascia alpha/2 in ciascuna coda e usa n−1 gradi di libertà. Moltiplicandolo per l'errore standard otteniamo la semiampiezza. Manteniamo tutte le cifre nel calcolo e arrotondiamo soltanto la tabella finale.
+
+```{r passo_02}
+gradi_liberta <- n - 1
+critico <- qt(1 - alpha / 2, df = gradi_liberta)
+margine <- critico * se
+intervallo <- stima + c(-1, 1) * margine
+names(intervallo) <- c("inferiore", "superiore")
+print(c(quantile_t = critico, margine_um = margine))
+print(intervallo)
+```
+
+**Lettura del risultato.** La semiampiezza dipende dalla dispersione, dal numero di unità indipendenti e dal livello richiesto. Il livello 95% descrive la copertura della procedura ripetuta sotto le sue ipotesi.
+
+## 3. Verificare il calcolo e osservare i dati
+
+La funzione t.test restituisce anche un test, ma qui leggiamo soltanto l'intervallo della media. Il controllo numerico aiuta a trovare errori nei gradi di libertà o nelle code; il grafico quantile-quantile segnala eventuali deviazioni marcate dalla forma normale.
+
+```{r passo_03}
+risultato <- t.test(x, conf.level = 1 - alpha)
+automatico <- as.numeric(risultato$conf.int)
+stopifnot(isTRUE(all.equal(unname(intervallo), automatico)))
+print(data.frame(manuale = unname(intervallo), funzione_R = automatico))
+qqnorm(x, main = "Diametri Rounded: controllo della forma",
+       ylab = "Diametro totale (umm)")
+qqline(x, col = "#A33B31", lwd = 2)
+```
+
+**Lettura del risultato.** La coincidenza verifica l'implementazione, non le ipotesi scientifiche. Un grafico plausibile non accerta indipendenza, rappresentatività o assenza di selezione dei fossili.
+
+## Variante svolta
+
+Confrontare livelli di confidenza 90%, 95% e 99% sugli stessi dati.
+
+```{r variante}
+livelli <- c(0.90, 0.95, 0.99)
+margini <- qt((1 + livelli) / 2, df = n - 1) * se
+print(data.frame(livello = livelli, inferiore_um = stima - margini,
+  superiore_um = stima + margini, ampiezza_um = 2 * margini))
+stopifnot(all(diff(margini) > 0))
+```
+
+A dati invariati, chiedere maggiore copertura allarga l'intervallo. Questa scelta non cambia la stima centrale e non aggiunge informazioni al campione.
+
+## Errore da riconoscere
+
+Non leggere il 95% come probabilità che il parametro fisso cada nell'intervallo già osservato; dichiarare il significato ripetuto della procedura.
+
+## Risposta alla domanda
+
+L'intervallo combina una stima e una regola di copertura. Il risultato va accompagnato dall'unità, dal livello e dalle condizioni sul campionamento.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M05_N06` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M05/M05_N06.R).

@@ -1,0 +1,134 @@
+---
+title: "Molte permutazioni e p-value Monte Carlo"
+subtitle: "M06_N04 \u00b7 Gemina"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come stimiamo un p-value quando non possiamo enumerare tutte le assegnazioni dei fossili ai gruppi?
+
+## Obiettivi
+
+- Simulare contrasti sotto riassegnazione delle etichette.
+- Usare una correzione Monte Carlo e distinguere B da n.
+
+**Prima di iniziare.** Vettori, indicizzazione, media, varianza e grafici di base in R.
+
+**Dati e unità.** Centosessanta diametri sintetici in micrometri, ottanta per morfotipo. La permutazione non studentizzata usa come riferimento la scambiabilità dei valori sotto la nulla.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M06_N04/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M06_N04")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(6004)
+```
+
+## 1. Preparare il contrasto osservato
+
+Manteniamo il verso Spiky meno Rounded e la numerosità originale di ciascun gruppo. La distribuzione nulla per permutazione viene costruita dai valori uniti. Il suo uso richiede una nulla che renda le etichette scambiabili; la sola uguaglianza delle medie non basta in generale.
+
+```{r passo_01}
+dati <- carica_dati("fossili_simulati.csv")
+a <- dati$diametro_tot_um[dati$morfotipo == "Rounded"]
+b <- dati$diametro_tot_um[dati$morfotipo == "Spiky"]
+x <- c(a, b)
+nA <- length(a)
+nB <- length(b)
+osservato <- mean(b) - mean(a)
+stopifnot(all(is.finite(x)))
+print(c(nA = nA, nB = nB, differenza_um = osservato))
+```
+
+**Lettura del risultato.** Le numerosità indicano quante unità sperimentali osserviamo. Non sono il numero di permutazioni e non cambieranno quando aumenteremo la precisione del calcolo.
+
+## 2. Simulare assegnazioni con numerosità fisse
+
+In ogni replica una selezione senza reinserimento determina il gruppo Rounded sotto la nulla. Tutti gli altri valori formano Spiky. Le permutazioni possono ripetersi fra repliche, mentre ogni assegnazione usa ciascun valore una sola volta.
+
+```{r passo_02}
+set.seed(604)
+B <- 2000
+nulli <- replicate(B, {
+  iA <- sample.int(length(x), nA, replace = FALSE)
+  mean(x[-iA]) - mean(x[iA])
+})
+print(c(B = B, media_nulla = mean(nulli), SD_nulla = sd(nulli)))
+print(quantile(nulli, c(0.025, 0.5, 0.975)))
+stopifnot(length(nulli) == B)
+```
+
+**Lettura del risultato.** Il centro è vicino a zero sotto riassegnazione casuale. La distribuzione simulata serve a valutare estremi sotto il riferimento nullo, non a costruire direttamente un intervallo del contrasto osservato.
+
+## 3. Contare le code e calcolare il p-value
+
+Per un confronto bilaterale contiamo i contrasti il cui valore assoluto è almeno quello osservato. Usiamo (k+1)/(B+1), che include il contributo dell'osservazione e impedisce di dichiarare p uguale a zero quando nessuna replica simulata supera la soglia.
+
+```{r passo_03}
+k <- sum(abs(nulli) >= abs(osservato))
+p_mc <- (k + 1) / (B + 1)
+minimo <- 1 / (B + 1)
+coda_binomiale <- binom.test(k, B)$conf.int
+print(c(estremi = k, B = B, p_MC = p_mc, minimo_risolubile = minimo))
+print(coda_binomiale)
+stopifnot(p_mc >= minimo, p_mc <= 1)
+```
+
+**Lettura del risultato.** L'intervallo binomiale riguarda la probabilità di coda della simulazione, non il parametro biologico. Un p-value piccolo esprime incompatibilità con il riferimento nullo, senza misurare la dimensione dell'effetto.
+
+## Variante svolta
+
+Ripetere con tremila permutazioni e un seme diverso, conservando lo stesso campione.
+
+```{r variante}
+set.seed(1604)
+B2 <- 3000
+nulli2 <- replicate(B2, {
+  iA <- sample.int(length(x), nA, FALSE)
+  mean(x[-iA]) - mean(x[iA])
+})
+k2 <- sum(abs(nulli2) >= abs(osservato))
+print(data.frame(B = c(B, B2), estremi = c(k, k2),
+  p_MC = c(p_mc, (k2 + 1) / (B2 + 1))))
+```
+
+La differenza fra i risultati riflette errore Monte Carlo e risoluzione. Non è richiesto che il p-value diminuisca quando aumenta B, né che i due valori coincidano.
+
+## Errore da riconoscere
+
+Non interpretare zero superamenti come impossibilità dell'evento sotto la nulla. Registrare k e B e usare una formula adatta al campionamento delle permutazioni.
+
+## Risposta alla domanda
+
+Il p-value Monte Carlo richiede ipotesi di scambiabilità, statistica e regola di coda esplicite. Più permutazioni stabilizzano il calcolo senza aggiungere osservazioni.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M06_N04` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M06/M06_N04.R).

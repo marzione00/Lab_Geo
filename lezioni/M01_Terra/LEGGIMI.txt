@@ -1,0 +1,137 @@
+INTRODUZIONE A R E ALL'ANALISI DEI DATI
+Preparazione a Terra01 e metodi per i dati ambientali
+Revisione completa — 18 novembre 2026
+
+LA PRESENTAZIONE
+
+Il PDF contiene 85 slide nel modello grafico M01: formato 20 x 12,5 cm,
+colori, caratteri, titoli e richiami coerenti con la versione approvata.
+Il sorgente R_analisi_dati_completa.tex contiene i diagrammi TikZ modificabili.
+I grafici scientifici vettoriali sono in Risorse/Figure/; i corrispondenti
+file della presentazione precedente sono conservati in Risorse/Originali/.
+
+Percorso:
+  3–11    R, tabelle, progetto, metadati e domanda scientifica.
+ 12–16    Popolazione, campione, variabili, media e mediana.
+ 17–28    Terra01: quantità di interesse, pesi, simulazione, R e attività.
+ 29–43    Campionamento, qualità, dipendenza, stime, modelli e intervalli.
+ 44–51    Grandi numeri, limite centrale e casi geoscientifici.
+ 52–62    Posizione, dispersione, correlazione e regressione.
+ 63–70    Importazione, controlli, grafici e trasformazioni.
+ 71–84    Serie temporali, copertura, filtri, LOESS e riferimenti.
+ 85       Riferimenti e materiali.
+
+Le formule introducono la quantità studiata, i simboli e le condizioni
+necessarie per interpretarla. Le figure dichiarate schematiche o simulate
+non rappresentano misure raccolte sul territorio.
+
+AVVIO DEGLI ESERCIZI R
+
+1. Estrarre l'intero archivio, mantenendo le cartelle.
+2. In RStudio, aprire Terra01.Rproj. In un altro ambiente R, impostare come
+   directory di lavoro la cartella che contiene setup.R e Dati/.
+3. Eseguire:
+
+   source("setup.R")
+
+4. Aprire il frammento desiderato in Codice/ e procedere per righe.
+   Il prefisso numerico del file corrisponde alla slide.
+5. Per ripercorrere l'intera lezione e mostrare istruzioni e risultati:
+
+   source("Lezione_completa.R", echo = TRUE)
+
+Lo script completo segue le slide in ordine. Alcuni frammenti usano oggetti
+creati nelle slide precedenti. Per esempio, 08 usa misure della slide 06,
+24 usa terra_sim della slide 23. setup.R prepara i dati comuni, ma non
+sostituisce questi passaggi intermedi. I commenti e il testo della slide
+indicano che cosa fa la nuova istruzione.
+
+I frammenti usano i pacchetti distribuiti con R: non occorrono installazioni
+aggiuntive né scaricamenti durante gli esercizi. La verifica è stata eseguita
+con R 4.6.0 tramite WebR 0.6.1; gli script possono essere aperti anche in una
+normale installazione di R. Le versioni sono documentate nelle note di verifica.
+
+Le istruzioni grafiche producono più figure. In RStudio si possono scorrere
+nel pannello Plots. Il frammento 84 esporta il riepilogo delle stazioni in
+Risultati/medie_stazioni.csv; è un esempio esplicito di salvataggio.
+
+QUALI DATI SI USANO
+
+terra
+  Anteprima archiviata di Terra01: 40 concentrazioni simulate, tre stazioni
+  A/B/C, numerosità 20/10/10. Il CSV è in Dati/terra01_anteprima.csv.
+
+terra_sim
+  Campione generato dal codice della slide 23. Il seme iniziale è 17.
+  Il generatore è lo stesso del laboratorio, riscritto con nomi espliciti.
+
+demo
+  Serie meteorologica interamente simulata: 1096 giorni, 2022–2024.
+  Serve per provare importazione, indicatori, modelli e serie temporali.
+  Il CSV è in Dati/meteo_simulati.csv. Il codice R legge questo file:
+  non è necessario usare Python per svolgere gli esercizi.
+
+Dati Meteostat
+  I grafici di Roma/Ciampino usano dati della fonte pubblica documentata
+  in PROVENIENZA_DATI.txt, compresi contributi di modello. Questi dati sono
+  separati da demo. I frammenti con titolo 'Prova su dati simulati' illustrano
+  un metodo sul dataset didattico; i numeri non coincidono con i grafici
+  Meteostat della stessa slide.
+
+Nel dataset demo la nuvolosità è percentuale. Nei dati Meteostat cldc è
+espressa in ottavi: i nomi delle colonne e le didascalie rendono esplicita
+la distinzione. Non unire le due colonne senza una conversione dichiarata.
+
+IL LABORATORIO TERRA01
+
+Sito:
+https://marzione00.github.io/Lab_Geo/#laboratorio/m01-estimando
+
+Terra01_esercitazione.R svolge il percorso in uno script separato, con
+commenti, quattro scenari e grafici. Terra01_scenari_verificati.csv riporta
+i risultati controllati in R. Il modello ha medie di stazione 3, 7 e 10 mg/L
+e deviazione standard 0,4 mg/L. Le misure simulate sono indipendenti.
+
+Con n_A = 20, le attese teoriche sono 5,75 mg/L per la media delle misure
+e 20/3 mg/L per la media delle stazioni. Il campione iniziale restituisce
+5,748234477155 e 6,605156418313334 mg/L. Il testo distingue queste quantità.
+
+Cambiare n_A cambia il peso della stazione A nella prima media. A seme fisso
+può cambiare anche quali numeri casuali sono usati per B e C. Con numerosità
+uguali, le due medie coincidono sul medesimo campione.
+
+COMPILARE IL SORGENTE LATEX
+
+Il PDF è già pronto. Per modificarlo occorrono una distribuzione LaTeX
+completa e XeLaTeX, con beamer, fontspec, TikZ/PGF, tcolorbox e listings.
+Il progetto non richiede shell-escape: i frammenti R sono letti da listings.
+
+Dalla cartella del progetto eseguire due volte:
+
+   xelatex -interaction=nonstopmode -halt-on-error R_analisi_dati_completa.tex
+   xelatex -interaction=nonstopmode -halt-on-error R_analisi_dati_completa.tex
+
+I due passaggi servono anche al posizionamento TikZ e ai collegamenti PDF.
+Il modello usa Nimbus Sans e DejaVu Sans Mono. Se questi caratteri non sono
+installati, il sorgente prevede TeX Gyre Heros e Latin Modern Mono come
+alternative; un cambio di font richiede un nuovo controllo visivo.
+
+Per cambiare un frammento R, modificare il relativo file in Codice/.
+Per cambiare un diagramma, cercare il commento '% SLIDE nnn' nel sorgente.
+Per rigenerare i grafici dai dati archiviati, consultare gli script e le
+dipendenze dichiarate in FONTI_E_NOTE.txt e PROVENIENZA_DATI.txt.
+
+NOTE PER LA LEZIONE
+
+- Presentare prima la domanda e i pesi, poi eseguire mean() e tapply().
+- Chiedere una previsione sullo scenario prima di far partire il laboratorio.
+- Distinguere numero di righe, numero di stazioni e repliche indipendenti.
+- Nei boxplot discutere mediana, dispersione e numerosità separatamente.
+- Nelle serie temporali controllare calendario, valori mancanti e metadati
+  prima di interpretare medie annue, curve smussate o cambi di livello.
+- Una media mensile su sei anni di campione non costituisce una normale
+  climatica standard trentennale.
+
+Fonti, provenienza, correzioni e limiti numerici sono documentati nei file
+di accompagnamento. Il materiale conserva gli esempi geoscientifici e
+le distinzioni fra descrizione, inferenza, previsione e decisione.

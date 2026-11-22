@@ -4,6 +4,7 @@ import { execFileSync } from 'node:child_process';
 import vm from 'node:vm';
 import { hardenBuild } from './harden-build.mjs';
 import { compactCourseSVG } from './compact-course-svg.mjs';
+import { buildLessons } from './lessons/build-lessons.mjs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'),
@@ -142,6 +143,7 @@ for (const m of catalogue.modules) {
     'window.GEO_MODULES=window.GEO_MODULES||{};window.GEO_MODULES.' + m.id + '=' + safe(data) + ';\n',
   );
 }
+const lessons = buildLessons(root, out);
 for (const name of [
   'html.js',
   'static.css',
@@ -179,6 +181,8 @@ for (const name of [
   'planet-families.js',
   'research-projects.js',
   'research-projects.css',
+  'lessons.js',
+  'lessons.css',
 ])
   fs.copyFileSync(path.join(root, 'src', name), path.join(out, 'assets', name));
 fs.writeFileSync(
@@ -276,7 +280,7 @@ function staticPage(file, title, summary, body) {
       body +
       '</main><footer><p>' +
       text(config.author) +
-      ' · <a href="../index.html">Atlante interattivo</a> · <a href="index.html">Indice testuale</a></p></footer></body></html>\n',
+      ' · <a href="../index.html">Atlante interattivo</a> · <a href="index.html">Indice testuale</a> · <a href="../LICENSE.md" rel="license">Licenze: materiali CC BY-NC-SA 4.0, codice PolyForm Noncommercial 1.0.0</a></p></footer></body></html>\n',
   );
 }
 for (const m of catalogue.modules) {
@@ -375,11 +379,12 @@ if (config.siteUrl)
       [config.siteUrl, ...staticPages.map(absolute)].map(u => '<url><loc>' + esc(u) + '</loc></url>').join('') +
       '</urlset>',
   );
-for (const f of ['THIRD_PARTY_NOTICES.md', 'LICENSE.md']) fs.copyFileSync(path.join(root, f), path.join(out, f));
+for (const f of ['THIRD_PARTY_NOTICES.md', 'LICENSE.md', 'LICENSE-CODE.md'])
+  fs.copyFileSync(path.join(root, f), path.join(out, f));
 // Compact generated SVG markup without changing coordinates, colours or precision.
 // Keep the editable course assets untouched.
 let svgBytesSaved = 0;
-for (const dir of ['assets/slides', 'assets/visuals']) {
+for (const dir of ['assets/slides', 'assets/visuals', 'assets/lezioni']) {
   for (const entry of fs.readdirSync(path.join(out, dir), { recursive: true })) {
     if (!entry.endsWith('.svg')) continue;
     const file = path.join(out, dir, entry),
@@ -407,5 +412,12 @@ console.log(
     counts.worlds +
     ' pianeti e ' +
     counts.missions +
-    ' spedizioni; materiali originali conservati.',
+    ' spedizioni; ' +
+    Object.keys(lessons).length +
+    ' lezioni a tappe (' +
+    Object.values(lessons).reduce((n, l) => n + l.pages, 0) +
+    ' tappe, ' +
+    Object.values(lessons).reduce((n, l) => n + l.explained.length, 0) +
+    ' commentate)' +
+    '; materiali originali conservati.',
 );

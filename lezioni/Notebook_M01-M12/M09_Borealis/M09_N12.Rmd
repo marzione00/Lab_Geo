@@ -1,0 +1,132 @@
+---
+title: "Leggere ACF e PACF di processi diversi"
+subtitle: "M09_N12 \u00b7 Borealis"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Quali informazioni aggiungono ACF e PACF alla semplice osservazione delle curve?
+
+## Obiettivi
+
+- Confrontare ACF e PACF.
+- Riconoscere il riferimento teorico dell’AR(1).
+- Distinguere copertura puntuale e simultanea.
+
+**Prima di iniziare.** Lettura di CSV, vettori, indicizzazione e funzioni di base in R. I blocchi vanno eseguiti nell’ordine all’interno del singolo notebook.
+
+**Dati e unità.** Tre realizzazioni sintetiche di 300 passi, senza unità fisica. L’AR(1) del CSV ha coefficiente 0,65 e valore iniziale fissato a zero: all’inizio presenta un transitorio. Nel random walk il primo valore registrato è già diverso da zero: la prima riga non va confusa con un’eventuale condizione iniziale precedente. Le colonne x_VAR e y_VAR appartengono a un altro approfondimento e qui non vengono usate.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Borealis oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M09_Borealis` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M09_Borealis/Risultati/M09_N12/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M09_Borealis"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M09_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M09_Borealis o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M09_N12")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(9012)
+```
+
+## 1. Confrontare le autocorrelazioni
+
+Usiamo gli stessi ritardi per i tre processi. Nei livelli del random walk un decadimento lento è compatibile con accumulazione degli shock, ma l’ACF campionaria resta una descrizione della traiettoria.
+
+```{r passo_01}
+p <- carica_dati("processi_simulati.csv")
+stopifnot(nrow(p)==300L, !anyNA(p))
+nomi <- c("rumore_bianco", "ar1", "random_walk")
+par(mfrow=c(3,1),mar=c(4.1,4.5,3.3,1.2))
+for(n in nomi) acf(p[[n]],lag.max=24,main=n)
+data.frame(serie=nomi,ACF1=vapply(p[nomi],function(z)
+ as.numeric(acf(z,plot=FALSE,lag.max=1)$acf[2]),numeric(1)))
+```
+
+**Lettura del risultato.** Il rumore bianco ha autocorrelazioni piccole salvo fluttuazioni, l’AR(1) conserva dipendenza a breve lag e il random walk mostra forte persistenza nei livelli.
+
+## 2. La dipendenza lineare al netto dei ritardi intermedi
+
+La PACF descrive l’associazione lineare residua fra estremi dopo aver considerato i lag intermedi. Per un AR(1) stazionario ideale si annulla oltre il primo ritardo, mentre il campione oscilla attorno a tale riferimento.
+
+```{r passo_02}
+par(mfrow=c(1,2),mar=c(4.1,4.5,3.3,1.2))
+acf(p$ar1,lag.max=24,main="AR(1): ACF")
+pacf(p$ar1,lag.max=24,main="AR(1): PACF")
+head(as.numeric(pacf(p$ar1,plot=FALSE,lag.max=6)$acf))
+```
+
+**Lettura del risultato.** La struttura teorica guida la lettura, ma una singola barra oltre la banda non identifica automaticamente l’ordine corretto di un modello.
+
+## 3. Interpretare le bande
+
+Le bande usuali $\pm1{,}96/\sqrt n$ sono un riferimento approssimato e puntuale per innovazioni indipendenti con momenti adeguati, per esempio gaussiane. La sola incorrelazione non basta in presenza di dipendenza non lineare. Guardare molti lag aumenta la possibilità di almeno uno scostamento casuale.
+
+```{r passo_03}
+n <- nrow(p)
+banda <- 1.96/sqrt(n)
+a <- as.numeric(acf(p$rumore_bianco,plot=FALSE,lag.max=24)$acf)[-1]
+c(limite=banda,lag_fuori_banda=sum(abs(a)>banda),lag_esaminati=length(a))
+# Due metà della stessa traiettoria: controllo descrittivo.
+data.frame(serie=nomi,media1=sapply(p[nomi],function(z)mean(z[1:150])),
+ media2=sapply(p[nomi],function(z)mean(z[151:300])))
+```
+
+**Lettura del risultato.** Il conteggio delle barre esterne non è un test simultaneo dell’intero grafico. Anche il confronto fra metà resta descrittivo, soprattutto quando le osservazioni sono dipendenti.
+
+## Variante svolta
+
+Simulare 200 serie bianche e contare quante hanno almeno un lag esterno fra i primi 24.
+
+```{r variante}
+set.seed(1912)
+uscite <- replicate(200,{
+ z<-rnorm(300)
+ any(abs(as.numeric(acf(z,plot=FALSE,lag.max=24)$acf)[-1])>1.96/sqrt(300))
+})
+mean(uscite)
+```
+
+La quota può essere molto superiore al 5%. Non coincide con 1−0,95²⁴ perché le stime ai diversi lag non sono indipendenti e le bande sono approssimate.
+
+## Errore da riconoscere
+
+Trattare le bande dell’ACF come una garanzia simultanea per tutti i ritardi, applicarle a qualsiasi processo solo perché incorrelato, o dedurre stazionarietà da un solo grafico.
+
+## Risposta alla domanda
+
+ACF e PACF descrivono aspetti diversi della dipendenza lineare. La loro lettura richiede la definizione dei lag, le ipotesi delle bande e il confronto con il grafico temporale.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M09_N12` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M09/M09_N12.R).

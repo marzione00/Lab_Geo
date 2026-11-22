@@ -1,0 +1,132 @@
+---
+title: "Confrontare senza anticipare un test"
+subtitle: "M01_N08 \u00b7 Terra"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Quale differenza descrittiva fra A e B emerge dalle densità osservate, considerando anche la variabilità dei singoli provini?
+
+## Obiettivi
+
+- Riassumere densità per affioramento con numerosità e dispersione.
+- Leggere una differenza fra medie accanto alla distribuzione dei valori.
+
+**Prima di iniziare.** Saper eseguire una cella R e riconoscere vettori, assegnamenti e nomi di colonne.
+
+**Dati e unità.** I dati sono 24 provini sintetici, 12 per affioramento, con densità calcolata come massa/volume. Il confronto è descrittivo e usa sempre il verso B meno A.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M01_N08/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M01_N08")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(1008)
+```
+
+## 1. Preparare dati e gruppi
+
+Il confronto parte dalle densità individuali, dopo aver verificato gli ingressi della formula. Separiamo i due gruppi in una lista: ogni elemento contiene i valori di un affioramento, mantenendo visibile il nome del gruppo.
+
+```{r passo_01}
+# Ogni esecuzione riparte dal CSV condiviso, senza modificare il file.
+d <- carica_dati("campioni_modulo1.csv", stringsAsFactors = FALSE)
+stopifnot(nrow(d) == 24L, !anyDuplicated(d$id))
+
+stopifnot(all(is.finite(d$massa_g)), all(d$massa_g > 0),
+          all(is.finite(d$volume_cm3)), all(d$volume_cm3 > 0))
+d$densita_g_cm3 <- d$massa_g / d$volume_cm3
+
+gruppi <- split(d$densita_g_cm3, d$affioramento)
+print(lengths(gruppi))
+stopifnot(identical(sort(names(gruppi)), c("A", "B")))
+print(lapply(gruppi, range))
+```
+
+**Lettura del risultato.** Le numerosità indicano quanti provini contribuiscono alla sintesi. Gli intervalli minimo-massimo descrivono la variabilità osservata; una loro eventuale sovrapposizione non equivale al risultato di un test statistico.
+
+## 2. Calcolare sintesi e differenza
+
+Affianchiamo media e deviazione standard, così il centro non nasconde la dispersione. La sottrazione usa i nomi dei gruppi e non la loro posizione nella tabella, riducendo il rischio di invertire il verso del confronto.
+
+```{r passo_02}
+medie <- vapply(gruppi, mean, numeric(1))
+deviazioni <- vapply(gruppi, sd, numeric(1))
+riassunto <- data.frame(affioramento = names(gruppi),
+                        n = lengths(gruppi), media_g_cm3 = medie,
+                        sd_g_cm3 = deviazioni, row.names = NULL)
+print(riassunto)
+differenza_B_A <- unname(medie["B"] - medie["A"])
+print(differenza_B_A)
+```
+
+**Lettura del risultato.** Il segno della differenza riguarda le medie del campione e non ogni coppia possibile di provini. La deviazione standard quantifica la dispersione dei valori individuali; non misura direttamente la precisione della differenza fra medie.
+
+## 3. Mostrare i valori oltre alle medie
+
+Il grafico dei punti lascia visibili tutte le osservazioni. Lo spostamento laterale serve soltanto a evitare sovrapposizioni; la coordinata verticale continua a rappresentare la densità. Aggiungiamo le medie con un simbolo distinto.
+
+```{r passo_03}
+stripchart(densita_g_cm3 ~ affioramento, data = d,
+           method = "jitter", vertical = TRUE, pch = 16,
+           col = "steelblue", xlab = "Affioramento", ylab = "Densita (g/cm^3)")
+points(seq_along(medie), medie, pch = 18, cex = 1.8, col = "firebrick")
+legend("topleft", c("Provini", "Medie"), pch = c(16, 18),
+       col = c("steelblue", "firebrick"), bty = "n")
+print(c(minimo = min(d$densita_g_cm3), massimo = max(d$densita_g_cm3)))
+```
+
+**Lettura del risultato.** Il grafico permette di confrontare posizione, dispersione e sovrapposizione. Non contiene un modello di campionamento: da solo non autorizza conclusioni sulla significatività, sulla causa delle differenze o su affioramenti non osservati.
+
+## Variante svolta
+
+Confrontare le mediane e osservare quanto cambia la sintesi del centro.
+
+```{r variante}
+mediane <- vapply(gruppi, median, numeric(1))
+confronto <- data.frame(gruppo = names(medie), media = medie, mediana = mediane)
+print(confronto)
+print(c(differenza_medie = differenza_B_A,
+        differenza_mediane = unname(mediane["B"] - mediane["A"])))
+```
+
+Media e mediana descrivono aspetti diversi del centro. Una differenza fra loro invita a guardare la forma dei dati; scegliere dopo aver visto quale risultato piace di più renderebbe ambiguo l'obiettivo dell'analisi.
+
+## Errore da riconoscere
+
+Una media maggiore non implica che tutti i valori di quel gruppo siano maggiori. Il grafico individuale e la dispersione impediscono di trasformare una proprietà della sintesi in una proprietà di ogni provino.
+
+## Risposta alla domanda
+
+Il confronto produce una differenza osservata, accompagnata da numerosità e distribuzioni. Le conclusioni restano riferite ai provini disponibili finché non viene definito un modello inferenziale coerente con le stazioni.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M01_N08` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M01/M01_N08.R).

@@ -1,0 +1,130 @@
+---
+title: "Un audit non \u00e8 una cancellazione automatica"
+subtitle: "M01_N15 \u00b7 Terra"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come possiamo segnalare misure non utilizzabili senza perdere le righe che richiedono un controllo?
+
+## Obiettivi
+
+- Costruire indicatori di qualità privi di valori logici mancanti.
+- Separare tabella completa e sottoinsieme utilizzabile per la densità.
+
+**Prima di iniziare.** Saper eseguire una cella R e riconoscere vettori, assegnamenti e nomi di colonne.
+
+**Dati e unità.** Introduciamo due anomalie dichiarate in una copia dei 24 provini: volume nullo per C02 e massa mancante per C04. Il CSV originale non viene modificato.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M01_N15/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M01_N15")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(1015)
+```
+
+## 1. Conservare la provenienza dell'anomalia
+
+Un esercizio di audit deve rendere visibili sia i dati ricevuti sia le modifiche didattiche. Conserviamo l'originale e registriamo le anomalie introdotte in una tabella distinta, senza attribuirle a misure reali o al file distribuito.
+
+```{r passo_01}
+# Ogni esecuzione riparte dal CSV condiviso, senza modificare il file.
+d <- carica_dati("campioni_modulo1.csv", stringsAsFactors = FALSE)
+stopifnot(nrow(d) == 24L, !anyDuplicated(d$id))
+
+originale <- d
+d$volume_cm3[d$id == "C02"] <- 0
+d$massa_g[d$id == "C04"] <- NA_real_
+modifiche <- data.frame(id = c("C02", "C04"),
+                        campo = c("volume_cm3", "massa_g"),
+                        nuovo_valore = c("0", "NA"))
+print(modifiche)
+print(d[d$id %in% modifiche$id, ])
+```
+
+**Lettura del risultato.** La tabella delle modifiche permette di riconoscere il carattere artificiale degli errori. Separare le versioni evita di perdere il valore iniziale e rende reversibile il procedimento di controllo.
+
+## 2. Tradurre le regole in indicatori
+
+Definiamo controlli specifici per massa e volume. is.finite restituisce falso anche per NA e infinito; combinandolo con la positività otteniamo una regola che non lascia indecisa la selezione delle righe.
+
+```{r passo_02}
+d$massa_ok <- is.finite(d$massa_g) & d$massa_g > 0
+d$volume_ok <- is.finite(d$volume_cm3) & d$volume_cm3 > 0
+d$densita_calcolabile <- d$massa_ok & d$volume_ok
+stopifnot(!anyNA(d$densita_calcolabile))
+print(table(d$densita_calcolabile))
+print(d[!d$densita_calcolabile, c("id", "massa_g", "volume_cm3", "massa_ok", "volume_ok")])
+```
+
+**Lettura del risultato.** Il falso indica che la densità non è calcolabile secondo la regola dichiarata. Non identifica automaticamente la causa dell'errore né autorizza a inventare una correzione: può richiedere la verifica del registro o una nuova misura.
+
+## 3. Calcolare senza nascondere le esclusioni
+
+Inizializziamo la densità a NA e la calcoliamo soltanto sulle righe ammesse. La tabella completa conserva tutte le osservazioni; il sottoinsieme analitico è un secondo oggetto, accompagnato da un conteggio riconciliabile.
+
+```{r passo_03}
+d$densita_g_cm3 <- NA_real_
+ok <- d$densita_calcolabile
+d$densita_g_cm3[ok] <- d$massa_g[ok] / d$volume_cm3[ok]
+utilizzabili <- d[ok, , drop = FALSE]
+print(c(totali = nrow(d), utilizzabili = nrow(utilizzabili), da_verificare = sum(!ok)))
+stopifnot(nrow(utilizzabili) + sum(!ok) == nrow(originale))
+stopifnot(all(is.finite(utilizzabili$densita_g_cm3)))
+```
+
+**Lettura del risultato.** Il conteggio spiega quanti provini contribuiscono ai calcoli successivi. La densità mancante conserva il legame con il problema originario; non viene trasformata in zero, che avrebbe un significato fisico completamente diverso.
+
+## Variante svolta
+
+Aggiungere un volume infinito e verificare che la regola lo intercetti.
+
+```{r variante}
+esempio <- d
+esempio$volume_cm3[esempio$id == "C06"] <- Inf
+volume_valido <- is.finite(esempio$volume_cm3) & esempio$volume_cm3 > 0
+print(esempio[!volume_valido, c("id", "volume_cm3")])
+stopifnot(!volume_valido[esempio$id == "C06"])
+```
+
+Controllare soltanto volume maggiore di zero lascerebbe passare infinito. La combinazione di finitezza e positività rende esplicite due condizioni diverse, entrambe necessarie per interpretare il rapporto come densità misurata.
+
+## Errore da riconoscere
+
+Cancellare tutte le righe segnalate impedisce di ricostruire le decisioni. Conservare l'audit e creare una vista analitica separata permette di riesaminare una riga quando arrivano informazioni nuove.
+
+## Risposta alla domanda
+
+L'audit produce indicatori e una selezione motivata, mantenendo tutte le osservazioni. Una misura insolita ma finita e positiva richiederebbe ulteriori controlli; non è esclusa soltanto perché lontana dalle altre.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M01_N15` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M01/M01_N15.R).

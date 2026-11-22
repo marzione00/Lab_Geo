@@ -1,0 +1,143 @@
+---
+title: "Silhouette: separazione relativa del campione"
+subtitle: "M08_N12 \u00b7 Polychroma"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Un campione è più vicino al proprio gruppo o al gruppo alternativo più prossimo?
+
+## Obiettivi
+
+- Calcolare a, b e silhouette.
+- Esaminare la distribuzione dei valori.
+- Distinguere separazione relativa, lontananza e probabilità.
+
+**Prima di iniziare.** Lettura di un CSV, vettori, matrici, indicizzazione e funzioni di base in R.
+
+**Dati e unità.** Novanta rocce sintetiche del corso. SiO2, CaO, MgO e FeO sono percentuali in massa; densita è espressa in g/cm³ e grana_mm in millimetri. colore e fossili sono indici numerici convenzionali del simulatore, non misure mineralogiche o conteggi reali. La colonna litologia_generatrice descrive il gruppo usato nella simulazione e viene esclusa dalle stime.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Polychroma oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M08_Polychroma` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M08_Polychroma/Risultati/M08_N12/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M08_Polychroma"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M08_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M08_Polychroma o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M08_N12")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(8012)
+```
+
+## 1. Distanze medie, non distanze dai centroidi
+
+Per il campione $i$, $a(i)$ è la distanza media dagli altri casi dello stesso gruppo; $b(i)$ è la minima distanza media dai casi di ciascun altro gruppo. La silhouette vale $s(i)=[b(i)-a(i)]/\max\{a(i),b(i)\}$.
+
+```{r passo_01}
+# Seleziona le misure per nome: ID ed etichetta non entrano nella matrice.
+r <- carica_dati("rocce_simulate.csv")
+v <- c("SiO2", "CaO", "MgO", "FeO", "densita", "grana_mm", "colore", "fossili")
+X <- as.matrix(r[v])
+stopifnot(nrow(X)==90L, ncol(X)==8L, !anyDuplicated(r$id),
+          all(is.finite(X)), all(apply(X,2,sd)>0))
+Z <- scale(X)
+D <- dist(Z)
+# Gli avvii multipli confrontano soluzioni locali sullo stesso spazio.
+set.seed(816)
+km <- kmeans(Z, centers=3, nstart=50, iter.max=100)
+s <- silhouette_base(km$cluster,D)
+c(media=mean(s),minimo=min(s),massimo=max(s))
+# Ricostruisce a e b per il primo campione.
+DD <- as.matrix(D); i <- 1L
+stesso <- which(km$cluster==km$cluster[i]); stesso <- setdiff(stesso,i)
+a <- mean(DD[i,stesso])
+altri <- setdiff(unique(km$cluster),km$cluster[i])
+b <- min(vapply(altri,function(g) mean(DD[i,km$cluster==g]),numeric(1)))
+c(a=a,b=b,s_diretta=(b-a)/max(a,b),s_funzione=s[i])
+```
+
+**Lettura del risultato.** La media è circa 0,626 e tutti i valori sono positivi in questo campione sintetico. La formula usa le distanze fra casi; sostituirle con distanze dai centroidi definirebbe una quantità diversa.
+
+## 2. Leggere l’intera distribuzione
+
+Una media può nascondere casi ambigui. Ordiniamo i valori all’interno dei gruppi e confrontiamo la loro ampiezza. La linea zero distingue i casi mediamente più vicini al gruppo alternativo.
+
+```{r passo_02}
+colori <- c("#087C74", "#C57E42", "#7363AA", "#1D7890", "#A17B19", "#657180", "#B55353")
+ord <- order(km$cluster,s)
+barplot(s[ord],col=colori[km$cluster[ord]],border=NA,space=0,
+ xlab="Campioni ordinati entro il cluster",ylab="Silhouette",ylim=c(-.1,1))
+abline(h=0,col="grey40"); abline(h=mean(s),lty=2,col="#C57E42")
+aggregate(s,list(cluster=km$cluster),function(x)c(min=min(x),mediana=median(x),media=mean(x)))
+```
+
+**Lettura del risultato.** I valori più piccoli segnalano minore separazione relativa. Un valore alto descrive coesione e separazione nella distanza selezionata: non è una probabilità di appartenenza né una prova di origine geologica.
+
+## 3. Il caso di un gruppo singolo
+
+La silhouette convenzionale di un singleton viene posta a zero, perché la distanza interna media non è definita. La funzione ausiliaria tratta esplicitamente questa situazione e i casi con tutte le distanze nulle.
+
+```{r passo_03}
+piccolo <- matrix(c(0,1,4,5),ncol=1)
+gruppi <- c(1,1,2,3)
+data.frame(x=piccolo[,1],gruppo=gruppi,
+ silhouette=silhouette_base(gruppi,dist(piccolo)))
+# Due gruppi su punti coincidenti: a=b=0, convenzione s=0.
+silhouette_base(c(1,1,2,2),dist(matrix(0,4,1)))
+```
+
+**Lettura del risultato.** La convenzione impedisce una divisione per zero e non attribuisce una separazione artificiale ai gruppi costituiti da un solo punto.
+
+## Variante svolta
+
+Elencare i sei casi con minore silhouette conservando ID, gruppo e distanza quadratica dal centro.
+
+```{r variante}
+d2 <- rowSums((Z-km$centers[km$cluster,,drop=FALSE])^2)
+tab <- data.frame(id=r$id,cluster=km$cluster,silhouette=s,distanza2=d2)
+head(tab[order(tab$silhouette),],6)
+```
+
+Distanza dal centro e silhouette rispondono a domande diverse. Un caso può essere lontano dal centro ma ben separato dagli altri gruppi; leggere entrambi aiuta a scegliere quali campioni esaminare.
+
+## Errore da riconoscere
+
+Descrivere una silhouette di 0,63 come “63% di probabilità che il cluster sia corretto”. Non è una probabilità.
+
+## Risposta alla domanda
+
+La silhouette confronta distanze medie relative e va letta per campione, per gruppo e insieme alle scelte che hanno definito la distanza.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M08_N12` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M08/M08_N12.R).

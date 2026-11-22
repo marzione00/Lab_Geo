@@ -1,0 +1,150 @@
+---
+title: "Ward: una gerarchia senza fissare subito k"
+subtitle: "M08_N16 \u00b7 Polychroma"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Che cosa rappresenta una fusione nel dendrogramma di Ward e come si collega alla WSS?
+
+## Obiettivi
+
+- Costruire una gerarchia di Ward.
+- Verificare la relazione fra altezza e aumento di WSS.
+- Confrontare tagli e partizioni.
+
+**Prima di iniziare.** Lettura di un CSV, vettori, matrici, indicizzazione e funzioni di base in R.
+
+**Dati e unità.** Novanta rocce sintetiche del corso. SiO2, CaO, MgO e FeO sono percentuali in massa; densita è espressa in g/cm³ e grana_mm in millimetri. colore e fossili sono indici numerici convenzionali del simulatore, non misure mineralogiche o conteggi reali. La colonna litologia_generatrice descrive il gruppo usato nella simulazione e viene esclusa dalle stime.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Polychroma oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M08_Polychroma` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M08_Polychroma/Risultati/M08_N16/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M08_Polychroma"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M08_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M08_Polychroma o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M08_N16")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(8016)
+```
+
+## 1. Costruire e tagliare la gerarchia
+
+Ward unisce progressivamente i gruppi scegliendo, a ogni passo, la fusione con minore aumento della somma quadratica interna. Usiamo ward.D2 e distanze euclidee calcolate su Z; non eleviamo le distanze al quadrato prima di passarle a R.
+
+```{r passo_01}
+# Seleziona le misure per nome: ID ed etichetta non entrano nella matrice.
+r <- carica_dati("rocce_simulate.csv")
+v <- c("SiO2", "CaO", "MgO", "FeO", "densita", "grana_mm", "colore", "fossili")
+X <- as.matrix(r[v])
+stopifnot(nrow(X)==90L, ncol(X)==8L, !anyDuplicated(r$id),
+          all(is.finite(X)), all(apply(X,2,sd)>0))
+Z <- scale(X)
+D <- dist(Z)
+# Ward.D2 riceve le distanze euclidee, senza elevarle al quadrato a mano.
+h <- hclust(D, method="ward.D2")
+ward <- cutree(h, k=3)
+plot(h,labels=FALSE,hang=-1,main="Gerarchia di Ward",xlab="90 campioni",
+ sub="",ylab="Altezza di Ward.D2")
+rect.hclust(h,k=3,border=c("#087C74","#C57E42","#7363AA"))
+table(ward)
+```
+
+**Lettura del risultato.** Il taglio produce tre gruppi da 30 casi. I rettangoli visualizzano una scelta di taglio; il dendrogramma descrive anche le fusioni più fini e quelle successive.
+
+## 2. Ricostruire l’aumento della WSS
+
+Per due gruppi A e B, $\Delta W=\frac{n_A n_B}{n_A+n_B}\|\mu_A-\mu_B\|^2$. In hclust con ward.D2 e ingresso euclideo, l’altezza memorizzata soddisfa $h^2=2\Delta W$. Ricostruiamo tutte le fusioni per controllare la convenzione.
+
+```{r passo_02}
+membri <- vector("list",nrow(Z)-1)
+delta <- numeric(nrow(Z)-1)
+for(t in seq_len(nrow(h$merge))){
+ # Valori negativi: singole righe; positivi: fusioni precedenti.
+ a <- h$merge[t,1]; b <- h$merge[t,2]
+ A <- if(a<0) -a else membri[[a]]
+ B <- if(b<0) -b else membri[[b]]
+ muA <- colMeans(Z[A,,drop=FALSE]); muB <- colMeans(Z[B,,drop=FALSE])
+ delta[t] <- length(A)*length(B)/(length(A)+length(B))*sum((muA-muB)^2)
+ membri[[t]] <- c(A,B)
+}
+c(errore_identita=max(abs(h$height^2/2-delta)),
+ somma_incrementi=sum(delta),TSS=sum(Z^2))
+tail(data.frame(fusione=seq_along(delta),altezza=h$height,delta_W=delta),5)
+```
+
+**Lettura del risultato.** Lo scarto massimo dell’identità è circa 6×10⁻¹⁴. La somma di tutti gli aumenti coincide con 712, la WSS quando tutti i campioni formano un solo gruppo. Le altezze del dendrogramma non vanno lette direttamente come ΔW.
+
+## 3. Confronto con k-means
+
+Confrontiamo due procedure sulla stessa geometria: una gerarchica con fusioni irreversibili e una partizione ricalcolata per k fissato. Anche se la partizione coincide, i percorsi algoritmici restano diversi.
+
+```{r passo_03}
+# Gli avvii multipli confrontano soluzioni locali sullo stesso spazio.
+set.seed(816)
+km <- kmeans(Z, centers=3, nstart=50, iter.max=100)
+table(kmeans=km$cluster,Ward=ward)
+c(accordo_coppie=accordo_coppie(km$cluster,ward),
+ ARI=indice_rand_corretto(km$cluster,ward))
+```
+
+**Lettura del risultato.** Nel caso sintetico entrambi gli indici valgono uno. La concordanza riguarda questi dati, questa distanza e questo taglio; non garantisce concordanza in altre condizioni.
+
+## Variante svolta
+
+Tagliare la gerarchia a quattro gruppi e confrontarla con k-means a quattro gruppi.
+
+```{r variante}
+ward4 <- cutree(h,k=4)
+set.seed(1601)
+km4 <- kmeans(Z,4,nstart=50,iter.max=100)
+table(Ward=ward4,kmeans=km4$cluster)
+c(ARI=indice_rand_corretto(ward4,km4$cluster),
+ silhouette_Ward=mean(silhouette_base(ward4,D)),
+ silhouette_kmeans=mean(silhouette_base(km4$cluster,D)))
+```
+
+Cambiare il taglio può rendere visibili differenze fra metodi. La silhouette viene calcolata con la stessa matrice delle distanze, così il confronto usa un riferimento comune.
+
+## Errore da riconoscere
+
+Passare dist(Z)^2 a ward.D2 o interpretare l’altezza come aumento di WSS senza controllare la convenzione del software.
+
+## Risposta alla domanda
+
+Il dendrogramma documenta una sequenza di fusioni. La formula degli incrementi permette di leggere correttamente le altezze e collegarle alla variabilità interna.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M08_N16` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M08/M08_N16.R).

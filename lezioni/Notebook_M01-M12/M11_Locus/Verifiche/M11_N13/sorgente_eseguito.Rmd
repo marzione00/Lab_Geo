@@ -1,0 +1,139 @@
+---
+title: "Moran I calcolato esplicitamente"
+subtitle: "M11_N13 · Locus"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Quale indice di Moran si ottiene con pesi binari e quale con pesi normalizzati?
+
+## Obiettivi
+
+- Calcolare esplicitamente I con A binaria.
+- Confrontare il risultato con W normalizzata.
+- Collegare la pendenza del diagramma a I_W.
+
+**Prima di iniziare.** Sono richiesti vettori, tabelle, coordinate e funzioni R di base. I blocchi vanno eseguiti in ordine; il notebook è autonomo rispetto agli altri. I calcoli usano R base e i pacchetti standard.
+
+**Dati e unità.** 64 siti sintetici su una griglia 8 × 8, con passo 250 m e coordinate locali x_m e y_m fra 0 e 1750 m. Questo piano locale non ha un codice EPSG. La concentrazione è sintetica, in unità arbitrarie (u.a.); la quota è in metri sintetici. Ogni riga descrive un sito e il suo valore puntuale, non la media di una cella.
+
+## Preparazione
+
+Aprire il progetto autonomo di Locus o quello generale dei notebook. I CSV locali restano invariati. Gli output vanno in `Risultati/M11_N13/`. Nessun download o installazione viene eseguito nei blocchi.
+
+```{r preparazione}
+# Trova il modulo dal progetto autonomo o dal progetto generale dei notebook.
+.gs_cerca <- normalizePath(getwd(),winslash="/",mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca,file.path(.gs_cerca,"M11_Locus"),
+    file.path(.gs_cerca,"03_Notebook_svolti","M11_Locus"),
+    file.path(.gs_cerca,"M11","03_Notebook_svolti","M11_Locus"))
+  .gs_ok <- file.exists(file.path(.gs_candidati,"M11_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati,"R","funzioni_notebook.R"))
+  if(any(.gs_ok)) { .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]];break }
+  .gs_padre <- dirname(.gs_cerca)
+  if(.gs_padre==.gs_cerca) stop("Aprire il progetto M11_Locus o quello generale dei notebook.")
+  .gs_cerca <- .gs_padre
+}
+source(file.path(.gs_modulo,"R","funzioni_notebook.R"),local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo,"M11_N13")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88,digits=6)
+if(requireNamespace("knitr",quietly=TRUE)) {
+  knitr::opts_chunk$set(echo=TRUE,error=FALSE,warning=TRUE,message=TRUE,
+    fig.width=8,fig.height=5,dpi=150,fig.align="center")
+}
+set.seed(11013)
+```
+
+## 1. La formula conserva la somma dei pesi
+
+Per una matrice $M$, $I_M=(n/S_0)\sum_{i,j}m_{ij}v_i v_j/\sum_i v_i^2$, con $v_i=z_i-\bar z$ e $S_0=\sum_{i,j}m_{ij}$. Il laboratorio originale usa pesi binari.
+
+```{r passo_01}
+d <- carica_dati("spazio_v3.csv")
+audit_spazio(d)
+ ps <- pesi_spaziali(d,260);A <- ps$A;W <- ps$W
+ v <- d$concentrazione-mean(d$concentrazione);n <- length(v)
+ I_A <- n/sum(A)*sum(A*outer(v,v))/sum(v^2)
+ controllo <- as.numeric(n/sum(A)*crossprod(v,A%*%v)/crossprod(v))
+ data.frame(matrice="A binaria",Moran_I=I_A,n=n,S0=sum(A),prodotto_quadratico=controllo)
+ stopifnot(abs(I_A-controllo)<1e-12,abs(I_A-moran_I(d$concentrazione,A))<1e-12)
+```
+
+**Lettura del risultato.** Il valore dell’indice dipende dal vicinato e dai pesi. La forma matriciale e la somma esplicita costituiscono due controlli del medesimo calcolo.
+
+## 2. La normalizzazione modifica l’indice
+
+Calcoliamo anche I_W senza chiamarlo lo stesso risultato. In questo dataset W ha somma totale pari a n.
+
+```{r passo_02}
+I_W <- n/sum(W)*sum(W*outer(v,v))/sum(v^2)
+confronto <- data.frame(matrice=c("A binaria","W per riga"),S0=c(sum(A),sum(W)),
+  Moran_I=c(I_A,I_W))
+confronto
+write.csv(confronto,percorso_risultati("Moran_due_matrici.csv"),row.names=FALSE)
+```
+
+**Lettura del risultato.** Il trattamento dei bordi cambia il contributo relativo delle coppie. Una differenza fra i due indici non è un errore di calcolo: è una differenza fra statistiche.
+
+## 3. La pendenza riguarda il lag costruito con W
+
+Nel diagramma ogni punto associa uno scarto alla media degli scarti dei suoi vicini. La pendenza OLS coincide qui con I_W, non con I_A.
+
+```{r passo_03}
+lag_W <- as.numeric(W%*%v)
+retta <- lm(lag_W~v)
+pendenza <- unname(coef(retta)["v"])
+data.frame(intercetta=coef(retta)[1],pendenza=pendenza,I_W=I_W,I_A=I_A)
+stopifnot(abs(pendenza-I_W)<1e-12)
+stile_grafico()
+plot(v,lag_W,pch=19,col=palette_geo[1],xlab="Scarto dalla media (u.a.)",
+  ylab="Media degli scarti vicini con W (u.a.)",main="Diagramma di Moran: pendenza I_W")
+abline(h=0,v=0,lty=2,col="grey70");abline(retta,col=palette_geo[2],lwd=2)
+```
+
+**Lettura del risultato.** La centratura di v e S 0=n spiegano l’identità. Non trasferire la pendenza al valore binario: occorre conservare la stessa matrice nella formula e nel grafico.
+
+## Variante svolta
+
+**Moran è invariato da una trasformazione affine comune.** Moltiplicare tutte le concentrazioni per 10 e aggiungere 7, conservando i pesi.
+
+```{r variante}
+z2 <- 10*d$concentrazione+7
+I2 <- moran_I(z2,A)
+data.frame(I_originale=I_A,I_trasformato=I2,scarto=I2-I_A)
+stopifnot(abs(I2-I_A)<1e-12)
+```
+
+L’indice è adimensionale e usa scarti normalizzati. La semivarianza, invece, conserva il quadrato dell’unità del dato e cambia sotto una moltiplicazione.
+
+## Errore da riconoscere
+
+Riportare I senza descrivere i pesi, oppure sovrapporre il valore binario alla retta del diagramma costruito con W.
+
+## Risposta alla domanda
+
+Moran confronta prodotti fra scarti vicini rispetto alla dispersione totale. A e W generano due statistiche distinte. Nel diagramma con lag W la pendenza è I_W nelle condizioni verificate, mentre il laboratorio originale conserva I_A.
+
+## Raccordo con le slide
+
+[Slide 56–62 della lezione Locus](../../02_PDF/M11_Locus/Locus_M11_statistica_spaziale.pdf#page=56). Il notebook conserva il tema del laboratorio originale e aggiunge verifiche e una variante svolta.
+
+
+## Riferimenti e provenienza
+
+Questo svolgimento sviluppa `M11_N13` del [modulo M11 del corso](https://marzione00.github.io/Lab_Geo/#modulo-M11). Il [codice originale](https://github.com/marzione00/Lab_Geo/blob/649f7cc577b96bd1044d81e78a2f530813e4f96b/materiali/laboratori/M11/M11_N13.R) è conservato immutato in `R/Originali_corso/`; la mappa allegata documenta gli ampliamenti. Dati e originali hanno impronte SHA-256 e SHA-1 Git verificate.
+
+Documentazione primaria delle operazioni: [R, dist](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/dist.html), [R, aggregate](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/aggregate.html), [R, sample](https://stat.ethz.ch/R-manual/R-devel/library/base/html/sample.html). Le definizioni spaziali e il riferimento inferenziale seguono il laboratorio originale, con le distinzioni esplicitate nel testo.

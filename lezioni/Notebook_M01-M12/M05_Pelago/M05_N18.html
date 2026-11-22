@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Precisione Monte Carlo e registrazione</title><style>
+:root{--navy:#15283e;--teal:#087c74;--ink:#253344;--muted:#536373;--paper:#f8f6f1;--line:#dbe3e6}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.65 system-ui,-apple-system,"Segoe UI",sans-serif}a{color:#06685f;text-underline-offset:3px}a:hover{color:#14354c}main{max-width:1000px;margin:auto;padding:38px 44px 70px;background:#fff;min-height:100vh}nav{font-size:14px;display:flex;gap:18px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:35px}.eyebrow{font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--teal);font-weight:750;margin:0 0 12px}h1,h2,h3{color:var(--navy);line-height:1.2;letter-spacing:-.02em}h1{font-size:39px;margin:0 0 20px}h2{font-size:27px;margin:44px 0 17px;padding-bottom:10px;border-bottom:1px solid var(--line)}h3{font-size:21px;margin:28px 0 12px}p{margin:13px 0}ul,ol{padding-left:25px}li{margin:7px 0}strong{font-weight:700}.question{font-size:21px;line-height:1.5;border-left:4px solid var(--teal);padding:14px 20px;background:#edf6f3;margin:25px 0}.meta{color:var(--muted);font-size:15px}.callout{border:1px solid #cbdad8;border-left:4px solid var(--teal);padding:14px 20px;border-radius:5px;background:#f7faf9;margin:22px 0}.pitfall{border-left-color:#a2632a;background:#fffaf3}pre{white-space:pre;overflow:auto;tab-size:2;font:14px/1.6 "DejaVu Sans Mono",Consolas,monospace;margin:0;padding:18px 20px;color:#182d44}code{font-family:"DejaVu Sans Mono",Consolas,monospace;font-size:.88em}p code,li code,td code{background:#eef3f4;border-radius:3px;padding:2px 5px;overflow-wrap:anywhere}.codebox{border:1px solid #cbd8df;border-radius:7px;overflow:hidden;margin:18px 0 8px;background:#f2f6fa}.code-label{background:#e6edf3;color:#2a4660;font:700 12px/1.4 system-ui,sans-serif;padding:9px 17px;letter-spacing:.05em;text-transform:uppercase}.output{border:1px solid #dee4e7;border-radius:6px;background:#fbfcfc;margin:8px 0 18px}.output .code-label{background:#f0f3f4;color:#536373}.output pre{font-size:13px;color:#344550;max-height:580px}.sourceCode .co{color:#4d6a58;font-style:italic}.sourceCode .st,.sourceCode .ch{color:#9b392e}.sourceCode .dv,.sourceCode .fl,.sourceCode .bn{color:#7946a0}.sourceCode .kw,.sourceCode .cf{color:#075f85;font-weight:650}.sourceCode .fu{color:#075f85}.sourceCode .op{color:#495b70}figure{margin:22px 0 26px}figure img{width:100%;height:auto;display:block;border:1px solid #e2e7e9;border-radius:5px}figcaption{color:var(--muted);font-size:13px;margin-top:6px}.result-label{color:var(--teal);font-weight:750;font-size:14px;margin-top:22px}.module-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.card{border:1px solid var(--line);border-top:4px solid var(--teal);border-radius:7px;padding:20px}.card h2{margin:0 0 9px;padding:0;border:0;font-size:25px}.card p{margin:7px 0}.toc{padding:17px 22px;background:#f6f8f8;border:1px solid var(--line);border-radius:6px;margin:24px 0}.toc p{margin:0 0 6px}.toc ol{margin:5px 0}table{border-collapse:collapse;width:100%;font-size:15px;margin:24px 0}th,td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{background:#eff4f5;color:var(--navy)}footer{margin-top:45px;padding-top:20px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}math{font-size:1.08em}math[display="block"]{overflow:auto;display:block;padding:12px 0}details{border:1px solid var(--line);border-radius:6px;padding:12px 18px;margin:22px 0}summary{cursor:pointer;color:var(--navy);font-weight:650}small{font-size:13px}.tag{font-size:12px;color:#506573;background:#eef3f4;border-radius:4px;padding:3px 7px}.file-links{display:flex;gap:14px;flex-wrap:wrap;margin:14px 0 20px}
+@media(max-width:640px){body{font-size:16px}main{padding:24px 19px 50px}h1{font-size:31px}h2{font-size:24px}.module-grid{grid-template-columns:1fr}.question{font-size:19px;padding:13px}pre{font-size:12.5px;padding:14px}.output pre{font-size:12px}th,td{padding:8px 5px}nav{gap:12px}}
+@media print{body{background:#fff;font-size:11pt}main{max-width:none;padding:0}nav,.file-links{display:none}pre{white-space:pre-wrap;font-size:9pt}.output pre{max-height:none}h2,h3{break-after:avoid}.codebox,figure,.callout{break-inside:avoid}a{color:inherit;text-decoration:none}}
+</style></head><body><main><nav><a href="../index.html">Tutti i moduli</a><a href="index.html">Indice Pelago</a><a href="M05_N17.html">← M05_N17</a><a href="M05_N19.html">M05_N19 →</a></nav><p class="eyebrow">GeoStat Lab · Esercitazioni svolte</p><h1>Precisione Monte Carlo e registrazione</h1><p class="meta">M05_N18 · Pelago · soluzione eseguita e commentata</p><div class="question"><p>Quanto cambiano gli estremi bootstrap per effetto del seme e come
+registriamo un risultato riproducibile?</p>
+</div><div class="file-links"><a href="M05_N18.Rmd" download>Sorgente R Markdown</a><a href="../LEGGIMI_NOTEBOOK.txt">Come eseguire il notebook</a></div><h2>Prima di iniziare</h2><ul><li><p>Separare errore Monte Carlo e incertezza di campionamento.</p>
+</li><li><p>Salvare dati di controllo, semi e parametri dell’analisi.</p>
+</li></ul><p><strong>Prerequisiti.</strong> Vettori, indicizzazione, media, varianza e grafici di base in R.</p><p><strong>Dati e unità.</strong> Ottanta diametri sintetici Rounded in micrometri. Lo stesso campione
+viene ricampionato con più semi e due numerosità di simulazione.</p><div class="toc"><p><strong>Percorso dello svolgimento</strong></p><ol><li><a href="#passo-1">Definire una funzione che restituisce i risultati necessari</a></li><li><a href="#passo-2">Confrontare più semi e più valori di B</a></li><li><a href="#passo-3">Salvare un risultato e i suoi controlli</a></li></ol><a href="#variante">Variante svolta</a> · <a href="#risposta">Risposta alla domanda</a></div><details><summary>Preparazione del progetto e seme casuale</summary><p>Aprire il progetto <code>GeoStat_Lab_Notebooks.Rproj</code> e poi il file Rmd. Questo blocco trova le cartelle dei dati e dei risultati senza usare percorsi personali.</p><div class="codebox"><div class="code-label">R · codice commentato</div><div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Trova il progetto risalendo le cartelle: nessun percorso personale.</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>.gs_radice <span class="ot">&lt;-</span> <span class="fu">normalizePath</span>(<span class="fu">getwd</span>(), <span class="at">winslash=</span><span class="st">&quot;/&quot;</span>, <span class="at">mustWork=</span><span class="cn">TRUE</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="cf">while</span> (<span class="sc">!</span><span class="fu">file.exists</span>(<span class="fu">file.path</span>(.gs_radice, <span class="st">&quot;GeoStat_Lab_Notebooks.Rproj&quot;</span>))) {</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  .gs_padre <span class="ot">&lt;-</span> <span class="fu">dirname</span>(.gs_radice)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (.gs_padre <span class="sc">==</span> .gs_radice) {</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">&quot;Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.&quot;</span>)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  .gs_radice <span class="ot">&lt;-</span> .gs_padre</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="co"># I dati restano separati dai risultati scritti dall&#39;esercitazione.</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(<span class="fu">file.path</span>(.gs_radice, <span class="st">&quot;R&quot;</span>, <span class="st">&quot;funzioni_notebook.R&quot;</span>), <span class="at">local=</span><span class="cn">TRUE</span>)</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>.gs_funzioni <span class="ot">&lt;-</span> <span class="fu">.gs_prepara_notebook</span>(.gs_radice, <span class="st">&quot;M05_N18&quot;</span>)</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>carica_dati <span class="ot">&lt;-</span> .gs_funzioni<span class="sc">$</span>carica_dati</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>percorso_dati <span class="ot">&lt;-</span> .gs_funzioni<span class="sc">$</span>percorso_dati</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>percorso_risultati <span class="ot">&lt;-</span> .gs_funzioni<span class="sc">$</span>percorso_risultati</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="at">width=</span><span class="dv">88</span>, <span class="at">digits=</span><span class="dv">6</span>)</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Il seme consente di ripetere le estrazioni casuali di questo notebook.</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">5018</span>)</span></code></pre></div>
+</div></details><section id="passo-1"><h2>1. Definire una funzione che restituisce i risultati necessari</h2><p>Una funzione rende confrontabili le simulazioni: dati, statistica e
+quantili restano invariati mentre cambiano seme e numero di repliche.
+Registriamo queste scelte insieme ai risultati, invece di conservare
+soltanto un intervallo privo di provenienza.</p>
+<div class="codebox"><div class="code-label">R · codice commentato</div><div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>dati <span class="ot">&lt;-</span> <span class="fu">carica_dati</span>(<span class="st">&quot;fossili_simulati.csv&quot;</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> dati<span class="sc">$</span>diametro_tot_um[dati<span class="sc">$</span>morfotipo <span class="sc">==</span> <span class="st">&quot;Rounded&quot;</span>]</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="fu">is.finite</span>(x)))</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>analizza_boot <span class="ot">&lt;-</span> <span class="cf">function</span>(B, seme) {</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set.seed</span>(seme)</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  z <span class="ot">&lt;-</span> <span class="fu">replicate</span>(B, <span class="fu">mean</span>(<span class="fu">sample</span>(x, <span class="fu">length</span>(x), <span class="cn">TRUE</span>)))</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  q <span class="ot">&lt;-</span> <span class="fu">quantile</span>(z, <span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>), <span class="at">names =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.frame</span>(<span class="at">B =</span> B, <span class="at">seme =</span> seme, <span class="at">SE =</span> <span class="fu">sd</span>(z), <span class="at">inferiore =</span> q[<span class="dv">1</span>], <span class="at">superiore =</span> q[<span class="dv">2</span>])</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+</div><p class="result-label">Lettura del risultato</p><p>La funzione stima lo stesso bersaglio in ogni chiamata. L’eventuale
+differenza fra le righe dipende dal ricampionamento numerico, perché il
+campione osservato non è cambiato.</p>
+</section><section id="passo-2"><h2>2. Confrontare più semi e più valori di B</h2><p>Usiamo sei semi per ciascuna numerosità di simulazione. La
+dispersione degli estremi fra semi descrive la stabilità numerica della
+procedura per questo campione. Sei ripetizioni forniscono una diagnosi
+didattica, non una misura molto precisa dell’errore Monte Carlo.</p>
+<div class="codebox"><div class="code-label">R · codice commentato</div><div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>piano <span class="ot">&lt;-</span> <span class="fu">expand.grid</span>(<span class="at">B =</span> <span class="fu">c</span>(<span class="dv">1000</span>, <span class="dv">3000</span>), <span class="at">seme =</span> <span class="dv">518</span><span class="sc">:</span><span class="dv">523</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>risultati <span class="ot">&lt;-</span> <span class="fu">do.call</span>(rbind, <span class="fu">lapply</span>(<span class="fu">seq_len</span>(<span class="fu">nrow</span>(piano)), <span class="cf">function</span>(i)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">analizza_boot</span>(piano<span class="sc">$</span>B[i], piano<span class="sc">$</span>seme[i])))</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>stabilita <span class="ot">&lt;-</span> <span class="fu">aggregate</span>(<span class="fu">cbind</span>(SE, inferiore, superiore) <span class="sc">~</span> B,</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>                       <span class="at">data =</span> risultati, <span class="at">FUN =</span> sd)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(risultati)</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(stabilita)</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">c</span>(<span class="at">n_fossili =</span> <span class="fu">length</span>(x), <span class="at">SE_classico =</span> <span class="fu">sd</span>(x) <span class="sc">/</span> <span class="fu">sqrt</span>(<span class="fu">length</span>(x))))</span></code></pre></div>
+</div><div class="output"><div class="code-label">Risultato dell’esecuzione</div><pre>B seme       SE inferiore superiore
+1  1000  518 0.112631   5.83160   6.28872
+2  3000  518 0.112745   5.83889   6.28872
+3  1000  519 0.114702   5.84446   6.28237
+4  3000  519 0.111033   5.85033   6.28205
+5  1000  520 0.109952   5.83943   6.27754
+6  3000  520 0.108784   5.84859   6.27553
+7  1000  521 0.111116   5.84097   6.27018
+8  3000  521 0.111295   5.84508   6.28429
+9  1000  522 0.106821   5.84972   6.27702
+10 3000  522 0.109271   5.84854   6.27018
+11 1000  523 0.111996   5.83425   6.27174
+12 3000  523 0.110351   5.84976   6.27990
+     B         SE  inferiore  superiore
+1 1000 0.00267160 0.00662166 0.00686522
+2 3000 0.00144174 0.00431061 0.00655717
+  n_fossili SE_classico 
+  80.000000    0.111854</pre></div><p class="result-label">Lettura del risultato</p><p>Le deviazioni standard nella tabella di stabilità riguardano gli
+stimatori numerici, non i diametri. Aumentare B tende a stabilizzare il
+calcolo, ma una singola sequenza non deve migliorare monotonamente.</p>
+</section><section id="passo-3"><h2>3. Salvare un risultato e i suoi controlli</h2><p>Salviamo una tabella leggibile e un oggetto R che contiene dati di
+configurazione. Il percorso dedicato al notebook evita di sovrascrivere
+i dati originali. Rileggiamo i file per controllare che ciò che è stato
+scritto corrisponda agli oggetti analizzati.</p>
+<div class="codebox"><div class="code-label">R · codice commentato</div><div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>file_tabella <span class="ot">&lt;-</span> <span class="fu">percorso_risultati</span>(<span class="st">&quot;stabilita_bootstrap.csv&quot;</span>)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">write.csv</span>(risultati, file_tabella, <span class="at">row.names =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>registro <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">gruppo =</span> <span class="st">&quot;Rounded&quot;</span>, <span class="at">variabile =</span> <span class="st">&quot;diametro_tot_um&quot;</span>,</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>                 <span class="at">n =</span> <span class="fu">length</span>(x), <span class="at">quantili =</span> <span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>),</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>                 <span class="at">R =</span> R.version.string, <span class="at">risultati =</span> risultati)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>file_registro <span class="ot">&lt;-</span> <span class="fu">percorso_risultati</span>(<span class="st">&quot;registro_bootstrap.rds&quot;</span>)</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(registro, file_registro)</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>riletto <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(file_registro)</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">identical</span>(riletto<span class="sc">$</span>risultati, risultati))</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">read.csv</span>(file_tabella)[<span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>, ])</span></code></pre></div>
+</div><div class="output"><div class="code-label">Risultato dell’esecuzione</div><pre>B seme       SE inferiore superiore
+1 1000  518 0.112631   5.83160   6.28872
+2 3000  518 0.112745   5.83889   6.28872
+3 1000  519 0.114702   5.84446   6.28237
+4 3000  519 0.111033   5.85033   6.28205</pre></div><p class="result-label">Lettura del risultato</p><p>Il registro documenta le scelte che consentono di ripetere l’analisi.
+Per archivi completi è utile conservare anche i dati usati e la versione
+del codice, disponibili nel pacchetto del corso.</p>
+</section><section id="variante"><h2>Variante svolta</h2><p>Ripetere una configurazione già eseguita e verificare l’identità dei
+risultati.</p>
+<div class="codebox"><div class="code-label">R · codice commentato</div><div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>prima <span class="ot">&lt;-</span> <span class="fu">analizza_boot</span>(<span class="dv">1000</span>, <span class="dv">518</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>seconda <span class="ot">&lt;-</span> <span class="fu">analizza_boot</span>(<span class="dv">1000</span>, <span class="dv">518</span>)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">identical</span>(prima, seconda))</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(prima)</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">c</span>(<span class="at">riproduzione_identica =</span> <span class="fu">identical</span>(prima, seconda)))</span></code></pre></div>
+</div><div class="output"><div class="code-label">Risultato dell’esecuzione</div><pre>B seme       SE inferiore superiore
+1 1000  518 0.112631    5.8316   6.28872
+riproduzione_identica 
+                 TRUE</pre></div><p>Stesso algoritmo, stessi dati, stesso seme e stesso ambiente rendono
+riproducibile il calcolo. La riproducibilità non è una prova che il
+disegno di campionamento sia corretto.</p>
+</section><div class="callout pitfall"><strong>Errore da riconoscere</strong><p>Non presentare un B elevato come aumento della numerosità
+scientifica. Restano ottanta fossili, qualunque sia il numero di
+ricampionamenti.</p>
+</div><section id="risposta"><h2>Risposta alla domanda</h2><p>La precisione numerica si controlla registrando semi, B e risultati.
+L’incertezza legata al campione richiede dati informativi e un disegno
+adeguato.</p>
+</section><footer><p>Svolgimento del laboratorio M05_N18 del percorso <a href="https://marzione00.github.io/Lab_Geo/#esperimenti">GeoStat Lab</a>. <a href="https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M05/M05_N18.R">Codice originale del corso</a>.</p><p>Risultati calcolati con R 4.6.0 tramite WebR 0.6.1. Ogni notebook è stato eseguito in un ambiente separato; il codice usa R base. Questa copia HTML si legge anche senza connessione.</p></footer></main></body></html>

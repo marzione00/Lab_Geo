@@ -2,6 +2,8 @@
 # Esaminare un classificatore a centroidi nella metrica scelta.
 # Dati sintetici; parametri e ambiente dichiarati.
 # Dipendenze: install.packages(c("ggplot2", "jsonlite", "svglite"))
+# Codice: PolyForm Noncommercial 1.0.0, https://polyformproject.org/licenses/noncommercial/1.0.0
+# Required Notice: Copyright 2026 Marzio De Corato (https://github.com/marzione00/Lab_Geo)
 
 # GeoStat Lab — funzioni comuni. R >= 4.3; ggplot2 >= 3.4; jsonlite.
 suppressPackageStartupMessages(library(ggplot2))
@@ -71,8 +73,8 @@ c0 <- colMeans(z[y == 0, ])
 
 c1 <- colMeans(z[y == 1, ])
 
-grid <- expand.grid(x = seq(min(x[, 1]) - 1, max(x[, 1]) + 1, length.out = 45), y = seq(min(x[, 
-    2]) - 1, max(x[, 2]) + 1, length.out = 45))
+grid <- expand.grid(x = seq(min(x[, 1]) - 1, max(x[, 1]) + 1, length.out = 45),
+    y = seq(min(x[, 2]) - 1, max(x[, 2]) + 1, length.out = 45))
 
 zg <- sweep(sweep(as.matrix(grid), 2, center), 2, sc, "/")
 

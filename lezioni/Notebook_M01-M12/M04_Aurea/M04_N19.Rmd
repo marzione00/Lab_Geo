@@ -1,0 +1,137 @@
+---
+title: "Laboratorio applicativo: probabilit\u00e0 normale"
+subtitle: "M04_N19 \u00b7 Aurea"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Quale quota del modello di densità cade fra 2,60 e 2,70 g/cm³, e come possiamo controllare il risultato?
+
+## Obiettivi
+
+- Svolgere il percorso completo da intervallo fisico a probabilità.
+- Confrontare formula, standardizzazione e simulazione con errore Monte Carlo.
+
+**Prima di iniziare.** Normale, cumulativa, standardizzazione e indicatori.
+
+**Dati e unità.** Modello didattico X normale con media 2,65 g/cm³ e deviazione standard 0,06 g/cm³. L'intervallo fisico richiesto è fissato prima del calcolo.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M04_N19/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M04_N19")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(4019)
+```
+
+## 1. Tradurre la consegna in soglie
+
+Definiamo media, deviazione standard e bordi nella stessa unità. Il problema riguarda una singola densità dal modello assegnato; non la media di un campione e non l'incertezza di stima dei parametri.
+
+```{r passo_01}
+mu <- 2.65
+sigma <- .06
+a <- 2.60
+b <- 2.70
+stopifnot(sigma > 0, a < b)
+# Le soglie e i parametri sono tutti espressi in g/cm^3.
+prob_esatta <- pnorm(b, mean = mu, sd = sigma) - pnorm(a, mean = mu, sd = sigma)
+print(c(limite_inferiore = a, limite_superiore = b, probabilita = prob_esatta))
+print(c(prob_fuori = pnorm(a, mu, sigma) + pnorm(b, mu, sigma, lower.tail = FALSE)))
+```
+
+**Lettura del risultato.** La probabilità esterna è la somma delle due code disgiunte. La loro somma con la probabilità interna deve essere uno; questo controllo aiuta a individuare bordi invertiti o sottrazioni sbagliate.
+
+## 2. Verificare sulla scala standard
+
+Le soglie standardizzate indicano quante deviazioni standard separano i bordi dalla media. Poiché l'intervallo è simmetrico, possiamo usare anche due volte la cumulativa della soglia positiva meno uno.
+
+```{r passo_02}
+za <- (a - mu) / sigma
+zb <- (b - mu) / sigma
+prob_z <- pnorm(zb) - pnorm(za)
+# La formula abbreviata e valida soltanto per soglie simmetriche rispetto a mu.
+prob_simmetria <- 2 * pnorm(zb) - 1
+print(c(za = za, zb = zb, prob_z = prob_z, prob_simmetria = prob_simmetria))
+stopifnot(abs(za + zb) < 1e-12)
+stopifnot(abs(prob_z - prob_esatta) < 1e-12,
+          abs(prob_simmetria - prob_esatta) < 1e-12)
+```
+
+**Lettura del risultato.** La scorciatoia della simmetria funziona perché i bordi sono equidistanti dalla media. Per un intervallo spostato occorre tornare alla differenza delle cumulative, senza forzare una formula che non rappresenta più l'evento.
+
+## 3. Controllare mediante repliche
+
+Generiamo cinquemila valori e calcoliamo la quota interna. L'errore standard degli indicatori quantifica la precisione della verifica numerica; la probabilità teorica resta il riferimento del modello.
+
+```{r passo_03}
+set.seed(419)
+B <- 5000
+x <- rnorm(B, mu, sigma)
+# La condizione deve riprodurre lo stesso intervallo usato nel calcolo con pnorm.
+evento <- x >= a & x <= b
+q <- mean(evento)
+se_mc <- sqrt(q * (1 - q) / B)
+print(c(probabilita_teorica = prob_esatta, quota_simulata = q,
+        errore_standard_mc = se_mc, scarto = q - prob_esatta))
+hist(x, breaks = "FD", col = "#D5E9EE", border = "white",
+     xlab = "Densita (g/cm^3)", ylab = "Repliche (n)", main = "Intervallo di interesse")
+abline(v = c(a, b), col = "#C57E42", lwd = 2, lty = 2)
+```
+
+**Lettura del risultato.** Una differenza di alcune unità dell'errore standard merita un controllo del codice e del modello generatore, ma non si deve pretendere uguaglianza esatta. Il seme permette di rivedere la stessa esecuzione con gli studenti.
+
+## Variante svolta
+
+Dimezzare sigma mantenendo la media e l'intervallo fisico, quindi ripetere il calcolo analitico.
+
+```{r variante}
+sigma_nuova <- sigma / 2
+prob_nuova <- pnorm(b, mu, sigma_nuova) - pnorm(a, mu, sigma_nuova)
+print(data.frame(sigma = c(sigma, sigma_nuova),
+                 probabilita_intervallo = c(prob_esatta, prob_nuova)))
+print(c(za_nuovo = (a - mu) / sigma_nuova, zb_nuovo = (b - mu) / sigma_nuova))
+stopifnot(prob_nuova > prob_esatta)
+stopifnot(prob_nuova < 1)
+```
+
+La distribuzione più concentrata colloca più probabilità nello stesso intervallo centrale. L'aumento non significherebbe automaticamente miglioramento di uno strumento se sigma rappresentasse invece eterogeneità naturale: il significato del parametro va dichiarato.
+
+## Errore da riconoscere
+
+Non confondere sigma con sigma diviso radice di n: il problema riguarda una singola estrazione, non una media. Non cambiare contemporaneamente soglie e deviazione standard senza distinguere i due effetti.
+
+## Risposta alla domanda
+
+Il percorso completo parte dall'evento fisico, verifica unità e soglie e confronta tre calcoli coerenti. La simulazione aggiunge un controllo riproducibile con precisione dichiarata, mentre l'interpretazione dipende dal significato del modello assegnato.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M04_N19` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M04/M04_N19.R).

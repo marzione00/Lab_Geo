@@ -1,0 +1,144 @@
+---
+title: "Un protocollo per separare training e test"
+subtitle: "M07_N10 \u00b7 Annula"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Come definire una valutazione predittiva prima di osservare gli errori sul test?
+
+## Obiettivi
+
+- Collegare la domanda al calcolo riportato.
+- Interpretare il risultato usando variabili e unità del problema.
+
+**Prima di iniziare.** Vettori, data frame, indicizzazione e funzioni di base in R.
+
+**Dati e unità.** Fossili simulati del corso: 160 individui, 80 Rounded e 80 Spiky. Diametri e spessori sono espressi in micrometri. Nel generatore, diametro interno = diametro totale − 2 × spessore. La relazione contiene quindi un vincolo geometrico noto.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Annula oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M07_Annula` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M07_Annula/Risultati/M07_N10/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M07_Annula"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M07_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M07_Annula o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M07_N10")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(7010)
+```
+
+## 1. Una regola riproducibile
+
+Per seguire il laboratorio originale, riserviamo ogni quinta riga al test. Il file sintetico contiene prima Rounded e poi Spiky, quindi questa regola conserva 16 individui di ciascun gruppo nel test. Nei dati di campo, la partizione deve rispettare stazioni, campagne o tempi di raccolta.
+
+```{r passo_01}
+# Ogni riga identifica un fossile simulato.
+f <- carica_dati("fossili_simulati.csv")
+f$morfotipo <- factor(f$morfotipo, levels=c("Rounded", "Spiky"))
+x <- f$diametro_tot_um
+y <- f$diametro_int_um
+stopifnot(nrow(f)==160L, !anyDuplicated(f$id),
+          all(is.finite(x)), all(is.finite(y)))
+# Partizione fissata prima del confronto dei modelli.
+# Nel CSV didattico ogni quinto individuo forma il test.
+is_test <- seq_len(nrow(f)) %% 5L == 0L
+train <- f[!is_test, ]
+test <- f[is_test, ]
+stopifnot(nrow(train)==128L, nrow(test)==32L,
+          length(intersect(train$id, test$id))==0L)
+table(insieme=ifelse(is_test,"test","train"),morfotipo=f$morfotipo)
+head(train$id)
+head(test$id)
+```
+
+**Lettura del risultato.** Si ottengono 128 casi di training e 32 di test. La regola è adatta a riprodurre questo esempio didattico, ma la posizione nel CSV non è in generale un buon criterio di campionamento.
+
+## 2. Controlli sulla separazione
+
+Un identificativo non deve comparire in entrambi gli insiemi. Se più righe provenissero dallo stesso campione fisico, servirebbe separare i campioni interi, non soltanto gli identificativi di riga.
+
+```{r passo_02}
+c(n_training=nrow(train),n_test=nrow(test),
+  id_condivisi=length(intersect(train$id,test$id)))
+stopifnot(setequal(c(train$id,test$id),f$id))
+data.frame(insieme=c("train","test"),
+ minimo_x=c(min(train$diametro_tot_um),min(test$diametro_tot_um)),
+ massimo_x=c(max(train$diametro_tot_um),max(test$diametro_tot_um)))
+```
+
+**Lettura del risultato.** I controlli confermano la partizione e mostrano il campo dei predittori. Non stiamo ancora usando le risposte del test per scegliere il modello.
+
+## 3. I candidati e la metrica
+
+Fissiamo tre formule e selezioniamo tramite RMSE medio in cinque partizioni interne al training. Il test servirà alla valutazione finale della procedura scelta. Le prime esercitazioni hanno già mostrato l’intero dataset: questa è una dimostrazione di metodo su dati noti, non una validazione esterna indipendente.
+
+```{r passo_03}
+formule <- list(
+ lineare=diametro_int_um~diametro_tot_um,
+ con_morfotipo=diametro_int_um~diametro_tot_um+morfotipo,
+ polinomio3=diametro_int_um~poly(diametro_tot_um,3))
+formule
+# Salviamo soltanto gli ID e la decisione di partizione.
+write.csv(data.frame(id=f$id,insieme=ifelse(is_test,"test","train")),
+ percorso_risultati("partizione.csv"),row.names=FALSE)
+```
+
+**Lettura del risultato.** La lista rende esplicite le alternative. Guardare il test dopo ogni modifica trasformerebbe quel test in uno strumento di scelta. Una nuova valutazione indipendente richiederebbe altri dati.
+
+## Variante svolta
+
+Simulare repliche di due stazioni e mostrare perché la separazione per riga può mescolare la stessa stazione.
+
+```{r variante}
+stazione <- rep(c("A","B"),each=10)
+test_riga <- seq_along(stazione)%%5==0
+intersect(unique(stazione[test_riga]),unique(stazione[!test_riga]))
+# Una separazione per stazione conserva le repliche insieme.
+test_stazione <- stazione=="B"
+intersect(unique(stazione[test_stazione]),unique(stazione[!test_stazione]))
+```
+
+Con la separazione per riga, entrambe le stazioni compaiono nei due insiemi. Con la separazione per stazione non ci sono sovrapposizioni. La scelta cambia la domanda di generalizzazione.
+
+## Errore da riconoscere
+
+Un test già usato per prendere decisioni non torna indipendente cambiando soltanto il nome della cartella.
+
+## Risposta alla domanda
+
+La valutazione comincia dalla definizione della popolazione futura, delle unità indipendenti e della regola di separazione.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M07_N10` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M07/M07_N10.R).

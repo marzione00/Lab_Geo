@@ -1,0 +1,133 @@
+---
+title: "Residui: controlli prima della previsione"
+subtitle: "M10_N04 · Futura"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Quale struttura rimane dopo l’adattamento del modello?
+
+## Obiettivi
+
+- Separare residui del train ed errori del test.
+- Leggere ACF e grafici diagnostici.
+- Interpretare Ljung–Box con gradi di libertà dichiarati.
+
+**Prima di iniziare.** Sono richiesti vettori, tabelle e funzioni R di base. I blocchi vanno eseguiti in ordine. Il notebook è autonomo rispetto agli altri.
+
+**Dati e unità.** CO₂ storica: 204 mesi da gennaio 1985 a dicembre 2001, concentrazione in ppm. Le medie derivano dalle osservazioni settimanali attribuite al mese della data, secondo la convenzione del corso. Sono dati storici, distinti da una serie mensile ufficiale e da una misura attuale. Il protocollo usa 168 mesi per l’adattamento (1985–1998) e 36 per il test (1999–2001).
+
+## Preparazione
+
+Aprire il progetto autonomo di Futura o quello generale del corso. I calcoli usano R base e stats. Gli output del notebook vanno in `Risultati/M10_N04/`; i CSV originali restano invariati.
+
+```{r preparazione}
+# Trova la cartella M10 dal progetto autonomo o dal progetto generale.
+.gs_cerca <- normalizePath(getwd(),winslash="/",mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca,
+    file.path(.gs_cerca,"M10_Futura"),
+    file.path(.gs_cerca,"03_Notebook_svolti","M10_Futura"),
+    file.path(.gs_cerca,"M10","03_Notebook_svolti","M10_Futura"))
+  .gs_ok <- file.exists(file.path(.gs_candidati,"M10_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati,"R","funzioni_notebook.R"))
+  if(any(.gs_ok)) { .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]; break }
+  .gs_padre <- dirname(.gs_cerca)
+  if(.gs_padre==.gs_cerca) stop("Aprire il progetto M10_Futura o quello generale dei notebook.")
+  .gs_cerca <- .gs_padre
+}
+source(file.path(.gs_modulo,"R","funzioni_notebook.R"),local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo,"M10_N04")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88,digits=6)
+if(requireNamespace("knitr",quietly=TRUE)) {
+  knitr::opts_chunk$set(echo=TRUE,error=FALSE,warning=TRUE,message=TRUE,
+    fig.width=8,fig.height=5,dpi=150,fig.align="center")
+}
+set.seed(10004)
+```
+
+## 1. I residui appartengono al train
+
+Seguiamo la convenzione del laboratorio originale, che esclude i primi 13 residui legati all’avvio del modello differenziato. Questa scelta resta documentata.
+
+```{r passo_01}
+c2 <- prepara_co2(carica_dati("co2_1985_2001.csv"))
+train <- c2$train; test <- c2$test; h <- c2$h
+fit <- stima_sarima(train)
+ res <- as.numeric(residuals(fit))
+ res <- res[seq.int(14,length(res))]
+ res <- res[is.finite(res)]
+ data.frame(n=length(res),media=mean(res),sd=sd(res),min=min(res),max=max(res))
+ stile_grafico()
+ plot(res,type="l",col=palette_geo[1],xlab="Indice residuo",ylab="Residuo (ppm)",
+      main="Innovazioni stimate nel train")
+ abline(h=0,lty=2)
+```
+
+**Lettura del risultato.** Il grafico mostra segni, sequenze e osservazioni insolite. Non comprende i 36 errori di previsione finali: quelli richiedono una verifica separata.
+
+## 2. La dipendenza residua ha una scala
+
+Ljung–Box aggrega autocorrelazioni fino al ritardo dichiarato. Usiamo 24 ritardi e fitdf=2 per i due coefficienti MA stimati.
+
+```{r passo_02}
+stile_grafico()
+acf(res,lag.max=36,main="ACF dei residui del train")
+lb <- Box.test(res,lag=24,type="Ljung-Box",fitdf=2)
+data.frame(statistica=as.numeric(lb$statistic),df=as.numeric(lb$parameter),
+           p_value=lb$p.value,lag=24,fitdf=2)
+```
+
+**Lettura del risultato.** Il test riguarda assenza di autocorrelazione fino a quei ritardi nel riferimento approssimato. Un p-value elevato non dimostra indipendenza, normalità o correttezza della previsione.
+
+## 3. La forma della distribuzione completa la diagnosi
+
+Il QQ plot esplora l’adeguatezza di un riferimento gaussiano per le innovazioni, importante per l’intervallo predittivo condizionale.
+
+```{r passo_03}
+stile_grafico()
+qqnorm(res,pch=19,col=palette_geo[1],main="Residui e quantili gaussiani")
+qqline(res,col=palette_geo[2],lwd=2)
+data.frame(quartile=c("Q1","Mediana","Q3"),valore=as.numeric(quantile(res,c(.25,.5,.75))))
+```
+
+**Lettura del risultato.** Scostamenti nelle code invitano a controllare eventi insoliti e sensibilità. I punti non sono una prova formale di gaussianità.
+
+## Variante svolta
+
+**Cambiare il ritardo diagnostico.** Confrontare 12, 24 e 36 ritardi, conservando la stessa correzione dei coefficienti.
+
+```{r variante}
+do.call(rbind,lapply(c(12,24,36),function(L) {
+  q <- Box.test(res,lag=L,type="Ljung-Box",fitdf=2)
+  data.frame(lag=L,df=as.numeric(q$parameter),p_value=q$p.value)
+}))
+```
+
+La sensibilità al ritardo è informazione diagnostica. Scegliere solo il risultato più favorevole trasformerebbe il controllo in selezione del p-value.
+
+## Errore da riconoscere
+
+Chiamare «errori fuori campione» i residui usati nella stima o interpretare un mancato rifiuto come certificazione del modello.
+
+## Risposta alla domanda
+
+La diagnostica combina successione temporale, autocorrelazione e forma della distribuzione. Consente di riconoscere problemi del modello prima della verifica predittiva, senza sostituirla.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M10_N04` di [GeoStat Lab M10](https://marzione00.github.io/Lab_Geo/#indice). Il [codice originale del laboratorio](https://github.com/marzione00/Lab_Geo/blob/649f7cc577b96bd1044d81e78a2f530813e4f96b/materiali/laboratori/M10/M10_N04.R) è conservato anche in `R/Originali_corso`. Gli ampliamenti e le varianti sono identificati nella mappa allegata.
+
+Documentazione dei metodi: [R stats, arima](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/arima.html), [predict.Arima](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/predict.arima.html), [Box.test](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/box.test.html) e [p.adjust](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/p.adjust.html).

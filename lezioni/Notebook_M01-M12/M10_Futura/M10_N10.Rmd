@@ -1,0 +1,132 @@
+---
+title: "Percorso obbligatorio e approfondimento"
+subtitle: "M10_N10 · Futura"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Quale domanda affronta il progetto base e quale il sistema VAR?
+
+## Obiettivi
+
+- Identificare unità osservativa e bersaglio.
+- Controllare i fossili prima della regressione.
+- Separare il progetto morfometrico dall’approfondimento temporale.
+
+**Prima di iniziare.** Sono richiesti vettori, tabelle e funzioni R di base. I blocchi vanno eseguiti in ordine. Il notebook è autonomo rispetto agli altri.
+
+**Dati e unità.** 160 fossili sintetici del corso. Diametri e spessore sono espressi in micrometri. Il diametro interno deriva dal totale meno due volte lo spessore, entro l’arrotondamento del CSV. Il test contiene ogni quinta riga: 32 individui, separati dai 128 usati per stimare. È un protocollo didattico su dati già noti, non una validazione prospettica. Processi sintetici di 300 passi, senza unità fisica. Le colonne x_VAR e y_VAR costituiscono un sistema bivariato. Usiamo i passi 1–250 per stimare e, quando richiesto, 251–260 per una previsione a origine fissa. La prima riga è una condizione iniziale finita: l’esempio non equivale a una nuova serie osservativa.
+
+## Preparazione
+
+Aprire il progetto autonomo di Futura o quello generale del corso. I calcoli usano R base e stats. Gli output del notebook vanno in `Risultati/M10_N10/`; i CSV originali restano invariati.
+
+```{r preparazione}
+# Trova la cartella M10 dal progetto autonomo o dal progetto generale.
+.gs_cerca <- normalizePath(getwd(),winslash="/",mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca,
+    file.path(.gs_cerca,"M10_Futura"),
+    file.path(.gs_cerca,"03_Notebook_svolti","M10_Futura"),
+    file.path(.gs_cerca,"M10","03_Notebook_svolti","M10_Futura"))
+  .gs_ok <- file.exists(file.path(.gs_candidati,"M10_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati,"R","funzioni_notebook.R"))
+  if(any(.gs_ok)) { .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]; break }
+  .gs_padre <- dirname(.gs_cerca)
+  if(.gs_padre==.gs_cerca) stop("Aprire il progetto M10_Futura o quello generale dei notebook.")
+  .gs_cerca <- .gs_padre
+}
+source(file.path(.gs_modulo,"R","funzioni_notebook.R"),local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo,"M10_N10")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88,digits=6)
+if(requireNamespace("knitr",quietly=TRUE)) {
+  knitr::opts_chunk$set(echo=TRUE,error=FALSE,warning=TRUE,message=TRUE,
+    fig.width=8,fig.height=5,dpi=150,fig.align="center")
+}
+set.seed(10010)
+```
+
+## 1. Una domanda per ciascun dataset
+
+Il progetto base riguarda individui, il VAR riguarda una successione bivariata. Una tabella di progetto mantiene esplicita questa differenza.
+
+```{r passo_01}
+progetti <- data.frame(percorso=c("Base morfometrico","Approfondimento VAR"),
+  unita=c("Fossile sintetico","Passo temporale sintetico"),
+  bersaglio=c("Diametro interno","X e Y future"),
+  verifica=c("32 individui esclusi","Passi 251-260"))
+progetti
+```
+
+**Lettura del risultato.** I due percorsi condividono audit e validazione, ma richiedono split e interpretazioni diversi.
+
+## 2. L’audit precede il modello
+
+Controlliamo identificativi e vincoli fisici, senza cancellare osservazioni automaticamente.
+
+```{r passo_02}
+f <- carica_dati("fossili_simulati.csv")
+audit <- data.frame(controllo=c("ID unici","Diametri completi","Totale positivo","Interno entro totale"),
+  esito=c(!anyDuplicated(f$id),!anyNA(f[c("diametro_tot_um","diametro_int_um")]),
+    all(f$diametro_tot_um>0),all(f$diametro_int_um>0 & f$diametro_int_um<=f$diametro_tot_um)))
+audit
+stopifnot(all(audit$esito))
+```
+
+**Lettura del risultato.** Un esito positivo significa coerenza con i controlli adottati, non assenza di ogni possibile problema.
+
+## 3. Il legame geometrico limita la spiegazione
+
+Il rapporto fra diametri contiene già il bersaglio. Non è disponibile prima di misurare il diametro interno.
+
+```{r passo_03}
+scarto <- f$diametro_int_um-(f$diametro_tot_um-2*f$spessore_um)
+data.frame(n=nrow(f),massimo_scarto_geometrico=max(abs(scarto)))
+stile_grafico()
+plot(f$diametro_tot_um,f$diametro_int_um,pch=19,col=palette_geo[1],
+  xlab="Diametro totale (micrometri)",ylab="Diametro interno (micrometri)",
+  main="Misure sintetiche geometricamente legate")
+abline(0,1,lty=2)
+```
+
+**Lettura del risultato.** Una forte associazione è in parte incorporata nella costruzione geometrica. Non basta per attribuire un meccanismo causale indipendente.
+
+## Variante svolta
+
+**Il protocollo è una tabella.** Scrivere prima del modello gli elementi minimi della consegna.
+
+```{r variante}
+piano <- data.frame(voce=c("Domanda","Input disponibile","Bersaglio","Split","Riferimento"),
+  scelta=c("Prevedere il diametro interno","Diametro totale","Diametro interno in micrometri",
+  "Ogni quinta riga nel test","Media del solo train"))
+write.csv(piano,percorso_risultati("piano_progetto.csv"),row.names=FALSE)
+piano
+```
+
+Il piano rende riconoscibili cambiamenti effettuati dopo aver visto i risultati.
+
+## Errore da riconoscere
+
+Mescolare individui e tempi nella stessa strategia di split, oppure introdurre il rapporto interno/totale come predittore ignoto all’atto della previsione.
+
+## Risposta alla domanda
+
+Il percorso base verifica una regressione morfometrica su individui sintetici. Il VAR approfondisce la previsione di un sistema temporale. Domande, unità e limiti restano distinti.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M10_N10` di [GeoStat Lab M10](https://marzione00.github.io/Lab_Geo/#indice). Il [codice originale del laboratorio](https://github.com/marzione00/Lab_Geo/blob/649f7cc577b96bd1044d81e78a2f530813e4f96b/materiali/laboratori/M10/M10_N10.R) è conservato anche in `R/Originali_corso`. Gli ampliamenti e le varianti sono identificati nella mappa allegata.
+
+Documentazione dei metodi: [R stats, arima](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/arima.html), [predict.Arima](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/predict.arima.html), [Box.test](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/box.test.html) e [p.adjust](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/p.adjust.html).

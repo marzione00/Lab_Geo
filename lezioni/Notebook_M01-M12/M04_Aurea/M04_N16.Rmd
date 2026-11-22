@@ -1,0 +1,137 @@
+---
+title: "Controllo con un'approssimazione analitica"
+subtitle: "M04_N16 \u00b7 Aurea"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+La dispersione simulata del rapporto massa-volume è coerente con una propagazione al primo ordine?
+
+## Obiettivi
+
+- Calcolare coefficienti di sensibilità e contributi alla varianza.
+- Confrontare approssimazione locale e simulazione senza confonderle con risultati esatti.
+
+**Prima di iniziare.** Rapporto massa-volume, varianza e significato di derivata locale.
+
+**Dati e unità.** Parametri didattici della misura: massa nominale 106 g, volume nominale 40 cm³, incertezze standard rispettivamente 1 g e 0,6 cm³. Le estrazioni sono simulate.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M04_N16/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M04_N16")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(4016)
+```
+
+## 1. Scrivere le sensibilità
+
+Per rho uguale m diviso V, la sensibilità alla massa è uno diviso V e quella al volume è meno m diviso V al quadrato. Il segno negativo ricorda che aumentando il volume a massa fissa la densità diminuisce.
+
+```{r passo_01}
+p <- carica_dati("parametri_densita.csv")
+m0 <- p$massa_media_g[1]; V0 <- p$volume_medio_cm3[1]
+um <- p$sd_massa_g[1]; uV <- p$sd_volume_cm3[1]
+rho0 <- m0 / V0
+sensibilita_m <- 1 / V0
+sensibilita_V <- -m0 / V0^2
+print(c(sensibilita_massa = sensibilita_m, sensibilita_volume = sensibilita_V))
+# Moltiplicare sensibilita e incertezza porta entrambi i contributi nell unita della densita.
+contributi <- c(massa = (sensibilita_m * um)^2, volume = (sensibilita_V * uV)^2)
+print(contributi)
+```
+
+**Lettura del risultato.** Ogni sensibilità trasforma l'incertezza dell'ingresso nell'unità dell'uscita; il quadrato produce una varianza in unità di densità al quadrato. I contributi possono essere confrontati perché hanno ormai la stessa unità.
+
+## 2. Sommare per ingressi indipendenti
+
+Al primo ordine e sotto indipendenza le varianze si sommano. La formula relativa equivalente è u(rho) circa rho per la radice della somma dei quadrati delle incertezze relative di massa e volume.
+
+```{r passo_02}
+# Le varianze si sommano sotto indipendenza; la radice restituisce una deviazione standard.
+u_lineare <- sqrt(sum(contributi))
+u_relativa <- rho0 * sqrt((um / m0)^2 + (uV / V0)^2)
+print(c(u_lineare_g_cm3 = u_lineare, formula_relativa_g_cm3 = u_relativa))
+quote <- contributi / sum(contributi)
+print(data.frame(ingresso = names(quote), quota_varianza = as.numeric(quote)))
+stopifnot(abs(u_lineare - u_relativa) < 1e-12)
+barplot(100 * quote, col = c("#1D7890", "#C57E42"), ylim = c(0, 100),
+        ylab = "Contributo alla varianza (%)", xlab = "Ingresso")
+```
+
+**Lettura del risultato.** Le quote riguardano la varianza, non la deviazione standard. Il volume contribuisce secondo la propria incertezza relativa e sensibilità, non semplicemente perché il suo errore numerico appare maggiore o minore in unità diverse.
+
+## 3. Confrontare con la propagazione numerica
+
+La simulazione mantiene il rapporto non lineare, mentre la formula usa la sua approssimazione vicino ai nominali. Una differenza comprende sia effetti di non linearità sia fluttuazioni dovute al numero finito di repliche.
+
+```{r passo_03}
+set.seed(416)
+B <- 3000
+massa <- rnorm(B, m0, um)
+volume <- rnorm(B, V0, uV)
+stopifnot(all(volume > 0))
+rho <- massa / volume
+# La simulazione mantiene il rapporto completo e consente un controllo della linearizzazione.
+u_mc <- sd(rho)
+print(c(sd_simulata = u_mc, u_lineare = u_lineare, rapporto = u_mc / u_lineare,
+        media_meno_nominale = mean(rho) - rho0))
+```
+
+**Lettura del risultato.** Con incertezze piccole rispetto ai nominali ci aspettiamo buona concordanza nel regime esplorato. La normale del volume resta un modello locale: questa verifica non rende validi momenti globali del rapporto vicino a un denominatore nullo.
+
+## Variante svolta
+
+Aumentare l'incertezza del volume a 3 cm³ e confrontare nuovamente formula e simulazione.
+
+```{r variante}
+uV_grande <- 3
+volume_grande <- rnorm(B, V0, uV_grande)
+stopifnot(all(volume_grande > 0))
+rho_grande <- massa / volume_grande
+u_lineare_grande <- rho0 * sqrt((um / m0)^2 + (uV_grande / V0)^2)
+print(c(sd_mc = sd(rho_grande), u_lineare = u_lineare_grande,
+        rapporto = sd(rho_grande) / u_lineare_grande,
+        media_meno_nominale = mean(rho_grande) - rho0))
+```
+
+Aumenta la regione in cui il rapporto viene esplorato e l'approssimazione lineare può peggiorare. Una singola simulazione non separa perfettamente errore numerico e non linearità; il confronto va interpretato senza pretendere una divergenza monotona.
+
+## Errore da riconoscere
+
+Non sommare direttamente le deviazioni standard degli ingressi. Non confrontare errori in grammi e centimetri cubi senza sensibilità e non omettere la dipendenza quando gli ingressi sono correlati.
+
+## Risposta alla domanda
+
+La propagazione al primo ordine fornisce un controllo indipendente della simulazione e un bilancio dei contributi. La sua accuratezza dipende dalla piccolezza delle incertezze e dal comportamento locale della funzione fisica.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M04_N16` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M04/M04_N16.R).

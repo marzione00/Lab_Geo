@@ -1,0 +1,129 @@
+---
+title: "Granger: confronto condizionato, non causalità fisica"
+subtitle: "M10_N16 · Futura"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Il passato di X aggiunge informazione predittiva per Y?
+
+## Obiettivi
+
+- Confrontare modelli annidati sullo stesso campione.
+- Conservare entrambe le direzioni.
+- Correggere la famiglia di due confronti dichiarati.
+
+**Prima di iniziare.** Sono richiesti vettori, tabelle e funzioni R di base. I blocchi vanno eseguiti in ordine. Il notebook è autonomo rispetto agli altri.
+
+**Dati e unità.** Processi sintetici di 300 passi, senza unità fisica. Le colonne x_VAR e y_VAR costituiscono un sistema bivariato. Usiamo i passi 1–250 per stimare e, quando richiesto, 251–260 per una previsione a origine fissa. La prima riga è una condizione iniziale finita: l’esempio non equivale a una nuova serie osservativa.
+
+## Preparazione
+
+Aprire il progetto autonomo di Futura o quello generale del corso. I calcoli usano R base e stats. Gli output del notebook vanno in `Risultati/M10_N16/`; i CSV originali restano invariati.
+
+```{r preparazione}
+# Trova la cartella M10 dal progetto autonomo o dal progetto generale.
+.gs_cerca <- normalizePath(getwd(),winslash="/",mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca,
+    file.path(.gs_cerca,"M10_Futura"),
+    file.path(.gs_cerca,"03_Notebook_svolti","M10_Futura"),
+    file.path(.gs_cerca,"M10","03_Notebook_svolti","M10_Futura"))
+  .gs_ok <- file.exists(file.path(.gs_candidati,"M10_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati,"R","funzioni_notebook.R"))
+  if(any(.gs_ok)) { .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]; break }
+  .gs_padre <- dirname(.gs_cerca)
+  if(.gs_padre==.gs_cerca) stop("Aprire il progetto M10_Futura o quello generale dei notebook.")
+  .gs_cerca <- .gs_padre
+}
+source(file.path(.gs_modulo,"R","funzioni_notebook.R"),local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo,"M10_N16")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88,digits=6)
+if(requireNamespace("knitr",quietly=TRUE)) {
+  knitr::opts_chunk$set(echo=TRUE,error=FALSE,warning=TRUE,message=TRUE,
+    fig.width=8,fig.height=5,dpi=150,fig.align="center")
+}
+set.seed(10016)
+```
+
+## 1. L’ipotesi riguarda coefficienti ritardati
+
+Nel VAR(1), la domanda X verso Y confronta Y spiegata dal proprio passato con Y spiegata anche da X ritardata.
+
+```{r passo_01}
+p <- carica_dati("processi_simulati.csv"); mod <- stima_var(p)
+ridotto_y <- lm(y~y_lag,data=mod$lagged)
+ridotto_x <- lm(x~x_lag,data=mod$lagged)
+g_xy <- anova(ridotto_y,mod$fit_y)
+g_yx <- anova(ridotto_x,mod$fit_x)
+g_xy
+g_yx
+```
+
+**Lettura del risultato.** Le regressioni sono annidate e hanno le stesse 249 righe. L’inferenza F usa le ipotesi del modello lineare sulle innovazioni, da confrontare con la diagnostica.
+
+## 2. Le due direzioni costituiscono una famiglia
+
+Conserviamo p-value grezzi e correzione Holm per i due confronti pianificati.
+
+```{r passo_02}
+p_g <- c(g_xy$`Pr(>F)`[2],g_yx$`Pr(>F)`[2])
+tab <- data.frame(direzione=c("X aiuta Y al lag 1","Y aiuta X al lag 1"),
+  p_non_corretto=p_g,p_Holm_due_confronti=p.adjust(p_g,method="holm"))
+tab
+write.csv(tab,percorso_risultati("Granger_due_direzioni.csv"),row.names=FALSE)
+```
+
+**Lettura del risultato.** Il numero di confronti si riferisce alla famiglia dichiarata. Cercare molti ritardi o molte variabili e correggere soltanto i due risultati selezionati cambierebbe il problema.
+
+## 3. Il test resta legato alla specifica
+
+Affianchiamo la stima del coefficiente incrociato alla sua incertezza. Un effetto statisticamente rilevabile va ancora valutato per scala e utilità.
+
+```{r passo_03}
+sx <- summary(mod$fit_x)$coefficients
+sy <- summary(mod$fit_y)$coefficients
+data.frame(direzione=c("X verso Y","Y verso X"),
+  coefficiente=c(sy["x_lag","Estimate"],sx["y_lag","Estimate"]),
+  errore_standard=c(sy["x_lag","Std. Error"],sx["y_lag","Std. Error"]))
+```
+
+**Lettura del risultato.** Il contributo è condizionato alle variabili incluse, al lag 1 e al periodo stimato. Cause comuni e variabili omesse restano possibili in un’applicazione osservativa.
+
+## Variante svolta
+
+**Leggere la correzione.** Confrontare le decisioni al livello nominale del 5% senza eliminare i valori grezzi.
+
+```{r variante}
+data.frame(tab,rifiuto_grezzo=tab$p_non_corretto<.05,
+           rifiuto_Holm=tab$p_Holm_due_confronti<.05)
+stopifnot(all(tab$p_Holm_due_confronti>=tab$p_non_corretto))
+```
+
+La correzione può conservare o modificare le decisioni. Anche un rifiuto corretto resta evidenza su una restrizione predittiva del modello.
+
+## Errore da riconoscere
+
+Scrivere «X causa fisicamente Y» perché il p-value del confronto di Granger è piccolo.
+
+## Risposta alla domanda
+
+Il confronto valuta se un passato aggiunge informazione nel modello specificato. L’interpretazione fisica richiede un disegno e assunzioni ulteriori, oltre al solo risultato statistico.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M10_N16` di [GeoStat Lab M10](https://marzione00.github.io/Lab_Geo/#indice). Il [codice originale del laboratorio](https://github.com/marzione00/Lab_Geo/blob/649f7cc577b96bd1044d81e78a2f530813e4f96b/materiali/laboratori/M10/M10_N16.R) è conservato anche in `R/Originali_corso`. Gli ampliamenti e le varianti sono identificati nella mappa allegata.
+
+Documentazione dei metodi: [R stats, arima](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/arima.html), [predict.Arima](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/predict.arima.html), [Box.test](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/box.test.html) e [p.adjust](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/p.adjust.html).

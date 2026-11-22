@@ -23,6 +23,8 @@ const types = {
   '.py': 'text/plain; charset=utf-8',
   '.tex': 'text/plain; charset=utf-8',
   '.md': 'text/plain; charset=utf-8',
+  '.Rmd': 'text/plain; charset=utf-8',
+  '.txt': 'text/plain; charset=utf-8',
   '.csv': 'text/csv; charset=utf-8',
   '.png': 'image/png',
   '.jpg': 'image/jpeg',

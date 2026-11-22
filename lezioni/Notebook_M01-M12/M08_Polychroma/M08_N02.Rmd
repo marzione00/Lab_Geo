@@ -1,0 +1,135 @@
+---
+title: "Standardizzare non significa rendere indipendenti"
+subtitle: "M08_N02 \u00b7 Polychroma"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Come cambia la geometria quando esprimiamo tutte le variabili in deviazioni standard?
+
+## Obiettivi
+
+- Verificare medie e deviazioni standard trasformate.
+- Controllare l’invarianza della correlazione.
+- Riutilizzare medie e scale per un nuovo campione.
+
+**Prima di iniziare.** Lettura di un CSV, vettori, matrici, indicizzazione e funzioni di base in R.
+
+**Dati e unità.** Novanta rocce sintetiche del corso. SiO2, CaO, MgO e FeO sono percentuali in massa; densita è espressa in g/cm³ e grana_mm in millimetri. colore e fossili sono indici numerici convenzionali del simulatore, non misure mineralogiche o conteggi reali. La colonna litologia_generatrice descrive il gruppo usato nella simulazione e viene esclusa dalle stime.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Polychroma oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M08_Polychroma` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M08_Polychroma/Risultati/M08_N02/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M08_Polychroma"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M08_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M08_Polychroma o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M08_N02")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(8002)
+```
+
+## 1. Media e scala di riferimento
+
+La trasformazione $z_{ij}=(x_{ij}-\bar x_j)/s_j$ centra e ridimensiona ogni colonna. Media e deviazione standard vengono conservate per applicare la stessa trasformazione ad altri campioni.
+
+```{r passo_01}
+# Seleziona le misure per nome: ID ed etichetta non entrano nella matrice.
+r <- carica_dati("rocce_simulate.csv")
+v <- c("SiO2", "CaO", "MgO", "FeO", "densita", "grana_mm", "colore", "fossili")
+X <- as.matrix(r[v])
+stopifnot(nrow(X)==90L, ncol(X)==8L, !anyDuplicated(r$id),
+          all(is.finite(X)), all(apply(X,2,sd)>0))
+Z <- scale(X)
+D <- dist(Z)
+parametri <- data.frame(variabile=v,media=attr(Z,"scaled:center"),
+ SD=attr(Z,"scaled:scale"),media_z=colMeans(Z),SD_z=apply(Z,2,sd))
+parametri
+stopifnot(max(abs(colMeans(Z)))<1e-12,
+          max(abs(apply(Z,2,sd)-1))<1e-12)
+```
+
+**Lettura del risultato.** Le medie trasformate sono praticamente nulle e le deviazioni standard unitarie. I piccoli scarti da zero sono arrotondamenti numerici, non proprietà geologiche.
+
+## 2. Le correlazioni rimangono
+
+Dividere per una scala positiva non elimina l’associazione fra due colonne. Verifichiamo che la matrice di correlazione rimanga la stessa, mentre le covarianze cambiano unità.
+
+```{r passo_02}
+round(cor(Z),2)
+c(massima_differenza_correlazioni=max(abs(cor(X)-cor(Z))))
+plot(Z[,"SiO2"],Z[,"CaO"],pch=19,col="#087C74",
+ xlab="SiO2 standardizzato",ylab="CaO standardizzato")
+abline(h=0,v=0,lty=3,col="grey65")
+```
+
+**Lettura del risultato.** La differenza fra le matrici di correlazione è prossima a zero. La nuvola SiO2–CaO continua a mostrare l’associazione presente nel campione sintetico. Media zero e varianza uno non implicano indipendenza.
+
+## 3. Una conversione delle unità
+
+Convertiamo la granulometria da millimetri a micrometri. La distanza grezza cambia, mentre quella calcolata dopo una nuova standardizzazione resta uguale: la conversione positiva è compensata dalla deviazione standard.
+
+```{r passo_03}
+X_um <- X
+X_um[,"grana_mm"] <- 1000*X_um[,"grana_mm"]
+c(distanza_grezza_mm=as.matrix(dist(X))[1,2],
+  distanza_grezza_um=as.matrix(dist(X_um))[1,2],
+  differenza_standardizzata=max(abs(scale(X_um)-Z)))
+```
+
+**Lettura del risultato.** I numeri grezzi dipendono dall’unità scelta. Dopo la standardizzazione le coordinate coincidono entro la precisione numerica, purché campione e definizione delle variabili rimangano gli stessi.
+
+## Variante svolta
+
+Trasformare il primo campione riutilizzando i parametri salvati.
+
+```{r variante}
+nuovo <- X[1,,drop=FALSE]
+nuovo_z <- sweep(sweep(nuovo,2,attr(Z,"scaled:center"),"-"),
+                 2,attr(Z,"scaled:scale"),"/")
+max(abs(nuovo_z-Z[1,,drop=FALSE]))
+```
+
+La coordinata ricostruita coincide con la prima riga di Z. Standardizzare una sola nuova riga usando la sua media e deviazione standard non definirebbe il riferimento del campione originario.
+
+## Errore da riconoscere
+
+La standardizzazione attribuisce a ogni colonna una dispersione unitaria; una variabile rumorosa o ridondante non diventa per questo scientificamente appropriata.
+
+## Risposta alla domanda
+
+La standardizzazione rende confrontabili gli scarti rispetto alla variabilità campionaria, conserva le correlazioni e richiede di documentare i parametri di riferimento.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M08_N02` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M08/M08_N02.R).

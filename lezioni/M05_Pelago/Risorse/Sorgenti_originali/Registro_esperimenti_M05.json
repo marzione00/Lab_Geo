@@ -1,0 +1,526 @@
+[
+  {
+    "id": "m05-estimandi",
+    "module": "M05",
+    "section": 2,
+    "sectionTitle": "Estimandi e disegni",
+    "page": 4,
+    "title": "Campionare per misure o per stazioni",
+    "goal": "Confrontare bersagli definiti da pesi differenti.",
+    "action": "Modifica il numero di misure nella stazione a concentrazione maggiore.",
+    "conclusion": "La media delle misure e quella delle stazioni rispondono a domande differenti.",
+    "formula": "\\theta_w=\\sum_gw_g\\mu_g,\\quad\\sum_gw_g=1",
+    "controls": [
+      {
+        "key": "nHigh",
+        "label": "Misure nella stazione elevata",
+        "type": "number",
+        "value": 40,
+        "min": 5,
+        "max": 100,
+        "step": 5,
+        "help": ""
+      },
+      {
+        "key": "seed",
+        "label": "Seme casuale",
+        "type": "number",
+        "value": 17,
+        "min": 1,
+        "max": 99999,
+        "step": 1,
+        "help": "A parità di ambiente R, il seme permette di ricostruire la simulazione."
+      }
+    ],
+    "prose": [
+      "Le misure appartengono a tre stazioni con livelli medi differenti. Aumentando il numero delle osservazioni nella stazione a concentrazione elevata si modifica il peso che essa assume nella media complessiva delle misure, mentre la media delle stazioni attribuisce a ciascuna unità lo stesso peso.",
+      "Il confronto riguarda due quantità di interesse differenti. Una sintesi riferita alle misure raccolte risponde alla composizione della campagna; una sintesi riferita a stazioni equiponderate richiede di aggregare prima entro stazione. La scelta dei pesi deve quindi essere collegata al disegno e alla popolazione sulla quale viene formulata la conclusione."
+    ],
+    "limits": "Le stazioni hanno medie gaussiane prefissate e una dispersione comune, mentre cambia la numerosità della stazione con concentrazione più elevata. Il peso uguale alle stazioni e quello uguale alle misure definiscono quantità differenti; nessuna delle due sintesi corregge automaticamente un disegno selettivo.",
+    "presets": [],
+    "source": "R/experiments/m05-estimandi.R",
+    "code": "data <- data.frame(stazione = rep(c(\"A\", \"B\", \"C\"), c(10, 10, p$nHigh)), valore = c(rnorm(10, \n    5), rnorm(10, 6), rnorm(p$nHigh, 12)))\n\na <- aggregate(valore ~ stazione, data, mean)\n\nplots <- list(ggplot(data, aes(stazione, valore, fill = stazione)) + geom_boxplot() + scale_fill_manual(values = col_geo) + \n    labs(title = \"Pesi delle unità campionarie\", x = \"Stazione\", y = \"Concentrazione\"))\n\nmetrics <- metric(`Media misure` = f(mean(data$valore)), `Media stazioni` = f(mean(a$valore)))",
+    "symbols": "$\\mu_g$ è la media della stazione $g$; $w_g$ è il peso attribuito alla stazione; $\\theta_w$ è la media pesata di interesse."
+  },
+  {
+    "id": "m05-selezione",
+    "module": "M05",
+    "section": 3,
+    "sectionTitle": "Selezione e distorsione",
+    "page": 15,
+    "title": "Precisione e bias di selezione",
+    "goal": "Osservare l’effetto della selezione su campagne ripetute.",
+    "action": "Aumenta n e confronta selezione casuale e preferenza per valori bassi.",
+    "conclusion": "Un campione numeroso può produrre stime precise intorno a un bersaglio distorto.",
+    "formula": "\\operatorname{MSE}=\\operatorname{Var}+\\operatorname{Bias}^2",
+    "controls": [
+      {
+        "key": "n",
+        "label": "Numero di osservazioni",
+        "type": "number",
+        "value": 60,
+        "min": 12,
+        "max": 300,
+        "step": 6,
+        "help": ""
+      },
+      {
+        "key": "B",
+        "label": "Repliche del procedimento",
+        "type": "number",
+        "value": 200,
+        "min": 40,
+        "max": 1000,
+        "step": 20,
+        "help": "Aumentare le repliche riduce l’incertezza Monte Carlo; la numerosità del campione rimane invariata."
+      },
+      {
+        "key": "bias",
+        "label": "Spostamento dovuto alla selezione",
+        "type": "number",
+        "value": 1,
+        "min": 0,
+        "max": 3,
+        "step": 0.25,
+        "help": ""
+      },
+      {
+        "key": "seed",
+        "label": "Seme casuale",
+        "type": "number",
+        "value": 17,
+        "min": 1,
+        "max": 99999,
+        "step": 1,
+        "help": "A parità di ambiente R, il seme permette di ricostruire la simulazione."
+      }
+    ],
+    "prose": [
+      "Il simulatore confronta distribuzioni campionarie gaussiane di medie ottenute con e senza uno spostamento dichiarato della popolazione osservata. La numerosità controlla la dispersione delle medie, mentre il parametro di selezione determina il bias rispetto al bersaglio comune.",
+      "Aumentando la numerosità si restringono entrambe le distribuzioni, ma quella selezionata rimane centrata sul livello spostato. La scomposizione dell’errore quadratico medio rende espliciti i contributi di variabilità e distorsione. L’attività rappresenta il bias attraverso un modello sintetico dello spostamento e non ricostruisce un algoritmo individuale di inclusione nella campagna."
+    ],
+    "limits": "Il modello rappresenta la selezione mediante uno spostamento dichiarato della distribuzione osservata; non simula un algoritmo di inclusione individuale.",
+    "presets": [],
+    "source": "R/experiments/m05-selezione.R",
+    "code": "a <- rnorm(p$B, 10, 2/sqrt(p$n))\n\nb <- rnorm(p$B, 10 - p$bias, 2/sqrt(p$n))\n\ndata <- data.frame(valore = c(a, b), disegno = rep(c(\"Casuale\", \"Selezionato\"), each = p$B))\n\nplots <- list(ggplot(data, aes(valore, fill = disegno)) + geom_histogram(bins = 25, alpha = 0.6, \n    position = \"identity\") + scale_fill_manual(values = col_geo) + geom_vline(xintercept = 10, \n    linetype = 2) + labs(title = \"Medie in campagne ripetute\", x = \"Stima\", y = \"Repliche\"))\n\nmetrics <- metric(`Bias teorico selezionato` = -p$bias, `SD teorica` = f(2/sqrt(p$n)), `MSE selezionato` = f(mean((b - \n    10)^2)))",
+    "symbols": "MSE è l’errore quadratico medio rispetto al bersaglio; Var è la varianza dello stimatore; Bias è la differenza fra il suo valore atteso e il parametro di interesse."
+  },
+  {
+    "id": "m05-distribuzioni",
+    "module": "M05",
+    "section": 4,
+    "sectionTitle": "Distribuzioni campionarie",
+    "page": 22,
+    "title": "Distribuzione campionaria della media",
+    "goal": "Distinguere dati individuali e statistiche campionarie.",
+    "action": "Scegli una popolazione asimmetrica e aumenta la dimensione di ogni campione.",
+    "conclusion": "La distribuzione delle medie dipende dalla popolazione e dalla numerosità di ciascun campione.",
+    "formula": "E(\\bar X)=\\mu,\\quad\\operatorname{Var}(\\bar X)=\\sigma^2/n",
+    "controls": [
+      {
+        "key": "n",
+        "label": "Numero di osservazioni",
+        "type": "number",
+        "value": 60,
+        "min": 12,
+        "max": 300,
+        "step": 6,
+        "help": ""
+      },
+      {
+        "key": "B",
+        "label": "Repliche del procedimento",
+        "type": "number",
+        "value": 200,
+        "min": 40,
+        "max": 1000,
+        "step": 20,
+        "help": "Aumentare le repliche riduce l’incertezza Monte Carlo; la numerosità del campione rimane invariata."
+      },
+      {
+        "key": "population",
+        "label": "Popolazione",
+        "type": "select",
+        "options": [
+          {
+            "value": "normal",
+            "label": "Normale"
+          },
+          {
+            "value": "exp",
+            "label": "Esponenziale"
+          }
+        ],
+        "value": "normal",
+        "help": ""
+      },
+      {
+        "key": "seed",
+        "label": "Seme casuale",
+        "type": "number",
+        "value": 17,
+        "min": 1,
+        "max": 99999,
+        "step": 1,
+        "help": "A parità di ambiente R, il seme permette di ricostruire la simulazione."
+      }
+    ],
+    "prose": [
+      "Ciascuna replica genera un nuovo campione dalla popolazione selezionata e ne calcola la media. Le due popolazioni offerte hanno media e varianza unitarie, ma differiscono per forma; l’istogramma rappresenta le medie campionarie, anziché le osservazioni individuali.",
+      "La numerosità n determina la precisione di ogni media, mentre B controlla quante repliche vengono utilizzate per rappresentarne la distribuzione. Sotto indipendenza e varianza finita, l’errore standard teorico diminuisce come la radice inversa di n. La popolazione esponenziale consente inoltre di osservare come la forma asimmetrica influenzi la distribuzione delle medie nei campioni meno numerosi."
+    ],
+    "limits": "Le popolazioni normale ed esponenziale condividono media e varianza unitarie, con osservazioni indipendenti. L’errore standard teorico è quindi comune, mentre la forma della distribuzione delle medie dipende dalla numerosità; il suo istogramma include la variabilità delle B repliche.",
+    "presets": [],
+    "source": "R/experiments/m05-distribuzioni.R",
+    "code": "means <- replicate(p$B, mean(if (p$population == \"normal\") rnorm(p$n, 1, 1) else rexp(p$n)))\n\ndata <- data.frame(media = means)\n\nplots <- list(hist_plot(means, \"Distribuzione delle medie\", \"Media campionaria\") + geom_vline(xintercept = 1, \n    linetype = 2))\n\nmetrics <- metric(`Media delle medie` = f(mean(means)), `SD empirica` = f(sd(means)), `SE teorico` = f(1/sqrt(p$n)))",
+    "symbols": "$\\bar X$ è la media di un campione; $\\mu$ e $\\sigma^2$ sono media e varianza della popolazione; $n$ è il numero di osservazioni per campione."
+  },
+  {
+    "id": "m05-dipendenza",
+    "module": "M05",
+    "section": 5,
+    "sectionTitle": "Errore standard",
+    "page": 34,
+    "title": "Errore standard e dipendenza",
+    "goal": "Quantificare il contributo delle covarianze alla precisione della media.",
+    "action": "Mantieni n costante e aumenta la correlazione intraclasse.",
+    "conclusion": "Misure che condividono una componente comune apportano meno informazione di misure indipendenti.",
+    "formula": "\\operatorname{Var}(\\bar X)=\\frac{\\sigma^2}{n}\\{1+(n-1)\\rho\\}",
+    "controls": [
+      {
+        "key": "n",
+        "label": "Numero di osservazioni",
+        "type": "number",
+        "value": 60,
+        "min": 12,
+        "max": 300,
+        "step": 6,
+        "help": ""
+      },
+      {
+        "key": "B",
+        "label": "Repliche del procedimento",
+        "type": "number",
+        "value": 200,
+        "min": 40,
+        "max": 1000,
+        "step": 20,
+        "help": "Aumentare le repliche riduce l’incertezza Monte Carlo; la numerosità del campione rimane invariata."
+      },
+      {
+        "key": "rho",
+        "label": "Correlazione comune",
+        "type": "number",
+        "value": 0.2,
+        "min": 0,
+        "max": 0.8,
+        "step": 0.05,
+        "help": ""
+      },
+      {
+        "key": "seed",
+        "label": "Seme casuale",
+        "type": "number",
+        "value": 17,
+        "min": 1,
+        "max": 99999,
+        "step": 1,
+        "help": "A parità di ambiente R, il seme permette di ricostruire la simulazione."
+      }
+    ],
+    "prose": [
+      "Ogni campione condivide una componente gaussiana comune, alla quale si aggiungono componenti individuali indipendenti. La costruzione mantiene unitaria la varianza marginale e assegna la stessa correlazione a tutte le coppie; le repliche dei campioni sono indipendenti fra loro.",
+      "L’errore standard corretto include il contributo delle covarianze, che diventa rilevante quando la correlazione è positiva. Le linee tratteggiate delimitano l’intervallo centrale che si otterrebbe assumendo indipendenza e varianza nota. Il confronto con l’istogramma delle medie rende visibile la sottostima della dispersione prodotta da quell’assunzione nel modello correlato."
+    ],
+    "limits": "Modello gaussiano equicorrelato con varianza marginale unitaria e correlazione non negativa. Le linee tratteggiate delimitano ±1,96/√n attorno alla media vera.",
+    "presets": [],
+    "source": "R/experiments/m05-dipendenza.R",
+    "code": "means <- replicate(p$B, {\n    u <- rnorm(1)\n    mean(sqrt(p$rho) * u + sqrt(1 - p$rho) * rnorm(p$n))\n})\n\nactual <- sqrt((1 + (p$n - 1) * p$rho)/p$n)\n\ndata <- data.frame(media = means)\n\nplots <- list(hist_plot(means, \"Medie di campioni correlati\", \"Media\") + geom_vline(xintercept = c(-1.96, \n    1.96)/sqrt(p$n), linetype = 2, colour = col_geo[2]))\n\nmetrics <- metric(`SE assumendo indipendenza` = f(1/sqrt(p$n)), `SE corretto teorico` = f(actual), \n    `SD delle repliche` = f(sd(means)), `n effettivo` = f(p$n/(1 + (p$n - 1) * p$rho)))",
+    "symbols": "$n$ è la numerosità; $\\sigma^2$ è la varianza marginale, qui unitaria; $\\rho$ è la correlazione comune; $\\bar X$ è la media del campione."
+  },
+  {
+    "id": "m05-intervalli",
+    "module": "M05",
+    "section": 6,
+    "sectionTitle": "Intervalli",
+    "page": 44,
+    "title": "Copertura degli intervalli di confidenza",
+    "goal": "Osservare la copertura frequentista in campioni ripetuti.",
+    "action": "Confronta campioni indipendenti e correlati utilizzando il medesimo intervallo t.",
+    "conclusion": "La copertura si riferisce alla frequenza con cui il procedimento include il parametro nelle repliche.",
+    "formula": "I_b=\\bar x_b\\pm t_{n-1,1-\\alpha/2}\\frac{s_b}{\\sqrt n}",
+    "controls": [
+      {
+        "key": "n",
+        "label": "Numero di osservazioni",
+        "type": "number",
+        "value": 30,
+        "min": 12,
+        "max": 300,
+        "step": 6,
+        "help": ""
+      },
+      {
+        "key": "B",
+        "label": "Repliche del procedimento",
+        "type": "number",
+        "value": 200,
+        "min": 40,
+        "max": 1000,
+        "step": 20,
+        "help": "Aumentare le repliche riduce l’incertezza Monte Carlo; la numerosità del campione rimane invariata."
+      },
+      {
+        "key": "rho",
+        "label": "Correlazione comune",
+        "type": "number",
+        "value": 0,
+        "min": 0,
+        "max": 0.6,
+        "step": 0.05,
+        "help": ""
+      },
+      {
+        "key": "level",
+        "label": "Livello nominale",
+        "type": "number",
+        "value": 0.95,
+        "min": 0.8,
+        "max": 0.99,
+        "step": 0.01,
+        "help": ""
+      },
+      {
+        "key": "seed",
+        "label": "Seme casuale",
+        "type": "number",
+        "value": 17,
+        "min": 1,
+        "max": 99999,
+        "step": 1,
+        "help": "A parità di ambiente R, il seme permette di ricostruire la simulazione."
+      }
+    ],
+    "prose": [
+      "La simulazione ripete la raccolta di campioni gaussiani e costruisce, per ciascuno, un intervallo t basato sulla deviazione standard campionaria. La media della popolazione rimane fissata; il colore distingue gli intervalli che la includono da quelli che la escludono.",
+      "Con osservazioni indipendenti il procedimento possiede il livello nominale dichiarato. Introducendo una componente comune alle osservazioni si modifica la dipendenza, mentre la formula applicata continua ad assumere indipendenza: il confronto permette di misurarne l’effetto sulla copertura. Il riepilogo usa tutte le repliche; la figura ne mostra le prime ottanta per conservarne la leggibilità."
+    ],
+    "limits": "Il generatore può introdurre un effetto gaussiano comune che rende correlate le misure, mentre l’intervallo usa l’errore standard di Student per osservazioni indipendenti. La copertura è stimata su B campioni; il grafico mostra soltanto le prime ottanta repliche e non consente di attribuire probabilità al parametro dopo l’osservazione.",
+    "presets": [],
+    "source": "R/experiments/m05-intervalli.R",
+    "code": "z <- t(replicate(p$B, {\n    u <- rnorm(1)\n    x <- 10 + sqrt(p$rho) * u + sqrt(1 - p$rho) * rnorm(p$n)\n    c(mean(x), sd(x)/sqrt(p$n))\n}))\n\nq <- qt((1 + p$level)/2, p$n - 1)\n\ndata <- data.frame(replica = 1:p$B, media = z[, 1], inferiore = z[, 1] - q * z[, 2], superiore = z[, \n    1] + q * z[, 2])\n\ndata$copre <- data$inferiore <= 10 & data$superiore >= 10\n\nshown <- head(data, 80)\n\nplots <- list(ggplot(shown, aes(media, replica, colour = copre)) + geom_segment(aes(x = inferiore, \n    xend = superiore, yend = replica), linewidth = 0.7) + geom_point(size = 1.5) + geom_vline(xintercept = 10, \n    linetype = 2) + scale_colour_manual(values = c(`FALSE` = col_geo[2], `TRUE` = col_geo[1]), \n    labels = c(\"Non include μ\", \"Include μ\")) + labs(title = \"Intervalli: prime 80 repliche\", \n    x = \"Media e intervallo\", y = \"Replica\"))\n\nmetrics <- metric(`Copertura osservata` = f(mean(data$copre)), `Livello nominale` = p$level, \n    Repliche = p$B, `MC SE copertura` = f(sqrt(mean(data$copre) * (1 - mean(data$copre))/p$B)))",
+    "symbols": "$I_b$ è l’intervallo della replica $b$; $\\bar x_b$ e $s_b$ sono media e deviazione standard campionarie; $n$ è la numerosità; $1-\\alpha$ è il livello nominale e $t_{n-1,1-\\alpha/2}$ il quantile di Student."
+  },
+  {
+    "id": "m05-bootstrap",
+    "module": "M05",
+    "section": 7,
+    "sectionTitle": "Bootstrap elementare",
+    "page": 55,
+    "title": "Ricampionare il campione osservato",
+    "goal": "Costruire una distribuzione bootstrap e un intervallo percentile.",
+    "action": "Conserva il campione e aumenta B; poi cambia seme per osservare la variabilità tra campioni.",
+    "conclusion": "Il bootstrap approssima la distribuzione dello stimatore mediante ricampionamento dal campione osservato.",
+    "formula": "\\widehat F_n=\\frac1n\\sum_i\\delta_{x_i},\\quad X_i^*\\sim\\widehat F_n",
+    "controls": [
+      {
+        "key": "n",
+        "label": "Numero di osservazioni",
+        "type": "number",
+        "value": 30,
+        "min": 12,
+        "max": 300,
+        "step": 6,
+        "help": ""
+      },
+      {
+        "key": "B",
+        "label": "Repliche del procedimento",
+        "type": "number",
+        "value": 200,
+        "min": 40,
+        "max": 1000,
+        "step": 20,
+        "help": "Aumentare le repliche riduce l’incertezza Monte Carlo; la numerosità del campione rimane invariata."
+      },
+      {
+        "key": "seed",
+        "label": "Seme casuale",
+        "type": "number",
+        "value": 17,
+        "min": 1,
+        "max": 99999,
+        "step": 1,
+        "help": "A parità di ambiente R, il seme permette di ricostruire la simulazione."
+      }
+    ],
+    "prose": [
+      "Un campione lognormale viene mantenuto fisso e utilizzato come distribuzione empirica dalla quale estrarre nuovi campioni con rimpiazzo. Ogni ricampionamento contiene lo stesso numero di osservazioni del campione originale e produce una nuova stima della media.",
+      "La distribuzione delle medie bootstrap approssima la variabilità dello stimatore condizionatamente al campione osservato. I quantili al 2,5% e al 97,5% definiscono l’intervallo percentile; la sua copertura non è garantita per ogni popolazione e numerosità. Cambiando B si studia la precisione numerica del ricampionamento, mentre cambiando seme si modifica anche il campione di partenza."
+    ],
+    "limits": "Il ricampionamento individuale riguarda un unico campione lognormale e assume osservazioni indipendenti. I percentili bootstrap sono una procedura approssimata la cui copertura non viene verificata qui; aumentare B stabilizza il calcolo, senza aggiungere informazione al campione originale.",
+    "presets": [],
+    "source": "R/experiments/m05-bootstrap.R",
+    "code": "x <- rlnorm(p$n, 0, 0.6)\n\nboot <- replicate(p$B, mean(sample(x, replace = TRUE)))\n\ndata <- data.frame(replica = seq_along(boot), media = boot)\n\nci <- quantile(boot, c(0.025, 0.975))\n\nplots <- list(hist_plot(boot, \"Distribuzione bootstrap della media\", \"Media ricampionata\") + \n    geom_vline(xintercept = ci, linetype = 2, colour = col_geo[2]))\n\nmetrics <- metric(`Media osservata` = f(mean(x)), `SE bootstrap` = f(sd(boot)), `Percentile 2,5%` = f(ci[1]), \n    `Percentile 97,5%` = f(ci[2]))",
+    "symbols": "$\\widehat F_n$ è la distribuzione empirica; $\\delta_{x_i}$ concentra massa nell’osservazione $x_i$; $X_i^*$ è un’estrazione con rimpiazzo dalla distribuzione empirica."
+  },
+  {
+    "id": "m05-ricampionamento",
+    "module": "M05",
+    "section": 8,
+    "sectionTitle": "Disegno del ricampionamento",
+    "page": 69,
+    "title": "Ricampionamento per stazioni",
+    "goal": "Confrontare bootstrap delle misure e delle unità indipendenti.",
+    "action": "Aumenta la componente comune alla stazione; confronta la dispersione dei due ricampionamenti.",
+    "conclusion": "Il disegno di ricampionamento deve conservare la struttura di dipendenza pertinente.",
+    "formula": "X_{gj}=\\mu+U_g+\\varepsilon_{gj}",
+    "controls": [
+      {
+        "key": "tau",
+        "label": "SD fra stazioni",
+        "type": "number",
+        "value": 2,
+        "min": 0,
+        "max": 5,
+        "step": 0.25,
+        "help": ""
+      },
+      {
+        "key": "B",
+        "label": "Repliche del procedimento",
+        "type": "number",
+        "value": 200,
+        "min": 40,
+        "max": 1000,
+        "step": 20,
+        "help": "Aumentare le repliche riduce l’incertezza Monte Carlo; la numerosità del campione rimane invariata."
+      },
+      {
+        "key": "seed",
+        "label": "Seme casuale",
+        "type": "number",
+        "value": 17,
+        "min": 1,
+        "max": 99999,
+        "step": 1,
+        "help": "A parità di ambiente R, il seme permette di ricostruire la simulazione."
+      }
+    ],
+    "prose": [
+      "Le osservazioni sono raccolte in dodici stazioni, ciascuna con sei misure che condividono una componente casuale. Il primo procedimento ricampiona singole misure ignorandone l’appartenenza; il secondo ricampiona stazioni intere, conservando insieme le sei osservazioni di ogni unità selezionata.",
+      "Quando la componente fra stazioni è rilevante, i due procedimenti producono distribuzioni delle medie con dispersioni differenti. Il confronto mostra perché il livello al quale vengono definite le unità indipendenti debba essere conservato nel ricampionamento. La stima bootstrap rimane condizionata alle dodici stazioni disponibili e non elimina l’incertezza dovuta a una raccolta geograficamente limitata."
+    ],
+    "limits": "Il campione contiene dodici stazioni indipendenti con sei misure ciascuna e un effetto comune di stazione. Il bootstrap per gruppi conserva questa dipendenza, ma dodici unità costituiscono una base limitata per stimare le code; gruppi di dimensione diversa richiederebbero una scelta esplicita dell’estimando e dei pesi.",
+    "presets": [],
+    "source": "R/experiments/m05-ricampionamento.R",
+    "code": "G <- 12\n\nm <- 6\n\nu <- rnorm(G, 0, p$tau)\n\nx <- matrix(10 + rep(u, each = m) + rnorm(G * m), nrow = m)\n\na <- replicate(p$B, mean(sample(as.vector(x), replace = TRUE)))\n\nb <- replicate(p$B, mean(x[, sample(1:G, replace = TRUE)]))\n\ndata <- data.frame(media = c(a, b), metodo = rep(c(\"Singole misure\", \"Stazioni intere\"), \n    each = p$B))\n\nplots <- list(ggplot(data, aes(media, colour = metodo)) + geom_density(linewidth = 1.1) + \n    scale_colour_manual(values = col_geo) + labs(title = \"Struttura del ricampionamento\", \n    x = \"Media bootstrap\", y = \"Densità\"))\n\nmetrics <- metric(`SE singole misure` = f(sd(a)), `SE stazioni` = f(sd(b)), `Unità indipendenti` = G)",
+    "symbols": "$X_{gj}$ è la misura $j$ della stazione $g$; $\\mu$ è il livello medio; $U_g$ è la componente condivisa dalla stazione; $\\varepsilon_{gj}$ è l’errore individuale."
+  },
+  {
+    "id": "m05-blocchi",
+    "module": "M05",
+    "section": 8,
+    "sectionTitle": "Disegno del ricampionamento",
+    "page": 69,
+    "title": "Bootstrap a blocchi di una serie dipendente",
+    "goal": "Confrontare ricampionamento individuale e ricampionamento di sequenze temporali.",
+    "action": "Aumenta la lunghezza dei blocchi conservando la medesima serie; confronta la dispersione delle medie ricampionate.",
+    "conclusion": "Il blocco conserva parte della dipendenza locale; la scelta della sua lunghezza contribuisce alla stima dell’incertezza.",
+    "formula": "B_s=(X_s,\\ldots,X_{s+\\ell-1}),\\quad \\bar X^*=n^{-1}\\sum_i X_i^*",
+    "controls": [
+      {
+        "key": "length",
+        "label": "Lunghezza dei blocchi",
+        "type": "number",
+        "value": 8,
+        "min": 1,
+        "max": 30,
+        "step": 1,
+        "help": ""
+      },
+      {
+        "key": "rho",
+        "label": "Parametro AR(1)",
+        "type": "number",
+        "value": 0.7,
+        "min": 0,
+        "max": 0.9,
+        "step": 0.1,
+        "help": ""
+      },
+      {
+        "key": "B",
+        "label": "Repliche del procedimento",
+        "type": "number",
+        "value": 200,
+        "min": 40,
+        "max": 1000,
+        "step": 20,
+        "help": "Aumentare le repliche riduce l’incertezza Monte Carlo; la numerosità del campione rimane invariata."
+      },
+      {
+        "key": "seed",
+        "label": "Seme casuale",
+        "type": "number",
+        "value": 17,
+        "min": 1,
+        "max": 99999,
+        "step": 1,
+        "help": "A parità di ambiente R, il seme permette di ricostruire la simulazione."
+      }
+    ],
+    "prose": [
+      "La serie sintetica segue un processo AR(1) stazionario. Il ricampionamento individuale estrae valori separatamente, mentre quello a blocchi conserva sequenze di osservazioni consecutive; i blocchi sono circolari, quindi possono proseguire dall’inizio della serie quando raggiungono il termine.",
+      "La lunghezza del blocco stabilisce quanta dipendenza locale viene conservata. Con blocchi unitari i due metodi condividono lo stesso principio, pur utilizzando estrazioni casuali differenti; aumentando la lunghezza si può osservare la sensibilità della stima dell’errore standard. La scelta non viene ottimizzata automaticamente e deve essere valutata rispetto alla memoria del processo e alla lunghezza del record."
+    ],
+    "limits": "Serie AR(1) stazionaria di 120 osservazioni con varianza marginale unitaria. Bootstrap circolare: un blocco che supera il termine della serie riparte dall’inizio. La lunghezza del blocco è una scelta di sensibilità, non viene ottimizzata automaticamente.",
+    "presets": [],
+    "source": "R/experiments/m05-blocchi.R",
+    "code": "x <- ar_series(120, p$rho)\n\nn <- length(x)\n\nL <- p$length\n\nindividual <- replicate(p$B, mean(sample(x, replace = TRUE)))\n\nblocks <- replicate(p$B, {\n    start <- sample(1:n, ceiling(n/L), replace = TRUE)\n    indices <- unlist(lapply(start, function(s) ((s - 1 + 0:(L - 1))%%n) + 1))\n    mean(x[indices[1:n]])\n})\n\ndata <- data.frame(media = c(individual, blocks), metodo = rep(c(\"Singole osservazioni\", \n    \"Blocchi circolari\"), each = p$B))\n\nplots <- list(ggplot(data, aes(media, colour = metodo)) + geom_density(linewidth = 1.1) + \n    scale_colour_manual(values = col_geo) + labs(title = \"Ricampionamento della stessa serie\", \n    x = \"Media bootstrap\", y = \"Densità\"))\n\nmetrics <- metric(`SE osservazioni` = f(sd(individual)), `SE blocchi` = f(sd(blocks)), `Lunghezza del blocco` = L, \n    `Osservazioni originali` = n)",
+    "symbols": "$B_s$ è il blocco che inizia all’indice $s$; $\\ell$ è la sua lunghezza; $X_i^*$ sono i valori ricampionati; $n$ è la lunghezza della serie ricostruita."
+  },
+  {
+    "id": "m05-precisione",
+    "module": "M05",
+    "section": 9,
+    "sectionTitle": "Precisione numerica",
+    "page": 86,
+    "title": "Stabilità numerica di un quantile bootstrap",
+    "goal": "Valutare l’incertezza dovuta al numero finito di ricampionamenti.",
+    "action": "Aumenta B mantenendo il campione fisso; confronta il limite superiore in ripetizioni indipendenti del bootstrap.",
+    "conclusion": "Un limite bootstrap stimato con poche repliche può oscillare sensibilmente anche a campione invariato.",
+    "formula": "\\widehat q_{0.975}^{*(B)}",
+    "controls": [
+      {
+        "key": "B",
+        "label": "Repliche del procedimento",
+        "type": "number",
+        "value": 200,
+        "min": 40,
+        "max": 1000,
+        "step": 20,
+        "help": "Aumentare le repliche riduce l’incertezza Monte Carlo; la numerosità del campione rimane invariata."
+      },
+      {
+        "key": "seed",
+        "label": "Seme casuale",
+        "type": "number",
+        "value": 17,
+        "min": 1,
+        "max": 99999,
+        "step": 1,
+        "help": "A parità di ambiente R, il seme permette di ricostruire la simulazione."
+      }
+    ],
+    "prose": [
+      "Il campione originale rimane fisso durante trenta ripetizioni indipendenti del calcolo bootstrap. Ciascuna ripetizione utilizza B ricampionamenti per stimare il quantile superiore della distribuzione delle medie, producendo un limite che può differire dagli altri per errore Monte Carlo.",
+      "La dispersione dei limiti così ottenuti misura la stabilità numerica del procedimento a campione invariato. Essa va distinta dalla variabilità che si osserverebbe raccogliendo un nuovo campione dalla popolazione. Aumentare B tende a stabilizzare il quantile stimato, mentre l’incertezza scientifica associata alla disponibilità di un solo campione richiede una valutazione separata."
+    ],
+    "limits": "Le trenta ripetizioni riutilizzano lo stesso campione di trenta osservazioni, variando soltanto il ricampionamento. La dispersione dei limiti superiori quantifica l’instabilità Monte Carlo del calcolo e non l’incertezza del limite su nuovi campioni né la copertura dell’intervallo.",
+    "presets": [],
+    "source": "R/experiments/m05-precisione.R",
+    "code": "x <- rlnorm(30, 0, 0.6)\n\nq <- replicate(30, quantile(replicate(p$B, mean(sample(x, replace = TRUE))), 0.975))\n\ndata <- data.frame(x = 1:30, y = q)\n\nplots <- list(point_plot(data, title = \"Ripetizioni del calcolo bootstrap\", xl = \"Ripetizione del calcolo\", \n    yl = \"Limite superiore 97,5%\"))\n\nmetrics <- metric(`Repliche per calcolo` = p$B, `SD dei limiti superiori` = f(sd(q)), `Campione fisso: n` = 30)",
+    "symbols": "$\\widehat q_{0.975}^{*(B)}$ è il quantile bootstrap al 97,5% stimato mediante $B$ repliche. Le trenta ripetizioni del suo calcolo utilizzano lo stesso campione originale."
+  }
+]

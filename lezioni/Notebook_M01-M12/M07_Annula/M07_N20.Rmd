@@ -1,0 +1,155 @@
+---
+title: "Probabilit\u00e0, soglia e costo degli errori"
+subtitle: "M07_N20 \u00b7 Annula"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Come passare da una probabilità a una decisione mantenendo esplicite le conseguenze degli errori?
+
+## Obiettivi
+
+- Collegare la domanda al calcolo riportato.
+- Interpretare il risultato usando variabili e unità del problema.
+
+**Prima di iniziare.** Vettori, data frame, indicizzazione e funzioni di base in R.
+
+**Dati e unità.** Fossili simulati del corso: 160 individui, 80 Rounded e 80 Spiky. Diametri e spessori sono espressi in micrometri. Nel generatore, diametro interno = diametro totale − 2 × spessore. La relazione contiene quindi un vincolo geometrico noto.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Annula oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M07_Annula` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M07_Annula/Risultati/M07_N20/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M07_Annula"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M07_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M07_Annula o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M07_N20")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(7020)
+```
+
+## 1. Stessa classe, probabilità differenti
+
+Due probabilità superiori a 0,5 producono entrambe la classe 1. La probabilità conserva però il grado di incertezza e permette una decisione con costi diversi.
+
+```{r passo_01}
+p <- c(.51,.99)
+data.frame(probabilita=p,classe=as.integer(p>=.5),
+ perdita_se_evento1=(p-1)^2,perdita_se_evento0=p^2)
+```
+
+**Lettura del risultato.** La probabilità 0,99 è molto buona se l’evento si verifica e molto costosa se l’evento non si verifica. Valutare solo la classe elimina questa distinzione.
+
+## 2. Una soglia definita dai costi
+
+Se un falso positivo costa $C_{FP}$ e un falso negativo $C_{FN}$, i costi attesi delle azioni sono $C_{FP}(1-p)$ e $C_{FN}p$. Con probabilità appropriate alla popolazione e costi corretti, si sceglie la classe 1 quando $p>C_{FP}/(C_{FP}+C_{FN})$.
+
+```{r passo_02}
+C_FP <- 1
+C_FN <- 3
+soglia <- C_FP/(C_FP+C_FN)
+griglia <- seq(0,1,length.out=101)
+plot(griglia,C_FP*(1-griglia),type="l",lwd=2,col="#C57E42",
+ ylim=c(0,3),xlab="Probabilita' dell'evento",ylab="Costo atteso")
+lines(griglia,C_FN*griglia,col="#087C74",lwd=2)
+abline(v=soglia,lty=2)
+legend("topleft",c("Decisione 1","Decisione 0"),
+ col=c("#C57E42","#087C74"),lwd=2,bty="n")
+soglia
+```
+
+**Lettura del risultato.** Con questi costi illustrativi, la soglia è 0,25. La relazione fra soglia e costi presuppone che le probabilità rappresentino il rischio nella popolazione in cui si decide. I costi qui sono ipotetici, non ricavati dalla geologia.
+
+## 3. Applicazione con regole già fissate
+
+Confrontiamo due regole di soglia definite a priori sullo stesso test. Manteniamo separata la qualità probabilistica del modello dalle conseguenze delle classificazioni.
+
+```{r passo_03}
+# Ogni riga identifica un fossile simulato.
+f <- carica_dati("fossili_simulati.csv")
+f$morfotipo <- factor(f$morfotipo, levels=c("Rounded", "Spiky"))
+x <- f$diametro_tot_um
+y <- f$diametro_int_um
+stopifnot(nrow(f)==160L, !anyDuplicated(f$id),
+          all(is.finite(x)), all(is.finite(y)))
+# Partizione fissata prima del confronto dei modelli.
+# Nel CSV didattico ogni quinto individuo forma il test.
+is_test <- seq_len(nrow(f)) %% 5L == 0L
+train <- f[!is_test, ]
+test <- f[is_test, ]
+stopifnot(nrow(train)==128L, nrow(test)==32L,
+          length(intersect(train$id, test$id))==0L)
+# Spiky=1 e Rounded=0: la probabilita' riguarda Spiky.
+train$spiky <- as.integer(train$morfotipo=="Spiky")
+test$spiky <- as.integer(test$morfotipo=="Spiky")
+logit <- glm(spiky ~ diametro_tot_um + rapporto_int_tot,
+             data=train, family=binomial())
+stopifnot(logit$converged)
+prob <- as.numeric(predict(logit, newdata=test, type="response"))
+stopifnot(all(is.finite(prob)), all(prob>=0 & prob<=1))
+valuta_soglia <- function(t) {
+ cl <- as.integer(prob>=t)
+ FP <- sum(cl==1 & test$spiky==0)
+ FN <- sum(cl==0 & test$spiky==1)
+ data.frame(soglia=t,FP=FP,FN=FN,
+ accuratezza=mean(cl==test$spiky),costo_medio=(C_FP*FP+C_FN*FN)/nrow(test))
+}
+rbind(valuta_soglia(.5),valuta_soglia(soglia))
+c(Brier=mean((prob-test$spiky)^2))
+```
+
+**Lettura del risultato.** Modificare la soglia cambia FP e FN, ma lascia invariato il Brier perché le probabilità non cambiano. La decisione fra le due soglie deve dipendere dai costi dichiarati e dalle condizioni di applicazione, senza inseguire il minimo osservato su questo piccolo test.
+
+## Variante svolta
+
+Aumentare il costo del falso positivo a 4, mantenendo quello del falso negativo a 3, e ricavare la soglia teorica.
+
+```{r variante}
+C_FP_nuovo <- 4
+C_FN_nuovo <- 3
+C_FP_nuovo/(C_FP_nuovo+C_FN_nuovo)
+```
+
+La soglia diventa circa 0,571. Quando aumentano le conseguenze dei falsi positivi, serve una probabilità più alta per scegliere l’evento.
+
+## Errore da riconoscere
+
+Una soglia universale pari a 0,5 ignora costi e obiettivi. Ottimizzarla sul test compromette la valutazione indipendente della decisione.
+
+## Risposta alla domanda
+
+La probabilità descrive l’incertezza del modello. La decisione richiede anche costi e un contesto d’uso dichiarati.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M07_N20` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M07/M07_N20.R).

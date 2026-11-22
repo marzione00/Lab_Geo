@@ -1,7 +1,7 @@
 /* Five reproducible investigations on frozen observations; fictional worlds are navigation. */
 (function (root) {
   'use strict';
-  const esc = root.GeoHTML.escape;
+  const { html } = root.GeoHTML;
   const projects = root.GEO_RESEARCH || [],
     byWorld = Object.fromEntries(projects.map(p => [p.worldId, p]));
   let dispose = null;
@@ -19,17 +19,19 @@
   function familyCard(p) {
     const f = root.GeoFamilies.byId[p.familyId];
     if (!f) return '';
-    return `<div class="family-card" data-level="${f.level}"><span>L${f.level} / ${esc(root.GeoFamilies.levels[f.level])}</span><strong>${esc(f.name)}</strong><p>${esc(root.GeoFamilies.hospitality[f.level])} · ${esc(f.description)}</p><details><summary>Come leggere il livello</summary><p>${esc(root.GeoFamilies.criteria[f.level])}</p><p>${esc(root.GeoFamilies.note)}</p></details></div>`;
+    return html`<div class="family-card" data-level="${f.level}"><span>L${f.level} / ${root.GeoFamilies.levels[f.level]}</span><strong>${f.name}</strong><p>${root.GeoFamilies.hospitality[f.level]} · ${f.description}</p><details><summary>Come leggere il livello</summary><p>${root.GeoFamilies.criteria[f.level]}</p><p>${root.GeoFamilies.note}</p></details></div>`;
   }
   function index() {
     if (!projects.length) return '';
-    return `<details class="research-index"><summary><span>MISSIONI SU DATI REALI</span><strong>Cinque progetti · da L1 a L5</strong><small>USGS · NASA/JPL · NOAA/NSIDC · NASA</small></summary><p class="research-intro">Scegli il grado di autonomia con cui vuoi lavorare. Le cinque missioni sono condivise dai mondi di pari livello; ciascuna conserva il campione osservato, la sua provenienza e il programma R che produce le figure.</p><div class="research-cards">${projects.map(p => `<a href="#esplorazione/${p.worldId}"><span>L${p.level} · ${esc(root.GeoFamilies.levels[p.level])}</span><strong>${esc(p.title)}</strong><small>${esc(p.question)}</small><b>Apri la missione ↗</b></a>`).join('')}</div><p class="instrument-note">${esc(root.GeoFamilies.note)}</p></details>`;
+    return html`<details class="research-index"><summary><span>MISSIONI SU DATI REALI</span><strong>Cinque progetti · da L1 a L5</strong><small>USGS · NASA/JPL · NOAA/NSIDC · NASA</small></summary><p class="research-intro">Scegli il grado di autonomia con cui vuoi lavorare. Le cinque missioni sono condivise dai mondi di pari livello; ciascuna conserva il campione osservato, la sua provenienza e il programma R che produce le figure.</p><div class="research-cards">${projects.map(p => html`<a href="#esplorazione/${p.worldId}"><span>L${p.level} · ${root.GeoFamilies.levels[p.level]}</span><strong>${p.title}</strong><small>${p.question}</small><b>Apri la missione ↗</b></a>`)}</div><p class="instrument-note">${root.GeoFamilies.note}</p></details>`;
   }
   function script(p, params, body = p.code) {
     return (
       '# GeoStat Lab · ' +
       p.title +
-      '\n# Dati osservati: consultare provenance.json.\n# Estrarre il pacchetto; impostare questa cartella come directory di lavoro.\n# install.packages("ggplot2")\n\n' +
+      '\n# Dati osservati: consultare provenance.json.\n# Estrarre il pacchetto; impostare questa cartella come directory di lavoro.\n# install.packages("ggplot2")\n' +
+      '# Codice: PolyForm Noncommercial 1.0.0, https://polyformproject.org/licenses/noncommercial/1.0.0\n' +
+      '# Required Notice: Copyright 2026 Marzio De Corato (https://github.com/marzione00/Lab_Geo)\n\n' +
       root.GEO_LABS.common +
       '\n' +
       root.GeoCodeGuide.parameterScript(p, params) +
@@ -67,7 +69,7 @@
       controller = null;
     let params = Object.fromEntries(p.controls.map(c => [c.key, c.value]));
     const path = 'assets/research/' + p.id + '/';
-    host.innerHTML = `<section class="research-mission" data-research="${esc(p.id)}"><p class="eyebrow">ARCHIVIO OSSERVATIVO / MISSIONE L${p.level}</p>${p.narrative.map(t => '<p>' + esc(t) + '</p>').join('')}<div class="research-brief"><h2>Il problema da indagare</h2><p>${esc(p.question)}</p><ol>${p.steps.map(t => '<li>' + esc(t) + '</li>').join('')}</ol></div><section class="research-formalism"><h2>Relazione statistica</h2><div class="math">\\[${esc(p.formula)}\\]</div><p>${esc(p.formulaExplanation)}</p></section><div class="research-provenance"><strong>Campione locale · ${p.rows} osservazioni</strong><span>Acquisizione: ${esc(p.retrievedAt || 'documentata nel manifesto')}</span><a href="${path}provenance.json" download>Provenienza e dizionario dei dati ↓</a></div><div class="research-workbench"><section class="research-controls" aria-labelledby="research-control-title"><h2 id="research-control-title">Configura l’indagine</h2><form id="research-form">${p.controls.map(c => `<label for="research-${c.key}">${esc(c.label)}${c.type === 'select' ? `<select id="research-${c.key}" name="${c.key}">${c.options.map(o => `<option value="${esc(o.value)}"${o.value === c.value ? ' selected' : ''}>${esc(o.label)}</option>`).join('')}</select>` : `<input id="research-${c.key}" name="${c.key}" type="number" value="${c.value}" min="${c.min}" max="${c.max}" step="${c.step}">`}${c.help ? '<small>' + esc(c.help) + '</small>' : ''}</label>`).join('')}<button class="button" type="submit">Esegui l’analisi in R</button><button class="button secondary" type="button" id="research-stop" hidden>Interrompi il calcolo</button></form><p id="research-engine" role="status">R viene avviato al primo calcolo.</p><a class="research-download" href="${path}project.zip" download>Pacchetto R + dati + provenienza ↓</a><a class="research-download" href="${path}data.csv" download>Campione CSV ↓</a></section><div class="research-terminal-column"><p class="research-input-code">Il campione viene caricato nell’oggetto <code>observations</code>. Nel programma scaricabile: <code>observations &lt;- read.csv("data.csv")</code>.</p><div class="research-terminal"></div></div></div><section class="research-results" aria-labelledby="research-results-title"><h2 id="research-results-title">Risultati dell’indagine</h2><p class="research-result-state" role="status">Anteprima calcolata in R con i parametri iniziali. Il pulsante ricalcola figure e statistiche sul tuo dispositivo.</p><div class="research-figures">${Array.from({ length: p.plotCount || 1 }, (_, i) => `<figure><a href="${path}figure-${i + 1}.svg" target="_blank" rel="noopener" aria-label="Ingrandisci figura ${i + 1}"><img src="${path}figure-${i + 1}.svg" alt="${esc(p.title)}: figura ${i + 1} prodotta dal codice R, parametri iniziali"></a><figcaption>Figura ${i + 1} · configurazione iniziale · seleziona per ingrandire</figcaption></figure>`).join('')}</div><div class="research-metrics"></div><div class="research-table"></div><button class="button secondary" id="research-export" type="button" hidden>Scarica i risultati CSV</button></section><details class="research-limits" open><summary>Interpretazione e limiti</summary><ul>${p.limitations.map(t => '<li>' + esc(t) + '</li>').join('')}</ul></details><section class="research-sources"><h2>Fonti dei dati</h2><ul>${p.sources.map(s => '<li><a href="' + esc(s.url) + '" target="_blank" rel="noopener noreferrer">' + esc(s.label) + '</a></li>').join('')}</ul><p>Il pianeta è una destinazione immaginaria: le osservazioni riguardano gli oggetti reali descritti nelle fonti.</p></section></section>`;
+    host.innerHTML = html`<section class="research-mission" data-research="${p.id}"><p class="eyebrow">ARCHIVIO OSSERVATIVO / MISSIONE L${p.level}</p>${p.narrative.map(t => html`<p>${t}</p>`)}<div class="research-brief"><h2>Il problema da indagare</h2><p>${p.question}</p><ol>${p.steps.map(t => html`<li>${t}</li>`)}</ol></div><section class="research-formalism"><h2>Relazione statistica</h2><div class="math">\\[${p.formula}\\]</div><p>${p.formulaExplanation}</p></section><div class="research-provenance"><strong>Campione locale · ${p.rows} osservazioni</strong><span>Acquisizione: ${p.retrievedAt || 'documentata nel manifesto'}</span><a href="${path}provenance.json" download>Provenienza e dizionario dei dati ↓</a></div><div class="research-workbench"><section class="research-controls" aria-labelledby="research-control-title"><h2 id="research-control-title">Configura l’indagine</h2><form id="research-form">${p.controls.map(c => html`<label for="research-${c.key}">${c.label}${c.type === 'select' ? html`<select id="research-${c.key}" name="${c.key}">${c.options.map(o => html`<option value="${o.value}"${o.value === c.value ? ' selected' : ''}>${o.label}</option>`)}</select>` : html`<input id="research-${c.key}" name="${c.key}" type="number" value="${c.value}" min="${c.min}" max="${c.max}" step="${c.step}">`}${c.help ? html`<small>${c.help}</small>` : ''}</label>`)}<button class="button" type="submit">Esegui l’analisi in R</button><button class="button secondary" type="button" id="research-stop" hidden>Interrompi il calcolo</button></form><p id="research-engine" role="status">R viene avviato al primo calcolo.</p><a class="research-download" href="${path}project.zip" download>Pacchetto R + dati + provenienza ↓</a><a class="research-download" href="${path}data.csv" download>Campione CSV ↓</a></section><div class="research-terminal-column"><p class="research-input-code">Il campione viene caricato nell’oggetto <code>observations</code>. Nel programma scaricabile: <code>observations &lt;- read.csv("data.csv")</code>.</p><div class="research-terminal"></div></div></div><section class="research-results" aria-labelledby="research-results-title"><h2 id="research-results-title">Risultati dell’indagine</h2><p class="research-result-state" role="status">Anteprima calcolata in R con i parametri iniziali. Il pulsante ricalcola figure e statistiche sul tuo dispositivo.</p><div class="research-figures">${Array.from({ length: p.plotCount || 1 }, (_, i) => html`<figure><a href="${path}figure-${i + 1}.svg" target="_blank" rel="noopener" aria-label="Ingrandisci figura ${i + 1}"><img src="${path}figure-${i + 1}.svg" alt="${p.title}: figura ${i + 1} prodotta dal codice R, parametri iniziali"></a><figcaption>Figura ${i + 1} · configurazione iniziale · seleziona per ingrandire</figcaption></figure>`)}</div><div class="research-metrics"></div><div class="research-table"></div><button class="button secondary" id="research-export" type="button" hidden>Scarica i risultati CSV</button></section><details class="research-limits" open><summary>Interpretazione e limiti</summary><ul>${p.limitations.map(t => html`<li>${t}</li>`)}</ul></details><section class="research-sources"><h2>Fonti dei dati</h2><ul>${p.sources.map(s => html`<li><a href="${s.url}" target="_blank" rel="noopener noreferrer">${s.label}</a></li>`)}</ul><p>Il pianeta è una destinazione immaginaria: le osservazioni riguardano gli oggetti reali descritti nelle fonti.</p></section></section>`;
     const $ = s => host.querySelector(s),
       form = $('#research-form'),
       status = $('#research-engine'),
@@ -168,30 +170,15 @@
           figure.append(link, caption);
           figures.append(figure);
         }
-        $('.research-metrics').innerHTML =
-          '<dl>' +
-          result.metrics
-            .map(
-              row =>
-                '<div><dt>' +
-                esc(row.grandezza ?? Object.values(row)[0]) +
-                '</dt><dd>' +
-                esc(row.valore ?? Object.values(row)[1]) +
-                '</dd></div>',
-            )
-            .join('') +
-          '</dl>';
+        $('.research-metrics').innerHTML = html`<dl>${result.metrics.map(
+          row =>
+            html`<div><dt>${row.grandezza ?? Object.values(row)[0]}</dt><dd>${row.valore ?? Object.values(row)[1]}</dd></div>`,
+        )}</dl>`;
         const columns = Object.keys(result.data[0] || {}).slice(0, 8);
         $('.research-table').innerHTML =
-          '<details><summary>Osservazioni del risultato · prime ' +
-          result.data.length +
-          ' righe, fino a 8 colonne</summary><div class="solution-table-scroll" tabindex="0" role="region" aria-label="Dati calcolati"><table><thead><tr>' +
-          columns.map(k => '<th scope="col">' + esc(k) + '</th>').join('') +
-          '</tr></thead><tbody>' +
-          result.data
-            .map(row => '<tr>' + columns.map(k => '<td>' + esc(row[k]) + '</td>').join('') + '</tr>')
-            .join('') +
-          '</tbody></table></div></details>';
+          html`<details><summary>Osservazioni del risultato · prime ${result.data.length} righe, fino a 8 colonne</summary><div class="solution-table-scroll" tabindex="0" role="region" aria-label="Dati calcolati"><table><thead><tr>${columns.map(k => html`<th scope="col">${k}</th>`)}</tr></thead><tbody>${result.data.map(
+            row => html`<tr>${columns.map(k => html`<td>${row[k]}</td>`)}</tr>`,
+          )}</tbody></table></div></details>`;
         terminal.completed(result, context);
         state.textContent =
           (context.custom ? 'Variante ricalcolata' : context.partial ? 'Risultato intermedio' : 'Analisi ricalcolata') +

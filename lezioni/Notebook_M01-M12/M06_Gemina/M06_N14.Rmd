@@ -1,0 +1,128 @@
+---
+title: "Ranghi indipendenti: quale ipotesi?"
+subtitle: "M06_N14 \u00b7 Gemina"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Che cosa misura il confronto a ranghi fra Spiky e Rounded e perché non va presentato automaticamente come test delle mediane?
+
+## Obiettivi
+
+- Calcolare la probabilità empirica di superiorità con mezzi pesi per i pareggi.
+- Distinguere statistica a ranghi e ipotesi di calibrazione.
+
+**Prima di iniziare.** Vettori, indicizzazione, media, varianza e grafici di base in R.
+
+**Dati e unità.** Due campioni sintetici indipendenti di ottanta fossili ciascuno, diametro totale in micrometri.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M06_N14/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M06_N14")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(6014)
+```
+
+## 1. Confrontare tutte le coppie fra gruppi
+
+Per ogni coppia formata da uno Spiky e un Rounded attribuiamo uno se Spiky è maggiore, mezzo se sono uguali e zero altrimenti. La media dei punteggi stima una probabilità di superiorità empirica, che non è una differenza di medie o di mediane.
+
+```{r passo_01}
+dati <- carica_dati("fossili_simulati.csv")
+a <- dati$diametro_tot_um[dati$morfotipo == "Rounded"]
+b <- dati$diametro_tot_um[dati$morfotipo == "Spiky"]
+maggiori <- outer(b, a, ">")
+uguali <- outer(b, a, "==")
+U <- sum(maggiori) + 0.5 * sum(uguali)
+theta <- U / (length(a) * length(b))
+print(c(U = U, confronti = length(a) * length(b), superiorita_empirica = theta))
+```
+
+**Lettura del risultato.** I confronti fra coppie non sono tutti indipendenti perché riutilizzano gli stessi fossili. Non possiamo trattare nA per nB come numero di repliche indipendenti per un test binomiale.
+
+## 2. Ricostruire la somma dei ranghi
+
+Ordiniamo i due gruppi insieme e assegniamo ranghi medi ai pareggi. Sottraendo il contributo minimo dei ranghi del primo gruppo otteniamo U nello stesso verso. Il controllo collega il conteggio intuitivo alla statistica usata da R.
+
+```{r passo_02}
+nB <- length(b)
+ranghi <- rank(c(b, a), ties.method = "average")
+somma_ranghi_B <- sum(ranghi[seq_len(nB)])
+U_da_ranghi <- somma_ranghi_B - nB * (nB + 1) / 2
+stopifnot(isTRUE(all.equal(U, U_da_ranghi)))
+test <- wilcox.test(b, a, exact = FALSE, correct = TRUE)
+print(c(U_manual = U, U_R = unname(test$statistic), p = test$p.value))
+stopifnot(isTRUE(all.equal(U, unname(test$statistic))))
+```
+
+**Lettura del risultato.** Usiamo l'approssimazione normale con correzione di continuità in modo esplicito. La calibrazione usuale del test a ranghi indipendenti si fonda sulla nulla di uguali distribuzioni, non sulla sola uguaglianza delle mediane.
+
+## 3. Separare i tre indici di confronto
+
+Affianchiamo differenza media, differenza delle mediane e probabilità empirica di superiorità. In un modello di sola traslazione possono esprimere aspetti collegati dello spostamento, ma senza quel modello non sono quantità intercambiabili. Il test a ranghi non è inoltre sensibile a ogni possibile cambiamento di forma.
+
+```{r passo_03}
+riepilogo <- data.frame(quantita = c("Media Spiky - Rounded",
+  "Mediana Spiky - Rounded", "Superiorita empirica Spiky"),
+  valore = c(mean(b) - mean(a), median(b) - median(a), theta),
+  unita = c("um", "um", "probabilita"))
+print(riepilogo)
+print(c(p_ranghi = test$p.value, n_Rounded = length(a), n_Spiky = length(b)))
+```
+
+**Lettura del risultato.** Le unità aiutano a non confondere i bersagli. Un p-value grande non dimostra equivalenza delle distribuzioni né uguaglianza delle mediane.
+
+## Variante svolta
+
+Costruire due gruppi con stessa mediana e diversa dispersione, e calcolare superiorità e ranghi.
+
+```{r variante}
+a2 <- c(-10, -1, 0, 1, 10)
+b2 <- c(-2, -0.2, 0, 0.2, 2)
+theta2 <- mean(outer(b2, a2, ">")) + 0.5 * mean(outer(b2, a2, "=="))
+print(c(mediana_A = median(a2), mediana_B = median(b2),
+  SD_A = sd(a2), SD_B = sd(b2), superiorita = theta2))
+print(wilcox.test(b2, a2, exact = FALSE, correct = TRUE))
+```
+
+In questo esempio simmetrico la superiorità empirica è un mezzo, pur con dispersioni diverse. L'esempio mostra perché il test non va descritto come rilevatore universale di ogni differenza di distribuzione.
+
+## Errore da riconoscere
+
+Non dire che il test di Wilcoxon indipendente verifica sempre e soltanto le mediane. Dichiarare struttura dei campioni, statistica e ipotesi che ne sostengono la calibrazione.
+
+## Risposta alla domanda
+
+I ranghi confrontano l'ordinamento relativo dei valori. L'interpretazione come spostamento di posizione richiede ipotesi ulteriori sulla forma delle distribuzioni.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M06_N14` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M06/M06_N14.R).

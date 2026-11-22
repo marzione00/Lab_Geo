@@ -2,6 +2,8 @@
 # Osservare la copertura frequentista in campioni ripetuti.
 # Dati sintetici; parametri e ambiente dichiarati.
 # Dipendenze: install.packages(c("ggplot2", "jsonlite", "svglite"))
+# Codice: PolyForm Noncommercial 1.0.0, https://polyformproject.org/licenses/noncommercial/1.0.0
+# Required Notice: Copyright 2026 Marzio De Corato (https://github.com/marzione00/Lab_Geo)
 
 # GeoStat Lab — funzioni comuni. R >= 4.3; ggplot2 >= 3.4; jsonlite.
 suppressPackageStartupMessages(library(ggplot2))
@@ -62,8 +64,8 @@ z <- t(replicate(p$B, {
 
 q <- qt((1 + p$level)/2, p$n - 1)
 
-data <- data.frame(replica = 1:p$B, media = z[, 1], inferiore = z[, 1] - q * z[, 2], superiore = z[, 
-    1] + q * z[, 2])
+data <- data.frame(replica = 1:p$B, media = z[, 1], inferiore = z[, 1] - q * z[, 2],
+    superiore = z[, 1] + q * z[, 2])
 
 data$copre <- data$inferiore <= 10 & data$superiore >= 10
 

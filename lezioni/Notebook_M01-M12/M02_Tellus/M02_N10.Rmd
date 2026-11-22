@@ -1,0 +1,133 @@
+---
+title: "Esportazione e controllo di ritorno"
+subtitle: "M02_N10 \u00b7 Tellus"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come possiamo verificare che un file esportato conservi le informazioni necessarie a riprendere l'analisi?
+
+## Obiettivi
+
+- Confrontare un'esportazione CSV e una serializzazione RDS.
+- Verificare chiavi, numeri e tipi dopo la rilettura.
+
+**Prima di iniziare.** Saper eseguire una cella R e riconoscere vettori, assegnamenti e nomi di colonne.
+
+**Dati e unità.** La sintesi usa le sei stazioni dei 24 provini sintetici. Esportiamo media della densità e numerosità; aggiungiamo un fattore ordinato costruito soltanto per osservare la conservazione dei tipi.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M02_N10/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M02_N10")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(2010)
+```
+
+## 1. Creare un risultato autonomo
+
+Il notebook deve generare da solo la tabella da esportare. Calcoliamo media e numerosità per stazione e ne dichiariamo l'ordine: il controllo successivo non dipenderà da file scritti in un'altra esercitazione o da oggetti già presenti in memoria.
+
+```{r passo_01}
+# Ogni esecuzione riparte dal CSV condiviso, senza modificare il file.
+d <- carica_dati("campioni_modulo1.csv", stringsAsFactors = FALSE)
+stopifnot(nrow(d) == 24L, !anyDuplicated(d$id))
+
+stopifnot(all(is.finite(d$massa_g)), all(d$massa_g > 0),
+          all(is.finite(d$volume_cm3)), all(d$volume_cm3 > 0))
+d$densita_g_cm3 <- d$massa_g / d$volume_cm3
+
+gruppi <- split(d$densita_g_cm3, d$stazione)
+tabella <- data.frame(stazione = names(gruppi), n = lengths(gruppi),
+                      media_g_cm3 = vapply(gruppi, mean, numeric(1)), row.names = NULL)
+tabella$stazione <- factor(tabella$stazione, levels = tabella$stazione, ordered = TRUE)
+print(tabella)
+stopifnot(sum(tabella$n) == nrow(d), !anyDuplicated(tabella$stazione))
+```
+
+**Lettura del risultato.** Il fattore ordinato serve qui a verificare una proprietà informatica del formato, non a introdurre una graduatoria geologica delle stazioni. Gli elementi indispensabili per interpretare la sintesi restano chiave, numerosità e unità della densità.
+
+## 2. Scrivere CSV e verificare valori e chiavi
+
+Il CSV scambia una tabella testuale facilmente leggibile da altri programmi. Alla rilettura controlliamo il contenuto richiesto, sapendo che alcuni attributi R non sono descritti dal formato e non devono essere presunti conservati.
+
+```{r passo_02}
+file_csv <- percorso_risultati("sintesi_stazioni.csv")
+write.csv(tabella, file_csv, row.names = FALSE)
+da_csv <- read.csv(file_csv, stringsAsFactors = FALSE)
+print(da_csv)
+stopifnot(identical(da_csv$stazione, as.character(tabella$stazione)))
+stopifnot(all(da_csv$n == tabella$n))
+stopifnot(isTRUE(all.equal(da_csv$media_g_cm3, tabella$media_g_cm3)))
+print(c(prima = class(tabella$stazione)[1], dopo_CSV = class(da_csv$stazione)[1]))
+```
+
+**Lettura del risultato.** Il contenuto delle etichette è conservato, ma la colonna riletta è testo: l'ordine dei livelli del fattore non fa parte del CSV. I controlli numerici confrontano i valori con una tolleranza, evitando di confondere formattazione e informazione.
+
+## 3. Conservare un oggetto R completo
+
+RDS salva un singolo oggetto con classi e attributi, utile quando l'analisi riprenderà in R. Verifichiamo l'identità dell'oggetto riletto; affianchiamo questo file al CSV, perché i due formati rispondono a esigenze diverse di scambio e ripresa.
+
+```{r passo_03}
+file_rds <- percorso_risultati("sintesi_stazioni.rds")
+saveRDS(tabella, file_rds)
+da_rds <- readRDS(file_rds)
+stopifnot(identical(da_rds, tabella))
+print(is.ordered(da_rds$stazione))
+print(levels(da_rds$stazione))
+print(c(righe_CSV = nrow(da_csv), righe_RDS = nrow(da_rds)))
+```
+
+**Lettura del risultato.** L'identità conferma che classi, attributi e valori sono stati conservati nel passaggio RDS. Il formato non sostituisce il codice che ha prodotto l'oggetto né il dizionario dei dati: un risultato resta interpretabile grazie alla sua documentazione.
+
+## Variante svolta
+
+Ricostruire esplicitamente il fattore dopo la lettura del CSV.
+
+```{r variante}
+livelli_dichiarati <- levels(tabella$stazione)
+da_csv$stazione <- factor(da_csv$stazione, levels = livelli_dichiarati, ordered = TRUE)
+stopifnot(identical(da_csv$stazione, tabella$stazione))
+print(da_csv)
+```
+
+Il ripristino è possibile perché abbiamo conservato i livelli dichiarati. Se l'ordine avesse un significato scientifico, andrebbe documentato in un file di metadati e non dedotto casualmente dall'ordine alfabetico.
+
+## Errore da riconoscere
+
+La semplice esistenza del file non dimostra che l'esportazione sia corretta. La rilettura deve verificare le proprietà necessarie al lavoro successivo, distinguendo contenuto tabellare e attributi dell'oggetto R.
+
+## Risposta alla domanda
+
+CSV e RDS sono verificati mediante controlli coerenti con il loro scopo. Il primo favorisce lo scambio di valori, il secondo conserva l'oggetto R; entrambi richiedono nomi, unità e provenienza documentati.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M02_N10` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M02/M02_N10.R).

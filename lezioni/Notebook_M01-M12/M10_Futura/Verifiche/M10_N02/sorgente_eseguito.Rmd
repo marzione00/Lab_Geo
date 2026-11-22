@@ -1,0 +1,127 @@
+---
+title: "Modelli di riferimento disponibili all’origine"
+subtitle: "M10_N02 · Futura"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Quale previsione semplice deve superare il modello?
+
+## Obiettivi
+
+- Calcolare tre riferimenti con il solo train.
+- Distinguere livello, stagione e deriva.
+- Verificare la ripetizione stagionale oltre un anno.
+
+**Prima di iniziare.** Sono richiesti vettori, tabelle e funzioni R di base. I blocchi vanno eseguiti in ordine. Il notebook è autonomo rispetto agli altri.
+
+**Dati e unità.** CO₂ storica: 204 mesi da gennaio 1985 a dicembre 2001, concentrazione in ppm. Le medie derivano dalle osservazioni settimanali attribuite al mese della data, secondo la convenzione del corso. Sono dati storici, distinti da una serie mensile ufficiale e da una misura attuale. Il protocollo usa 168 mesi per l’adattamento (1985–1998) e 36 per il test (1999–2001).
+
+## Preparazione
+
+Aprire il progetto autonomo di Futura o quello generale del corso. I calcoli usano R base e stats. Gli output del notebook vanno in `Risultati/M10_N02/`; i CSV originali restano invariati.
+
+```{r preparazione}
+# Trova la cartella M10 dal progetto autonomo o dal progetto generale.
+.gs_cerca <- normalizePath(getwd(),winslash="/",mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca,
+    file.path(.gs_cerca,"M10_Futura"),
+    file.path(.gs_cerca,"03_Notebook_svolti","M10_Futura"),
+    file.path(.gs_cerca,"M10","03_Notebook_svolti","M10_Futura"))
+  .gs_ok <- file.exists(file.path(.gs_candidati,"M10_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati,"R","funzioni_notebook.R"))
+  if(any(.gs_ok)) { .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]; break }
+  .gs_padre <- dirname(.gs_cerca)
+  if(.gs_padre==.gs_cerca) stop("Aprire il progetto M10_Futura o quello generale dei notebook.")
+  .gs_cerca <- .gs_padre
+}
+source(file.path(.gs_modulo,"R","funzioni_notebook.R"),local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo,"M10_N02")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88,digits=6)
+if(requireNamespace("knitr",quietly=TRUE)) {
+  knitr::opts_chunk$set(echo=TRUE,error=FALSE,warning=TRUE,message=TRUE,
+    fig.width=8,fig.height=5,dpi=150,fig.align="center")
+}
+set.seed(10002)
+```
+
+## 1. Ultimo valore e stagione
+
+Il riferimento ingenuo conserva l’ultimo valore. Il riferimento stagionale ripete l’ultimo anno osservato. Le formule per i primi dodici passi sono $\hat y_{T+h}=y_T$ e $\hat y_{T+h}=y_{T+h-12}$.
+
+```{r passo_01}
+c2 <- prepara_co2(carica_dati("co2_1985_2001.csv"))
+train <- c2$train; test <- c2$test; h <- c2$h
+ ultimo <- rep(as.numeric(tail(train,1)),h)
+ stagionale <- rep(as.numeric(tail(train,12)),length.out=h)
+ head(data.frame(h=1:h,ultimo=ultimo,stagionale=stagionale),6)
+ stopifnot(identical(stagionale[1:12],stagionale[13:24]))
+```
+
+**Lettura del risultato.** Dopo dodici passi il riferimento stagionale ripete ancora l’ultimo anno del train. Non consulta il primo anno del test per prevedere il secondo.
+
+## 2. La deriva usa il cambiamento storico
+
+La pendenza deriva dagli estremi del train: $\hat d=(y_T-y_1)/(T-1)$. Questo riferimento è trasparente, ma sensibile agli estremi e a cambiamenti del processo.
+
+```{r passo_02}
+deriva <- (as.numeric(tail(train,1))-as.numeric(head(train,1)))/(length(train)-1)
+pred_deriva <- as.numeric(tail(train,1))+seq_len(h)*deriva
+data.frame(ppm_per_mese=deriva,ppm_per_anno=12*deriva)
+tail(data.frame(h=1:h,previsto=pred_deriva),3)
+```
+
+**Lettura del risultato.** La deriva esprime ppm per mese. Moltiplicarla per dodici cambia l’unità della pendenza, senza rendere lineare il processo reale.
+
+## 3. I riferimenti fanno ipotesi differenti
+
+Il confronto grafico riguarda soltanto le traiettorie prodotte all’origine, prima di usarle per calcolare l’errore.
+
+```{r passo_03}
+stile_grafico()
+matplot(1:h,cbind(ultimo,stagionale,pred_deriva),type="l",lty=c(2,1,1),
+  col=palette_geo[1:3],lwd=2,xlab="Mesi dall'origine",ylab="CO2 prevista (ppm)",
+  main="Riferimenti disponibili nel dicembre 1998")
+legend("topleft",c("Ultimo valore","Stagionale","Deriva"),col=palette_geo[1:3],lty=c(2,1,1),bty="n")
+```
+
+**Lettura del risultato.** Le curve codificano persistenza, ripetizione stagionale e crescita lineare. Un modello più complesso va giudicato rispetto a un riferimento pertinente alla domanda.
+
+## Variante svolta
+
+**Un quarto riferimento.** Aggiungere la media del train e confrontarla con l’ultimo valore.
+
+```{r variante}
+media <- rep(mean(train),h)
+data.frame(metodo=c("Media","Ultimo"),previsione=c(media[1],ultimo[1]))
+stopifnot(all(media==mean(train)))
+```
+
+La media usa l’intero periodo passato e può essere poco adatta a una serie in crescita. La scelta del riferimento richiede una motivazione, non soltanto facilità di calcolo.
+
+## Errore da riconoscere
+
+Usare i valori osservati nel test per aggiornare una baseline e confrontarla con un modello rimasto a origine fissa.
+
+## Risposta alla domanda
+
+Il riferimento conserva soltanto informazioni disponibili all’origine. Ultimo valore, stagione e deriva offrono confronti complementari da valutare sulle stesse date e sugli stessi orizzonti.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M10_N02` di [GeoStat Lab M10](https://marzione00.github.io/Lab_Geo/#indice). Il [codice originale del laboratorio](https://github.com/marzione00/Lab_Geo/blob/649f7cc577b96bd1044d81e78a2f530813e4f96b/materiali/laboratori/M10/M10_N02.R) è conservato anche in `R/Originali_corso`. Gli ampliamenti e le varianti sono identificati nella mappa allegata.
+
+Documentazione dei metodi: [R stats, arima](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/arima.html), [predict.Arima](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/predict.arima.html), [Box.test](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/box.test.html) e [p.adjust](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/p.adjust.html).

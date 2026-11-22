@@ -1,0 +1,138 @@
+---
+title: "Una tabella di decisione ragionata"
+subtitle: "M06_N19 \u00b7 Gemina"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come scegliamo un metodo partendo da domanda, unità e disegno invece che dal p-value più piccolo?
+
+## Obiettivi
+
+- Associare ogni metodo al suo bersaglio e alle sue ipotesi.
+- Costruire una tabella di risultati che non mescoli domande diverse.
+
+**Prima di iniziare.** Vettori, indicizzazione, media, varianza e grafici di base in R.
+
+**Dati e unità.** Due archivi sintetici: fossili indipendenti in micrometri e misure appaiate in unità convenzionali. Servono a rappresentare domande statistiche diverse.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M06_N19/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M06_N19")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(6019)
+```
+
+## 1. Scrivere le decisioni prima di calcolare i risultati
+
+Prepariamo una tabella che distingue medie indipendenti, cambiamenti appaiati e ordinamento relativo di due gruppi. Per ogni riga specifichiamo l'unità indipendente e una condizione essenziale. La tabella costituisce il percorso della scelta e precede i p-value.
+
+```{r passo_01}
+scelta <- data.frame(
+  domanda = c("Differenza di medie", "Media del cambiamento", "Ordinamento tra gruppi"),
+  disegno = c("Due campioni indipendenti", "Misure sulla stessa unita", "Due campioni indipendenti"),
+  metodo = c("Welch", "t sulle differenze", "Ranghi indipendenti"),
+  unita = c("Fossile", "Coppia", "Fossile"),
+  condizione = c("Varianze separate, indipendenza",
+    "Differenze indipendenti; normale per t esatto",
+    "Uguali distribuzioni per la calibrazione usuale"))
+print(scelta)
+```
+
+**Lettura del risultato.** Il metodo non è scelto soltanto dalla forma del grafico o dal numero di colonne. Un dato appaiato resta tale anche quando le due colonne hanno distribuzioni molto simili.
+
+## 2. Calcolare i risultati mantenendo distinti i bersagli
+
+Carichiamo gli archivi e prepariamo i vettori appropriati. Nei fossili il verso è Spiky meno Rounded; nelle coppie è dopo meno prima. Le unità differenti impediscono di confrontare direttamente le grandezze dei due effetti.
+
+```{r passo_02}
+fossili <- carica_dati("fossili_simulati.csv")
+a <- fossili$diametro_tot_um[fossili$morfotipo == "Rounded"]
+b <- fossili$diametro_tot_um[fossili$morfotipo == "Spiky"]
+coppie <- carica_dati("misure_appaiate_simulate.csv")
+stopifnot(!anyDuplicated(coppie$id))
+coppie <- coppie[complete.cases(coppie[c("prima", "dopo")]), ]
+d <- coppie$dopo - coppie$prima
+welch <- t.test(b, a)
+appaiato <- t.test(d)
+ranghi <- wilcox.test(b, a, exact = FALSE, correct = TRUE)
+theta <- mean(outer(b, a, ">")) + 0.5 * mean(outer(b, a, "=="))
+```
+
+**Lettura del risultato.** Ogni funzione riceve il dato corrispondente alla domanda. Il test a ranghi e Welch usano gli stessi fossili ma non hanno automaticamente la stessa interpretazione sotto qualunque differenza di forma.
+
+## 3. Presentare una tabella che conservi il significato
+
+La colonna della stima riporta la quantità pertinente: differenza media, cambiamento medio o superiorità empirica. Gli intervalli numerici sono riportati solo dove sono stati calcolati per quel bersaglio. Un valore mancante dichiarato è preferibile a un intervallo preso da un'altra analisi.
+
+```{r passo_03}
+risultati <- data.frame(
+  metodo = c("Welch", "t appaiato", "Ranghi indipendenti"),
+  stima = c(mean(b) - mean(a), mean(d), theta),
+  unita_stima = c("um", "u.c.", "probabilita"),
+  nA_o_coppie = c(length(a), length(d), length(a)),
+  nB = c(length(b), NA_integer_, length(b)),
+  inferiore = c(welch$conf.int[1], appaiato$conf.int[1], NA_real_),
+  superiore = c(welch$conf.int[2], appaiato$conf.int[2], NA_real_),
+  p = c(welch$p.value, appaiato$p.value, ranghi$p.value))
+print(risultati)
+print(scelta[c("metodo", "condizione")])
+```
+
+**Lettura del risultato.** Le righe non costituiscono una gara fra p-value. In questo esercizio illustrano domande diverse; se una ricerca formulasse una famiglia comune di decisioni, dovrebbe dichiararne anche la gestione della molteplicità.
+
+## Variante svolta
+
+Esportare tabella delle scelte e risultati, poi controllare che le unità siano state conservate.
+
+```{r variante}
+file_scelte <- percorso_risultati("scelte_statistiche.csv")
+file_risultati <- percorso_risultati("risultati_con_bersaglio.csv")
+write.csv(scelta, file_scelte, row.names = FALSE)
+write.csv(risultati, file_risultati, row.names = FALSE, na = "")
+riletto <- read.csv(file_risultati, na.strings = "")
+stopifnot(identical(riletto$unita_stima, risultati$unita_stima))
+print(riletto)
+```
+
+L'esportazione deve conservare etichette, unità e dati mancanti espliciti. Una colonna di soli p-value perde il contesto necessario per una conclusione scientifica.
+
+## Errore da riconoscere
+
+Non scegliere il test che produce il risultato più favorevole e non usare un intervallo per la media come se riguardasse superiorità o mediana.
+
+## Risposta alla domanda
+
+La scelta del metodo segue bersaglio, unità e disegno. Una tabella completa rende leggibili le condizioni del confronto e impedisce di confondere risultati numericamente simili.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M06_N19` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M06/M06_N19.R).

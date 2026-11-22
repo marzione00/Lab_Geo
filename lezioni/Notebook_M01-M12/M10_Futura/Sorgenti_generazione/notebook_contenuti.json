@@ -1,0 +1,762 @@
+[
+  {
+    "title": "Fissare l’origine della previsione",
+    "question": "Quali osservazioni erano disponibili nel dicembre 1998?",
+    "objectives": [
+      "Controllare il calendario mensile.",
+      "Separare adattamento e test prima delle scelte.",
+      "Associare origine, bersaglio e orizzonte."
+    ],
+    "data": "CO₂ storica: 204 mesi da gennaio 1985 a dicembre 2001, concentrazione in ppm. Le medie derivano dalle osservazioni settimanali attribuite al mese della data, secondo la convenzione del corso. Sono dati storici, distinti da una serie mensile ufficiale e da una misura attuale. Il protocollo usa 168 mesi per l’adattamento (1985–1998) e 36 per il test (1999–2001).",
+    "steps": [
+      {
+        "title": "Il calendario identifica le osservazioni",
+        "text": "Una riga corrisponde a un mese. Il controllo usa le date, perché una sequenza di numeri senza calendario non determina l’orizzonte.",
+        "code": "d <- carica_dati(\"co2_1985_2001.csv\")\nd$data <- as.Date(d$data)\nstopifnot(!anyDuplicated(d$data), !anyNA(d$co2_ppm))\nstopifnot(identical(d$data,seq(as.Date(\"1985-01-01\"),as.Date(\"2001-12-01\"),by=\"month\")))\ndata.frame(prima=min(d$data),ultima=max(d$data),mesi=nrow(d),\n           minimo_settimane=min(d$n_settimane))",
+        "reading": "Le 204 righe formano una griglia mensile completa. La copertura settimanale rimane una colonna del dato, anche quando il valore mensile è disponibile."
+      },
+      {
+        "title": "La divisione conserva l’ordine",
+        "text": "L’origine fissa è l’ultimo mese del train. Tutti i valori successivi servono soltanto alla verifica del protocollo già definito.",
+        "code": "c2 <- prepara_co2(carica_dati(\"co2_1985_2001.csv\"))\ntrain <- c2$train; test <- c2$test; h <- c2$h\n data.frame(insieme=c(\"Train\",\"Test\"),n=c(length(train),length(test)),\n   inizio=c(\"1985-01\",\"1999-01\"),fine=c(\"1998-12\",\"2001-12\"))\n stopifnot(length(train)==168L,h==36L,max(time(train))<min(time(test)))",
+        "reading": "Nessuna osservazione 1999–2001 entra nel train. Il periodo di test è noto come calendario, mentre i suoi valori restano fuori dalla stima."
+      },
+      {
+        "title": "L’orizzonte misura la distanza dall’origine",
+        "text": "La separazione appare sul grafico. L’esposizione del test qui rende visibile il disegno didattico: le scelte di modello devono essere fissate prima del suo uso per confrontare gli errori.",
+        "code": "stile_grafico()\nplot(c2$dati$data,c2$dati$co2_ppm,type=\"n\",xlab=\"Data\",ylab=\"CO2 (ppm)\",\n     main=\"Train e test: origine dicembre 1998\")\nlines(c2$dati$data[1:168],c2$dati$co2_ppm[1:168],col=palette_geo[1],lwd=2)\nlines(c2$date_test,as.numeric(test),col=palette_geo[2],lwd=2)\nabline(v=as.numeric(as.Date(\"1999-01-01\")),lty=2)\nlegend(\"topleft\",c(\"Train: 168 mesi\",\"Test: 36 mesi\"),col=palette_geo[1:2],lty=1,bty=\"n\")\ndata.frame(origine=\"1998-12\",bersaglio=as.character(c2$date_test[c(1,12,36)]),h=c(1,12,36))",
+        "reading": "I primi 12 mesi e il terzo anno del test rispondono a orizzonti diversi. Conservarli evita di chiamare «previsione a un mese» una sequenza prodotta una sola volta per 36 mesi."
+      }
+    ],
+    "variant": {
+      "title": "Un’origine precedente",
+      "text": "Spostare l’origine a dicembre 1997 e misurare quante osservazioni restano nei due segmenti.",
+      "code": "tr97 <- window(c2$y,end=c(1997,12)); te97 <- window(c2$y,start=c(1998,1))\ndata.frame(origine=\"1997-12\",n_train=length(tr97),n_test=length(te97))\nstopifnot(length(tr97)+length(te97)==204L)",
+      "reading": "La variante cambia il problema: aumenta il periodo da prevedere e riduce quello disponibile per l’adattamento. Non confrontare i suoi errori come se il protocollo fosse identico."
+    },
+    "error": "Rimescolare le righe prima dello split, oppure scegliere la data di separazione dopo aver confrontato gli errori sul futuro.",
+    "answer": "Al dicembre 1998 sono disponibili i 168 mesi del train. Una previsione verificabile conserva la data dell’origine, le date bersaglio e il numero di passi. I risultati su questo archivio storico hanno valore didattico."
+  },
+  {
+    "title": "Modelli di riferimento disponibili all’origine",
+    "question": "Quale previsione semplice deve superare il modello?",
+    "objectives": [
+      "Calcolare tre riferimenti con il solo train.",
+      "Distinguere livello, stagione e deriva.",
+      "Verificare la ripetizione stagionale oltre un anno."
+    ],
+    "data": "CO₂ storica: 204 mesi da gennaio 1985 a dicembre 2001, concentrazione in ppm. Le medie derivano dalle osservazioni settimanali attribuite al mese della data, secondo la convenzione del corso. Sono dati storici, distinti da una serie mensile ufficiale e da una misura attuale. Il protocollo usa 168 mesi per l’adattamento (1985–1998) e 36 per il test (1999–2001).",
+    "steps": [
+      {
+        "title": "Ultimo valore e stagione",
+        "text": "Il riferimento ingenuo conserva l’ultimo valore. Il riferimento stagionale ripete l’ultimo anno osservato. Le formule per i primi dodici passi sono $\\hat y_{T+h}=y_T$ e $\\hat y_{T+h}=y_{T+h-12}$.",
+        "code": "c2 <- prepara_co2(carica_dati(\"co2_1985_2001.csv\"))\ntrain <- c2$train; test <- c2$test; h <- c2$h\n ultimo <- rep(as.numeric(tail(train,1)),h)\n stagionale <- rep(as.numeric(tail(train,12)),length.out=h)\n head(data.frame(h=1:h,ultimo=ultimo,stagionale=stagionale),6)\n stopifnot(identical(stagionale[1:12],stagionale[13:24]))",
+        "reading": "Dopo dodici passi il riferimento stagionale ripete ancora l’ultimo anno del train. Non consulta il primo anno del test per prevedere il secondo."
+      },
+      {
+        "title": "La deriva usa il cambiamento storico",
+        "text": "La pendenza deriva dagli estremi del train: $\\hat d=(y_T-y_1)/(T-1)$. Questo riferimento è trasparente, ma sensibile agli estremi e a cambiamenti del processo.",
+        "code": "deriva <- (as.numeric(tail(train,1))-as.numeric(head(train,1)))/(length(train)-1)\npred_deriva <- as.numeric(tail(train,1))+seq_len(h)*deriva\ndata.frame(ppm_per_mese=deriva,ppm_per_anno=12*deriva)\ntail(data.frame(h=1:h,previsto=pred_deriva),3)",
+        "reading": "La deriva esprime ppm per mese. Moltiplicarla per dodici cambia l’unità della pendenza, senza rendere lineare il processo reale."
+      },
+      {
+        "title": "I riferimenti fanno ipotesi differenti",
+        "text": "Il confronto grafico riguarda soltanto le traiettorie prodotte all’origine, prima di usarle per calcolare l’errore.",
+        "code": "stile_grafico()\nmatplot(1:h,cbind(ultimo,stagionale,pred_deriva),type=\"l\",lty=c(2,1,1),\n  col=palette_geo[1:3],lwd=2,xlab=\"Mesi dall'origine\",ylab=\"CO2 prevista (ppm)\",\n  main=\"Riferimenti disponibili nel dicembre 1998\")\nlegend(\"topleft\",c(\"Ultimo valore\",\"Stagionale\",\"Deriva\"),col=palette_geo[1:3],lty=c(2,1,1),bty=\"n\")",
+        "reading": "Le curve codificano persistenza, ripetizione stagionale e crescita lineare. Un modello più complesso va giudicato rispetto a un riferimento pertinente alla domanda."
+      }
+    ],
+    "variant": {
+      "title": "Un quarto riferimento",
+      "text": "Aggiungere la media del train e confrontarla con l’ultimo valore.",
+      "code": "media <- rep(mean(train),h)\ndata.frame(metodo=c(\"Media\",\"Ultimo\"),previsione=c(media[1],ultimo[1]))\nstopifnot(all(media==mean(train)))",
+      "reading": "La media usa l’intero periodo passato e può essere poco adatta a una serie in crescita. La scelta del riferimento richiede una motivazione, non soltanto facilità di calcolo."
+    },
+    "error": "Usare i valori osservati nel test per aggiornare una baseline e confrontarla con un modello rimasto a origine fissa.",
+    "answer": "Il riferimento conserva soltanto informazioni disponibili all’origine. Ultimo valore, stagione e deriva offrono confronti complementari da valutare sulle stesse date e sugli stessi orizzonti."
+  },
+  {
+    "title": "Stimare il modello sui livelli, non sulle differenze già calcolate",
+    "question": "Come si applica correttamente una specifica SARIMA?",
+    "objectives": [
+      "Dichiarare ordini e periodo stagionale.",
+      "Stimare sui livelli lasciando le differenze alla funzione.",
+      "Controllare convergenza e struttura dei coefficienti."
+    ],
+    "data": "CO₂ storica: 204 mesi da gennaio 1985 a dicembre 2001, concentrazione in ppm. Le medie derivano dalle osservazioni settimanali attribuite al mese della data, secondo la convenzione del corso. Sono dati storici, distinti da una serie mensile ufficiale e da una misura attuale. Il protocollo usa 168 mesi per l’adattamento (1985–1998) e 36 per il test (1999–2001).",
+    "steps": [
+      {
+        "title": "La specifica entra nella funzione",
+        "text": "Nel modello SARIMA$(0,1,1)(0,1,1)_{12}$, le differenze ordinaria e stagionale sono interne alla stima. In R i coefficienti MA usano la convenzione con il segno più.",
+        "code": "c2 <- prepara_co2(carica_dati(\"co2_1985_2001.csv\"))\ntrain <- c2$train; test <- c2$test; h <- c2$h\n fit <- stats::arima(train,order=c(0,1,1),\n   seasonal=list(order=c(0,1,1),period=12),\n   include.mean=FALSE,method=\"ML\")\n fit\n stopifnot(is.null(fit$code) || fit$code==0L)",
+        "reading": "La stima riceve i 168 livelli. La chiamata dichiara due differenze e due termini MA, senza drift. Il numero di coefficienti non misura da solo l’adeguatezza del modello."
+      },
+      {
+        "title": "Coefficienti e precisione numerica",
+        "text": "Il modello soddisfa $(1-B)(1-B^{12})y_t=(1+\\theta B)(1+\\Theta B^{12})\\varepsilon_t$. Gli errori standard sono quelli dell’approssimazione della stima.",
+        "code": "data.frame(termine=names(coef(fit)),stima=as.numeric(coef(fit)),\n  errore_standard=sqrt(diag(fit$var.coef)))\ndata.frame(varianza_innovazioni=fit$sigma2,logLik=as.numeric(logLik(fit)),\n           AIC=AIC(fit),codice_convergenza=fit$code)\nstopifnot(length(coef(fit))==2L,all(is.finite(fit$var.coef)))",
+        "reading": "La convergenza è un requisito di calcolo, non una garanzia scientifica. AIC riguarda l’adattamento penalizzato e va distinto dalla prestazione futura."
+      },
+      {
+        "title": "La differenza esplicita serve a capire",
+        "text": "Costruiamo la trasformazione separatamente per controllarne l’indice temporale. Questo oggetto serve alla diagnosi, mentre il modello precedente resta stimato sui livelli.",
+        "code": "z <- diff(diff(train,lag=12),differences=1)\ndata.frame(livelli=length(train),dopo_differenza_12=length(diff(train,lag=12)),\n           doppia_differenza=length(z))\nstile_grafico()\nplot(z,type=\"l\",col=palette_geo[1],xlab=\"Anno\",ylab=\"Differenza (ppm)\",\n     main=\"Trasformazione diagnostica: (1-B)(1-B^12)\")\nabline(h=0,lty=2)",
+        "reading": "La trasformazione esplicita conserva 155 valori. Passarla di nuovo a una chiamata con d=1 e D=1 introdurrebbe altre differenze."
+      }
+    ],
+    "variant": {
+      "title": "Una specifica alternativa dichiarata",
+      "text": "Stimare un modello stagionale con il solo termine MA stagionale. Il confronto è esplorativo all’interno del train.",
+      "code": "alternativo <- arima(train,order=c(0,1,0),\n  seasonal=list(order=c(0,1,1),period=12),include.mean=FALSE,method=\"ML\")\nstopifnot(is.null(alternativo$code)||alternativo$code==0L)\ndata.frame(modello=c(\"MA1 e MA stagionale\",\"Solo MA stagionale\"),\n           AIC=c(AIC(fit),AIC(alternativo)))",
+      "reading": "Le due specifiche condividono differenze, campione e metodo ML. Il confronto AIC è interpretabile in questo contesto, ma il modello scelto richiede ancora diagnostica e validazione."
+    },
+    "error": "Applicare diff due volte ai dati e poi dichiarare ancora d=1 e D=1 in arima.",
+    "answer": "La specifica SARIMA va applicata ai livelli quando arima gestisce le differenze. Ordini, metodo di stima, componenti deterministiche e convergenza fanno parte del risultato riproducibile."
+  },
+  {
+    "title": "Residui: controlli prima della previsione",
+    "question": "Quale struttura rimane dopo l’adattamento del modello?",
+    "objectives": [
+      "Separare residui del train ed errori del test.",
+      "Leggere ACF e grafici diagnostici.",
+      "Interpretare Ljung–Box con gradi di libertà dichiarati."
+    ],
+    "data": "CO₂ storica: 204 mesi da gennaio 1985 a dicembre 2001, concentrazione in ppm. Le medie derivano dalle osservazioni settimanali attribuite al mese della data, secondo la convenzione del corso. Sono dati storici, distinti da una serie mensile ufficiale e da una misura attuale. Il protocollo usa 168 mesi per l’adattamento (1985–1998) e 36 per il test (1999–2001).",
+    "steps": [
+      {
+        "title": "I residui appartengono al train",
+        "text": "Seguiamo la convenzione del laboratorio originale, che esclude i primi 13 residui legati all’avvio del modello differenziato. Questa scelta resta documentata.",
+        "code": "c2 <- prepara_co2(carica_dati(\"co2_1985_2001.csv\"))\ntrain <- c2$train; test <- c2$test; h <- c2$h\nfit <- stima_sarima(train)\n res <- as.numeric(residuals(fit))\n res <- res[seq.int(14,length(res))]\n res <- res[is.finite(res)]\n data.frame(n=length(res),media=mean(res),sd=sd(res),min=min(res),max=max(res))\n stile_grafico()\n plot(res,type=\"l\",col=palette_geo[1],xlab=\"Indice residuo\",ylab=\"Residuo (ppm)\",\n      main=\"Innovazioni stimate nel train\")\n abline(h=0,lty=2)",
+        "reading": "Il grafico mostra segni, sequenze e osservazioni insolite. Non comprende i 36 errori di previsione finali: quelli richiedono una verifica separata."
+      },
+      {
+        "title": "La dipendenza residua ha una scala",
+        "text": "Ljung–Box aggrega autocorrelazioni fino al ritardo dichiarato. Usiamo 24 ritardi e fitdf=2 per i due coefficienti MA stimati.",
+        "code": "stile_grafico()\nacf(res,lag.max=36,main=\"ACF dei residui del train\")\nlb <- Box.test(res,lag=24,type=\"Ljung-Box\",fitdf=2)\ndata.frame(statistica=as.numeric(lb$statistic),df=as.numeric(lb$parameter),\n           p_value=lb$p.value,lag=24,fitdf=2)",
+        "reading": "Il test riguarda assenza di autocorrelazione fino a quei ritardi nel riferimento approssimato. Un p-value elevato non dimostra indipendenza, normalità o correttezza della previsione."
+      },
+      {
+        "title": "La forma della distribuzione completa la diagnosi",
+        "text": "Il QQ plot esplora l’adeguatezza di un riferimento gaussiano per le innovazioni, importante per l’intervallo predittivo condizionale.",
+        "code": "stile_grafico()\nqqnorm(res,pch=19,col=palette_geo[1],main=\"Residui e quantili gaussiani\")\nqqline(res,col=palette_geo[2],lwd=2)\ndata.frame(quartile=c(\"Q1\",\"Mediana\",\"Q3\"),valore=as.numeric(quantile(res,c(.25,.5,.75))))",
+        "reading": "Scostamenti nelle code invitano a controllare eventi insoliti e sensibilità. I punti non sono una prova formale di gaussianità."
+      }
+    ],
+    "variant": {
+      "title": "Cambiare il ritardo diagnostico",
+      "text": "Confrontare 12, 24 e 36 ritardi, conservando la stessa correzione dei coefficienti.",
+      "code": "do.call(rbind,lapply(c(12,24,36),function(L) {\n  q <- Box.test(res,lag=L,type=\"Ljung-Box\",fitdf=2)\n  data.frame(lag=L,df=as.numeric(q$parameter),p_value=q$p.value)\n}))",
+      "reading": "La sensibilità al ritardo è informazione diagnostica. Scegliere solo il risultato più favorevole trasformerebbe il controllo in selezione del p-value."
+    },
+    "error": "Chiamare «errori fuori campione» i residui usati nella stima o interpretare un mancato rifiuto come certificazione del modello.",
+    "answer": "La diagnostica combina successione temporale, autocorrelazione e forma della distribuzione. Consente di riconoscere problemi del modello prima della verifica predittiva, senza sostituirla."
+  },
+  {
+    "title": "Valutazione progressiva interna al train",
+    "question": "Come si confrontano previsioni senza aprire il test finale?",
+    "objectives": [
+      "Ripetere la stima a origini crescenti.",
+      "Confrontare SARIMA e riferimento stagionale.",
+      "Conservare origine e orizzonte per ogni errore."
+    ],
+    "data": "CO₂ storica: 204 mesi da gennaio 1985 a dicembre 2001, concentrazione in ppm. Le medie derivano dalle osservazioni settimanali attribuite al mese della data, secondo la convenzione del corso. Sono dati storici, distinti da una serie mensile ufficiale e da una misura attuale. Il protocollo usa 168 mesi per l’adattamento (1985–1998) e 36 per il test (1999–2001).",
+    "steps": [
+      {
+        "title": "Il disegno resta dentro il train",
+        "text": "Le origini 120, 132 e 144 corrispondono a dicembre 1994, 1995 e 1996. Ogni previsione copre i dodici mesi successivi, tutti anteriori al test finale.",
+        "code": "c2 <- prepara_co2(carica_dati(\"co2_1985_2001.csv\"))\ntrain <- c2$train; test <- c2$test; h <- c2$h\n origini <- c(120L,132L,144L)\n data.frame(origine=origini,data_origine=c2$dati$data[origini],\n            primo_bersaglio=c2$dati$data[origini+1],\n            ultimo_bersaglio=c2$dati$data[origini+12])\n stopifnot(all(origini+12<=length(train)))",
+        "reading": "Il disegno separa scelta del modello e test finale. Le tre origini sono poche: la loro sintesi è un confronto didattico, con variabilità che va mostrata."
+      },
+      {
+        "title": "Ogni origine richiede una nuova stima",
+        "text": "Per ciascuna origine la funzione riceve soltanto il passato disponibile. I 36 bersagli interni non sono i 36 mesi del test 1999–2001.",
+        "code": "dettaglio <- do.call(rbind,lapply(origini,function(o) {\n  tr <- ts(as.numeric(train)[1:o],start=c(1985,1),frequency=12)\n  obs <- as.numeric(train)[(o+1):(o+12)]\n  mod <- stima_sarima(tr)\n  pr <- as.numeric(predict(mod,n.ahead=12)$pred)\n  sn <- as.numeric(tail(tr,12))\n  data.frame(origine=o,h=1:12,osservato=obs,SARIMA=pr,Stagionale=sn)\n}))\ncv <- do.call(rbind,lapply(split(dettaglio,dettaglio$origine),function(d) {\n  data.frame(origine=d$origine[1],RMSE_SARIMA=metriche(d$osservato,d$SARIMA)[\"RMSE\"],\n             RMSE_Stagionale=metriche(d$osservato,d$Stagionale)[\"RMSE\"])\n}))\nrownames(cv) <- NULL\ncv",
+        "reading": "La graduatoria può variare con l’origine. Tutti i metodi devono affrontare gli stessi bersagli per rendere equo il confronto."
+      },
+      {
+        "title": "Il registro rende verificabile la procedura",
+        "text": "Salviamo sia la sintesi per origine sia le singole previsioni, così da poter ricalcolare metriche e controllare i confini temporali.",
+        "code": "write.csv(dettaglio,percorso_risultati(\"previsioni_CV.csv\"),row.names=FALSE)\nwrite.csv(cv,percorso_risultati(\"metriche_CV.csv\"),row.names=FALSE)\nstile_grafico()\nmatplot(cv$origine,cv[,c(\"RMSE_SARIMA\",\"RMSE_Stagionale\")],type=\"b\",pch=c(19,17),\n  lty=1,col=palette_geo[1:2],xlab=\"Indice origine\",ylab=\"RMSE a 12 mesi (ppm)\",\n  main=\"Validazione interna al train\")\nlegend(\"topleft\",c(\"SARIMA\",\"Stagionale\"),col=palette_geo[1:2],pch=c(19,17),lty=1,bty=\"n\")",
+        "reading": "Il grafico mantiene visibile la variabilità fra origini. Una media unica perderebbe questa parte dell’evidenza."
+      }
+    ],
+    "variant": {
+      "title": "Una quarta origine",
+      "text": "Aggiungere l’origine 156, con verifica nei mesi 157–168 ancora interni al train.",
+      "code": "o <- 156L\ntr <- ts(as.numeric(train)[1:o],start=c(1985,1),frequency=12)\nobs <- as.numeric(train)[157:168]\npr <- as.numeric(predict(stima_sarima(tr),n.ahead=12)$pred)\nrbind(SARIMA=metriche(obs,pr),Stagionale=metriche(obs,tail(tr,12)))",
+      "reading": "Il protocollo esteso aggiunge un confronto possibile senza toccare il test. Dichiarare la variante evita di confonderla con le tre origini del laboratorio originale."
+    },
+    "error": "Stimare una sola volta sui 168 mesi e chiamare «validazione interna» le previsioni retrospettive delle origini precedenti.",
+    "answer": "La valutazione progressiva ricostruisce ciò che era disponibile a ogni origine. La stima si ripete e il test finale resta separato dalla scelta del modello."
+  },
+  {
+    "title": "Previsione e intervallo condizionale",
+    "question": "Quale incertezza descrive la fascia attorno alla previsione?",
+    "objectives": [
+      "Calcolare previsione e errore standard per 36 passi.",
+      "Costruire intervalli gaussiani puntuali.",
+      "Dichiarare quale incertezza resta esclusa."
+    ],
+    "data": "CO₂ storica: 204 mesi da gennaio 1985 a dicembre 2001, concentrazione in ppm. Le medie derivano dalle osservazioni settimanali attribuite al mese della data, secondo la convenzione del corso. Sono dati storici, distinti da una serie mensile ufficiale e da una misura attuale. Il protocollo usa 168 mesi per l’adattamento (1985–1998) e 36 per il test (1999–2001).",
+    "steps": [
+      {
+        "title": "Il modello produce media ed errore standard",
+        "text": "La specifica resta SARIMA$(0,1,1)(0,1,1)_{12}$ stimata sui livelli del solo train.",
+        "code": "c2 <- prepara_co2(carica_dati(\"co2_1985_2001.csv\"))\ntrain <- c2$train; test <- c2$test; h <- c2$h\nfit <- stima_sarima(train)\n fc <- predict(fit,n.ahead=h)\n previsione <- data.frame(data=c2$date_test,h=1:h,\n   media=as.numeric(fc$pred),se=as.numeric(fc$se))\n head(previsione,6)\n stopifnot(all(is.finite(previsione$se)),all(previsione$se>=0))",
+        "reading": "L’errore standard dipende dall’orizzonte e dal modello. L’implementazione predict.Arima non include l’incertezza della stima dei parametri."
+      },
+      {
+        "title": "Il livello nominale entra nel quantile",
+        "text": "Usiamo $\\hat y_{T+h}\\pm z_{0,975}\\,\\widehat{se}_h$. La lettura gaussiana è condizionata alla specifica stimata e alle sue ipotesi.",
+        "code": "previsione$inferiore95 <- previsione$media-qnorm(.975)*previsione$se\nprevisione$superiore95 <- previsione$media+qnorm(.975)*previsione$se\nprevisione$ampiezza95 <- previsione$superiore95-previsione$inferiore95\nprevisione[c(1,12,24,36),]\nwrite.csv(previsione,percorso_risultati(\"previsione_condizionale.csv\"),row.names=FALSE)",
+        "reading": "La fascia è puntuale: 95% nominale per ciascun orizzonte sotto il modello. Non equivale a 95% di probabilità che l’intera traiettoria resti dentro tutte le bande."
+      },
+      {
+        "title": "Il disegno mostra solo ciò che si prevede",
+        "text": "Il grafico conserva l’origine e i livelli del train. I valori osservati del test non sono necessari per costruire la previsione.",
+        "code": "stile_grafico()\nplot(c2$dati$data[1:168],as.numeric(train),type=\"l\",col=\"grey45\",\n  xlim=range(c2$dati$data),ylim=range(train,previsione$inferiore95,previsione$superiore95),\n  xlab=\"Data\",ylab=\"CO2 (ppm)\",main=\"Previsione a origine fissa\")\npolygon(c(previsione$data,rev(previsione$data)),\n  c(previsione$inferiore95,rev(previsione$superiore95)),\n  col=adjustcolor(palette_geo[1],.18),border=NA)\nlines(previsione$data,previsione$media,col=palette_geo[1],lwd=2)\nabline(v=as.numeric(as.Date(\"1999-01-01\")),lty=2)",
+        "reading": "La previsione riguarda l’archivio storico e non la CO₂ attuale. Un cambiamento strutturale futuro non è automaticamente rappresentato da queste bande."
+      }
+    ],
+    "variant": {
+      "title": "Dal 95% all’80%",
+      "text": "Calcolare l’ampiezza nominale all’80% alle stesse date.",
+      "code": "previsione$ampiezza80 <- 2*qnorm(.9)*previsione$se\nprevisione[c(1,12,36),c(\"h\",\"ampiezza80\",\"ampiezza95\")]\nstopifnot(all(previsione$ampiezza80<=previsione$ampiezza95))",
+      "reading": "Un livello nominale più basso restringe la fascia senza migliorare il modello. Copertura e ampiezza vanno valutate congiuntamente."
+    },
+    "error": "Presentare l’intervallo come garanzia universale, o interpretarlo come intervallo di confidenza di una costante senza distinguere il valore futuro.",
+    "answer": "La fascia descrive l’incertezza predittiva condizionale del modello gaussiano stimato. Non comprende automaticamente stima dei parametri, scelta del modello, cambiamenti di regime o copertura simultanea della traiettoria."
+  },
+  {
+    "title": "Aprire il test e confrontare gli errori",
+    "question": "Come si confrontano i metodi sul periodo escluso?",
+    "objectives": [
+      "Usare gli stessi 36 bersagli per tutti i metodi.",
+      "Calcolare MAE, RMSE e bias con segno esplicito.",
+      "Distinguere valutazione finale e nuova selezione."
+    ],
+    "data": "CO₂ storica: 204 mesi da gennaio 1985 a dicembre 2001, concentrazione in ppm. Le medie derivano dalle osservazioni settimanali attribuite al mese della data, secondo la convenzione del corso. Sono dati storici, distinti da una serie mensile ufficiale e da una misura attuale. Il protocollo usa 168 mesi per l’adattamento (1985–1998) e 36 per il test (1999–2001).",
+    "steps": [
+      {
+        "title": "Le previsioni precedono il confronto",
+        "text": "I metodi sono quelli del protocollo già dichiarato. Il test viene usato qui per quantificare la prestazione.",
+        "code": "c2 <- prepara_co2(carica_dati(\"co2_1985_2001.csv\"))\ntrain <- c2$train; test <- c2$test; h <- c2$h\nfit <- stima_sarima(train)\n pred <- baseline_co2(train,h)[c(\"Ultimo\",\"Stagionale\",\"Deriva\")]\n pred$SARIMA <- as.numeric(predict(fit,n.ahead=h)$pred)\n stopifnot(all(vapply(pred,length,integer(1))==length(test)))\n data.frame(h=1:3,osservato=as.numeric(test)[1:3],\n            previsto_SARIMA=pred$SARIMA[1:3])",
+        "reading": "Tutti i metodi partono dal dicembre 1998. Nessuno aggiorna la previsione usando i valori del test nei mesi successivi."
+      },
+      {
+        "title": "Tre metriche descrivono aspetti diversi",
+        "text": "Definiamo $e_h=y_{T+h}-\\hat y_{T+h}$, $MAE=\\operatorname{media}|e_h|$ e $RMSE=\\sqrt{\\operatorname{media}(e_h^2)}$. Un bias positivo indica sottostima media.",
+        "code": "risultati <- as.data.frame(do.call(rbind,lapply(pred,function(p) metriche(test,p))))\nrisultati$modello <- rownames(risultati)\nrownames(risultati) <- NULL\nrisultati <- risultati[,c(\"modello\",\"MAE\",\"RMSE\",\"bias_osservato_meno_previsto\")]\nrisultati\nwrite.csv(risultati,percorso_risultati(\"metriche_test.csv\"),row.names=FALSE)",
+        "reading": "MAE e RMSE restano in ppm. RMSE pesa maggiormente gli errori ampi, mentre il bias può nascondere compensazioni fra segni."
+      },
+      {
+        "title": "Il calendario localizza gli errori",
+        "text": "La prestazione riassuntiva va accompagnata dalla successione degli scarti per riconoscere errori persistenti.",
+        "code": "errori <- sapply(pred,function(p) as.numeric(test)-p)\nstile_grafico()\nmatplot(1:h,errori,type=\"l\",lty=1,col=palette_geo,lwd=1.7,\n  xlab=\"Mesi dall'origine\",ylab=\"Osservato - previsto (ppm)\",main=\"Errori nel test storico\")\nabline(h=0,lty=2)\nlegend(\"topleft\",names(pred),col=palette_geo,lty=1,bty=\"n\",cex=.8)",
+        "reading": "Le curve rendono visibili scostamenti sistematici e stagionalità residua. Un solo holdout resta una verifica limitata di trasferibilità."
+      }
+    ],
+    "variant": {
+      "title": "MAE e RMSE ordinano allo stesso modo?",
+      "text": "Ordinare le tabelle secondo due perdite e confrontare la graduatoria.",
+      "code": "data.frame(posizione=seq_len(nrow(risultati)),\n  ordine_MAE=risultati$modello[order(risultati$MAE)],\n  ordine_RMSE=risultati$modello[order(risultati$RMSE)])",
+      "reading": "Una graduatoria diversa può riflettere il peso degli errori grandi. La metrica va scelta in rapporto alla domanda prima di usare il test per decidere."
+    },
+    "error": "Dopo aver visto la graduatoria del test, cambiare ordini finché il modello supera i riferimenti e riportare lo stesso test come indipendente.",
+    "answer": "Il confronto usa gli stessi bersagli, le stesse unità e un’origine comune. La tabella finale quantifica ciò che accade in questo segmento storico, con il protocollo fissato."
+  },
+  {
+    "title": "Orizzonte e copertura descrittiva",
+    "question": "Come cambiano errori e copertura con la distanza dall’origine?",
+    "objectives": [
+      "Conservare l’orizzonte di ogni previsione.",
+      "Contare le osservazioni dentro l’intervallo.",
+      "Distinguere copertura descrittiva e calibrazione della procedura."
+    ],
+    "data": "CO₂ storica: 204 mesi da gennaio 1985 a dicembre 2001, concentrazione in ppm. Le medie derivano dalle osservazioni settimanali attribuite al mese della data, secondo la convenzione del corso. Sono dati storici, distinti da una serie mensile ufficiale e da una misura attuale. Il protocollo usa 168 mesi per l’adattamento (1985–1998) e 36 per il test (1999–2001).",
+    "steps": [
+      {
+        "title": "Una riga per bersaglio",
+        "text": "Affianchiamo osservato, previsto e intervallo senza perdere l’orizzonte.",
+        "code": "c2 <- prepara_co2(carica_dati(\"co2_1985_2001.csv\"))\ntrain <- c2$train; test <- c2$test; h <- c2$h\nfit <- stima_sarima(train)\n fc <- predict(fit,n.ahead=h)\n p <- data.frame(data=c2$date_test,h=1:h,osservato=as.numeric(test),\n   previsto=as.numeric(fc$pred),se=as.numeric(fc$se))\n p$inferiore <- p$previsto-qnorm(.975)*p$se\n p$superiore <- p$previsto+qnorm(.975)*p$se\n p$errore <- p$osservato-p$previsto\n p$dentro95 <- p$osservato>=p$inferiore & p$osservato<=p$superiore\n head(p,4)",
+        "reading": "Le 36 righe sono orizzonti della stessa origine. Le loro dipendenze impediscono di trattarle automaticamente come 36 prove indipendenti di calibrazione."
+      },
+      {
+        "title": "La copertura si accompagna alla numerosità",
+        "text": "Il conteggio è una descrizione del test. Per studiare la calibrazione a un dato orizzonte occorrono molte origini o simulazioni dichiarate.",
+        "code": "data.frame(dentro=sum(p$dentro95),totale=nrow(p),quota=mean(p$dentro95),\n           ampiezza_media=mean(p$superiore-p$inferiore))\np$blocco <- factor(rep(c(\"1-12 mesi\",\"13-24 mesi\",\"25-36 mesi\"),each=12),\n                  levels=c(\"1-12 mesi\",\"13-24 mesi\",\"25-36 mesi\"))\ndo.call(rbind,lapply(split(p,p$blocco),function(d) {\n  data.frame(blocco=as.character(d$blocco[1]),n=nrow(d),MAE=mean(abs(d$errore)),\n             quota_dentro95=mean(d$dentro95),ampiezza=mean(d$superiore-d$inferiore))\n}))",
+        "reading": "Una quota lontana dal 95% può rivelare problemi, ma una quota vicina non basta a certificare la procedura. L’ampiezza contribuisce al giudizio di utilità."
+      },
+      {
+        "title": "Gli errori hanno un andamento",
+        "text": "Il riferimento zero mantiene visibile il segno della previsione e le sequenze di sottostima o sovrastima.",
+        "code": "stile_grafico()\nplot(p$h,p$errore,type=\"b\",pch=19,col=palette_geo[1],xlab=\"Mesi dall'origine\",\n     ylab=\"Osservato - previsto (ppm)\",main=\"Errore per orizzonte\")\nabline(h=0,lty=2)\nwrite.csv(p,percorso_risultati(\"errori_intervalli_per_orizzonte.csv\"),row.names=FALSE)",
+        "reading": "Le differenze fra anni del test vanno riportate, non compensate soltanto in una media globale."
+      }
+    ],
+    "variant": {
+      "title": "Contare la copertura all’80%",
+      "text": "Ricalcolare la quota descrittiva per un livello nominale diverso, mantenendo le stesse previsioni.",
+      "code": "dentro80 <- abs(p$errore)<=qnorm(.9)*p$se\ndata.frame(livello=c(.8,.95),dentro=c(sum(dentro80),sum(p$dentro95)),\n  n=nrow(p),quota=c(mean(dentro80),mean(p$dentro95)))\nstopifnot(all(!dentro80 | p$dentro95))",
+      "reading": "Le bande sono annidate. Questa proprietà geometrica non dimostra calibrazione statistica."
+    },
+    "error": "Trattare i 36 orizzonti correlati di una singola origine come repliche indipendenti e associare una garanzia al semplice conteggio.",
+    "answer": "Errori, copertura e ampiezza vanno letti per orizzonte. Il test storico permette una descrizione verificabile, mentre la calibrazione richiede un disegno più esteso."
+  },
+  {
+    "title": "Esportare una previsione verificabile",
+    "question": "Quali file permettono a un’altra persona di ricostruire la previsione?",
+    "objectives": [
+      "Salvare date, metodi e intervalli.",
+      "Conservare il modello e il protocollo.",
+      "Rileggere gli output e controllarne l’identità."
+    ],
+    "data": "CO₂ storica: 204 mesi da gennaio 1985 a dicembre 2001, concentrazione in ppm. Le medie derivano dalle osservazioni settimanali attribuite al mese della data, secondo la convenzione del corso. Sono dati storici, distinti da una serie mensile ufficiale e da una misura attuale. Il protocollo usa 168 mesi per l’adattamento (1985–1998) e 36 per il test (1999–2001).",
+    "steps": [
+      {
+        "title": "La tabella conserva il bersaglio",
+        "text": "Esportiamo valori previsti e osservati con origine e orizzonte, in modo che la tabella si interpreti anche fuori dalla sessione R.",
+        "code": "c2 <- prepara_co2(carica_dati(\"co2_1985_2001.csv\"))\ntrain <- c2$train; test <- c2$test; h <- c2$h\nfit <- stima_sarima(train)\n fc <- predict(fit,n.ahead=h)\n tab <- data.frame(origine=\"1998-12-01\",data=as.character(c2$date_test),h=1:h,\n   osservato=as.numeric(test),previsto=as.numeric(fc$pred),\n   inferiore95=as.numeric(fc$pred-qnorm(.975)*fc$se),\n   superiore95=as.numeric(fc$pred+qnorm(.975)*fc$se),unita=\"ppm\")\n write.csv(tab,percorso_risultati(\"previsioni_test.csv\"),row.names=FALSE)\n pr <- baseline_co2(train,h)[c(\"Ultimo\",\"Stagionale\",\"Deriva\")]\n pr$SARIMA <- tab$previsto\n met <- as.data.frame(do.call(rbind,lapply(pr,function(z) metriche(tab$osservato,z))))\n met$modello <- rownames(met); rownames(met) <- NULL\n write.csv(met,percorso_risultati(\"metriche_test.csv\"),row.names=FALSE)\n head(tab,3)\n met",
+        "reading": "L’origine non si ricava dal semplice nome del modello. Date e unità devono accompagnare ogni valore."
+      },
+      {
+        "title": "Il modello e la specifica hanno file distinti",
+        "text": "L’oggetto RDS conserva l’adattamento. Il testo spiega la procedura a chi non apre R.",
+        "code": "saveRDS(fit,percorso_risultati(\"modello_SARIMA.rds\"))\n cv <- do.call(rbind,lapply(c(120L,132L,144L),function(o) {\n   tr <- ts(as.numeric(train)[1:o],start=c(1985,1),frequency=12)\n   osservato <- as.numeric(train)[o+1:12]\n   previsto <- as.numeric(predict(stima_sarima(tr),n.ahead=12)$pred)\n   stagionale <- as.numeric(tail(tr,12))\n   data.frame(origine=o,RMSE_SARIMA=metriche(osservato,previsto)[\"RMSE\"],\n     RMSE_stagionale=metriche(osservato,stagionale)[\"RMSE\"])\n }))\n rownames(cv) <- NULL\n write.csv(cv,percorso_risultati(\"validazione_interna_train.csv\"),row.names=FALSE)\n cv\n protocollo <- c(\"CO2 storica: aggregazione mensile del corso, ppm.\",\n   \"Train 1985-01/1998-12. Test 1999-01/2001-12.\",\n   \"Origine fissa dicembre 1998, 36 mesi, nessun aggiornamento nel test.\",\n   \"SARIMA(0,1,1)(0,1,1)[12], ML, senza drift.\",\n   \"Intervalli gaussiani puntuali condizionali. Incertezza dei parametri esclusa.\",\n   paste(\"Runtime:\",R.version.string),capture.output(met))\n writeLines(protocollo,percorso_risultati(\"protocollo.txt\"),useBytes=TRUE)\n cat(paste(protocollo,collapse=\"\n\"))",
+        "reading": "Il contenitore RDS dipende da R. CSV e protocollo testuale rendono il risultato accessibile e controllabile anche senza caricare l’oggetto."
+      },
+      {
+        "title": "La rilettura controlla la consegna",
+        "text": "Un file scritto con successo può essere incompleto o mal interpretato. Verifichiamo numero di righe, colonne e corrispondenza numerica.",
+        "code": "ritorno <- read.csv(percorso_risultati(\"previsioni_test.csv\"),stringsAsFactors=FALSE)\nfit2 <- readRDS(percorso_risultati(\"modello_SARIMA.rds\"))\nstopifnot(nrow(ritorno)==36L,identical(ritorno$data,tab$data),\n  isTRUE(all.equal(ritorno$previsto,tab$previsto,tolerance=1e-10)),\n  isTRUE(all.equal(as.numeric(predict(fit2,n.ahead=h)$pred),tab$previsto)))\ndata.frame(controllo=c(\"36 righe\",\"Date identiche\",\"Valori riletti\",\"Previsione da RDS\"),esito=TRUE)",
+        "reading": "Il controllo di ritorno rende verificabile il percorso fino al file consegnato."
+      }
+    ],
+    "variant": {
+      "title": "La metrica si ricalcola dal CSV",
+      "text": "Usare soltanto la tabella riletta per ottenere le metriche finali.",
+      "code": "metriche(ritorno$osservato,ritorno$previsto)\nwrite.csv(as.data.frame(t(metriche(ritorno$osservato,ritorno$previsto))),\n  percorso_risultati(\"metriche_da_csv.csv\"),row.names=FALSE)",
+      "reading": "Chi riceve il CSV può controllare le metriche senza rieseguire la stima. La provenienza dei dati resta comunque necessaria."
+    },
+    "error": "Consegnare soltanto il grafico o un RDS senza calendario, unità e descrizione della specifica.",
+    "answer": "Una previsione ricostruibile unisce tabella, protocollo, dati originali e codice. La rilettura verifica che l’esportazione conservi effettivamente ciò che si intende comunicare."
+  },
+  {
+    "title": "Percorso obbligatorio e approfondimento",
+    "question": "Quale domanda affronta il progetto base e quale il sistema VAR?",
+    "objectives": [
+      "Identificare unità osservativa e bersaglio.",
+      "Controllare i fossili prima della regressione.",
+      "Separare il progetto morfometrico dall’approfondimento temporale."
+    ],
+    "data": "160 fossili sintetici del corso. Diametri e spessore sono espressi in micrometri. Il diametro interno deriva dal totale meno due volte lo spessore, entro l’arrotondamento del CSV. Il test contiene ogni quinta riga: 32 individui, separati dai 128 usati per stimare. È un protocollo didattico su dati già noti, non una validazione prospettica. Processi sintetici di 300 passi, senza unità fisica. Le colonne x_VAR e y_VAR costituiscono un sistema bivariato. Usiamo i passi 1–250 per stimare e, quando richiesto, 251–260 per una previsione a origine fissa. La prima riga è una condizione iniziale finita: l’esempio non equivale a una nuova serie osservativa.",
+    "steps": [
+      {
+        "title": "Una domanda per ciascun dataset",
+        "text": "Il progetto base riguarda individui, il VAR riguarda una successione bivariata. Una tabella di progetto mantiene esplicita questa differenza.",
+        "code": "progetti <- data.frame(percorso=c(\"Base morfometrico\",\"Approfondimento VAR\"),\n  unita=c(\"Fossile sintetico\",\"Passo temporale sintetico\"),\n  bersaglio=c(\"Diametro interno\",\"X e Y future\"),\n  verifica=c(\"32 individui esclusi\",\"Passi 251-260\"))\nprogetti",
+        "reading": "I due percorsi condividono audit e validazione, ma richiedono split e interpretazioni diversi."
+      },
+      {
+        "title": "L’audit precede il modello",
+        "text": "Controlliamo identificativi e vincoli fisici, senza cancellare osservazioni automaticamente.",
+        "code": "f <- carica_dati(\"fossili_simulati.csv\")\naudit <- data.frame(controllo=c(\"ID unici\",\"Diametri completi\",\"Totale positivo\",\"Interno entro totale\"),\n  esito=c(!anyDuplicated(f$id),!anyNA(f[c(\"diametro_tot_um\",\"diametro_int_um\")]),\n    all(f$diametro_tot_um>0),all(f$diametro_int_um>0 & f$diametro_int_um<=f$diametro_tot_um)))\naudit\nstopifnot(all(audit$esito))",
+        "reading": "Un esito positivo significa coerenza con i controlli adottati, non assenza di ogni possibile problema."
+      },
+      {
+        "title": "Il legame geometrico limita la spiegazione",
+        "text": "Il rapporto fra diametri contiene già il bersaglio. Non è disponibile prima di misurare il diametro interno.",
+        "code": "scarto <- f$diametro_int_um-(f$diametro_tot_um-2*f$spessore_um)\ndata.frame(n=nrow(f),massimo_scarto_geometrico=max(abs(scarto)))\nstile_grafico()\nplot(f$diametro_tot_um,f$diametro_int_um,pch=19,col=palette_geo[1],\n  xlab=\"Diametro totale (micrometri)\",ylab=\"Diametro interno (micrometri)\",\n  main=\"Misure sintetiche geometricamente legate\")\nabline(0,1,lty=2)",
+        "reading": "Una forte associazione è in parte incorporata nella costruzione geometrica. Non basta per attribuire un meccanismo causale indipendente."
+      }
+    ],
+    "variant": {
+      "title": "Il protocollo è una tabella",
+      "text": "Scrivere prima del modello gli elementi minimi della consegna.",
+      "code": "piano <- data.frame(voce=c(\"Domanda\",\"Input disponibile\",\"Bersaglio\",\"Split\",\"Riferimento\"),\n  scelta=c(\"Prevedere il diametro interno\",\"Diametro totale\",\"Diametro interno in micrometri\",\n  \"Ogni quinta riga nel test\",\"Media del solo train\"))\nwrite.csv(piano,percorso_risultati(\"piano_progetto.csv\"),row.names=FALSE)\npiano",
+      "reading": "Il piano rende riconoscibili cambiamenti effettuati dopo aver visto i risultati."
+    },
+    "error": "Mescolare individui e tempi nella stessa strategia di split, oppure introdurre il rapporto interno/totale come predittore ignoto all’atto della previsione.",
+    "answer": "Il percorso base verifica una regressione morfometrica su individui sintetici. Il VAR approfondisce la previsione di un sistema temporale. Domande, unità e limiti restano distinti."
+  },
+  {
+    "title": "Dichiarare prima il confronto predittivo",
+    "question": "La regressione migliora la previsione rispetto alla media del train?",
+    "objectives": [
+      "Riprodurre lo split dichiarato.",
+      "Stimare usando soltanto il train.",
+      "Confrontare modello e riferimento sugli stessi individui."
+    ],
+    "data": "160 fossili sintetici del corso. Diametri e spessore sono espressi in micrometri. Il diametro interno deriva dal totale meno due volte lo spessore, entro l’arrotondamento del CSV. Il test contiene ogni quinta riga: 32 individui, separati dai 128 usati per stimare. È un protocollo didattico su dati già noti, non una validazione prospettica.",
+    "steps": [
+      {
+        "title": "Gli identificativi fissano la separazione",
+        "text": "Il laboratorio conserva ogni quinta riga nel test. Questo disegno deterministico dipende dall’ordine del file e non equivale a un campionamento casuale.",
+        "code": "f <- carica_dati(\"fossili_simulati.csv\")\ns <- prepara_fossili(f); tr <- s$train; te <- s$test\ndata.frame(insieme=c(\"Train\",\"Test\"),n=c(nrow(tr),nrow(te)))\nstopifnot(nrow(tr)==128L,nrow(te)==32L,!any(tr$id %in% te$id))\ntable(insieme=ifelse(f$id %in% te$id,\"Test\",\"Train\"),morfotipo=f$morfotipo)",
+        "reading": "La tabella dei morfotipi descrive la composizione degli insiemi. Le prestazioni restano legate a questa divisione didattica."
+      },
+      {
+        "title": "Stima e riferimento usano la stessa informazione",
+        "text": "La regressione usa soltanto il diametro totale. Il riferimento è costante e pari alla media dei diametri interni del train.",
+        "code": "mod <- lm(diametro_int_um~diametro_tot_um,data=tr)\nprev <- as.numeric(predict(mod,newdata=te))\nbase <- rep(mean(tr$diametro_int_um),nrow(te))\ndata.frame(termine=names(coef(mod)),stima=as.numeric(coef(mod)))\nhead(data.frame(id=te$id,osservato=te$diametro_int_um,regressione=prev,baseline=base),4)",
+        "reading": "Il valore della baseline non deve usare i diametri interni del test. Una stima corretta dei parametri non implica automaticamente un buon risultato sui nuovi casi."
+      },
+      {
+        "title": "Il confronto conserva unità e campione",
+        "text": "Calcoliamo perdite sui medesimi 32 individui e salviamo la tabella.",
+        "code": "confronto <- rbind(Media_train=metriche(te$diametro_int_um,base),\n                    Regressione=metriche(te$diametro_int_um,prev))\nconfronto\nwrite.csv(confronto,percorso_risultati(\"metriche_fossili.csv\"))",
+        "reading": "Le metriche sono in micrometri. Il confronto quantifica il contributo predittivo del diametro totale entro questa simulazione."
+      }
+    ],
+    "variant": {
+      "title": "La mediana come riferimento",
+      "text": "La mediana del train offre un ulteriore riferimento costante, naturale per una perdita assoluta.",
+      "code": "med <- rep(median(tr$diametro_int_um),nrow(te))\nrbind(Media=metriche(te$diametro_int_um,base),\n      Mediana=metriche(te$diametro_int_um,med))",
+      "reading": "La variante amplia la discussione della perdita. Non trasforma il test già esaminato in un nuovo campione indipendente."
+    },
+    "error": "Calcolare la baseline sull’intero dataset o scegliere il predittore dopo aver misurato il suo vantaggio nel test.",
+    "answer": "Il confronto è interpretabile quando informazioni disponibili, individui del test e metrica restano gli stessi. Il legame geometrico e la natura sintetica delimitano la conclusione."
+  },
+  {
+    "title": "Un grafico e una diagnostica utili alla domanda",
+    "question": "Quali grafici distinguono adattamento e previsione?",
+    "objectives": [
+      "Disegnare osservato contro previsto nel test.",
+      "Esaminare i residui nel train.",
+      "Collegare gli assi alla quantità misurata."
+    ],
+    "data": "160 fossili sintetici del corso. Diametri e spessore sono espressi in micrometri. Il diametro interno deriva dal totale meno due volte lo spessore, entro l’arrotondamento del CSV. Il test contiene ogni quinta riga: 32 individui, separati dai 128 usati per stimare. È un protocollo didattico su dati già noti, non una validazione prospettica.",
+    "steps": [
+      {
+        "title": "La bisettrice rappresenta una previsione esatta",
+        "text": "Ogni punto del test confronta lo stesso individuo previsto e osservato. Assi con uguale scala permettono di leggere la distanza dalla bisettrice.",
+        "code": "f <- carica_dati(\"fossili_simulati.csv\"); s <- prepara_fossili(f)\ntr <- s$train; te <- s$test\nmod <- lm(diametro_int_um~diametro_tot_um,data=tr)\nprev <- as.numeric(predict(mod,newdata=te))\nstile_grafico()\nlim <- range(prev,te$diametro_int_um)\nplot(prev,te$diametro_int_um,pch=19,col=palette_geo[1],xlim=lim,ylim=lim,asp=1,\n  xlab=\"Previsto nel test (micrometri)\",ylab=\"Osservato nel test (micrometri)\",\n  main=\"32 individui esclusi dalla stima\")\nabline(0,1,lty=2)",
+        "reading": "La vicinanza alla bisettrice descrive la prestazione sui casi esclusi. Il grafico non mostra di per sé l’incertezza delle previsioni."
+      },
+      {
+        "title": "I residui servono alla diagnosi del train",
+        "text": "Una struttura dei residui rispetto ai valori stimati può suggerire un andamento medio incompleto o una variabilità non costante.",
+        "code": "stile_grafico()\nplot(fitted(mod),residuals(mod),pch=19,col=palette_geo[2],\n  xlab=\"Stimato nel train (micrometri)\",ylab=\"Residuo nel train (micrometri)\",\n  main=\"Diagnostica della regressione\")\nabline(h=0,lty=2)\ndata.frame(n_train=nobs(mod),sd_residua=sigma(mod),df_residui=df.residual(mod))",
+        "reading": "Questi residui appartengono all’insieme che ha determinato i coefficienti. Non vanno usati al posto degli errori del test."
+      },
+      {
+        "title": "Il contesto del gruppo aiuta a leggere",
+        "text": "I morfotipi sono metadati della simulazione. Li usiamo qui per descrivere gli errori, senza cambiare il modello già valutato.",
+        "code": "errori <- data.frame(id=te$id,morfotipo=te$morfotipo,errore=te$diametro_int_um-prev)\naggregate(errore~morfotipo,data=errori,FUN=mean)\naggregate(abs(errore)~morfotipo,data=errori,FUN=mean)\nwrite.csv(errori,percorso_risultati(\"errori_per_individuo.csv\"),row.names=FALSE)",
+        "reading": "La descrizione per gruppo può orientare una successiva indagine. Un modello modificato dopo questo esame richiederebbe una nuova valutazione."
+      }
+    ],
+    "variant": {
+      "title": "Il QQ plot dei residui",
+      "text": "Esplorare la forma degli scarti del train.",
+      "code": "stile_grafico()\nqqnorm(residuals(mod),pch=19,col=palette_geo[1],main=\"Residui della regressione e riferimento normale\")\nqqline(residuals(mod),col=palette_geo[2])",
+      "reading": "La forma della distribuzione ha rilievo per gli intervalli del modello. La previsione puntuale e il suo errore restano oggetti distinti."
+    },
+    "error": "Sovrapporre residui di adattamento ed errori di previsione in un solo grafico senza identificare gli insiemi.",
+    "answer": "Osservato contro previsto documenta il test. Residui contro stimato documenta l’adattamento. Le etichette chiariscono quale informazione sostiene ciascuna conclusione."
+  },
+  {
+    "title": "Generare una relazione che riporti i risultati reali",
+    "question": "Come si scrive una conclusione collegata agli output calcolati?",
+    "objectives": [
+      "Generare il testo dai risultati dell’analisi.",
+      "Esplicitare fonte, split e unità.",
+      "Rileggere la relazione senza completare a mano i numeri."
+    ],
+    "data": "160 fossili sintetici del corso. Diametri e spessore sono espressi in micrometri. Il diametro interno deriva dal totale meno due volte lo spessore, entro l’arrotondamento del CSV. Il test contiene ogni quinta riga: 32 individui, separati dai 128 usati per stimare. È un protocollo didattico su dati già noti, non una validazione prospettica.",
+    "steps": [
+      {
+        "title": "I risultati vengono prima della frase",
+        "text": "Ricalcoliamo il progetto per rendere autonomo questo notebook. La tabella finale alimenterà il testo.",
+        "code": "f <- carica_dati(\"fossili_simulati.csv\"); s <- prepara_fossili(f)\ntr <- s$train; te <- s$test\nmod <- lm(diametro_int_um~diametro_tot_um,data=tr)\nprev <- as.numeric(predict(mod,newdata=te))\nbase <- rep(mean(tr$diametro_int_um),nrow(te))\nm0 <- metriche(te$diametro_int_um,base); m1 <- metriche(te$diametro_int_um,prev)\nconfronto <- data.frame(modello=c(\"Media_train\",\"Regressione\"),\n  MAE=c(m0[\"MAE\"],m1[\"MAE\"]),RMSE=c(m0[\"RMSE\"],m1[\"RMSE\"]))\naudit <- data.frame(controllo=c(\"ID unici\",\"Diametri completi\",\"Totale positivo\",\"Interno entro totale\"),\n  esito=c(!anyDuplicated(f$id),!anyNA(f[c(\"diametro_tot_um\",\"diametro_int_um\")]),\n    all(f$diametro_tot_um>0),all(f$diametro_int_um>0 & f$diametro_int_um<=f$diametro_tot_um)))\nstopifnot(all(audit$esito))\nconfronto",
+        "reading": "La relazione deve restare coerente se dati o specifica cambiano. Evitiamo valori numerici copiati separatamente dal codice."
+      },
+      {
+        "title": "La conclusione mantiene i limiti",
+        "text": "La differenza di RMSE è descritta nelle unità originali. Il risultato resta condizionato al dataset sintetico e al singolo holdout.",
+        "code": "rapporto <- c(\"PROGETTO MORFOMETRICO: DATI SINTETICI\",\n   \"Domanda: prevedere il diametro interno a partire dal totale.\",\n   sprintf(\"Train: %d individui; test: %d, ogni quinta riga.\",nrow(tr),nrow(te)),\n   sprintf(\"Retta stimata: interno = %.4f + %.4f * totale (micrometri).\",coef(mod)[1],coef(mod)[2]),\n   sprintf(\"RMSE media train: %.4f micrometri; regressione: %.4f.\",m0[\"RMSE\"],m1[\"RMSE\"]),\n   sprintf(\"Differenza RMSE riferimento meno modello: %.4f micrometri.\",m0[\"RMSE\"]-m1[\"RMSE\"]),\n   \"Limiti: dati simulati, misure geometricamente legate, un solo holdout noto.\",\n   \"La previsione non dimostra causalita fisica; servono nuovi dati e un protocollo prospettico.\")\n cat(paste(rapporto,collapse=\"\n\"))",
+        "reading": "La frase riporta il risultato effettivo, anche se un’altra specifica non migliorasse il riferimento. La parte argomentativa non deve trasformare un caso sintetico in evidenza sul territorio."
+      },
+      {
+        "title": "Testo e tabelle si verificano insieme",
+        "text": "Conserviamo coefficienti, previsioni e relazione per ricostruire tutti i numeri riportati.",
+        "code": "writeLines(rapporto,percorso_risultati(\"relazione_progetto_base.txt\"),useBytes=TRUE)\nwrite.csv(audit,percorso_risultati(\"audit_progetto.csv\"),row.names=FALSE)\nwrite.csv(confronto,percorso_risultati(\"metriche_progetto.csv\"),row.names=FALSE)\nwrite.csv(data.frame(id=te$id,osservato=te$diametro_int_um,previsto=prev),\n  percorso_risultati(\"previsioni_fossili.csv\"),row.names=FALSE)\nsaveRDS(mod,percorso_risultati(\"modello_fossili.rds\"))\nstopifnot(identical(readLines(percorso_risultati(\"relazione_progetto_base.txt\"),warn=FALSE),rapporto))\ndata.frame(righe_relazione=length(rapporto),previsioni=nrow(te),rilettura_identica=TRUE)",
+        "reading": "La rilettura controlla la consegna, mentre il giudizio sui limiti richiede comunque un’interpretazione scientifica."
+      }
+    ],
+    "variant": {
+      "title": "Un riepilogo alternativo",
+      "text": "Scrivere un confronto basato su MAE, conservando il nome della metrica.",
+      "code": "sprintf(\"MAE sul medesimo test: riferimento %.4f, regressione %.4f micrometri.\",m0[\"MAE\"],m1[\"MAE\"])",
+      "reading": "Cambiare la metrica cambia la perdita descritta. La frase deve nominarla esplicitamente."
+    },
+    "error": "Scrivere una conclusione favorevole al modello prima del calcolo oppure chiamare «reali» dati costruiti per la didattica.",
+    "answer": "Una relazione verificabile deriva i numeri dai risultati e collega domanda, unità, disegno e limiti. La parte interpretativa resta proporzionata alla natura dei dati."
+  },
+  {
+    "title": "Approfondimento: un VAR(1) come due regressioni",
+    "question": "Come si rappresenta la memoria reciproca di due serie?",
+    "objectives": [
+      "Costruire ritardi senza disallineare le righe.",
+      "Stimare le due equazioni sullo stesso campione.",
+      "Leggere la matrice dei coefficienti."
+    ],
+    "data": "Processi sintetici di 300 passi, senza unità fisica. Le colonne x_VAR e y_VAR costituiscono un sistema bivariato. Usiamo i passi 1–250 per stimare e, quando richiesto, 251–260 per una previsione a origine fissa. La prima riga è una condizione iniziale finita: l’esempio non equivale a una nuova serie osservativa.",
+    "steps": [
+      {
+        "title": "I ritardi mantengono le coppie",
+        "text": "Per ogni istante da 2 a 250, i predittori sono X e Y dell’istante precedente. La trasformazione produce 249 coppie complete.",
+        "code": "p <- carica_dati(\"processi_simulati.csv\")\nv <- p[1:250,c(\"x_VAR\",\"y_VAR\")]\nlagged <- data.frame(x=v$x_VAR[-1],y=v$y_VAR[-1],\n  x_lag=head(v$x_VAR,-1),y_lag=head(v$y_VAR,-1))\nhead(lagged,4)\nstopifnot(nrow(lagged)==249L,lagged$x_lag[1]==v$x_VAR[1],lagged$x[1]==v$x_VAR[2])",
+        "reading": "Il ritardo costa una riga. Usare serie con lunghezze uguali non basta: ogni risposta deve essere associata ai suoi predittori passati."
+      },
+      {
+        "title": "Due equazioni formano il sistema",
+        "text": "Il VAR(1) scrive $\\boldsymbol z_t=\\boldsymbol c+A\\boldsymbol z_{t-1}+\\boldsymbol\\varepsilon_t$. Entrambe le regressioni usano il medesimo insieme di predittori.",
+        "code": "fit_x <- lm(x~x_lag+y_lag,data=lagged)\nfit_y <- lm(y~x_lag+y_lag,data=lagged)\ncoefficienti <- rbind(X=coef(fit_x),Y=coef(fit_y))\ncoefficienti",
+        "reading": "La riga X descrive la prima equazione, la riga Y la seconda. I coefficienti incrociati riguardano un contributo predittivo condizionato agli altri regressori."
+      },
+      {
+        "title": "La matrice conserva la direzione",
+        "text": "La riga identifica la risposta e la colonna la variabile ritardata. Questa convenzione è essenziale per la previsione ricorsiva.",
+        "code": "A <- rbind(coef(fit_x)[c(\"x_lag\",\"y_lag\")],coef(fit_y)[c(\"x_lag\",\"y_lag\")])\nrownames(A) <- c(\"X\",\"Y\")\nintercetta <- c(coef(fit_x)[1],coef(fit_y)[1])\nA\nz250 <- as.numeric(v[250,])\nprimo <- as.numeric(intercetta+A%*%z250)\ndata.frame(variabile=c(\"X\",\"Y\"),prevista_passo251=primo)",
+        "reading": "L’operazione matrice per stato usa il valore al passo 250 per produrre il 251. Il futuro osservato non entra in questa operazione."
+      }
+    ],
+    "variant": {
+      "title": "Il modello senza contributi incrociati",
+      "text": "Stimare separatamente due AR(1) per comprendere le restrizioni imposte.",
+      "code": "rid_x <- lm(x~x_lag,data=lagged); rid_y <- lm(y~y_lag,data=lagged)\ndata.frame(equazione=c(\"X\",\"Y\"),AIC_VAR=c(AIC(fit_x),AIC(fit_y)),\n  AIC_solo_memoria_propria=c(AIC(rid_x),AIC(rid_y)))",
+      "reading": "L’esercizio riguarda l’adattamento nel train. Un vantaggio AIC non prova né causalità né superiorità predittiva su dati esclusi."
+    },
+    "error": "Trasporre la matrice dei coefficienti o allineare X del tempo t con Y del tempo t anziché con il ritardo dichiarato.",
+    "answer": "Il VAR(1) coordina due regressioni con i medesimi predittori ritardati. La matrice A rende esplicite memoria propria e dipendenza incrociata, da verificare prima dell’uso predittivo."
+  },
+  {
+    "title": "Stabilità e residui del sistema",
+    "question": "La dinamica stimata si attenua e quali scarti rimangono?",
+    "objectives": [
+      "Calcolare gli autovalori della matrice VAR.",
+      "Confrontare i moduli con uno.",
+      "Esaminare residui contemporanei e temporali."
+    ],
+    "data": "Processi sintetici di 300 passi, senza unità fisica. Le colonne x_VAR e y_VAR costituiscono un sistema bivariato. Usiamo i passi 1–250 per stimare e, quando richiesto, 251–260 per una previsione a origine fissa. La prima riga è una condizione iniziale finita: l’esempio non equivale a una nuova serie osservativa.",
+    "steps": [
+      {
+        "title": "La stabilità riguarda la matrice",
+        "text": "Per un VAR(1) la dinamica è stabile quando tutti gli autovalori di A hanno modulo inferiore a uno. La condizione riguarda il modello stimato.",
+        "code": "p <- carica_dati(\"processi_simulati.csv\")\nmod <- stima_var(p)\nev <- eigen(mod$A,only.values=TRUE)$values\ndata.frame(parte_reale=Re(ev),parte_immaginaria=Im(ev),modulo=Mod(ev))\ndata.frame(stabile=all(Mod(ev)<1))",
+        "reading": "Una singola stima stabile non dimostra che ogni meccanismo reale sia stabile. Nel dataset sintetico conosciamo il contesto di simulazione, ma restano variabilità campionaria e avvio finito."
+      },
+      {
+        "title": "Gli scarti possono condividere uno shock",
+        "text": "La correlazione contemporanea fra residui X e Y è diversa dall’autocorrelazione nel tempo.",
+        "code": "rx <- residuals(mod$fit_x); ry <- residuals(mod$fit_y)\ncov(cbind(X=rx,Y=ry))\ncor(rx,ry)\nstile_grafico()\nplot(rx,ry,pch=19,col=palette_geo[1],xlab=\"Residuo X\",ylab=\"Residuo Y\",\n     main=\"Scarti contemporanei del sistema\")\nabline(h=0,v=0,lty=2,col=\"grey60\")",
+        "reading": "Una covarianza contemporanea richiede attenzione nell’incertezza congiunta. Non identifica da sola la direzione di una relazione fisica."
+      },
+      {
+        "title": "La successione verifica memoria residua",
+        "text": "Le ACF delle due equazioni conservano la scala dei ritardi.",
+        "code": "stile_grafico(); acf(rx,lag.max=20,main=\"VAR: ACF residui equazione X\")\nstile_grafico(); acf(ry,lag.max=20,main=\"VAR: ACF residui equazione Y\")\ndata.frame(equazione=c(\"X\",\"Y\"),n=c(length(rx),length(ry)),\n           media=c(mean(rx),mean(ry)),sd=c(sd(rx),sd(ry)))",
+        "reading": "Residui con memoria suggeriscono una specifica incompleta. Grafici e test devono considerare la struttura del sistema e la stima dei parametri."
+      }
+    ],
+    "variant": {
+      "title": "Propagare una perturbazione nota",
+      "text": "Conservare la matrice stimata e osservare come evolve uno scostamento iniziale unitario in X, senza aggiungere innovazioni.",
+      "code": "stato <- c(1,0)\nrisposta <- matrix(NA_real_,21,2)\nrisposta[1,] <- stato\nfor(k in 1:20) { stato <- as.numeric(mod$A%*%stato); risposta[k+1,] <- stato }\nhead(data.frame(h=0:20,X=risposta[,1],Y=risposta[,2]),6)\nstile_grafico()\nmatplot(0:20,risposta,type=\"l\",lty=1,col=palette_geo[1:2],\n  xlab=\"Passi\",ylab=\"Scostamento dal riferimento\",main=\"Propagazione deterministica con A stimata\")\nabline(h=0,lty=2)",
+      "reading": "Questa è una perturbazione dello stato, non un impulso strutturale identificato. Confronta la dinamica della matrice senza introdurre un’interpretazione causale."
+    },
+    "error": "Controllare separatamente i coefficienti diagonali e trascurare gli autovalori dell’intera matrice.",
+    "answer": "La stabilità dipende dal sistema complessivo. La diagnosi dei residui completa la verifica e mantiene distinta la dipendenza contemporanea dalla memoria temporale."
+  },
+  {
+    "title": "Granger: confronto condizionato, non causalità fisica",
+    "question": "Il passato di X aggiunge informazione predittiva per Y?",
+    "objectives": [
+      "Confrontare modelli annidati sullo stesso campione.",
+      "Conservare entrambe le direzioni.",
+      "Correggere la famiglia di due confronti dichiarati."
+    ],
+    "data": "Processi sintetici di 300 passi, senza unità fisica. Le colonne x_VAR e y_VAR costituiscono un sistema bivariato. Usiamo i passi 1–250 per stimare e, quando richiesto, 251–260 per una previsione a origine fissa. La prima riga è una condizione iniziale finita: l’esempio non equivale a una nuova serie osservativa.",
+    "steps": [
+      {
+        "title": "L’ipotesi riguarda coefficienti ritardati",
+        "text": "Nel VAR(1), la domanda X verso Y confronta Y spiegata dal proprio passato con Y spiegata anche da X ritardata.",
+        "code": "p <- carica_dati(\"processi_simulati.csv\"); mod <- stima_var(p)\nridotto_y <- lm(y~y_lag,data=mod$lagged)\nridotto_x <- lm(x~x_lag,data=mod$lagged)\ng_xy <- anova(ridotto_y,mod$fit_y)\ng_yx <- anova(ridotto_x,mod$fit_x)\ng_xy\ng_yx",
+        "reading": "Le regressioni sono annidate e hanno le stesse 249 righe. L’inferenza F usa le ipotesi del modello lineare sulle innovazioni, da confrontare con la diagnostica."
+      },
+      {
+        "title": "Le due direzioni costituiscono una famiglia",
+        "text": "Conserviamo p-value grezzi e correzione Holm per i due confronti pianificati.",
+        "code": "p_g <- c(g_xy$`Pr(>F)`[2],g_yx$`Pr(>F)`[2])\ntab <- data.frame(direzione=c(\"X aiuta Y al lag 1\",\"Y aiuta X al lag 1\"),\n  p_non_corretto=p_g,p_Holm_due_confronti=p.adjust(p_g,method=\"holm\"))\ntab\nwrite.csv(tab,percorso_risultati(\"Granger_due_direzioni.csv\"),row.names=FALSE)",
+        "reading": "Il numero di confronti si riferisce alla famiglia dichiarata. Cercare molti ritardi o molte variabili e correggere soltanto i due risultati selezionati cambierebbe il problema."
+      },
+      {
+        "title": "Il test resta legato alla specifica",
+        "text": "Affianchiamo la stima del coefficiente incrociato alla sua incertezza. Un effetto statisticamente rilevabile va ancora valutato per scala e utilità.",
+        "code": "sx <- summary(mod$fit_x)$coefficients\nsy <- summary(mod$fit_y)$coefficients\ndata.frame(direzione=c(\"X verso Y\",\"Y verso X\"),\n  coefficiente=c(sy[\"x_lag\",\"Estimate\"],sx[\"y_lag\",\"Estimate\"]),\n  errore_standard=c(sy[\"x_lag\",\"Std. Error\"],sx[\"y_lag\",\"Std. Error\"]))",
+        "reading": "Il contributo è condizionato alle variabili incluse, al lag 1 e al periodo stimato. Cause comuni e variabili omesse restano possibili in un’applicazione osservativa."
+      }
+    ],
+    "variant": {
+      "title": "Leggere la correzione",
+      "text": "Confrontare le decisioni al livello nominale del 5% senza eliminare i valori grezzi.",
+      "code": "data.frame(tab,rifiuto_grezzo=tab$p_non_corretto<.05,\n           rifiuto_Holm=tab$p_Holm_due_confronti<.05)\nstopifnot(all(tab$p_Holm_due_confronti>=tab$p_non_corretto))",
+      "reading": "La correzione può conservare o modificare le decisioni. Anche un rifiuto corretto resta evidenza su una restrizione predittiva del modello."
+    },
+    "error": "Scrivere «X causa fisicamente Y» perché il p-value del confronto di Granger è piccolo.",
+    "answer": "Il confronto valuta se un passato aggiunge informazione nel modello specificato. L’interpretazione fisica richiede un disegno e assunzioni ulteriori, oltre al solo risultato statistico."
+  },
+  {
+    "title": "Previsione ricorsiva senza osservazioni future",
+    "question": "Come si prosegue il sistema dopo il passo 250?",
+    "objectives": [
+      "Avviare la ricorsione dall’ultimo stato osservato.",
+      "Usare gli stati previsti nei passi successivi.",
+      "Confrontare con il riferimento dell’ultimo valore."
+    ],
+    "data": "Processi sintetici di 300 passi, senza unità fisica. Le colonne x_VAR e y_VAR costituiscono un sistema bivariato. Usiamo i passi 1–250 per stimare e, quando richiesto, 251–260 per una previsione a origine fissa. La prima riga è una condizione iniziale finita: l’esempio non equivale a una nuova serie osservativa.",
+    "steps": [
+      {
+        "title": "La prima previsione usa lo stato osservato",
+        "text": "Dopo l’origine non si sostituiscono le previsioni con i valori futuri osservati.",
+        "code": "p <- carica_dati(\"processi_simulati.csv\"); mod <- stima_var(p)\nh <- 10L\nstato <- as.numeric(tail(mod$v,1))\nprev <- matrix(NA_real_,h,2,dimnames=list(NULL,c(\"X\",\"Y\")))\nfor(k in seq_len(h)) {\n  stato <- as.numeric(mod$intercetta+mod$A%*%stato)\n  prev[k,] <- stato\n}\ndata.frame(passo=251:260,prev)",
+        "reading": "Le innovazioni future hanno media condizionale zero nel modello. La traiettoria puntuale non riproduce i futuri shock casuali."
+      },
+      {
+        "title": "La verifica apre i dieci bersagli",
+        "text": "Solo ora i valori osservati vengono usati per quantificare l’errore a origine fissa.",
+        "code": "obs <- as.matrix(p[251:260,c(\"x_VAR\",\"y_VAR\")])\nbase <- matrix(rep(as.numeric(tail(mod$v,1)),each=h),ncol=2)\nconfronto <- data.frame(variabile=c(\"X\",\"Y\"),\n  RMSE_VAR=sqrt(colMeans((obs-prev)^2)),\n  RMSE_ultimo=sqrt(colMeans((obs-base)^2)))\nconfronto",
+        "reading": "Dieci passi da una sola origine sono un esempio limitato. Un risultato favorevole o sfavorevole non rappresenta la prestazione universale del VAR."
+      },
+      {
+        "title": "La figura mantiene lo stesso bersaglio",
+        "text": "Disegniamo Y osservata e prevista, etichettando l’orizzonte.",
+        "code": "stile_grafico()\nmatplot(1:h,cbind(obs[,2],prev[,2],base[,2]),type=\"b\",pch=c(19,1,17),lty=c(1,2,3),\n  col=palette_geo[1:3],xlab=\"Passi dall'origine 250\",ylab=\"Y sintetica\",\n  main=\"Previsione ricorsiva a origine fissa\")\nlegend(\"topleft\",c(\"Osservato\",\"VAR\",\"Ultimo valore\"),col=palette_geo[1:3],\n  pch=c(19,1,17),lty=c(1,2,3),bty=\"n\")\nwrite.csv(data.frame(passo=251:260,X_osservata=obs[,1],Y_osservata=obs[,2],\n  X_prevista=prev[,1],Y_prevista=prev[,2]),percorso_risultati(\"previsioni_VAR.csv\"),row.names=FALSE)",
+        "reading": "La previsione ricorsiva può attenuarsi mentre la realizzazione futura riceve nuovi shock. Questo comportamento è coerente con la distinzione fra previsione media e dato."
+      }
+    ],
+    "variant": {
+      "title": "Una verifica automatica della ricorsione",
+      "text": "Confrontare il ciclo visibile con la funzione di servizio e controllare il secondo passo.",
+      "code": "stopifnot(isTRUE(all.equal(prev,prevedi_var(mod,h))),\n  isTRUE(all.equal(as.numeric(prev[2,]),as.numeric(mod$intercetta+mod$A%*%prev[1,]))))\ndata.frame(controllo=c(\"Funzione e ciclo coincidono\",\"Secondo passo usa il primo previsto\"),esito=TRUE)",
+      "reading": "Il caso calcolabile verifica il codice. Non dimostra che il modello descriva ogni aspetto del processo."
+    },
+    "error": "Inserire X o Y osservata al passo 251 per calcolare il passo 252, continuando a chiamare il risultato «origine fissa 250».",
+    "answer": "La ricorsione mantiene l’origine: ogni stato futuro deriva dallo stato previsto precedente. L’apertura dei bersagli serve esclusivamente al confronto finale."
+  },
+  {
+    "title": "Consegnare e verificare",
+    "question": "Quali elementi rendono completa la consegna dell’approfondimento?",
+    "objectives": [
+      "Conservare modello, previsioni e confronti.",
+      "Separare i risultati predittivi dai test.",
+      "Rileggere i file esportati."
+    ],
+    "data": "Processi sintetici di 300 passi, senza unità fisica. Le colonne x_VAR e y_VAR costituiscono un sistema bivariato. Usiamo i passi 1–250 per stimare e, quando richiesto, 251–260 per una previsione a origine fissa. La prima riga è una condizione iniziale finita: l’esempio non equivale a una nuova serie osservativa.",
+    "steps": [
+      {
+        "title": "La tabella collega origine e valori",
+        "text": "Ricostruiamo il VAR per un’esecuzione autonoma e salviamo i dieci bersagli con le rispettive previsioni.",
+        "code": "p <- carica_dati(\"processi_simulati.csv\"); mod <- stima_var(p)\npr <- prevedi_var(mod,10)\nobs <- as.matrix(p[251:260,c(\"x_VAR\",\"y_VAR\")])\ntab <- data.frame(origine=250L,passo=251:260,h=1:10,\n  X_osservata=obs[,1],Y_osservata=obs[,2],X_prevista=pr[,1],Y_prevista=pr[,2])\nwrite.csv(tab,percorso_risultati(\"consegna_VAR.csv\"),row.names=FALSE)\nsaveRDS(mod,percorso_risultati(\"modello_VAR.rds\"))\nhead(tab,3)",
+        "reading": "La consegna dichiara che X e Y sono senza unità fisica. Il file del modello non sostituisce la tabella leggibile."
+      },
+      {
+        "title": "Metriche e test rispondono a domande diverse",
+        "text": "La prima tabella valuta previsioni fuori dal train. La seconda valuta restrizioni nelle regressioni stimate.",
+        "code": "ultimo <- matrix(rep(as.numeric(tail(mod$v,1)),each=10),ncol=2)\nmetriche_var <- data.frame(variabile=c(\"X\",\"Y\"),\n  RMSE_VAR=sqrt(colMeans((obs-pr)^2)),\n  RMSE_ultimo=sqrt(colMeans((obs-ultimo)^2)))\ngy <- anova(lm(y~y_lag,data=mod$lagged),mod$fit_y)\ngx <- anova(lm(x~x_lag,data=mod$lagged),mod$fit_x)\npval <- c(gy$`Pr(>F)`[2],gx$`Pr(>F)`[2])\ngranger <- data.frame(direzione=c(\"X verso Y\",\"Y verso X\"),p=pval,\n                       p_Holm=p.adjust(pval,\"holm\"))\nwrite.csv(metriche_var,percorso_risultati(\"metriche_VAR.csv\"))\nwrite.csv(granger,percorso_risultati(\"Granger.csv\"),row.names=FALSE)\nmetriche_var\ngranger",
+        "reading": "Un test significativo non garantisce un guadagno predittivo in ogni futuro. Una buona previsione non identifica automaticamente una causa fisica."
+      },
+      {
+        "title": "La verifica della consegna usa i file riletti",
+        "text": "Una breve scheda documenta input, parametri e limiti insieme ai controlli automatici.",
+        "code": "ritorno <- read.csv(percorso_risultati(\"consegna_VAR.csv\"))\n mod2 <- readRDS(percorso_risultati(\"modello_VAR.rds\"))\n stopifnot(identical(ritorno$passo,251:260),\n   isTRUE(all.equal(ritorno$X_prevista,pr[,1],check.attributes=FALSE,tolerance=1e-10)),\n   isTRUE(all.equal(prevedi_var(mod2,10),pr)))\n scheda <- c(\"VAR(1) didattico su processi sintetici.\",\n   \"Train: passi 1-250. Test: passi 251-260. Origine fissa 250.\",\n   \"Due regressioni OLS con intercetta e ritardi X,Y.\",\n   \"Granger: due direzioni pianificate, correzione Holm.\",\n   \"Limiti: simulazione, singola origine, nessuna attribuzione causale fisica.\")\n writeLines(scheda,percorso_risultati(\"scheda_modello.txt\"),useBytes=TRUE)\n cat(paste(scheda,collapse=\"\n\"))",
+        "reading": "La scheda delimita il significato del risultato. La prova di rilettura controlla il trasferimento delle informazioni."
+      }
+    ],
+    "variant": {
+      "title": "Inventario degli output",
+      "text": "Elencare soltanto i file del notebook corrente e la loro dimensione.",
+      "code": "files <- list.files(dirname(percorso_risultati(\"scheda_modello.txt\")),full.names=TRUE)\ndata.frame(file=basename(files),bytes=file.info(files)$size)",
+      "reading": "L’inventario aiuta a riconoscere output mancanti. Per un archivio completo va affiancato al manifesto delle impronte del pacchetto."
+    },
+    "error": "Riportare solo il p-value più favorevole oppure confondere la scheda del progetto base con quella del VAR.",
+    "answer": "Una consegna completa collega tabella, modello, metriche e limiti. La rilettura e la ricostruzione della previsione verificano il risultato trasferito."
+  },
+  {
+    "title": "Laboratorio applicativo: audit prima del modello",
+    "question": "Che cosa succede se un individuo compare due volte?",
+    "objectives": [
+      "Riconoscere un duplicato della chiave.",
+      "Distinguere duplicazione e nuova misura.",
+      "Conservare la segnalazione senza modificare l’originale."
+    ],
+    "data": "160 fossili sintetici del corso. Diametri e spessore sono espressi in micrometri. Il diametro interno deriva dal totale meno due volte lo spessore, entro l’arrotondamento del CSV. Il test contiene ogni quinta riga: 32 individui, separati dai 128 usati per stimare. È un protocollo didattico su dati già noti, non una validazione prospettica.",
+    "steps": [
+      {
+        "title": "Una copia mantiene intatto il CSV",
+        "text": "Aggiungiamo deliberatamente una riga a un oggetto in memoria. L’esperimento permette di osservare il comportamento del controllo.",
+        "code": "f <- carica_dati(\"fossili_simulati.csv\")\ncopia <- rbind(f,f[1,])\ndata.frame(originale=nrow(f),copia=nrow(copia),duplicati=sum(duplicated(copia$id)))\ncopia[duplicated(copia$id),]\nstopifnot(nrow(f)==160L,nrow(copia)==161L)",
+        "reading": "Il CSV resta invariato. Una riga duplicata aumenta il peso dell’individuo senza creare una nuova unità indipendente."
+      },
+      {
+        "title": "La chiave identifica il problema",
+        "text": "Mostriamo tutte le righe che condividono una chiave, inclusa la prima occorrenza.",
+        "code": "flag <- duplicated(copia$id)|duplicated(copia$id,fromLast=TRUE)\nsegnalazioni <- data.frame(riga=which(flag),copia[flag,],check.names=FALSE)\nsegnalazioni\nwrite.csv(segnalazioni,percorso_risultati(\"segnalazioni_duplicati.csv\"),row.names=FALSE)",
+        "reading": "Il controllo segnala identità ripetute. Stabilire se si tratta di una copia accidentale o di una misura ripetuta richiede metadati e protocollo."
+      },
+      {
+        "title": "La duplicazione cambia i pesi",
+        "text": "Confrontiamo le medie senza cancellare automaticamente la riga. Il cambiamento può essere piccolo ma il principio statistico resta rilevante.",
+        "code": "data.frame(archivio=c(\"Originale\",\"Con duplicato\"),\n  n_righe=c(nrow(f),nrow(copia)),n_ID=c(length(unique(f$id)),length(unique(copia$id))),\n  media_interno=c(mean(f$diametro_int_um),mean(copia$diametro_int_um)))",
+        "reading": "Il numero di righe non coincide più con il numero di individui. La duplice presenza può anche contaminare uno split se l’identificativo appare in entrambi gli insiemi."
+      }
+    ],
+    "variant": {
+      "title": "Una violazione geometrica separata",
+      "text": "Modificare una copia di un diametro per simulare un errore e riconoscerlo.",
+      "code": "errore <- f\nerrore$diametro_int_um[2] <- errore$diametro_tot_um[2]+1\nfuori <- errore$diametro_int_um>errore$diametro_tot_um\nerrore[fuori,c(\"id\",\"diametro_tot_um\",\"diametro_int_um\")]\nstopifnot(sum(fuori)==1L,nrow(carica_dati(\"fossili_simulati.csv\"))==160L)",
+      "reading": "La chiave può essere corretta mentre la geometria è incoerente. Controlli diversi affrontano errori diversi."
+    },
+    "error": "Eliminare righe ripetute senza stabilire se rappresentano lo stesso individuo, repliche tecniche o misure in tempi differenti.",
+    "answer": "L’audit riconosce e documenta la duplicazione prima del modello. I dati originali restano disponibili e le decisioni richiedono una spiegazione del processo di raccolta."
+  },
+  {
+    "title": "Laboratorio applicativo: baseline stagionale",
+    "question": "Come si costruiscono diciotto mesi usando soltanto l’ultimo anno del train?",
+    "objectives": [
+      "Associare ogni bersaglio al mese di riferimento.",
+      "Ripetere il ciclo oltre i primi dodici passi.",
+      "Controllare che il test non entri nella formula."
+    ],
+    "data": "CO₂ storica: 204 mesi da gennaio 1985 a dicembre 2001, concentrazione in ppm. Le medie derivano dalle osservazioni settimanali attribuite al mese della data, secondo la convenzione del corso. Sono dati storici, distinti da una serie mensile ufficiale e da una misura attuale. Il protocollo usa 168 mesi per l’adattamento (1985–1998) e 36 per il test (1999–2001).",
+    "steps": [
+      {
+        "title": "L’ultimo anno è il riferimento disponibile",
+        "text": "Il protocollo usa la stessa origine del caso SARIMA. Costruiamo diciotto mesi senza consultare i valori del test.",
+        "code": "c2 <- prepara_co2(carica_dati(\"co2_1985_2001.csv\"))\ntrain <- c2$train; test <- c2$test; h <- c2$h\n h18 <- 18L\n ultimo_anno <- as.numeric(tail(train,12))\n pred18 <- rep(ultimo_anno,length.out=h18)\n data.frame(h=1:h18,data=as.character(c2$date_test[1:h18]),\n            mese_riferimento=rep(as.character(c2$dati$data[157:168]),length.out=h18),\n            previsto=pred18)",
+        "reading": "Gennaio 2000 usa ancora gennaio 1998 nella previsione a origine fissa dicembre 1998. Gennaio 1999 osservato appartiene al futuro di quell’origine."
+      },
+      {
+        "title": "La periodicità diventa un controllo",
+        "text": "La regola è verificabile senza conoscere il test: i passi 13–18 ripetono i primi sei valori dell’ultimo anno.",
+        "code": "stopifnot(identical(pred18[13:18],ultimo_anno[1:6]),\n          identical(pred18[1:12],ultimo_anno))\ndata.frame(controllo=c(\"Primo anno uguale all'ultimo train\",\"Mesi 13-18 ripetono 1-6\"),esito=TRUE)\nstile_grafico()\nplot(1:h18,pred18,type=\"b\",pch=19,col=palette_geo[1],xlab=\"Mesi dall'origine\",\n  ylab=\"CO2 prevista (ppm)\",main=\"Baseline stagionale a 18 mesi\")\nabline(v=12.5,lty=2)",
+        "reading": "La curva conserva la stagione ma non aggiunge crescita. Questa ipotesi va discussa quando la serie ha un trend."
+      },
+      {
+        "title": "Il confronto usa esattamente diciotto bersagli",
+        "text": "Calcoliamo le metriche sul sottoinsieme dichiarato. Non confrontiamo direttamente queste metriche con quelle su 36 mesi senza segnalare il cambio di orizzonte.",
+        "code": "obs18 <- as.numeric(test)[1:h18]\nfit <- stima_sarima(train)\nar18 <- as.numeric(predict(fit,n.ahead=h18)$pred)\nrbind(Stagionale=metriche(obs18,pred18),SARIMA=metriche(obs18,ar18))\nwrite.csv(data.frame(data=c2$date_test[1:h18],osservato=obs18,\n  stagionale=pred18,SARIMA=ar18),percorso_risultati(\"baseline_18_mesi.csv\"),row.names=FALSE)",
+        "reading": "I due metodi condividono origine e bersagli. Il risultato riguarda questa finestra e non tutti i possibili periodi futuri."
+      }
+    ],
+    "variant": {
+      "title": "Trenta mesi senza accesso al futuro",
+      "text": "Estendere la regola e verificare il terzo ciclo parziale.",
+      "code": "pred30 <- rep(ultimo_anno,length.out=30)\nstopifnot(identical(pred30[25:30],ultimo_anno[1:6]))\ndata.frame(h=25:30,previsto=pred30[25:30])",
+      "reading": "L’estensione richiede solo il calendario della previsione. Per aggiornare il riferimento con nuovi valori servirebbe dichiarare una nuova origine."
+    },
+    "error": "Costruire la baseline con y del mese precedente dell’anno del test per gli orizzonti superiori a dodici, senza dichiarare l’aggiornamento.",
+    "answer": "La baseline stagionale ripete l’ultimo ciclo osservato all’origine. Una tabella di corrispondenza fra mesi rende il calcolo trasparente e impedisce l’uso accidentale di osservazioni future."
+  }
+]

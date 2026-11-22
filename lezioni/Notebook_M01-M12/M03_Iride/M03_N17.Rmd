@@ -1,0 +1,130 @@
+---
+title: "Trasformazione logaritmica e standardizzazione"
+subtitle: "M03_N17 \u00b7 Iride"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Qual è la differenza fra cambiare la forma di una distribuzione con il logaritmo e cambiarne soltanto centro e scala?
+
+## Obiettivi
+
+- Applicare il logaritmo a misure positive con riferimento unitario esplicito.
+- Calcolare e interpretare valori standardizzati.
+
+**Prima di iniziare.** Media, deviazione standard e operazioni vettoriali.
+
+**Dati e unità.** Archivio didattico sintetico di 90 rocce. La grana è espressa in millimetri e la densità in grammi per centimetro cubo; la litologia generatrice è nota.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M03_N17/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M03_N17")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(3017)
+```
+
+## 1. Controllare la scala originale
+
+La grana è una misura positiva. Prima del logaritmo controlliamo zeri e valori non finiti; aggiungere una costante arbitraria per evitare log di zero cambierebbe il significato della trasformazione.
+
+```{r passo_01}
+d <- carica_dati("rocce_simulate.csv")
+grana <- d$grana_mm
+# Il logaritmo richiede valori positivi e finiti: controlliamo prima di trasformare.
+stopifnot(all(is.finite(grana)), all(grana > 0))
+print(summary(grana))
+hist(grana, breaks = "FD", col = "#C57E42", border = "white",
+     xlab = "Grana (mm)", ylab = "Rocce (n)", main = "Scala originale")
+print(c(media_mm = mean(grana), mediana_mm = median(grana)))
+```
+
+**Lettura del risultato.** La distanza fra media e mediana può accompagnare un'asimmetria, ma la figura ne mostra anche code e concentrazioni. La positività rende possibile il logaritmo; non dimostra che una distribuzione lognormale sia appropriata.
+
+## 2. Passare a rapporti moltiplicativi
+
+Scriviamo il logaritmo del rapporto fra la grana e un millimetro: l'argomento è adimensionale. Distanze uguali sulla scala logaritmica corrispondono a rapporti uguali sulla scala originale, non a differenze additive uguali.
+
+```{r passo_02}
+riferimento_mm <- 1
+# Dividere per il riferimento di 1 mm rende adimensionale l argomento del logaritmo.
+log_grana <- log(grana / riferimento_mm)
+hist(log_grana, breaks = "FD", col = "#1D7890", border = "white",
+     xlab = "log(grana / 1 mm)", ylab = "Rocce (n)", main = "Scala logaritmica naturale")
+ricostruita <- riferimento_mm * exp(log_grana)
+stopifnot(max(abs(ricostruita - grana)) < 1e-12)
+print(c(media_geometrica_mm = riferimento_mm * exp(mean(log_grana))))
+```
+
+**Lettura del risultato.** Il logaritmo comprime i valori grandi e può ridurre una coda destra. L'esponenziale della media dei log è la media geometrica, non la media aritmetica delle grane; le due quantità rispondono a domande diverse.
+
+## 3. Centrare e dividere per la dispersione
+
+La standardizzazione z uguale x meno media, diviso deviazione standard, è una trasformazione lineare crescente. Cambia origine e unità dell'asse ma conserva ordine e forma della distribuzione, compresa un'eventuale asimmetria.
+
+```{r passo_03}
+# La trasformazione lineare cambia centro e scala, ma non elimina l asimmetria.
+z <- (grana - mean(grana)) / sd(grana)
+z_funzione <- as.numeric(scale(grana))
+print(c(media_z = mean(z), sd_z = sd(z)))
+stopifnot(max(abs(z - z_funzione)) < 1e-12)
+stopifnot(abs(mean(z)) < 1e-12, abs(sd(z) - 1) < 1e-12)
+hist(z, breaks = "FD", col = "#7363AA", border = "white",
+     xlab = "Grana standardizzata (senza unita)", ylab = "Rocce (n)", main = "Stessa forma, altra scala")
+```
+
+**Lettura del risultato.** Uno z pari a due indica due deviazioni standard sopra la media del campione usato. Non implica una probabilità di coda normale: standardizzare una variabile non la trasforma automaticamente in una normale.
+
+## Variante svolta
+
+Standardizzare i logaritmi e ricostruire le grane originali con la trasformazione inversa.
+
+```{r variante}
+z_log <- (log_grana - mean(log_grana)) / sd(log_grana)
+log_ricostruiti <- mean(log_grana) + sd(log_grana) * z_log
+grana_ricostruita <- riferimento_mm * exp(log_ricostruiti)
+print(c(media_z_log = mean(z_log), sd_z_log = sd(z_log)))
+stopifnot(max(abs(grana_ricostruita - grana)) < 1e-12)
+print(head(data.frame(grana_mm = grana, z_originale = z, z_log = z_log)))
+```
+
+Le due standardizzazioni non sono intercambiabili: una misura gli scarti sulla scala additiva, l'altra sulla scala dei rapporti. Per invertire la trasformazione servono media e deviazione standard della scala corretta.
+
+## Errore da riconoscere
+
+Non applicare log a valori nulli o negativi senza esaminarne l'origine. Non attribuire normalità ai valori z e non confondere media geometrica e aritmetica.
+
+## Risposta alla domanda
+
+Il logaritmo modifica la geometria delle distanze e può cambiare la forma; la standardizzazione lineare cambia centro e scala. La scelta dipende dalla domanda fisica e deve essere accompagnata dalla trasformazione inversa.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M03_N17` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M03/M03_N17.R).

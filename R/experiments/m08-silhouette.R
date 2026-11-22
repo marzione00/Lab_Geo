@@ -2,6 +2,8 @@
 # Valutare coesione e separazione di una partizione.
 # Dati sintetici; parametri e ambiente dichiarati.
 # Dipendenze: install.packages(c("ggplot2", "jsonlite", "svglite"))
+# Codice: PolyForm Noncommercial 1.0.0, https://polyformproject.org/licenses/noncommercial/1.0.0
+# Required Notice: Copyright 2026 Marzio De Corato (https://github.com/marzione00/Lab_Geo)
 
 # GeoStat Lab — funzioni comuni. R >= 4.3; ggplot2 >= 3.4; jsonlite.
 suppressPackageStartupMessages(library(ggplot2))
@@ -66,8 +68,8 @@ s <- sapply(1:nrow(x), function(i) {
     if (!length(same)) 
         return(0)
     a <- mean(dd[i, same])
-    b <- min(sapply(setdiff(unique(km$cluster), km$cluster[i]), function(g) mean(dd[i, km$cluster == 
-        g])))
+    b <- min(sapply(setdiff(unique(km$cluster), km$cluster[i]),
+        function(g) mean(dd[i, km$cluster == g])))
     (b - a)/max(a, b)
 })
 

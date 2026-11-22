@@ -1,0 +1,130 @@
+---
+title: "Dispersione: la media non basta"
+subtitle: "M03_N06 \u00b7 Iride"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come distinguere due campioni con la stessa media ma con misure più o meno disperse?
+
+## Obiettivi
+
+- Ricostruire varianza campionaria e deviazione standard.
+- Distinguere dispersione delle osservazioni e incertezza della media.
+
+**Prima di iniziare.** Media, sottrazione vettoriale e potenze.
+
+**Dati e unità.** Due vettori didattici di cinque misure in micrometri, seguiti dai diametri dei fossili sintetici; le grandezze sono trattate come osservazioni individuali.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M03_N06/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M03_N06")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(3006)
+```
+
+## 1. Confrontare campioni con identico centro
+
+Costruiamo misure equidistanti da cinque, con due ampiezze diverse. La media resta la stessa, ma la distanza fra gli individui cambia. Questo mostra perché un solo valore centrale non descrive la variabilità.
+
+```{r passo_01}
+compatto <- c(4, 4.5, 5, 5.5, 6)
+disperso <- c(1, 3, 5, 7, 9)
+riassunto <- rbind(compatto = c(media = mean(compatto), sd = sd(compatto)),
+                  disperso = c(media = mean(disperso), sd = sd(disperso)))
+print(riassunto)
+stopifnot(mean(compatto) == mean(disperso))
+# Lo stripchart conserva tutte le misure e le colloca sulla stessa scala.
+stripchart(list(Compatto = compatto, Disperso = disperso), pch = 16,
+           col = "#1D7890", xlab = "Misura (um)", method = "stack")
+```
+
+**Lettura del risultato.** Il secondo gruppo occupa una fascia più larga dell'asse pur avendo lo stesso centro. La deviazione standard riassume questa dispersione usando tutti gli scarti dalla media, non soltanto minimo e massimo.
+
+## 2. Ricostruire la formula
+
+Per la varianza campionaria sommiamo gli scarti quadratici e dividiamo per n meno uno. Un grado di libertà è già usato dalla media: gli scarti hanno somma nulla. La radice quadrata restituisce l'unità originale.
+
+```{r passo_02}
+scarti <- disperso - mean(disperso)
+quadrati <- scarti^2
+# Il denominatore n - 1 coincide con la convenzione campionaria di var in R.
+s2 <- sum(quadrati) / (length(disperso) - 1)
+s <- sqrt(s2)
+print(data.frame(misura_um = disperso, scarto_um = scarti, quadrato_um2 = quadrati))
+print(c(varianza_um2 = s2, deviazione_standard_um = s))
+stopifnot(abs(sum(scarti)) < 1e-12, abs(s2 - var(disperso)) < 1e-12)
+```
+
+**Lettura del risultato.** La varianza è espressa in micrometri quadrati; la deviazione standard in micrometri. Il denominatore n meno uno è quello usato da var e sd in R, e non va sostituito senza dichiarare un altro obiettivo.
+
+## 3. Applicare ai diametri
+
+Calcoliamo dispersione e campo dei diametri nel campione. Mostriamo anche s diviso radice di n come quantità distinta: è un errore standard della media solo sotto opportune condizioni di indipendenza e campionamento.
+
+```{r passo_03}
+f <- carica_dati("fossili_simulati.csv")
+x <- f$diametro_tot_um
+n <- length(x)
+print(c(n = n, media_um = mean(x), sd_um = sd(x),
+        minimo_um = min(x), massimo_um = max(x), ampiezza_um = diff(range(x))))
+# Questa quantita riguarda la media sotto ipotesi di campionamento, non gli individui.
+se_formale <- sd(x) / sqrt(n)
+print(c(sd_individui_um = sd(x), s_su_radice_n_um = se_formale))
+```
+
+**Lettura del risultato.** La piccola quantità s diviso radice di n non significa che gli individui siano poco variabili. Anche il mescolamento di due morfotipi contribuisce alla dispersione totale; un'analisi per gruppo può chiarirne l'origine.
+
+## Variante svolta
+
+Convertire le misure da micrometri a millimetri e controllare come cambiano varianza e deviazione standard.
+
+```{r variante}
+mm <- x / 1000
+print(c(sd_um = sd(x), sd_mm = sd(mm), var_um2 = var(x), var_mm2 = var(mm)))
+stopifnot(abs(sd(mm) - sd(x) / 1000) < 1e-12)
+stopifnot(abs(var(mm) - var(x) / 1000^2) < 1e-12)
+print(range(mm))
+```
+
+La deviazione standard cambia con il fattore di conversione; la varianza con il suo quadrato. Questa differenza evita errori quando si confrontano risultati calcolati con unità differenti.
+
+## Errore da riconoscere
+
+Non usare la deviazione standard come se fosse un intervallo di confidenza. Non riportare una varianza con la stessa unità lineare delle misure.
+
+## Risposta alla domanda
+
+Il confronto richiede centro e dispersione. La deviazione standard descrive gli scarti individuali dalla media, mentre l'incertezza su una media campionaria richiede anche un modello del prelievo e della dipendenza fra osservazioni.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M03_N06` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M03/M03_N06.R).

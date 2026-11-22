@@ -1,0 +1,134 @@
+---
+title: "Poisson: conteggi con esposizione dichiarata"
+subtitle: "M04_N08 \u00b7 Aurea"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come cambia il numero atteso di eventi se osserviamo per due ore anziché una?
+
+## Obiettivi
+
+- Distinguere tasso per unità di esposizione e parametro del conteggio.
+- Calcolare probabilità e controllare una simulazione di Poisson.
+
+**Prima di iniziare.** Conteggi, probabilità e media.
+
+**Dati e unità.** Modello didattico di eventi indipendenti a tasso costante r = 3 eventi per ora. Il tempo di osservazione determina lambda = r per t; non sono dati di monitoraggio reali.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M04_N08/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M04_N08")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(4008)
+```
+
+## 1. Legare parametro ed esposizione
+
+Il tasso possiede un'unità, eventi per ora; lambda è il numero atteso nell'intervallo specificato. Un parametro senza durata sarebbe ambiguo. Il modello assume tasso costante e assenza di raggruppamenti o dipendenze fra eventi.
+
+```{r passo_01}
+tasso <- 3
+ore <- c(1, 2)
+# Il tasso per ora va moltiplicato per una durata espressa in ore.
+lambda <- tasso * ore
+tab <- data.frame(ore = ore, lambda = lambda,
+  nessun_evento = dpois(0, lambda), almeno_uno = ppois(0, lambda, lower.tail = FALSE))
+print(tab)
+stopifnot(max(abs(tab$nessun_evento + tab$almeno_uno - 1)) < 1e-12)
+```
+
+**Lettura del risultato.** Raddoppiare la durata raddoppia il conteggio atteso, ma non raddoppia tutte le probabilità. La probabilità di almeno un evento resta limitata a uno e cambia secondo la distribuzione del conteggio.
+
+## 2. Rappresentare il supporto infinito
+
+La Poisson ammette qualsiasi intero non negativo. Per il grafico scegliamo fino a quindici eventi e calcoliamo anche la probabilità della coda omessa: la somma delle barre visibili non è necessariamente uno.
+
+```{r passo_02}
+k <- 0:15
+p1 <- dpois(k, lambda = lambda[1])
+p2 <- dpois(k, lambda = lambda[2])
+matplot(k, cbind(p1, p2), type = "b", pch = c(16, 17),
+        col = c("#1D7890", "#C57E42"), xlab = "Eventi osservati", ylab = "Probabilita")
+legend("topright", c("1 ora", "2 ore"), col = c("#1D7890", "#C57E42"), pch = c(16, 17), bty = "n")
+# Il modello ha supporto infinito: quantifichiamo la parte non mostrata nel grafico.
+code <- ppois(15, lambda = lambda, lower.tail = FALSE)
+print(data.frame(ore = ore, probabilita_oltre_15 = code))
+stopifnot(max(abs(c(sum(p1), sum(p2)) + code - 1)) < 1e-12)
+```
+
+**Lettura del risultato.** Il troncamento riguarda soltanto la figura, non il modello. Le distribuzioni si spostano e si allargano con lambda; il tasso resta identico, mentre l'esposizione distingue i due conteggi.
+
+## 3. Verificare media e varianza
+
+Per una Poisson semplice media e varianza sono entrambe lambda. Simuliamo esposizioni uguali per confrontare queste proprietà; con dati reali esposizioni diverse andrebbero considerate prima di interpretare una varianza elevata.
+
+```{r passo_03}
+set.seed(408)
+B <- 3000
+una_ora <- rpois(B, lambda = lambda[1])
+# L esposizione doppia cambia lambda, mentre il tasso di eventi resta costante.
+due_ore <- rpois(B, lambda = lambda[2])
+risultati <- rbind(una_ora = c(media = mean(una_ora), varianza = var(una_ora)),
+                   due_ore = c(media = mean(due_ore), varianza = var(due_ore)))
+print(risultati)
+print(c(tasso_stimato_1ora = mean(una_ora), tasso_stimato_2ore = mean(due_ore) / 2))
+```
+
+**Lettura del risultato.** Le medie e le varianze simulate oscillano attorno ai rispettivi valori teorici. Dividere il conteggio medio per la durata permette di confrontare i tassi, mentre confrontare i conteggi grezzi confonderebbe attività ed esposizione.
+
+## Variante svolta
+
+Calcolare il conteggio atteso e la probabilità di almeno un evento in trenta minuti.
+
+```{r variante}
+minuti <- 30
+durata_ore <- minuti / 60
+lambda_breve <- tasso * durata_ore
+prob_breve <- ppois(0, lambda_breve, lower.tail = FALSE)
+print(c(durata_ore = durata_ore, lambda = lambda_breve, almeno_uno = prob_breve))
+stopifnot(abs(lambda_breve - 1.5) < 1e-12)
+print(dpois(0:5, lambda_breve))
+```
+
+La conversione dei minuti in ore è necessaria perché il tasso è espresso per ora. Moltiplicare direttamente tre per trenta produrrebbe un conteggio atteso sessanta volte troppo grande.
+
+## Errore da riconoscere
+
+Non confrontare conteggi osservati in durate o superfici diverse senza includere l'esposizione. Non concludere che il modello vale soltanto perché media e varianza sono simili in un piccolo campione.
+
+## Risposta alla domanda
+
+Il parametro del conteggio dipende da tasso ed esposizione. Dichiarare le unità evita errori di scala; probabilità, media e varianza restano proprietà di un modello che richiede eventi indipendenti e un tasso adeguatamente costante.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M04_N08` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M04/M04_N08.R).

@@ -1,0 +1,132 @@
+---
+title: "Standardizzazione e dipendenza"
+subtitle: "M05_N04 \u00b7 Pelago"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Quaranta misure organizzate in gruppi forniscono la stessa precisione di quaranta misure indipendenti?
+
+## Obiettivi
+
+- Riconoscere il contributo delle covarianze.
+- Calcolare effetto del disegno e numerosità effettiva in un modello esplicito.
+
+**Prima di iniziare.** Vettori, indicizzazione, media, varianza e grafici di base in R.
+
+**Dati e unità.** Simuliamo dieci stazioni con quattro provini ciascuna. Un effetto comune di stazione crea dipendenza; tutte le misure sono in unità convenzionali.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M05_N04/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M05_N04")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(5004)
+```
+
+## 1. Definire il modello a stazioni
+
+Ogni misura somma una media generale, un effetto di stazione e un errore del provino. Gli effetti delle diverse stazioni sono indipendenti. Due provini della stessa stazione condividono l'effetto comune, quindi la loro covarianza è tau².
+
+```{r passo_01}
+set.seed(505)
+G <- 10
+m <- 4
+mu <- 5
+tau <- 1
+sigma_e <- 0.5
+n <- G * m
+var_marginale <- tau^2 + sigma_e^2
+rho <- tau^2 / var_marginale
+print(c(n_righe = n, stazioni = G, correlazione_interna = rho))
+```
+
+**Lettura del risultato.** La correlazione interna dipende dal rapporto fra variabilità comune e variabilità totale. Quaranta righe descrivono dieci gruppi indipendenti nel modello adottato.
+
+## 2. Derivare la varianza della media
+
+Per gruppi tutti della stessa dimensione, l'effetto del disegno è 1 + (m−1)rho. La varianza corretta della media è tau²/G + sigma_e²/(Gm). La numerosità effettiva riassume questa perdita di precisione rispetto a osservazioni indipendenti della stessa varianza marginale.
+
+```{r passo_02}
+deff <- 1 + (m - 1) * rho
+n_eff <- n / deff
+se_indipendenza <- sqrt(var_marginale / n)
+se_corretto <- sqrt(tau^2 / G + sigma_e^2 / n)
+stopifnot(isTRUE(all.equal(se_corretto^2, se_indipendenza^2 * deff)))
+print(c(DEFF = deff, n_effettivo = n_eff,
+        SE_indipendenza = se_indipendenza, SE_corretto = se_corretto))
+```
+
+**Lettura del risultato.** La numerosità effettiva non è un conteggio di stazioni e non sostituisce automaticamente i gradi di libertà di un test. Qui è un confronto fra varianze sotto un modello dichiarato.
+
+## 3. Controllare la standardizzazione con la simulazione
+
+Ripetiamo l'intero insieme di stazioni e provini. Standardizzare con l'errore standard che ignora la dipendenza produce una distribuzione troppo larga; la standardizzazione corretta deve invece avere dispersione vicina a uno.
+
+```{r passo_03}
+B <- 2000
+medie <- replicate(B, {
+  u <- rep(rnorm(G, sd = tau), each = m)
+  mean(mu + u + rnorm(n, sd = sigma_e))
+})
+z_errato <- (medie - mu) / se_indipendenza
+z_corretto <- (medie - mu) / se_corretto
+print(c(sd_z_errato = sd(z_errato), sd_z_corretto = sd(z_corretto)))
+boxplot(z_errato, z_corretto, names = c("Righe indipendenti", "Stazioni"),
+        ylab = "Media standardizzata", col = c("#E7B977", "#95BDD0"))
+```
+
+**Lettura del risultato.** La differenza fra le due scale nasce dalla covarianza condivisa. Aumentare il numero di repliche simulate rende più leggibile il confronto, senza cambiare la struttura del campionamento.
+
+## Variante svolta
+
+Confrontare venti stazioni con due provini e dieci stazioni con quattro provini, mantenendo quaranta misure.
+
+```{r variante}
+disegni <- data.frame(stazioni = c(10, 20), provini_per_stazione = c(4, 2))
+disegni$SE <- sqrt(tau^2 / disegni$stazioni + sigma_e^2 / n)
+disegni$DEFF <- 1 + (disegni$provini_per_stazione - 1) * rho
+disegni$n_eff <- n / disegni$DEFF
+print(disegni)
+```
+
+Con una componente comune positiva, distribuire le stesse misure su più stazioni riduce l'incertezza della media generale. Costi e rappresentatività del territorio restano decisioni del disegno reale.
+
+## Errore da riconoscere
+
+Contare le righe come repliche indipendenti sottostima la varianza quando i provini condividono una stazione. La correzione richiede identificativi dei gruppi e ipotesi esplicite.
+
+## Risposta alla domanda
+
+La precisione dipende sia dal numero di misure sia da come sono dipendenti. La formula s/√n richiede di identificare correttamente le unità indipendenti.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M05_N04` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M05/M05_N04.R).

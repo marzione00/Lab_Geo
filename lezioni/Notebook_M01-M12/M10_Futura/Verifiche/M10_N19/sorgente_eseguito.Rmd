@@ -1,0 +1,126 @@
+---
+title: "Laboratorio applicativo: audit prima del modello"
+subtitle: "M10_N19 · Futura"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Che cosa succede se un individuo compare due volte?
+
+## Obiettivi
+
+- Riconoscere un duplicato della chiave.
+- Distinguere duplicazione e nuova misura.
+- Conservare la segnalazione senza modificare l’originale.
+
+**Prima di iniziare.** Sono richiesti vettori, tabelle e funzioni R di base. I blocchi vanno eseguiti in ordine. Il notebook è autonomo rispetto agli altri.
+
+**Dati e unità.** 160 fossili sintetici del corso. Diametri e spessore sono espressi in micrometri. Il diametro interno deriva dal totale meno due volte lo spessore, entro l’arrotondamento del CSV. Il test contiene ogni quinta riga: 32 individui, separati dai 128 usati per stimare. È un protocollo didattico su dati già noti, non una validazione prospettica.
+
+## Preparazione
+
+Aprire il progetto autonomo di Futura o quello generale del corso. I calcoli usano R base e stats. Gli output del notebook vanno in `Risultati/M10_N19/`; i CSV originali restano invariati.
+
+```{r preparazione}
+# Trova la cartella M10 dal progetto autonomo o dal progetto generale.
+.gs_cerca <- normalizePath(getwd(),winslash="/",mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca,
+    file.path(.gs_cerca,"M10_Futura"),
+    file.path(.gs_cerca,"03_Notebook_svolti","M10_Futura"),
+    file.path(.gs_cerca,"M10","03_Notebook_svolti","M10_Futura"))
+  .gs_ok <- file.exists(file.path(.gs_candidati,"M10_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati,"R","funzioni_notebook.R"))
+  if(any(.gs_ok)) { .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]; break }
+  .gs_padre <- dirname(.gs_cerca)
+  if(.gs_padre==.gs_cerca) stop("Aprire il progetto M10_Futura o quello generale dei notebook.")
+  .gs_cerca <- .gs_padre
+}
+source(file.path(.gs_modulo,"R","funzioni_notebook.R"),local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo,"M10_N19")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88,digits=6)
+if(requireNamespace("knitr",quietly=TRUE)) {
+  knitr::opts_chunk$set(echo=TRUE,error=FALSE,warning=TRUE,message=TRUE,
+    fig.width=8,fig.height=5,dpi=150,fig.align="center")
+}
+set.seed(10019)
+```
+
+## 1. Una copia mantiene intatto il CSV
+
+Aggiungiamo deliberatamente una riga a un oggetto in memoria. L’esperimento permette di osservare il comportamento del controllo.
+
+```{r passo_01}
+f <- carica_dati("fossili_simulati.csv")
+copia <- rbind(f,f[1,])
+data.frame(originale=nrow(f),copia=nrow(copia),duplicati=sum(duplicated(copia$id)))
+copia[duplicated(copia$id),]
+stopifnot(nrow(f)==160L,nrow(copia)==161L)
+```
+
+**Lettura del risultato.** Il CSV resta invariato. Una riga duplicata aumenta il peso dell’individuo senza creare una nuova unità indipendente.
+
+## 2. La chiave identifica il problema
+
+Mostriamo tutte le righe che condividono una chiave, inclusa la prima occorrenza.
+
+```{r passo_02}
+flag <- duplicated(copia$id)|duplicated(copia$id,fromLast=TRUE)
+segnalazioni <- data.frame(riga=which(flag),copia[flag,],check.names=FALSE)
+segnalazioni
+write.csv(segnalazioni,percorso_risultati("segnalazioni_duplicati.csv"),row.names=FALSE)
+```
+
+**Lettura del risultato.** Il controllo segnala identità ripetute. Stabilire se si tratta di una copia accidentale o di una misura ripetuta richiede metadati e protocollo.
+
+## 3. La duplicazione cambia i pesi
+
+Confrontiamo le medie senza cancellare automaticamente la riga. Il cambiamento può essere piccolo ma il principio statistico resta rilevante.
+
+```{r passo_03}
+data.frame(archivio=c("Originale","Con duplicato"),
+  n_righe=c(nrow(f),nrow(copia)),n_ID=c(length(unique(f$id)),length(unique(copia$id))),
+  media_interno=c(mean(f$diametro_int_um),mean(copia$diametro_int_um)))
+```
+
+**Lettura del risultato.** Il numero di righe non coincide più con il numero di individui. La duplice presenza può anche contaminare uno split se l’identificativo appare in entrambi gli insiemi.
+
+## Variante svolta
+
+**Una violazione geometrica separata.** Modificare una copia di un diametro per simulare un errore e riconoscerlo.
+
+```{r variante}
+errore <- f
+errore$diametro_int_um[2] <- errore$diametro_tot_um[2]+1
+fuori <- errore$diametro_int_um>errore$diametro_tot_um
+errore[fuori,c("id","diametro_tot_um","diametro_int_um")]
+stopifnot(sum(fuori)==1L,nrow(carica_dati("fossili_simulati.csv"))==160L)
+```
+
+La chiave può essere corretta mentre la geometria è incoerente. Controlli diversi affrontano errori diversi.
+
+## Errore da riconoscere
+
+Eliminare righe ripetute senza stabilire se rappresentano lo stesso individuo, repliche tecniche o misure in tempi differenti.
+
+## Risposta alla domanda
+
+L’audit riconosce e documenta la duplicazione prima del modello. I dati originali restano disponibili e le decisioni richiedono una spiegazione del processo di raccolta.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M10_N19` di [GeoStat Lab M10](https://marzione00.github.io/Lab_Geo/#indice). Il [codice originale del laboratorio](https://github.com/marzione00/Lab_Geo/blob/649f7cc577b96bd1044d81e78a2f530813e4f96b/materiali/laboratori/M10/M10_N19.R) è conservato anche in `R/Originali_corso`. Gli ampliamenti e le varianti sono identificati nella mappa allegata.
+
+Documentazione dei metodi: [R stats, arima](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/arima.html), [predict.Arima](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/predict.arima.html), [Box.test](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/box.test.html) e [p.adjust](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/p.adjust.html).

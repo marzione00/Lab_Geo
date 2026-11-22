@@ -1,0 +1,139 @@
+---
+title: "Varianza spiegata e perdita di informazione"
+subtitle: "M08_N04 \u00b7 Polychroma"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Quanta variabilità conservano le prime due componenti e che cosa viene escluso?
+
+## Obiettivi
+
+- Calcolare quote e cumulata.
+- Collegare varianza esclusa ed errore di ricostruzione.
+- Distinguere una scelta grafica da una soglia scientifica.
+
+**Prima di iniziare.** Lettura di un CSV, vettori, matrici, indicizzazione e funzioni di base in R.
+
+**Dati e unità.** Novanta rocce sintetiche del corso. SiO2, CaO, MgO e FeO sono percentuali in massa; densita è espressa in g/cm³ e grana_mm in millimetri. colore e fossili sono indici numerici convenzionali del simulatore, non misure mineralogiche o conteggi reali. La colonna litologia_generatrice descrive il gruppo usato nella simulazione e viene esclusa dalle stime.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Polychroma oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M08_Polychroma` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M08_Polychroma/Risultati/M08_N04/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M08_Polychroma"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M08_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M08_Polychroma o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M08_N04")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(8004)
+```
+
+## 1. Gli autovalori come varianze
+
+In prcomp, sdev contiene le deviazioni standard delle componenti. La quota della componente k è $\lambda_k/\sum_j\lambda_j$. Per otto colonne standardizzate, la somma delle varianze è otto.
+
+```{r passo_01}
+# Seleziona le misure per nome: ID ed etichetta non entrano nella matrice.
+r <- carica_dati("rocce_simulate.csv")
+v <- c("SiO2", "CaO", "MgO", "FeO", "densita", "grana_mm", "colore", "fossili")
+X <- as.matrix(r[v])
+stopifnot(nrow(X)==90L, ncol(X)==8L, !anyDuplicated(r$id),
+          all(is.finite(X)), all(apply(X,2,sd)>0))
+Z <- scale(X)
+D <- dist(Z)
+# La PCA conserva medie, scale e rotazione per eventuali nuovi campioni.
+pc <- prcomp(X, center=TRUE, scale.=TRUE)
+lambda <- pc$sdev^2
+quota <- lambda/sum(lambda)
+varianza <- data.frame(PC=1:8,lambda=lambda,quota=quota,
+ cumulata=cumsum(quota))
+varianza
+c(somma_autovalori=sum(lambda),varianza_totale=sum(apply(Z,2,var)))
+```
+
+**Lettura del risultato.** PC1 conserva circa il 55,07% e PC2 il 31,52%. Insieme descrivono l’86,59% della variabilità standardizzata. Queste percentuali si riferiscono alle otto colonne e a questo campione.
+
+## 2. Quote singole e cumulate
+
+Le barre mostrano il contributo separato di ogni componente; la linea cumulata mostra ciò che viene conservato includendole progressivamente. La soglia grafica del 90% è un criterio illustrativo, non una legge universale.
+
+```{r passo_02}
+posizioni <- barplot(100*quota,names.arg=1:8,col="#087C74",
+ ylim=c(0,100),xlab="Componente",ylab="Varianza (%)")
+lines(posizioni,100*cumsum(quota),type="b",pch=19,col="#C57E42",lwd=2)
+abline(h=90,lty=3,col="grey45")
+c(prime_due=100*sum(quota[1:2]),
+  componenti_per_90=which(cumsum(quota)>=.90)[1])
+```
+
+**Lettura del risultato.** Occorrono tre componenti per superare il 90% nel caso analizzato. Scegliere due componenti può essere utile per il grafico, ma è una scelta diversa dal fissare la percentuale minima di varianza conservata.
+
+## 3. Quanta informazione manca nel piano
+
+La ricostruzione a due componenti è $\hat Z_2=T_2V_2^\top$. La frazione di somma quadratica persa coincide con la somma delle quote escluse.
+
+```{r passo_03}
+Z2 <- pc$x[,1:2,drop=FALSE] %*% t(pc$rotation[,1:2,drop=FALSE])
+perdita <- sum((Z-Z2)^2)/sum(Z^2)
+c(perdita_quadratica=perdita,quota_esclusa=1-sum(quota[1:2]))
+stopifnot(abs(perdita-(1-sum(quota[1:2])))<1e-10)
+```
+
+**Lettura del risultato.** La perdita è circa il 13,41%. Si tratta di una misura quadratica sulla scala standardizzata; non significa che il 13,41% dei campioni sia sbagliato o che siano state eliminate intere variabili.
+
+## Variante svolta
+
+Ripetere il calcolo della perdita conservando da una a otto componenti.
+
+```{r variante}
+data.frame(q=1:8,perdita=vapply(1:8,function(q) {
+ rec <- pc$x[,seq_len(q),drop=FALSE] %*%
+   t(pc$rotation[,seq_len(q),drop=FALSE])
+ sum((Z-rec)^2)/sum(Z^2)
+},numeric(1)))
+```
+
+L’errore diminuisce includendo componenti. Con tutte le componenti la ricostruzione coincide con Z entro la precisione numerica.
+
+## Errore da riconoscere
+
+Una quota globale elevata può nascondere una variabile poco rappresentata. La qualità della proiezione va valutata anche rispetto alle proprietà scientificamente rilevanti.
+
+## Risposta alla domanda
+
+Le prime due componenti conservano l’86,59% della varianza standardizzata, con una perdita quadratica del 13,41%. Il numero di componenti dipende dall’uso della rappresentazione.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M08_N04` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M08/M08_N04.R).

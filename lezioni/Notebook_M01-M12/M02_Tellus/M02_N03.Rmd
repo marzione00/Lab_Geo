@@ -1,0 +1,145 @@
+---
+title: "Scegliere righe e colonne in modo esplicito"
+subtitle: "M02_N03 \u00b7 Tellus"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come si costruisce una tabella selezionata e ordinata senza perdere le associazioni fra le misure?
+
+## Obiettivi
+
+- Combinare condizioni logiche documentate.
+- Ordinare righe intere e controllare la corrispondenza degli identificativi.
+
+**Prima di iniziare.** Saper eseguire una cella R e riconoscere vettori, assegnamenti e nomi di colonne.
+
+**Dati e unità.** I 24 provini sintetici hanno massa, volume e classe di alterazione. Selezioniamo i provini di A con alterazione bassa o media e calcoliamo la densità in g/cm³.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M02_N03/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M02_N03")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(2003)
+```
+
+## 1. Costruire e contare il criterio
+
+Scriviamo ogni componente della selezione separatamente prima di combinarla. Il metodo permette di capire quante righe soddisfano ciascuna condizione e quante l'intersezione, senza affidarsi alla sola ispezione della tabella finale.
+
+```{r passo_01}
+# Ogni esecuzione riparte dal CSV condiviso, senza modificare il file.
+d <- carica_dati("campioni_modulo1.csv", stringsAsFactors = FALSE)
+stopifnot(nrow(d) == 24L, !anyDuplicated(d$id))
+
+stopifnot(all(is.finite(d$massa_g)), all(d$massa_g > 0),
+          all(is.finite(d$volume_cm3)), all(d$volume_cm3 > 0))
+d$densita_g_cm3 <- d$massa_g / d$volume_cm3
+
+in_A <- d$affioramento == "A"
+alterazione_scelta <- d$alterazione %in% c("bassa", "media")
+seleziona <- in_A & alterazione_scelta
+stopifnot(!anyNA(seleziona))
+print(c(in_A = sum(in_A), classi_scelte = sum(alterazione_scelta),
+        entrambe = sum(seleziona)))
+```
+
+**Lettura del risultato.** Il conteggio delle classi scelte considera l'intera tabella, mentre entrambe considera solo l'intersezione. Un operatore | al posto di & produrrebbe l'unione e risponderebbe a una domanda diversa.
+
+## 2. Scegliere le colonne necessarie
+
+Conserviamo ID, gruppo, classe e densità. Selezionare esplicitamente i nomi rende riconoscibile il contenuto atteso anche quando il dataset originale acquisisce nuove colonne; drop = FALSE mantiene la struttura tabellare.
+
+```{r passo_02}
+campi <- c("id", "affioramento", "alterazione", "densita_g_cm3")
+scelti <- d[seleziona, campi, drop = FALSE]
+print(scelti)
+stopifnot(nrow(scelti) == sum(seleziona))
+stopifnot(identical(names(scelti), campi))
+stopifnot(!anyDuplicated(scelti$id))
+```
+
+**Lettura del risultato.** La tabella contiene una riga per provino selezionato. I campi che giustificano la selezione rimangono nell'output, così un altro lettore può controllare la condizione senza ricostruirla esclusivamente dal codice.
+
+## 3. Ordinare senza separare le colonne
+
+order restituisce posizioni, che usiamo per riordinare tutte le colonne insieme. Per controllare il risultato torniamo alla tabella di origine attraverso gli ID: il valore della densità deve restare associato allo stesso provino.
+
+```{r passo_03}
+posizioni <- order(scelti$densita_g_cm3, decreasing = TRUE)
+ordinati <- scelti[posizioni, , drop = FALSE]
+print(ordinati)
+origini <- match(ordinati$id, d$id)
+stopifnot(setequal(ordinati$id, scelti$id))
+stopifnot(isTRUE(all.equal(ordinati$densita_g_cm3, d$densita_g_cm3[origini])))
+stopifnot(all(diff(ordinati$densita_g_cm3) <= 0))
+```
+
+**Lettura del risultato.** Il controllo verifica sia l'ordinamento decrescente sia la conservazione delle associazioni. Un ordinamento separato della sola densità potrebbe produrre numeri plausibili collegati agli ID sbagliati, un errore difficilmente visibile dalla stampa.
+
+## 4. Gestire una condizione incompleta
+
+In dati meno regolari, una condizione logica può contenere NA. Se l'intenzione è selezionare soltanto casi verificati, trasformiamo esplicitamente i casi indecisi in esclusioni e ne contiamo la presenza, invece di generare righe interamente mancanti.
+
+```{r passo_04}
+condizione_esempio <- c(TRUE, FALSE, NA)
+condizione_verificata <- !is.na(condizione_esempio) & condizione_esempio
+print(data.frame(originale = condizione_esempio, verificata = condizione_verificata))
+stopifnot(!anyNA(condizione_verificata))
+```
+
+**Lettura del risultato.** La regola applicata tratta l'incertezza della condizione come mancata ammissione, non come prova che il criterio sia falso. Questa decisione deve essere appropriata alla domanda e documentata quando riguarda osservazioni reali.
+
+## Variante svolta
+
+Ripetere la selezione in B e ordinare per identificativo.
+
+```{r variante}
+in_B <- d$affioramento == "B" & d$alterazione %in% c("bassa", "media")
+risposta <- d[in_B, campi, drop = FALSE]
+risposta <- risposta[order(risposta$id), , drop = FALSE]
+print(risposta)
+stopifnot(all(risposta$affioramento == "B"))
+```
+
+La variazione cambia soltanto il gruppo e il criterio di ordinamento. Lasciare le condizioni esplicite rende semplice verificare che la modifica non abbia alterato inavvertitamente le classi di alterazione richieste.
+
+## Errore da riconoscere
+
+Il numero di riga è una posizione temporanea. Dopo selezioni e ordinamenti si usa l'identificativo per ricostruire gli abbinamenti, evitando di assumere che la terza riga rappresenti sempre lo stesso provino.
+
+## Risposta alla domanda
+
+Una selezione affidabile dichiara il criterio, conserva i campi necessari e controlla gli ID dopo l'ordinamento. La tabella finale rimane interpretabile come insieme di provini, non come raccolta di colonne indipendenti.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M02_N03` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M02/M02_N03.R).

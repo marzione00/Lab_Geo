@@ -1,0 +1,134 @@
+---
+title: "Una miscela pu\u00f2 violare il modello semplice"
+subtitle: "M04_N09 \u00b7 Aurea"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Perché conteggi con la stessa media possono avere varianze molto diverse quando il tasso cambia fra siti?
+
+## Obiettivi
+
+- Distinguere Poisson omogenea e miscela di tassi.
+- Scomporre la varianza in variabilità entro sito e fra tassi.
+
+**Prima di iniziare.** Media, varianza e modello di Poisson.
+
+**Dati e unità.** Simulazione didattica di 3000 esposizioni uguali. Ogni esposizione ha tasso atteso 1 oppure 5 con uguale probabilità; una seconda simulazione usa sempre lambda = 3.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M04_N09/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M04_N09")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(4009)
+```
+
+## 1. Generare l'eterogeneità
+
+Prima estraiamo il tasso del sito, poi il conteggio condizionato a quel tasso. La seconda estrazione è Poisson, ma la distribuzione complessiva mescola due ambienti differenti e non è una Poisson con parametro medio.
+
+```{r passo_01}
+set.seed(409)
+B <- 3000
+lambda_sito <- sample(c(1, 5), size = B, replace = TRUE)
+# Ogni riga usa il proprio lambda: la Poisson vale condizionatamente al sito.
+misti <- rpois(B, lambda = lambda_sito)
+omogenei <- rpois(B, lambda = 3)
+print(table(lambda_sito))
+print(rbind(miscela = c(media = mean(misti), varianza = var(misti)),
+            poisson3 = c(media = mean(omogenei), varianza = var(omogenei))))
+```
+
+**Lettura del risultato.** Le medie sono vicine perché entrambi i modelli hanno valore atteso tre. La varianza della miscela è maggiore perché si sommano le fluttuazioni dei conteggi entro tasso e le differenze fra tassi.
+
+## 2. Ricostruire la varianza totale
+
+La formula Var(X) = E[Var(X dato lambda)] + Var[E(X dato lambda)] separa due contributi. Per la Poisson condizionata entrambi i termini interni coinvolgono lambda, ma la variabilità del tasso aggiunge una componente ulteriore.
+
+```{r passo_02}
+valori_lambda <- c(1, 5)
+pesi <- c(.5, .5)
+media_lambda <- sum(pesi * valori_lambda)
+# I pesi definiscono una varianza di distribuzione; non si divide per n - 1.
+var_lambda <- sum(pesi * (valori_lambda - media_lambda)^2)
+var_totale <- media_lambda + var_lambda
+print(c(media_teorica = media_lambda, var_entro = media_lambda,
+        var_fra_tassi = var_lambda, var_totale = var_totale))
+stopifnot(media_lambda == 3, var_totale == 7)
+```
+
+**Lettura del risultato.** La varianza sette appartiene al modello di miscela, mentre una Poisson di media tre avrebbe varianza tre. La differenza non richiede dipendenza fra conteggi: basta l'eterogeneità dei parametri fra esposizioni.
+
+## 3. Confrontare anche gli zeri
+
+La media da sola può nascondere differenze nella frequenza degli zeri e nelle code. Calcoliamo le masse teoriche dei due modelli e confrontiamo la quota di esposizioni senza eventi.
+
+```{r passo_03}
+k <- 0:15
+# La massa della miscela e la somma ponderata delle due masse condizionate.
+massa_mista <- .5 * dpois(k, 1) + .5 * dpois(k, 5)
+massa_unica <- dpois(k, 3)
+matplot(k, cbind(massa_mista, massa_unica), type = "b", pch = c(16, 17),
+        col = c("#C57E42", "#1D7890"), xlab = "Conteggio", ylab = "Probabilita")
+legend("topright", c("Miscela 1/5", "Poisson 3"), col = c("#C57E42", "#1D7890"), pch = c(16, 17), bty = "n")
+print(c(zeri_misti_simulati = mean(misti == 0), zeri_misti_teorici = massa_mista[1],
+        zeri_poisson_teorici = massa_unica[1]))
+```
+
+**Lettura del risultato.** Gli zeri sono più frequenti nella componente a basso tasso e contribuiscono al risultato complessivo. In dati reali una sovradispersione può avere diverse cause: la miscela mostra una spiegazione possibile, non una diagnosi automatica.
+
+## Variante svolta
+
+Avvicinare i tassi a due e quattro mantenendo media tre e ricalcolare la varianza teorica.
+
+```{r variante}
+lambda_vicini <- c(2, 4)
+media_vicina <- mean(lambda_vicini)
+var_tassi_vicini <- mean((lambda_vicini - media_vicina)^2)
+print(c(media = media_vicina, var_totale = media_vicina + var_tassi_vicini))
+nuovi_tassi <- sample(lambda_vicini, B, replace = TRUE)
+nuovi_conteggi <- rpois(B, nuovi_tassi)
+print(c(media_simulata = mean(nuovi_conteggi), varianza_simulata = var(nuovi_conteggi)))
+```
+
+Ridurre la distanza fra i tassi riduce il contributo di eterogeneità, mentre la media resta invariata. La varianza teorica diventa quattro e si avvicina a quella del modello omogeneo.
+
+## Errore da riconoscere
+
+Non usare var(c(1, 5)) per la varianza teorica di due valori equiprobabili: var divide per n meno uno. Qui la distribuzione assegnata richiede pesi che sommano a uno.
+
+## Risposta alla domanda
+
+La media non identifica una distribuzione di conteggi. Un'eterogeneità dei tassi può produrre varianza maggiore della media e più zeri; il confronto corretto richiede un modello che descriva anche come cambia il parametro fra esposizioni.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M04_N09` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M04/M04_N09.R).

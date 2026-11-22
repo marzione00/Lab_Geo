@@ -1,0 +1,130 @@
+---
+title: "Una tabella a doppia entrata"
+subtitle: "M03_N04 \u00b7 Iride"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+La distribuzione dell'alterazione è la stessa nei due affioramenti, e quale denominatore serve per confrontarla?
+
+## Obiettivi
+
+- Costruire una tabella di contingenza.
+- Distinguere percentuali di riga, di colonna e sul totale.
+
+**Prima di iniziare.** Categorie, table e frequenze relative.
+
+**Dati e unità.** Ventiquattro campioni sintetici con affioramento A o B e alterazione bassa, media o alta; ciascuna riga rappresenta un campione.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M03_N04/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M03_N04")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(3004)
+```
+
+## 1. Organizzare due categorie
+
+Ordiniamo i livelli di alterazione dal più basso al più alto. L'ordine facilita la lettura, ma la tabella continua a contare categorie: non assegna distanze numeriche uguali fra bassa, media e alta.
+
+```{r passo_01}
+d <- carica_dati("campioni_modulo1.csv")
+stopifnot(!anyNA(d[c("affioramento", "alterazione")]))
+# I livelli fissano un ordine leggibile, senza trasformare le categorie in misure.
+alterazione <- factor(d$alterazione, levels = c("bassa", "media", "alta"))
+t <- table(affioramento = d$affioramento, alterazione = alterazione)
+print(t)
+print(addmargins(t))
+stopifnot(sum(t) == nrow(d))
+```
+
+**Lettura del risultato.** Ogni cella contiene il numero di campioni che soddisfano entrambe le etichette. I margini recuperano separatamente la distribuzione degli affioramenti e quella dell'alterazione, perdendo il legame fra le due.
+
+## 2. Confrontare dentro ciascun affioramento
+
+Per chiedere come si distribuisce l'alterazione in A e in B dividiamo ogni riga per il proprio totale. margin = 1 specifica che il denominatore resta fissato entro la riga.
+
+```{r passo_02}
+# margin = 1 usa il totale di ciascun affioramento come denominatore.
+percentuali_riga <- 100 * prop.table(t, margin = 1)
+print(round(percentuali_riga, 1))
+print(rowSums(percentuali_riga))
+stopifnot(all(abs(rowSums(percentuali_riga) - 100) < 1e-10))
+barplot(t(percentuali_riga), beside = TRUE,
+        col = c("#087C74", "#C57E42", "#7363AA"),
+        ylab = "Campioni entro affioramento (%)", legend.text = TRUE)
+```
+
+**Lettura del risultato.** Le barre confrontano composizioni anche se i totali di riga fossero diversi. Una differenza visibile descrive questo campione; da sola non quantifica l'incertezza di una generalizzazione agli affioramenti interi.
+
+## 3. Invertire il condizionamento
+
+Le percentuali di colonna rispondono a un'altra domanda: fra i campioni con un certo grado di alterazione, quanti provengono da ciascun affioramento? Calcoliamo anche le quote sull'intero campione per evitare ambiguità.
+
+```{r passo_03}
+# margin = 2 condiziona sul grado di alterazione e cambia la domanda.
+percentuali_colonna <- 100 * prop.table(t, margin = 2)
+percentuali_totali <- 100 * prop.table(t)
+print(round(percentuali_colonna, 1))
+print(round(percentuali_totali, 1))
+stopifnot(all(abs(colSums(percentuali_colonna) - 100) < 1e-10))
+print(c(in_A = percentuali_riga["A", "alta"],
+        da_A_fra_alti = percentuali_colonna["A", "alta"]))
+```
+
+**Lettura del risultato.** Le due percentuali della cella A–alta condividono il numeratore ma dividono per margini diversi. Scrivere soltanto una percentuale senza specificare 'fra quali campioni' impedirebbe di interpretarla correttamente.
+
+## Variante svolta
+
+Raggruppare media e alta in alterazione non bassa e ricalcolare la composizione entro affioramento.
+
+```{r variante}
+non_bassa <- factor(ifelse(d$alterazione == "bassa", "bassa", "non_bassa"),
+                    levels = c("bassa", "non_bassa"))
+t2 <- table(d$affioramento, non_bassa)
+print(t2)
+print(round(100 * prop.table(t2, 1), 1))
+stopifnot(all(t2[, "non_bassa"] == rowSums(t[, c("media", "alta")])))
+```
+
+L'aggregazione risponde a una domanda più grossolana e conserva i totali di affioramento. Non può più distinguere campioni mediamente alterati da quelli fortemente alterati.
+
+## Errore da riconoscere
+
+Non scambiare la percentuale di campioni alterati in A con la percentuale di campioni provenienti da A fra gli alterati: sono condizionamenti opposti.
+
+## Risposta alla domanda
+
+La tabella mette in relazione due classificazioni. Il confronto dell'alterazione fra affioramenti richiede percentuali di riga, accompagnate dai conteggi; la scelta del denominatore dipende sempre dalla domanda.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M03_N04` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M03/M03_N04.R).

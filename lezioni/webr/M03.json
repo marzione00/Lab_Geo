@@ -1,0 +1,655 @@
+{
+ "R": "R version 4.6.0 (2026-04-24)",
+ "fragments": {
+  "03_avvio.R": {
+   "status": "ok",
+   "output": "> # Aprire Iride_M03.Rproj.\n> source(\"setup.R\", encoding = \"UTF-8\")\n> # Tabelle lette dai CSV distribuiti\n> dim(fossili)       # 160 righe\n[1] 160   7\n> dim(rocce)         # 90 righe\n[1] 90 11\n> dim(campioni)      # 24 righe\n[1] 24  6\n> names(fossili)\n[1] \"id\"               \"morfotipo\"        \"diametro_tot_um\"  \"diametro_int_um\" \n[5] \"diaframma_um\"     \"spessore_um\"      \"rapporto_int_tot\"",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "c579da3b916e05736540",
+   "seconds": 19.3
+  },
+  "04_campione.R": {
+   "status": "ok",
+   "output": "> # Un fossile per riga\n> head(fossili[, 1:3], 3)\n    id morfotipo diametro_tot_um\n1 F001   Rounded        7.234159\n2 F002   Rounded        5.810230\n3 F003   Rounded        6.637885\n> table(fossili$morfotipo)\n\nRounded   Spiky \n     80      80 \n> # Due gruppi di 80 individui\n> range(fossili$diametro_tot_um)\n[1] 3.677892 8.620979",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "e7fac230620387399a25",
+   "seconds": 0.0
+  },
+  "05_controlli.R": {
+   "status": "ok",
+   "output": "> # Variabile e unita': diametro in um\n> x05 <- fossili$diametro_tot_um\n> c(n = length(x05),\n+   mancanti = sum(is.na(x05)))\n       n mancanti \n     160        0 \n> stopifnot(!anyDuplicated(fossili$id))\n> stopifnot(all(is.finite(x05)))\n> stopifnot(all(x05 > 0))\n> summary(x05)\n   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. \n  3.678   5.806   6.429   6.355   7.028   8.621 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "e6bdb547efc48464be45",
+   "seconds": 0.0
+  },
+  "06_supporto.R": {
+   "status": "ok",
+   "output": "> # Densita' dei 24 provini [g/cm^3]\n> c06 <- campioni\n> c06$rho <- c06$massa_g /\n+             c06$volume_cm3\n> # Una media per stazione: sei valori\n> st06 <- aggregate(rho ~ stazione,\n+   data = c06, FUN = mean)\n> nrow(c06)\n[1] 24\n> nrow(st06)\n[1] 6",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "fa049d3200d7a358238e",
+   "seconds": 0.0
+  },
+  "07_sintesi.R": {
+   "status": "ok",
+   "output": "> # Esempi costruiti, adimensionali\n> a07 <- c(4, 5, 6)\n> b07 <- c(1, 5, 9)\n> c(mean(a07), mean(b07))  # 5, 5\n[1] 5 5\n> c(var(a07), var(b07))   # 1, 16\n[1]  1 16",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "2c931eb2936f96b784c4",
+   "seconds": 0.0
+  },
+  "09_lab_supporto.R": {
+   "status": "ok",
+   "output": "> # Stesso seme, rumore diverso\n> a09 <- lab_supporto(noise = 1)\n> b09 <- lab_supporto(noise = 3)\n> a09$indicatori\n        misure medie_stazione \n            48              6 \n> b09$indicatori\n        misure medie_stazione \n            48              6 \n> # Ogni stazione conserva 8 misure\n> table(a09$dati$gruppo)\n\n1 2 3 4 5 6 \n8 8 8 8 8 8 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "bef6dff075635f390549",
+   "seconds": 0.0
+  },
+  "10_conteggi.R": {
+   "status": "ok",
+   "output": "> # Frequenze assolute per morfotipo\n> n10 <- table(fossili$morfotipo)\n> n10\n\nRounded   Spiky \n     80      80 \n> sum(n10)  # 160 individui\n[1] 160\n> barplot(n10, ylab = \"N. di fossili\",\n+         col = c(\"#1D7890\", \"#C57E42\"))",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "470064b3feedb15e0c4e",
+   "seconds": 0.0
+  },
+  "11_proporzioni.R": {
+   "status": "ok",
+   "output": "> # Stesso conteggio, denominatore noto\n> p11 <- prop.table(n10)\n> 100 * p11  # Percentuali\n\nRounded   Spiky \n     50      50 \n> stopifnot(abs(sum(p11) - 1) < 1e-12)",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "b7929b8bc558e09c716d",
+   "seconds": 0.0
+  },
+  "12_doppia_entrata.R": {
+   "status": "ok",
+   "output": "> # Esempio costruito: gruppi A e B\n> t12 <- matrix(c(10, 40, 20, 80),\n+   nrow = 2, byrow = TRUE,\n+   dimnames = list(c(\"A\", \"B\"),\n+     c(\"evento\", \"assenza\")))\n> t12\n  evento assenza\nA     10      40\nB     20      80\n> prop.table(t12, margin = 1) # Per riga\n  evento assenza\nA    0.2     0.8\nB    0.2     0.8\n> prop.table(t12, margin = 2) # Colonne\n     evento   assenza\nA 0.3333333 0.3333333\nB 0.6666667 0.6666667",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "8594d884cd4dc25759f8",
+   "seconds": 0.0
+  },
+  "13_copertura.R": {
+   "status": "ok",
+   "output": "> # 1: evento; 0: assenza; NA: ignoto\n> x13 <- c(1, 0, 1, NA, 0, NA)\n> n13 <- length(x13)\n> v13 <- sum(!is.na(x13))\n> e13 <- sum(x13 == 1, na.rm = TRUE)\n> c(eventi = e13, validi = v13, n = n13)\neventi validi      n \n     2      4      6 \n> c(quota_valida = e13 / v13,\n+   copertura = v13 / n13)\nquota_valida    copertura \n   0.5000000    0.6666667 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "86ba57b28a45e31b62b3",
+   "seconds": 0.0
+  },
+  "14_pesi.R": {
+   "status": "ok",
+   "output": "> # Medie e numerosita' di due gruppi\n> m14 <- c(2, 8)\n> n14 <- c(2, 8)\n> mean(m14)                 # 5\n[1] 5\n> weighted.mean(m14, n14)   # 6.8\n[1] 6.8\n> sum(n14 * m14) / sum(n14)\n[1] 6.8",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "dddb239758c47b09c808",
+   "seconds": 0.0
+  },
+  "15_lab_denominatori.R": {
+   "status": "ok",
+   "output": "> # A: 10 eventi su 50 unita'\n> a15 <- lab_denominatori(nB = 100,\n+   scale = \"count\")\n> b15 <- lab_denominatori(nB = 200,\n+   scale = \"rate\")\n> a15$dati\n  gruppo eventi   n valore\n1      A     10  50     10\n2      B     20 100     20\n> b15$dati\n  gruppo eventi   n valore\n1      A     10  50    0.2\n2      B     20 200    0.1",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "339473e7e8d9c980ff99",
+   "seconds": 0.0
+  },
+  "16_media.R": {
+   "status": "ok",
+   "output": "> # Esempio costruito, adimensionale\n> x16 <- c(2, 4, 6)\n> m16 <- mean(x16)\n> sum(x16)\n[1] 12\n> length(x16) * m16  # Stesso totale\n[1] 12\n> mean(fossili$diametro_tot_um)\n[1] 6.354641",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "b4a3eff5f2c214d77f49",
+   "seconds": 0.0
+  },
+  "17_quadrati.R": {
+   "status": "ok",
+   "output": "> x17 <- c(2, 4, 6)\n> scarti2 <- function(a) {\n+   sum((x17 - a)^2)\n+ }\n> sapply(c(3, 4, 5), scarti2)\n[1] 11  8 11\n> # 11, 8, 11: minimo in a = 4",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "183a69c539c2983de319",
+   "seconds": 0.0
+  },
+  "18_mediana.R": {
+   "status": "ok",
+   "output": "> # Prima si ordinano i valori\n> x18 <- c(8, 2, 9, 4, 5)\n> sort(x18)\n[1] 2 4 5 8 9\n> median(x18)       # 5\n[1] 5\n> median(c(2, 4, 6, 9))  # 5\n[1] 5",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "1f277552a9986d09538b",
+   "seconds": 0.0
+  },
+  "19_assoluti.R": {
+   "status": "ok",
+   "output": "> x19 <- c(2, 4, 6)\n> scarti1 <- function(a) {\n+   sum(abs(x19 - a))\n+ }\n> sapply(c(3, 4, 5), scarti1)\n[1] 5 4 5\n> # 5, 4, 5: minimo in a = 4",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "4d121b1de9e9b4933abd",
+   "seconds": 0.0
+  },
+  "20_sensibilita.R": {
+   "status": "ok",
+   "output": "> # Si modifica soltanto l'ultimo valore\n> a20 <- c(4, 5, 6, 7)\n> b20 <- c(4, 5, 6, 27)\n> c(mean(a20), mean(b20))\n[1]  5.5 10.5\n> c(median(a20), median(b20))\n[1] 5.5 5.5\n> # La media cresce di (27 - 7) / 4",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "0daaac822d915aeea3bf",
+   "seconds": 0.0
+  },
+  "21_densita.R": {
+   "status": "ok",
+   "output": "> # Due provini: volumi in cm^3\n> v21 <- c(1, 9)\n> rho21 <- c(2, 4)  # Densita' g/cm^3\n> m21 <- rho21 * v21  # Masse in g\n> mean(rho21)                  # 3\n[1] 3\n> sum(m21) / sum(v21)          # 3.8\n[1] 3.8\n> weighted.mean(rho21, v21)    # 3.8\n[1] 3.8",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "0490d99d86b91d7d32b1",
+   "seconds": 0.0
+  },
+  "22_moda.R": {
+   "status": "ok",
+   "output": "> # Esempio discreto con ripetizioni\n> x22 <- c(1, 1, 2, 3, 4)\n> f22 <- table(x22)\n> names(f22)[f22 == max(f22)] # \"1\"\n[1] \"1\"\n> # mode() descrive il tipo, non la moda\n> mode(x22)                  # \"numeric\"\n[1] \"numeric\"",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "3f6817a54a62a810aa23",
+   "seconds": 0.0
+  },
+  "23_lab_posizione.R": {
+   "status": "ok",
+   "output": "> # 29 valori comuni, uno modificato\n> a23 <- lab_posizione(outlier = 15)\n> b23 <- lab_posizione(outlier = 100)\n> rbind(a23$indicatori, b23$indicatori)\n        media  mediana\n[1,] 10.53819 10.37447\n[2,] 13.37153 10.37447\n> # Aumento teorico della media\n> (100 - 15) / 30\n[1] 2.833333",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "a3ac6e4569abd1a06e3a",
+   "seconds": 0.0
+  },
+  "24_dispersione.R": {
+   "status": "ok",
+   "output": "> # Esempi costruiti: misure in mm\n> x_disp <- c(4, 5, 6)\n> y_disp <- c(0, 5, 10)\n> rbind(A = c(media = mean(x_disp),\n+             sd = sd(x_disp)),\n+       B = c(media = mean(y_disp),\n+             sd = sd(y_disp)))\n  media sd\nA     5  1\nB     5  5",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "2e0b03567501407a49b9",
+   "seconds": 0.0
+  },
+  "26_varianza.R": {
+   "status": "ok",
+   "output": "> # Dati della slide 24\n> d_sc <- x_disp - mean(x_disp)\n> somma_q <- sum(d_sc^2)\n> s2 <- somma_q / (length(x_disp)-1)\n> c(formula = s2, R = var(x_disp))\nformula       R \n      1       1 \n> sqrt(s2)\n[1] 1\n> sd(x_disp)                  # 1 mm\n[1] 1",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "ac7809519ff55b3ee998",
+   "seconds": 0.0
+  },
+  "27_unita.R": {
+   "status": "ok",
+   "output": "> # Da millimetri a micrometri\n> y_um <- 1000 * x_disp\n> sd(y_um)                    # 1000\n[1] 1000\n> var(y_um)                   # 1e6\n[1] 1e+06\n> # Traslazione nella stessa unita\n> sd(x_disp + 20)             # 1\n[1] 1",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "9c8e56d0443e310ec2b7",
+   "seconds": 0.1
+  },
+  "28_quantili.R": {
+   "status": "ok",
+   "output": "> # Esempio ordinato, in mm\n> x_q <- c(1, 2, 4, 7, 8, 9, 10, 12)\n> quantile(x_q, c(.25, .5, .75),\n+          type = 7)\n 25%  50%  75% \n3.50 7.50 9.25 \n> # Primo quartile interpolato\n> .25 * 2 + .75 * 4           # 3.5\n[1] 3.5",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "74ae5642f8fed218ff0a",
+   "seconds": 0.1
+  },
+  "29_iqr.R": {
+   "status": "ok",
+   "output": "> q13 <- quantile(x_q, c(.25, .75),\n+                 type = 7)\n> diff(q13)                   # 5.75\n 75% \n5.75 \n> IQR(x_q, type = 7)          # 5.75\n[1] 5.75\n> # La mediana e' 7.5 mm\n> median(x_q)\n[1] 7.5",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "9acbdff7306beacd7f30",
+   "seconds": 0.0
+  },
+  "30_fossili.R": {
+   "status": "ok",
+   "output": "> diam <- fossili$diametro_tot_um\n> stopifnot(all(is.finite(diam)),\n+           all(diam > 0))\n> c(n = length(diam),\n+   media = mean(diam),\n+   mediana = median(diam),\n+   sd = sd(diam))\n         n      media    mediana         sd \n160.000000   6.354641   6.428915   1.001309 \n> quantile(diam, c(.25, .5, .75),\n+          type = 7)\n     25%      50%      75% \n5.806228 6.428915 7.028336 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "66a3a69203571d883381",
+   "seconds": 0.0
+  },
+  "31_lab_quantili.R": {
+   "status": "ok",
+   "output": "> # Simulazione separata dai fossili\n> qA <- lab_quantili(noise = 1,\n+                   n = 60, seed = 17)\n> qB <- lab_quantili(noise = 2,\n+                   n = 60, seed = 17)\n> rbind(qA$indicatori, qB$indicatori)\n           sd      IQR      Q25      Q75\n[1,] 1.050146 1.421608 9.367078 10.78869\n[2,] 2.100292 2.843215 8.734156 11.57737",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "d5121715a65936547c0c",
+   "seconds": 0.0
+  },
+  "32_classi.R": {
+   "status": "ok",
+   "output": "> x_h <- c(1,1,2,3,3,3,4,5,6,6)\n> b_h <- c(0, 2, 4, 6)\n> h_h <- hist(x_h, breaks = b_h,\n+             plot = FALSE)\n> h_h$counts                  # 3 4 3\n[1] 3 4 3\n> sum(h_h$counts)             # 10\n[1] 10",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "5cb318bce6fa39eb4c0a",
+   "seconds": 0.0
+  },
+  "33_confini.R": {
+   "status": "ok",
+   "output": "> h_dx <- hist(x_h, breaks = b_h,\n+              right = TRUE,\n+              plot = FALSE)\n> h_sx <- hist(x_h, breaks = b_h,\n+              right = FALSE,\n+              plot = FALSE)\n> rbind(destra = h_dx$counts,\n+       sinistra = h_sx$counts)\n         [,1] [,2] [,3]\ndestra      3    4    3\nsinistra    2    4    4",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "423ffb1f6995fa338787",
+   "seconds": 0.0
+  },
+  "34_ampiezza.R": {
+   "status": "ok",
+   "output": "> h05 <- hist(diam, plot = FALSE,\n+             breaks = seq(2,14,by=.5))\n> h10 <- hist(diam, plot = FALSE,\n+             breaks = seq(2,14,by=1))\n> plot(h10, xlim = c(2,10),\n+      ylim = c(0,70), border = 2)\n> plot(h05, add = TRUE, border = 4)",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "d6c32970545e9454434f",
+   "seconds": 0.1
+  },
+  "35_densita.R": {
+   "status": "ok",
+   "output": "> # h_h viene dalla slide 32\n> amp_h <- diff(h_h$breaks)\n> data.frame(n = h_h$counts,\n+            densita = h_h$density)\n  n densita\n1 3    0.15\n2 4    0.20\n3 3    0.15\n> quote_h <- h_h$density * amp_h\n> quote_h                     # .3 .4 .3\n[1] 0.3 0.4 0.3\n> sum(quote_h)                # 1\n[1] 1",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "1f8097b835917e88810a",
+   "seconds": 0.0
+  },
+  "36_classi_disuguali.R": {
+   "status": "ok",
+   "output": "> x_u <- c(.2,.4,.5,.6,.8,\n+          1.2,1.8,2,3,3.8)\n> h_u <- hist(x_u, breaks = c(0,1,4),\n+             plot = FALSE)\n> h_u$counts                  # 5 5\n[1] 5 5\n> h_u$density                 # .5 1/6\n[1] 0.5000000 0.1666667\n> plot(h_u, freq = FALSE)",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "02f8e85cf16bcaf24af6",
+   "seconds": 0.0
+  },
+  "38_banda.R": {
+   "status": "ok",
+   "output": "> k15 <- density(diam, bw = .15,\n+   from = 2, to = 14, n = 256)\n> k40 <- density(diam, bw = .4,\n+   from = 2, to = 14, n = 256)\n> k12 <- density(diam, bw = 1.2,\n+   from = 2, to = 14, n = 256)\n> plot(k15, xlim = c(3,9),\n+      ylim = c(0,.65))\n> lines(k40, col = 2)\n> lines(k12, col = 4)",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "ba04e0bbe7eeb68f2ed8",
+   "seconds": 0.1
+  },
+  "40_ecdf.R": {
+   "status": "ok",
+   "output": "> x_e <- c(4.1,4.8,5.2,5.2,6.4)\n> F_e <- ecdf(x_e)\n> F_e(5.2)                    # 0.8\n[1] 0.8\n> plot(F_e, verticals = TRUE,\n+      xlab = \"Misura [mm]\",\n+      ylab = \"Quota cumulata\")",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "1d95faff43584e2337b0",
+   "seconds": 0.0
+  },
+  "41_lab_smoothing.R": {
+   "status": "ok",
+   "output": "> sA <- lab_smoothing(bins = 18,\n+   bw = .5, seed = 17)\n> sB <- lab_smoothing(bins = 8,\n+   bw = .5, seed = 17)\n> sC <- lab_smoothing(bins = 8,\n+   bw = 1.5, seed = 17)\n> identical(sA$dati, sB$dati)  # TRUE\n[1] TRUE\n> identical(sA$dati, sC$dati)  # TRUE\n[1] TRUE",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "d7358a447a46c9cd6136",
+   "seconds": 0.0
+  },
+  "42_boxplot.R": {
+   "status": "ok",
+   "output": "> x_b <- c(1:8, 20)\n> bx <- boxplot.stats(x_b, coef = 1.5)\n> bx$stats                  # 1 3 5 7 8\n[1] 1 3 5 7 8\n> bx$out                      # 20\n[1] 20\n> boxplot(x_b, horizontal = TRUE,\n+         xlab = \"Misura [mm]\")",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "20d149b4bf480e0d344b",
+   "seconds": 0.1
+  },
+  "43_cerniere.R": {
+   "status": "ok",
+   "output": "> v_b <- 1:8\n> quantile(v_b, c(.25,.5,.75),\n+          type = 7)\n 25%  50%  75% \n2.75 4.50 6.25 \n> # Cerniere e mediana di R base\n> boxplot.stats(v_b)$stats[2:4]\n[1] 2.5 4.5 6.5",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "0099465278304905feb8",
+   "seconds": 0.0
+  },
+  "44_controllo.R": {
+   "status": "ok",
+   "output": "> check_b <- data.frame(\n+   id = paste0(\"P\", seq_along(x_b)),\n+   valore = x_b)\n> check_b$oltre <- x_b %in% bx$out\n> # Selezione per ispezione\n> check_b[check_b$oltre, ]\n  id valore oltre\n9 P9     20  TRUE",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "d05fc788b09a8e50d19b",
+   "seconds": 0.0
+  },
+  "45_jitter.R": {
+   "status": "ok",
+   "output": "> set.seed(303)\n> g_f <- fossili$morfotipo\n> pos <- as.integer(g_f)\n> pos <- pos +\n+   runif(length(pos), -.12, .12)\n> plot(pos, diam, xaxt = \"n\",\n+      xlim = c(.5,2.5), ylim = c(3,9),\n+      xlab = \"Morfotipo\",\n+      ylab = \"Diametro [um]\")\n> axis(1, at = 1:2,\n+      labels = levels(g_f))",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "5404f82e5983e80e68b3",
+   "seconds": 0.0
+  },
+  "46_scale_comuni.R": {
+   "status": "ok",
+   "output": "> # Stesso asse per entrambi i gruppi\n> boxplot(diam ~ g_f,\n+         ylim = range(diam),\n+         xlab = \"Morfotipo\",\n+         ylab = \"Diametro [um]\")\n> table(g_f)                  # 80 e 80\ng_f\nRounded   Spiky \n     80      80 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 2,
+   "same": true,
+   "hash": "8bf3d511ee5c5ef4f8a6",
+   "seconds": 0.1
+  },
+  "48_ecdf_gruppi.R": {
+   "status": "ok",
+   "output": "> gr_f <- split(diam, g_f)\n> F_R <- ecdf(gr_f[[\"Rounded\"]])\n> F_S <- ecdf(gr_f[[\"Spiky\"]])\n> plot(F_R, xlim = c(3,9),\n+      verticals = TRUE, col = 4,\n+      xlab = \"Diametro [um]\")\n> plot(F_S, add = TRUE,\n+      verticals = TRUE, col = 2)",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 2,
+   "same": true,
+   "hash": "bb00dbc9b6fe9c4bab35",
+   "seconds": 0.1
+  },
+  "49_sintesi_gruppi.R": {
+   "status": "ok",
+   "output": "> riassumi_f <- function(v) {\n+   c(n = length(v), media = mean(v),\n+     mediana = median(v), sd = sd(v),\n+     IQR = IQR(v, type = 7))\n+ }\n> # gr_f e' la lista della slide 48\n> round(t(sapply(gr_f, riassumi_f)), 3)\n         n media mediana   sd   IQR\nRounded 80 6.064    6.27 1.00 1.433\nSpiky   80 6.646    6.63 0.92 1.281",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 2,
+   "same": true,
+   "hash": "06ebb4351a71b91aa55c",
+   "seconds": 0.1
+  },
+  "50_lab_gruppi.R": {
+   "status": "ok",
+   "output": "> # Stesso delta e stesso seme\n> gA <- lab_gruppi(delta = 1,\n+                 ratio = 1, seed = 17)\n> gB <- lab_gruppi(delta = 1,\n+                 ratio = 2, seed = 17)\n> rbind(gA$indicatori, gB$indicatori)\n     differenza_media rapporto_sd\n[1,]        0.7310697    1.163867\n[2,]        0.5897163    2.327735",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "4252c26a2ac7a9c467a8",
+   "seconds": 0.1
+  },
+  "51_coppie.R": {
+   "status": "ok",
+   "output": "> # Misure in micrometri: stessa riga\n> r_x <- fossili$diametro_tot_um\n> r_y <- fossili$diaframma_um\n> stopifnot(all(is.finite(r_x)),\n+           all(is.finite(r_y)))\n> r_xy <- data.frame(id = fossili$id,\n+                    x = r_x, y = r_y)\n> head(r_xy, 3)\n    id        x        y\n1 F001 7.234159 3.360359\n2 F002 5.810230 2.749251\n3 F003 6.637885 2.585601",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "7f57c68791202997866c",
+   "seconds": 0.0
+  },
+  "52_scatter.R": {
+   "status": "ok",
+   "output": "> # Un punto per ogni coppia\n> plot(r_x, r_y,\n+      pch = 16, col = \"#1D7890\",\n+      xlab = \"Diametro totale [um]\",\n+      ylab = \"Diaframma [um]\")",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "1a7bca8855e23a3df316",
+   "seconds": 0.0
+  },
+  "53_covarianza.R": {
+   "status": "ok",
+   "output": "> # Scarti dalle rispettive medie\n> r_dx <- r_x - mean(r_x)\n> r_dy <- r_y - mean(r_y)\n> r_n <- length(r_x)\n> r_cov <- sum(r_dx * r_dy) /\n+   (r_n - 1)\n> c(manuale = r_cov, R = cov(r_x,r_y))\n  manuale         R \n0.4287309 0.4287309 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "1d609ce149778b40f9fa",
+   "seconds": 0.0
+  },
+  "54_pearson.R": {
+   "status": "ok",
+   "output": "> # Due deviazioni standard positive\n> stopifnot(sd(r_x)>0, sd(r_y)>0)\n> r_p <- cor(r_x, r_y)\n> r_formula <- r_cov /\n+   (sd(r_x) * sd(r_y))\n> c(Pearson = r_p, formula = r_formula)\n  Pearson   formula \n0.8912868 0.8912868 \n> all.equal(r_p, r_formula)\n[1] TRUE",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "f2f799b13f2b7f5c726b",
+   "seconds": 0.0
+  },
+  "55_unita.R": {
+   "status": "ok",
+   "output": "> # Da micrometri a millimetri\n> r_mm <- r_x / 1000\n> c(cor(r_x,r_y), cor(r_mm,r_y))\n[1] 0.8912868 0.8912868\n> c(cov(r_x,r_y), cov(r_mm,r_y))\n[1] 0.4287309430 0.0004287309\n> # Invertire un asse cambia il segno\n> cor(-r_x, r_y)\n[1] -0.8912868",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "e8f96f56c077c01b1910",
+   "seconds": 0.0
+  },
+  "56_spearman.R": {
+   "status": "ok",
+   "output": "> # Esempio deterministico positivo\n> r_a <- c(1, 2, 2, 5, 8)\n> r_b <- r_a^2\n> rank(r_a)\n[1] 1.0 2.5 2.5 4.0 5.0\n> cor(r_a, r_b)\n[1] 0.982081\n> cor(r_a, r_b, method=\"spearman\")\n[1] 1\n> cor(rank(r_a), rank(r_b))\n[1] 1",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "650740b3d000730fec87",
+   "seconds": 0.0
+  },
+  "57_curva.R": {
+   "status": "ok",
+   "output": "> # Parabola simmetrica, senza rumore\n> r_u <- seq(-2, 2, by=.5)\n> r_v <- r_u^2\n> round(c(cor(r_u,r_v),\n+   cor(r_u,r_v,method=\"spearman\")),8)\n[1] 0 0\n> plot(r_u, r_v, pch=16,\n+      xlab=\"x\", ylab=\"y = x^2\")",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "c73058f6669e5bf48a0a",
+   "seconds": 0.0
+  },
+  "58_gruppi.R": {
+   "status": "ok",
+   "output": "> # Ordine esplicito dei morfotipi\n> r_g <- factor(fossili$morfotipo,\n+   levels=c(\"Rounded\",\"Spiky\"))\n> r_col <- c(\"#1D7890\",\"#C57E42\")[r_g]\n> plot(r_x,r_y,pch=c(16,17)[r_g],\n+   col=adjustcolor(r_col,alpha.f=.65),\n+   xlab=\"Diametro totale [um]\",\n+   ylab=\"Diaframma [um]\")\n> legend(\"topleft\",levels(r_g),\n+  col=c(\"#1D7890\",\"#C57E42\"),pch=16:17)",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "0351c0be7f207bc83870",
+   "seconds": 0.1
+  },
+  "59_lab_relazioni.R": {
+   "status": "ok",
+   "output": "> # Stesso seme, forme differenti\n> rL <- lab_relazioni(shape=\"line\",\n+   noise=1, seed=17)\n> rQ <- lab_relazioni(shape=\"curve\",\n+   noise=1, seed=17)\n> rbind(lineare=rL$indicatori,\n+       quadratica=rQ$indicatori)\n              pearson    spearman\nlineare     0.6930825  0.70263426\nquadratica -0.1027965 -0.09382538",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "8c1dfbae6e4249cec880",
+   "seconds": 0.1
+  },
+  "61_copertura.R": {
+   "status": "ok",
+   "output": "> # Posizioni deterministiche in metri\n> s_est <- seq(0,100,length.out=30)\n> s_nord <- 50 + 5*sin(s_est/8)\n> plot(s_est,s_nord,pch=16,asp=1,\n+      xlim=c(0,100),ylim=c(0,100),\n+      xlab=\"Est [m]\",ylab=\"Nord [m]\")",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "2fe9cb1a0ef633ae59c7",
+   "seconds": 0.1
+  },
+  "62_griglia.R": {
+   "status": "ok",
+   "output": "> # E varia piu rapidamente di N\n> s_rete <- expand.grid(E=1:4,N=1:4)\n> s_rete$valore <- rep(1:4,4)\n> s_mat <- matrix(s_rete$valore,4,4)\n> s_pal <- colorRampPalette(\n+   c(\"#F0F4F3\",\"#087C74\"))(4)\n> image(1:4,1:4,s_mat,col=s_pal,\n+       xlab=\"Est [km]\",\n+       ylab=\"Nord [km]\",asp=1)",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "e00b7b67b29aba5e2990",
+   "seconds": 0.1
+  },
+  "63_permutazione.R": {
+   "status": "ok",
+   "output": "> # Trasporre cambia solo la posizione\n> s_z2 <- as.vector(t(s_mat))\n> all(sort(s_z2)==sort(s_rete$valore))\n[1] TRUE\n> rbind(A=table(s_rete$valore),\n+       B=table(s_z2))\n  1 2 3 4\nA 4 4 4 4\nB 4 4 4 4",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "65c96cd1b610808b9469",
+   "seconds": 0.1
+  },
+  "64_simboli.R": {
+   "status": "ok",
+   "output": "> # Le aree sono nel rapporto 1:4:9\n> s_v <- c(1,4,9)\n> symbols(1:3,rep(1,3),\n+   circles=sqrt(s_v),inches=.35,\n+   bg=\"#1D7890\",fg=\"#1D7890\",\n+   xlab=\"Posizione dimostrativa\",\n+   ylab=\"\",ylim=c(0,2))",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "8fda2a5451a2383ea1d3",
+   "seconds": 0.0
+  },
+  "66_lab_mappa.R": {
+   "status": "ok",
+   "output": "> # Stesso seme: stesso rumore\n> s0 <- lab_mappa(gradient=0,seed=17)\n> s4 <- lab_mappa(gradient=4,seed=17)\n> rbind(A=s4$indicatori,\n+       B=s0$indicatori)\n      media       sd\nA 12.099534 1.181521\nB  9.999534 0.312251\n> range(s4$dati$x)            # 1, 20\n[1]  1 20",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "2d71ac38b8073a71939e",
+   "seconds": 0.1
+  },
+  "67_log_distanze.R": {
+   "status": "ok",
+   "output": "> # Riferimento esplicito: 1 mm\n> l_x <- c(1,2,5,10,20,50,100)\n> l_ref <- 1\n> cbind(mm=l_x,log10=log10(l_x/l_ref))\n      mm   log10\n[1,]   1 0.00000\n[2,]   2 0.30103\n[3,]   5 0.69897\n[4,]  10 1.00000\n[5,]  20 1.30103\n[6,]  50 1.69897\n[7,] 100 2.00000\n> # Due rapporti pari a 10\n> diff(log10(c(1,10,100)/l_ref))\n[1] 1 1",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "2e8a1a25af84d2317bc6",
+   "seconds": 0.0
+  },
+  "68_dominio.R": {
+   "status": "ok",
+   "output": "> # Grana in mm; riferimento 1 mm\n> l_g <- rocce$grana_mm\n> l_ref <- 1\n> stopifnot(all(is.finite(l_g)),\n+           all(l_g > 0))\n> l_y <- log(l_g/l_ref)\n> head(l_y)\n[1] -1.1974806 -1.2594129 -0.4520527 -0.9570269 -1.2255756 -0.8608744",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "2763ccc0b9f842f73dc9",
+   "seconds": 0.0
+  },
+  "69_asse_variabile.R": {
+   "status": "ok",
+   "output": "> # Scala grafica; dati invariati\n> plot(l_g,seq_along(l_g),log=\"x\",\n+      xlab=\"Grana [mm]\",ylab=\"Indice\")\n> # Nuova variabile: log naturale\n> hist(l_y,breaks=12,\n+      xlab=\"log(grana / 1 mm)\",\n+      main=\"Grana trasformata\")",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 2,
+   "same": true,
+   "hash": "927749f36ac36887e7e8",
+   "seconds": 0.1
+  },
+  "70_geometrica.R": {
+   "status": "ok",
+   "output": "> # Misure in mm; riferimento 1 mm\n> l_es <- c(1,4,16)\n> c(aritmetica=mean(l_es),\n+   geometrica=l_ref*\n+     exp(mean(log(l_es/l_ref))))\naritmetica geometrica \n         7          4 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "9e8b7f35d5f488717ab2",
+   "seconds": 0.0
+  },
+  "71_sintesi.R": {
+   "status": "ok",
+   "output": "> # Riferimento delle misure: 1 mm\n> l_a <- c(1,4,16)\n> l_b <- c(7,7,7)\n> l_medie <- function(v) {\n+   c(aritmetica=mean(v),\n+     geometrica=exp(mean(log(v/1))))\n+ }\n> rbind(A=l_medie(l_a),B=l_medie(l_b))\n  aritmetica geometrica\nA          7          4\nB          7          7",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "387723adf924f9140b4a",
+   "seconds": 0.0
+  },
+  "72_standardizzare.R": {
+   "status": "ok",
+   "output": "> # Esempio deterministico asimmetrico\n> l_s <- c(1,2,3,12)\n> stopifnot(sd(l_s)>0)\n> l_z <- as.numeric(scale(l_s))\n> c(media=mean(l_z),sd=sd(l_z))\n       media           sd \n2.775558e-17 1.000000e+00 \n> all.equal(l_z,\n+   (l_s-mean(l_s))/sd(l_s))\n[1] TRUE",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "d8c3d161f7d61cf05e40",
+   "seconds": 0.0
+  },
+  "73_lab_scale.R": {
+   "status": "ok",
+   "output": "> # Stesso seme; diversa dispersione\n> lA <- lab_scale(sdlog=.7,seed=17)\n> lB <- lab_scale(sdlog=1.2,seed=17)\n> rbind(A=lA$indicatori,\n+       B=lB$indicatori)\n  media_aritmetica media_geometrica\nA         3.491748         2.619810\nB         5.836479         2.551665\n> head(lA$dati)\n  originale logaritmo\n1  1.335751 0.2894939\n2  2.570896 0.9442543\n3  2.309218 0.8369091\n4  1.534052 0.4279124\n5  4.666753 1.5404636\n6  2.420736 0.8840716",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "3052d8b594badd0771cc",
+   "seconds": 0.0
+  },
+  "74_ggplot_opzionale.R": {
+   "status": "ok",
+   "output": "> # Estensione facoltativa\n> if (requireNamespace(\"ggplot2\",\n+     quietly = TRUE)) {\n+   g74 <- ggplot2::ggplot(fossili,\n+     ggplot2::aes(diametro_tot_um,\n+                 diametro_int_um,\n+                 colour = morfotipo))\n+   print(g74 + ggplot2::geom_point())\n+ }",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "ead54934133c890e74fe",
+   "seconds": 0.5
+  },
+  "75_figura.R": {
+   "status": "ok",
+   "output": "> # Coppie riferite allo stesso fossile\n> col75 <- c(\"#1D7890\", \"#C57E42\")\n> i75 <- as.integer(fossili$morfotipo)\n> plot(fossili$diametro_tot_um,\n+      fossili$diametro_int_um,\n+      col = col75[i75], pch = 16,\n+      xlab = \"D totale [micrometri]\",\n+      ylab = \"D interno [micrometri]\")\n> legend(\"topleft\",\n+   legend = levels(fossili$morfotipo),\n+   col = col75, pch = 16, bty = \"n\")",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "056877e74f08da724376",
+   "seconds": 0.1
+  },
+  "76_didascalia.R": {
+   "status": "ok",
+   "output": "> cap76 <- c(\n+  \"Diametri dei 160 fossili simulati.\",\n+  \"80 Rounded, 80 Spiky; un punto\",\n+  \"per individuo. Unita': micrometri.\",\n+  \"Relazione positiva nel campione.\",\n+  \"Fonte: fossili_simulati.csv.\")\n> dir.create(\"Risultati\",\n+            showWarnings = FALSE)\n> writeLines(cap76,\n+  \"Risultati/Fossili_didascalia.txt\")",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "2b470a7b149eb67913f2",
+   "seconds": 0.0
+  },
+  "77_esporta.R": {
+   "status": "ok",
+   "output": "> # Un dispositivo separato per il PDF\n> salva77 <- function() {\n+   pdf(\"Risultati/Fossili.pdf\",\n+       width = 7.2, height = 4.8)\n+   on.exit(dev.off())\n+   source(\"Codice/75_figura.R\",\n+          local = TRUE)\n+ }\n> salva77()",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "74da5445be7688b9471d",
+   "seconds": 0.3
+  }
+ },
+ "cards": {
+  "Esercizi/01_supporto.R": {
+   "status": "ok",
+   "tail": "4      4 4.427704\n5      5 2.822578\n6      6 8.656882"
+  },
+  "Esercizi/02_denominatori.R": {
+   "status": "ok",
+   "tail": "  proporzione_A proporzione_B\nA           0.2           0.2\nB           0.2           0.1"
+  },
+  "Esercizi/03_posizione.R": {
+   "status": "ok",
+   "tail": "[1] TRUE\n> (100 - 15) / 30\n[1] 2.833333"
+  },
+  "Esercizi/04_quantili.R": {
+   "status": "ok",
+   "tail": "> # Trasformazione rispetto al centro teorico 10\n> all.equal(rB$dati$valore, 10 + 2 * (rA$dati$valore - 10))\n[1] TRUE"
+  },
+  "Esercizi/05_smoothing.R": {
+   "status": "ok",
+   "tail": "    n  bw bins\nA 180 0.5   18\nB 180 1.5    8"
+  },
+  "Esercizi/06_gruppi.R": {
+   "status": "ok",
+   "tail": "> # Il gruppo A non viene modificato\n> identical(rA$dati$valore[1:70], rB$dati$valore[1:70])\n[1] TRUE"
+  },
+  "Esercizi/07_relazioni.R": {
+   "status": "ok",
+   "tail": "> # Ascisse identiche nei due modelli\n> identical(rA$dati$x, rB$dati$x)\n[1] TRUE"
+  },
+  "Esercizi/08_mappa.R": {
+   "status": "ok",
+   "tail": "> # A seme fisso resta soltanto il termine del gradiente\n> all.equal(rA$dati$z - rB$dati$z, 4 * rA$dati$x / 20)\n[1] TRUE"
+  },
+  "Esercizi/09_scale.R": {
+   "status": "ok",
+   "tail": "> # R usa il logaritmo naturale con log()\n> exp(mean(log(rB$dati$originale)))\n[1] 2.551665"
+  }
+ }
+}

@@ -1,0 +1,130 @@
+---
+title: "Raggruppare: cambia l'unit\u00e0 della tabella"
+subtitle: "M02_N04 \u00b7 Tellus"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Che cosa rappresenta una riga dopo aver riassunto i provini per stazione?
+
+## Obiettivi
+
+- Costruire una tabella con una riga per gruppo.
+- Affiancare alle medie numerosità e dispersione.
+
+**Prima di iniziare.** Saper eseguire una cella R e riconoscere vettori, assegnamenti e nomi di colonne.
+
+**Dati e unità.** La tabella di partenza contiene 24 provini sintetici in sei stazioni. La densità è in g/cm³; la tabella finale descriverà sei stazioni, ciascuna con quattro provini.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M02_N04/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M02_N04")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(2004)
+```
+
+## 1. Definire gruppi e numerosità
+
+Raggruppare significa cambiare il livello della rappresentazione. Separiamo le densità in una lista per stazione e controlliamo che tutti i provini appartengano a un gruppo, senza sovrapposizioni dovute a codici incoerenti.
+
+```{r passo_01}
+# Ogni esecuzione riparte dal CSV condiviso, senza modificare il file.
+d <- carica_dati("campioni_modulo1.csv", stringsAsFactors = FALSE)
+stopifnot(nrow(d) == 24L, !anyDuplicated(d$id))
+
+stopifnot(all(is.finite(d$massa_g)), all(d$massa_g > 0),
+          all(is.finite(d$volume_cm3)), all(d$volume_cm3 > 0))
+d$densita_g_cm3 <- d$massa_g / d$volume_cm3
+
+gruppi <- split(d$densita_g_cm3, d$stazione)
+print(lengths(gruppi))
+stopifnot(length(gruppi) == 6L)
+stopifnot(sum(lengths(gruppi)) == nrow(d))
+print(names(gruppi))
+```
+
+**Lettura del risultato.** Ogni elemento della lista contiene i valori dei provini di una stazione. La somma delle lunghezze riconcilia la lista con la tabella individuale; non significa che i sei gruppi siano automaticamente indipendenti nel senso richiesto da un modello statistico.
+
+## 2. Calcolare una sintesi completa per gruppo
+
+Una media isolata nasconde quante osservazioni la sostengono e quanto differiscono. La funzione di sintesi restituisce quindi conteggio, media, deviazione standard ed estremi, mantenendo la stessa unità fisica per le misure di posizione e dispersione.
+
+```{r passo_02}
+sintesi <- function(x) c(n = length(x), media_g_cm3 = mean(x),
+                         sd_g_cm3 = sd(x), minimo_g_cm3 = min(x),
+                         massimo_g_cm3 = max(x))
+matrice <- t(vapply(gruppi, sintesi, numeric(5)))
+stazioni <- data.frame(stazione = rownames(matrice), matrice, row.names = NULL)
+print(stazioni)
+stopifnot(nrow(stazioni) == length(gruppi), !anyDuplicated(stazioni$stazione))
+```
+
+**Lettura del risultato.** Una riga della nuova tabella è una stazione, non un provino. La deviazione standard misura variazione fra i provini di quella stazione; non è la deviazione standard delle sei medie e non va scambiata con essa.
+
+## 3. Verificare il passaggio di livello
+
+Confrontiamo la media generale dei provini con la media ponderata delle medie di stazione. I conteggi sono i pesi necessari per ricostruire il risultato individuale. Visualizziamo inoltre il numero di provini che sostiene ogni riga aggregata.
+
+```{r passo_03}
+media_righe <- mean(d$densita_g_cm3)
+media_ricostruita <- weighted.mean(stazioni$media_g_cm3, stazioni$n)
+print(c(provini = media_righe, stazioni_ponderate = media_ricostruita))
+stopifnot(abs(media_righe - media_ricostruita) < 1e-12)
+barplot(stazioni$n, names.arg = stazioni$stazione, col = "steelblue",
+        xlab = "Stazione", ylab = "Numero di provini")
+stopifnot(sum(stazioni$n) == 24L)
+```
+
+**Lettura del risultato.** Il controllo lega le due tabelle e mostra il ruolo dei pesi. In questo disegno bilanciato la media semplice delle stazioni coincide con quella ponderata; con conteggi diversi le due sintesi possono rispondere a domande differenti.
+
+## Variante svolta
+
+Aggiungere l'ampiezza osservata delle densità per stazione.
+
+```{r variante}
+stazioni$ampiezza_g_cm3 <- stazioni$massimo_g_cm3 - stazioni$minimo_g_cm3
+print(stazioni[c("stazione", "n", "ampiezza_g_cm3")])
+stopifnot(all(stazioni$ampiezza_g_cm3 >= 0))
+```
+
+L'ampiezza usa soltanto due osservazioni estreme e dipende anche dal numero di provini disponibili. È una descrizione immediata, ma non sostituisce la deviazione standard né fornisce un intervallo di incertezza sulla media.
+
+## Errore da riconoscere
+
+Dopo un raggruppamento, contare le righe restituisce il numero di gruppi. Per conoscere quanti provini sono rappresentati bisogna sommare la colonna n, che va conservata nella tabella aggregata.
+
+## Risposta alla domanda
+
+La sintesi per stazione è verificabile perché dichiara la nuova unità e conserva i conteggi. Il collegamento con la tabella individuale permette di ricostruire il risultato e interpretarne correttamente i pesi.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M02_N04` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M02/M02_N04.R).

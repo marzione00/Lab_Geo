@@ -1,0 +1,134 @@
+---
+title: "Il riferimento \u22121/2 e la variabilit\u00e0 campionaria"
+subtitle: "M09_N20 \u00b7 Borealis"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Quanto si avvicina a −1/2 l’ACF di un rumore bianco differenziato, e quanto varia fra campioni?
+
+## Obiettivi
+
+- Riprodurre un risultato teorico tramite simulazione.
+- Stimare la variabilità fra campioni.
+- Distinguere correlazione e scala.
+
+**Prima di iniziare.** Lettura di CSV, vettori, indicizzazione e funzioni di base in R. I blocchi vanno eseguiti nell’ordine all’interno del singolo notebook.
+
+**Dati e unità.** Innovazioni normali simulate, senza unità fisica. Semi, numerosità e numero di repliche sono dichiarati nei blocchi.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Borealis oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M09_Borealis` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M09_Borealis/Risultati/M09_N20/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M09_Borealis"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M09_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M09_Borealis o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M09_N20")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(9020)
+```
+
+## 1. Riprodurre l’esperimento lungo
+
+Usiamo il seme 1840 e 10.000 innovazioni normali, come nel laboratorio originale. La correlazione teorica della differenza a lag uno è $-1/2$.
+
+```{r passo_01}
+set.seed(1840)
+x <- rnorm(10000)
+z <- diff(x)
+rho <- as.numeric(acf(z,plot=FALSE,lag.max=1)$acf[2])
+c(ACF1=rho,teoria=-.5,scarto=rho+.5,n=length(z))
+```
+
+**Lettura del risultato.** La stima è vicina al valore teorico, ma non coincide esattamente. Una singola simulazione non descrive da sola la variabilità dell’estimatore.
+
+## 2. Ripetere a due numerosità
+
+Ripetiamo l’esperimento 300 volte con serie brevi e lunghe. I semi e il numero di repliche sono fissati, così il confronto è riproducibile.
+
+```{r passo_02}
+set.seed(1920)
+B <- 300L
+stima <- function(n) as.numeric(acf(diff(rnorm(n)),plot=FALSE,lag.max=1)$acf[2])
+brevi <- replicate(B,stima(100))
+lunghe <- replicate(B,stima(1000))
+data.frame(n=c(100,1000),media=c(mean(brevi),mean(lunghe)),
+ SD=c(sd(brevi),sd(lunghe)),
+ q025=c(quantile(brevi,.025),quantile(lunghe,.025)),
+ q975=c(quantile(brevi,.975),quantile(lunghe,.975)))
+```
+
+**Lettura del risultato.** La dispersione diminuisce aumentando la numerosità. Gli intervalli empirici descrivono questa simulazione e non sono automaticamente intervalli di confidenza per qualunque serie osservata.
+
+## 3. Visualizzare la dispersione
+
+I due istogrammi condividono lo stesso asse orizzontale. La linea verticale indica il riferimento teorico, mentre le distribuzioni mostrano le fluttuazioni finite.
+
+```{r passo_03}
+lim <- range(c(brevi,lunghe,-.5))
+par(mfrow=c(1,2),mar=c(4.1,4.5,3.3,1.2))
+hist(brevi,breaks=15,xlim=lim,col="#D9ECE8",border="white",
+ main="n = 100",xlab="ACF al lag 1")
+abline(v=-.5,col="#C57E42",lwd=2)
+hist(lunghe,breaks=15,xlim=lim,col="#D9ECE8",border="white",
+ main="n = 1000",xlab="ACF al lag 1")
+abline(v=-.5,col="#C57E42",lwd=2)
+```
+
+**Lettura del risultato.** Una stima abbastanza diversa da −1/2 può comparire nei campioni brevi. Il confronto con la teoria richiede di tenere conto della variabilità campionaria e del generatore ipotizzato.
+
+## Variante svolta
+
+Cambiare la deviazione standard delle innovazioni da uno a cinque.
+
+```{r variante}
+set.seed(1840)
+ampia <- 5*rnorm(10000)
+c(ACF1=as.numeric(acf(diff(ampia),plot=FALSE,lag.max=1)$acf[2]),
+ rapporto_varianze=var(diff(ampia))/var(z))
+```
+
+La correlazione rimane uguale perché una riscalatura positiva non la modifica. La varianza delle differenze si moltiplica invece per 25.
+
+## Errore da riconoscere
+
+Trattare −1/2 come una soglia diagnostica universale o interpretare qualsiasi ACF negativa come prova di differenziazione eccessiva.
+
+## Risposta alla domanda
+
+Il riferimento −1/2 deriva dal modello del rumore bianco differenziato. Le stime finite oscillano attorno a esso e la loro dispersione dipende dalla numerosità.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M09_N20` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M09/M09_N20.R).

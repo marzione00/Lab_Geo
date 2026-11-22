@@ -1,0 +1,130 @@
+---
+title: "Un esempio di tabella lunga"
+subtitle: "M02_N06 \u00b7 Tellus"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come trasformiamo massa e volume da due colonne a una colonna di valori, mantenendo distinta la loro unità?
+
+## Obiettivi
+
+- Passare da formato largo a formato lungo.
+- Controllare chiavi, unità e reversibilità della trasformazione.
+
+**Prima di iniziare.** Saper eseguire una cella R e riconoscere vettori, assegnamenti e nomi di colonne.
+
+**Dati e unità.** Usiamo i 24 provini sintetici con massa in g e volume in cm³. La tabella lunga contiene 48 righe, una per ogni coppia identificativo-variabile; non contiene 48 provini.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M02_N06/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M02_N06")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(2006)
+```
+
+## 1. Definire la chiave prima della trasformazione
+
+Nel formato largo l'ID identifica una riga con più misure. Se portiamo le misure su righe diverse, l'ID da solo non sarà più unico: la nuova chiave dovrà comprendere anche il nome della variabile osservata.
+
+```{r passo_01}
+# Ogni esecuzione riparte dal CSV condiviso, senza modificare il file.
+d <- carica_dati("campioni_modulo1.csv", stringsAsFactors = FALSE)
+stopifnot(nrow(d) == 24L, !anyDuplicated(d$id))
+
+larga <- d[c("id", "massa_g", "volume_cm3")]
+print(head(larga, 4))
+stopifnot(!anyDuplicated(larga$id))
+variabili <- c("massa_g", "volume_cm3")
+print(c(provini = nrow(larga), misure_per_provino = length(variabili)))
+```
+
+**Lettura del risultato.** La scelta delle colonne rende esplicite le misure coinvolte. Altre informazioni, come affioramento e stazione, potrebbero essere mantenute come colonne descrittive, ma non diventano nuove variabili misurate soltanto perché vengono ripetute.
+
+## 2. Costruire il formato lungo
+
+reshape raccoglie le colonne indicate in una colonna valore e crea una colonna che ne registra il nome. Aggiungiamo l'unità corrispondente: un unico contenitore numerico non rende fisicamente confrontabili massa e volume.
+
+```{r passo_02}
+lunga <- reshape(larga, varying = variabili, v.names = "valore",
+                 timevar = "variabile", times = variabili,
+                 idvar = "id", direction = "long")
+lunga <- lunga[order(lunga$id, lunga$variabile), , drop = FALSE]
+rownames(lunga) <- NULL
+unita <- c(massa_g = "g", volume_cm3 = "cm^3")
+lunga$unita <- unname(unita[lunga$variabile])
+print(head(lunga, 6))
+stopifnot(nrow(lunga) == 2L * nrow(larga))
+stopifnot(!anyDuplicated(lunga[c("id", "variabile")]))
+```
+
+**Lettura del risultato.** Ogni provino compare due volte, con variabile e unità diverse. Il controllo sulla coppia di colonne verifica la nuova chiave. Una media complessiva della colonna valore mescolerebbe grammi e centimetri cubi e non avrebbe significato fisico.
+
+## 3. Ritornare al formato largo
+
+La trasformazione è più affidabile se possiamo ricostruire i valori iniziali. Escludiamo la colonna descrittiva dell'unità dal ritorno, ricreiamo le due misure e riordiniamo mediante l'ID prima del confronto numerico.
+
+```{r passo_03}
+ritorno <- reshape(lunga[c("id", "variabile", "valore")],
+                   idvar = "id", timevar = "variabile", direction = "wide")
+ritorno <- ritorno[match(larga$id, ritorno$id), , drop = FALSE]
+print(head(ritorno, 4))
+stopifnot(isTRUE(all.equal(ritorno$valore.massa_g, larga$massa_g)))
+stopifnot(isTRUE(all.equal(ritorno$valore.volume_cm3, larga$volume_cm3)))
+stopifnot(identical(ritorno$id, larga$id))
+```
+
+**Lettura del risultato.** I confronti verificano che nessun valore sia perso o associato a un altro provino. La scelta del formato dipende dall'operazione successiva: lungo per gestire sistematicamente variabili, largo quando una formula richiede più misure della stessa riga.
+
+## Variante svolta
+
+Calcolare una media separata per variabile e riportare l'unità corrispondente.
+
+```{r variante}
+medie <- aggregate(valore ~ variabile + unita, data = lunga, FUN = mean)
+print(medie)
+stopifnot(nrow(medie) == 2L)
+stopifnot(abs(medie$valore[medie$variabile == "massa_g"] - mean(larga$massa_g)) < 1e-12)
+```
+
+Le medie restano distinte perché massa e volume sono grandezze diverse. La tabella lunga facilita l'applicazione della stessa operazione, ma il gruppo variabile e l'unità impediscono di attribuire un significato comune a valori incompatibili.
+
+## Errore da riconoscere
+
+Contare le righe della tabella lunga come campioni raddoppia artificialmente la numerosità. Il numero di provini si ottiene dagli ID distinti, mentre il numero di righe conta osservazioni di variabile.
+
+## Risposta alla domanda
+
+Il formato lungo conserva l'informazione se la chiave include la variabile e le unità rimangono documentate. La trasformazione inversa controllata verifica che il cambiamento riguardi l'organizzazione della tabella, non i dati.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M02_N06` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M02/M02_N06.R).

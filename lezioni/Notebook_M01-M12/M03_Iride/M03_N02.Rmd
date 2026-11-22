@@ -1,0 +1,130 @@
+---
+title: "Frequenza assoluta, relativa e percentuale"
+subtitle: "M03_N02 \u00b7 Iride"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come cambia la lettura delle categorie quando passiamo dai conteggi alle proporzioni e alle percentuali?
+
+## Obiettivi
+
+- Calcolare tre rappresentazioni della stessa distribuzione.
+- Mantenere esplicito il denominatore di ogni frequenza relativa.
+
+**Prima di iniziare.** table, divisione fra vettori e numero di righe di un data frame.
+
+**Dati e unità.** Archivio didattico sintetico: 160 fossili, 80 Rounded e 80 Spiky. Diametri e spessori sono espressi in micrometri; ogni riga identifica un individuo.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M03_N02/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M03_N02")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(3002)
+```
+
+## 1. Contare e dividere
+
+La frequenza assoluta conta gli individui della categoria. Per ottenere la frequenza relativa dividiamo per il numero di individui con categoria nota; in questo file coincide con il totale delle righe.
+
+```{r passo_01}
+f <- carica_dati("fossili_simulati.csv")
+stopifnot(!anyNA(f$morfotipo))
+conteggi <- table(f$morfotipo)
+denominatore <- sum(conteggi)
+# Ogni conteggio viene diviso per lo stesso numero di individui classificati.
+relative <- as.numeric(conteggi) / denominatore
+tabella <- data.frame(morfotipo = names(conteggi), n = as.integer(conteggi),
+                      frequenza = relative, percentuale = 100 * relative)
+print(tabella)
+```
+
+**Lettura del risultato.** La percentuale è cento volte la proporzione: non aggiunge una nuova informazione. Il valore 50 significa cinquanta individui su cento, mentre 0,50 esprime la stessa quota su una scala da zero a uno.
+
+## 2. Verificare la chiusura
+
+Le categorie esclusive ed esaustive ripartiscono tutto il denominatore. Le somme forniscono un controllo semplice del calcolo; una percentuale arrotondata, invece, può introdurre piccoli scarti nella somma visualizzata.
+
+```{r passo_02}
+print(c(totale_n = sum(tabella$n), totale_f = sum(tabella$frequenza),
+        totale_percentuale = sum(tabella$percentuale)))
+stopifnot(sum(tabella$n) == nrow(f))
+stopifnot(abs(sum(tabella$frequenza) - 1) < 1e-12)
+# prop.table senza margini normalizza rispetto al totale della tabella.
+automatiche <- prop.table(conteggi)
+print(automatiche)
+stopifnot(isTRUE(all.equal(as.numeric(automatiche), relative)))
+```
+
+**Lettura del risultato.** Il controllo conferma che tutte le righe sono state attribuite una sola volta. Non corregge una classificazione sbagliata: per quello occorrerebbe riesaminare gli individui e i criteri di riconoscimento.
+
+## 3. Scegliere la scala del grafico
+
+Disegniamo le percentuali e riportiamo i conteggi sopra le barre. In questo modo il lettore vede insieme composizione e numerosità, che sarebbero indistinguibili in due campioni con proporzioni uguali ma dimensioni diverse.
+
+```{r passo_03}
+# barplot restituisce le ascisse centrali, utili per posizionare i conteggi.
+posizioni <- barplot(tabella$percentuale, names.arg = tabella$morfotipo,
+                     col = c("#1D7890", "#C57E42"), ylim = c(0, 65),
+                     ylab = "Individui (%)", xlab = "Morfotipo")
+text(posizioni, tabella$percentuale + 4,
+     labels = paste0("n = ", tabella$n))
+title(main = "Composizione del campione sintetico")
+```
+
+**Lettura del risultato.** Le barre confrontano categorie, quindi la loro larghezza non rappresenta un intervallo numerico. Le due quote uguali riflettono la costruzione bilanciata dei dati, non una prevalenza stimata nell'ambiente.
+
+## Variante svolta
+
+Descrivere un sottoinsieme costruito con 20 Rounded e 60 Spiky e confrontare quote e numerosità.
+
+```{r variante}
+selezione <- c(head(which(f$morfotipo == "Rounded"), 20),
+               head(which(f$morfotipo == "Spiky"), 60))
+piccoli <- table(f$morfotipo[selezione])
+print(data.frame(n = as.integer(piccoli), quota = as.numeric(prop.table(piccoli)),
+                 row.names = names(piccoli)))
+stopifnot(sum(piccoli) == 80)
+```
+
+Il nuovo denominatore è 80 e la selezione è deliberatamente sbilanciata. Il cambiamento delle proporzioni deriva dalla regola di selezione, non da una variazione avvenuta nella popolazione.
+
+## Errore da riconoscere
+
+Non confrontare conteggi grezzi di campioni con numerosità diverse senza dichiararne la dimensione. Non aggiungere il simbolo percentuale a una proporzione non moltiplicata per cento.
+
+## Risposta alla domanda
+
+Conteggio, proporzione e percentuale descrivono la stessa ripartizione con scale diverse. La tabella completa conserva il denominatore e rende confrontabile la composizione senza nascondere quanti individui la sostengono.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M03_N02` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M03/M03_N02.R).

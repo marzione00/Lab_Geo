@@ -2,6 +2,8 @@
 # Dati osservati: consultare provenance.json.
 # Estrarre il pacchetto; impostare questa cartella come directory di lavoro.
 # install.packages("ggplot2")
+# Codice: PolyForm Noncommercial 1.0.0, https://polyformproject.org/licenses/noncommercial/1.0.0
+# Required Notice: Copyright 2026 Marzio De Corato (https://github.com/marzione00/Lab_Geo)
 
 # GeoStat Lab — funzioni comuni. R >= 4.3; ggplot2 >= 3.4; jsonlite.
 suppressPackageStartupMessages(library(ggplot2))

@@ -2,6 +2,8 @@
 # Confrontare risultati prodotti da scelte analitiche tracciate.
 # Dati sintetici; parametri e ambiente dichiarati.
 # Dipendenze: install.packages(c("ggplot2", "jsonlite", "svglite"))
+# Codice: PolyForm Noncommercial 1.0.0, https://polyformproject.org/licenses/noncommercial/1.0.0
+# Required Notice: Copyright 2026 Marzio De Corato (https://github.com/marzione00/Lab_Geo)
 
 # GeoStat Lab — funzioni comuni. R >= 4.3; ggplot2 >= 3.4; jsonlite.
 suppressPackageStartupMessages(library(ggplot2))
@@ -65,8 +67,9 @@ data <- data.frame(x = cuts, y = means)
 plots <- list(line_plot(data, title = "Sensibilità della media alla soglia", xl = "Soglia dichiarata", 
     yl = "Media dopo filtro") + geom_vline(xintercept = p$cut, linetype = 2, colour = col_geo[2]))
 
-metrics <- metric(`Soglia corrente` = p$cut, `Media corrente` = if (any(x <= p$cut)) f(mean(x[x <= 
-    p$cut])) else "Nessuna osservazione ammessa", `Osservazioni incluse` = sum(x <= p$cut))
+metrics <- metric(`Soglia corrente` = p$cut,
+    `Media corrente` = if (any(x <= p$cut)) f(mean(x[x <= p$cut])) else "Nessuna osservazione ammessa",
+    `Osservazioni incluse` = sum(x <= p$cut))
 
 print(metrics, row.names = FALSE)
 if (!interactive()) grDevices::cairo_pdf("figure_esperimento.pdf", width=9, height=5.5)

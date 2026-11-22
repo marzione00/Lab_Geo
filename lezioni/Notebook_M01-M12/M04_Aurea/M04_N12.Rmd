@@ -1,0 +1,136 @@
+---
+title: "Dati positivi e asimmetria"
+subtitle: "M04_N12 \u00b7 Aurea"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Quali proprietà ha una misura positiva il cui logaritmo segue una distribuzione normale?
+
+## Obiettivi
+
+- Collegare normale dei logaritmi e distribuzione lognormale.
+- Distinguere media, mediana e parametri meanlog e sdlog.
+
+**Prima di iniziare.** Logaritmo, esponenziale, media e mediana.
+
+**Dati e unità.** Grane sintetiche in millimetri, generate da una lognormale con meanlog = log(0,5) e sdlog = 0,7, riferendo il logaritmo al rapporto grana su 1 mm.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M04_N12/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M04_N12")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(4012)
+```
+
+## 1. Generare valori positivi
+
+rlnorm riceve media e deviazione standard dei logaritmi, non quelle delle misure originali. Tutti i valori generati sono positivi; una coda verso valori grandi nasce dalla trasformazione esponenziale della normale.
+
+```{r passo_01}
+set.seed(412)
+B <- 3000
+riferimento_mm <- 1
+mu_log <- log(.5)
+sigma_log <- .7
+# meanlog e sdlog descrivono i logaritmi, non media e deviazione delle grane originali.
+grana <- riferimento_mm * rlnorm(B, meanlog = mu_log, sdlog = sigma_log)
+stopifnot(all(grana > 0), all(is.finite(grana)))
+print(summary(grana))
+hist(grana, breaks = "FD", col = "#C57E42", border = "white",
+     xlab = "Grana (mm)", ylab = "Repliche (n)", main = "Lognormale: valori positivi")
+```
+
+**Lettura del risultato.** La maggior parte dei valori può concentrarsi vicino alla mediana mentre una piccola parte si estende molto a destra. Positività e asimmetria rendono questo modello plausibile in alcuni contesti, ma non bastano a dimostrarne l'adeguatezza a dati reali.
+
+## 2. Calcolare media e mediana teoriche
+
+La mediana è l'esponenziale di meanlog; la media include anche metà della varianza logaritmica nell'esponente. Le formule mostrano perché la media aritmetica supera la mediana quando sdlog è positiva.
+
+```{r passo_02}
+mediana_teorica <- riferimento_mm * exp(mu_log)
+# Il termine sigma_log^2 / 2 distingue la media aritmetica dalla mediana.
+media_teorica <- riferimento_mm * exp(mu_log + sigma_log^2 / 2)
+var_teorica <- riferimento_mm^2 * (exp(sigma_log^2) - 1) * exp(2 * mu_log + sigma_log^2)
+confronto <- rbind(teoria = c(media_mm = media_teorica, mediana_mm = mediana_teorica,
+                              sd_mm = sqrt(var_teorica)),
+                   simulazione = c(media_mm = mean(grana), mediana_mm = median(grana), sd_mm = sd(grana)))
+print(confronto)
+print(c(errore_standard_mc_media = sqrt(var_teorica / B)))
+```
+
+**Lettura del risultato.** La simulazione fluttua attorno alle quantità teoriche. meanlog non è log della media aritmetica: usarlo in quel modo cambierebbe la distribuzione desiderata e introdurrebbe un errore sistematico nella generazione dei dati.
+
+## 3. Esaminare la scala dei logaritmi
+
+Ritrasformiamo i valori generati e confrontiamo media e deviazione standard dei log con i parametri assegnati. Il riferimento di un millimetro rende il rapporto interno al logaritmo privo di unità.
+
+```{r passo_03}
+log_grana <- log(grana / riferimento_mm)
+print(c(media_log = mean(log_grana), sd_log = sd(log_grana)))
+# freq = FALSE usa una densita compatibile con la curva normale sovrapposta.
+hist(log_grana, breaks = "FD", freq = FALSE, col = "#D5E9EE", border = "white",
+     xlab = "log(grana / 1 mm)", ylab = "Densita", main = "La scala generatrice")
+griglia <- seq(min(log_grana), max(log_grana), length.out = 300)
+lines(griglia, dnorm(griglia, mu_log, sigma_log), col = "#1D7890", lwd = 2)
+print(quantile(grana, c(.025, .5, .975)))
+```
+
+**Lettura del risultato.** La sovrapposizione è un controllo della simulazione perché sappiamo come i dati sono stati generati. Su misure reali una forma apparentemente normale dei log sarebbe un indizio da verificare, non una prova definitiva del modello.
+
+## Variante svolta
+
+Raddoppiare sdlog mantenendo meanlog e confrontare mediana e media teoriche.
+
+```{r variante}
+sdlog2 <- 2 * sigma_log
+nuova_mediana <- riferimento_mm * exp(mu_log)
+nuova_media <- riferimento_mm * exp(mu_log + sdlog2^2 / 2)
+print(rbind(prima = c(mediana = mediana_teorica, media = media_teorica),
+            dopo = c(mediana = nuova_mediana, media = nuova_media)))
+print(c(q975_prima = qlnorm(.975, mu_log, sigma_log),
+        q975_dopo = qlnorm(.975, mu_log, sdlog2)))
+stopifnot(nuova_mediana == mediana_teorica, nuova_media > media_teorica)
+```
+
+La mediana resta fissa, mentre media e coda superiore aumentano. La variabilità moltiplicativa modifica il centro aritmetico anche se il centro sulla scala logaritmica non cambia.
+
+## Errore da riconoscere
+
+Non passare la media desiderata in millimetri direttamente a meanlog. Non trasformare con log valori non positivi senza esaminare se siano errori, limiti di rilevabilità o misure di un'altra natura.
+
+## Risposta alla domanda
+
+La lognormale separa chiaramente scala originale e scala dei logaritmi. Media, mediana e dispersione hanno formule diverse; documentare parametri e riferimento unitario è necessario per simulare e interpretare misure positive.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M04_N12` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M04/M04_N12.R).

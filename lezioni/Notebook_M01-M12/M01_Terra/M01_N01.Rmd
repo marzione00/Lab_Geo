@@ -1,0 +1,131 @@
+---
+title: "Prima di digitare: definire la domanda"
+subtitle: "M01_N01 \u00b7 Terra"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Quale confronto possiamo descrivere con i provini dei due affioramenti, e quali informazioni servono prima di calcolarlo?
+
+## Obiettivi
+
+- Separare domanda, variabile e unità di osservazione.
+- Tradurre una domanda in oggetti R controllabili.
+
+**Prima di iniziare.** Saper eseguire una cella R e riconoscere vettori, assegnamenti e nomi di colonne.
+
+**Dati e unità.** Il CSV contiene 24 provini sintetici, raccolti idealmente in sei stazioni di due affioramenti. Massa e volume sono espressi in grammi e centimetri cubi.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M01_N01/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M01_N01")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(1001)
+```
+
+## 1. Scrivere una domanda verificabile
+
+Una domanda operativa specifica che cosa viene confrontato e su quali oggetti. Registriamo separatamente unità, variabile e ambito: saranno il riferimento per riconoscere eventuali cambiamenti di significato durante l'analisi.
+
+```{r passo_01}
+domanda <- "Quale differenza di densita osserviamo fra i provini di B e A?"
+unita <- "provino"
+variabile <- "densita"
+unita_misura <- "g/cm^3"
+ambito <- "Provini delle sei stazioni del caso didattico"
+scheda <- list(domanda = domanda, unita = unita, variabile = variabile,
+               unita_misura = unita_misura, ambito = ambito)
+print(scheda)
+```
+
+**Lettura del risultato.** La lista riunisce informazioni diverse senza confonderle con misure numeriche. La parola provino indica l'oggetto osservato; g/cm³ indica l'unità della misura. L'ambito dichiarato evita di attribuire subito il risultato a qualsiasi affioramento.
+
+## 2. Confrontare la scheda con la tabella
+
+Leggiamo il file e controlliamo se contiene le variabili necessarie. La densità non è una colonna originale: deve essere ottenuta da massa e volume. Questo controllo anticipa il lavoro richiesto, senza effettuare ancora il confronto.
+
+```{r passo_02}
+# Ogni esecuzione riparte dal CSV condiviso, senza modificare il file.
+d <- carica_dati("campioni_modulo1.csv", stringsAsFactors = FALSE)
+stopifnot(nrow(d) == 24L, !anyDuplicated(d$id))
+
+print(names(d))
+print(head(d, 3))
+campi_richiesti <- c("id", "affioramento", "massa_g", "volume_cm3")
+presenti <- campi_richiesti %in% names(d)
+print(data.frame(campo = campi_richiesti, presente = presenti))
+stopifnot(all(presenti))
+```
+
+**Lettura del risultato.** Il controllo distingue una variabile disponibile da una variabile da costruire. L'identificativo permette di tornare al provino; affioramento definisce il gruppo. La presenza delle colonne non dimostra ancora che ogni misura sia valida.
+
+## 3. Esplicitare il verso del confronto
+
+La differenza richiede un ordine. Stabiliamo B meno A e contiamo i provini disponibili per ciascun gruppo. Un futuro numero positivo significherà quindi una densità media osservata maggiore in B.
+
+```{r passo_03}
+gruppo_riferimento <- "A"
+gruppo_confronto <- "B"
+verso <- paste(gruppo_confronto, "meno", gruppo_riferimento)
+numerosita <- table(d$affioramento)
+print(numerosita)
+print(verso)
+stopifnot(all(c(gruppo_riferimento, gruppo_confronto) %in% names(numerosita)))
+```
+
+**Lettura del risultato.** Il conteggio descrive la copertura della tabella. Non verifica indipendenza, rappresentatività o precisione della media: queste proprietà richiedono anche informazioni sul disegno di campionamento e sul procedimento di misura.
+
+## Variante svolta
+
+Riscrivere la domanda quando l'oggetto di interesse diventa la stazione.
+
+```{r variante}
+scheda_stazioni <- scheda
+scheda_stazioni$unita <- "stazione"
+scheda_stazioni$domanda <- "Come variano le densita medie delle stazioni fra A e B?"
+stazioni <- unique(d[c("stazione", "affioramento")])
+print(scheda_stazioni)
+print(table(stazioni$affioramento))
+```
+
+Cambiare unità richiede una sintesi per stazione e cambia il numero di oggetti descritti. La tabella originale rimane la stessa, ma non coincide più direttamente con la tabella dell'analisi.
+
+## Errore da riconoscere
+
+Scrivere soltanto 'confrontare A e B' lascia indefiniti variabile, unità e direzione della differenza. Aggiungerli prima dei calcoli evita interpretazioni incompatibili dello stesso risultato.
+
+## Risposta alla domanda
+
+La domanda è ora traducibile in operazioni: verificare massa e volume, calcolare la densità, riassumere per affioramento e dichiarare B meno A. L'eventuale generalizzazione richiederà ulteriori assunzioni sul campionamento.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M01_N01` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M01/M01_N01.R).

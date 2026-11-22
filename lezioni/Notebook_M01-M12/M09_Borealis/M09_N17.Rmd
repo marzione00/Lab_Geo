@@ -1,0 +1,135 @@
+---
+title: "CO\u2082: differenze ordinarie e stagionali"
+subtitle: "M09_N17 \u00b7 Borealis"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Quali strutture restano dopo una differenza a un mese o a dodici mesi?
+
+## Obiettivi
+
+- Applicare diff con lag e differences.
+- Verificare l’operatore combinato.
+- Conservare il calendario delle trasformazioni.
+
+**Prima di iniziare.** Lettura di CSV, vettori, indicizzazione e funzioni di base in R. I blocchi vanno eseguiti nell’ordine all’interno del singolo notebook.
+
+**Dati e unità.** Archivio storico CO₂ 1958–2001, copia del dataset settimanale statsmodels attribuito a Keeling, Whorf e CDIAC. Le concentrazioni sono espresse in ppm. Le medie mensili del corso derivano dai valori settimanali assegnati al mese della data e differiscono per definizione da una serie mensile ufficiale.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Borealis oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M09_Borealis` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M09_Borealis/Risultati/M09_N17/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M09_Borealis"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M09_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M09_Borealis o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M09_N17")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(9017)
+```
+
+## 1. Allineare quattro rappresentazioni
+
+La differenza ordinaria confronta mesi adiacenti; quella stagionale confronta lo stesso mese a distanza di un anno. La combinata applica entrambe: $(1-B)(1-B^{12})X_t$.
+
+```{r passo_01}
+d <- carica_dati("co2_1985_2001.csv")
+d$data <- as.Date(d$data)
+d <- d[order(d$data), ]
+attese <- seq(as.Date("1985-01-01"), as.Date("2001-12-01"), by="month")
+stopifnot(identical(d$data, attese), !anyNA(d$co2_ppm))
+y <- ts(d$co2_ppm, start=c(1985,1), frequency=12)
+d1 <- diff(y)
+d12 <- diff(y,lag=12)
+d1d12 <- diff(d12)
+data.frame(serie=c("Livello","Diff1","Diff12","Combinata"),
+ n=c(length(y),length(d1),length(d12),length(d1d12)),
+ prima=c(as.character(d$data[1]),as.character(d$data[2]),
+ as.character(d$data[13]),as.character(d$data[14])))
+```
+
+**Lettura del risultato.** Le lunghezze sono 204, 203, 192 e 191. La differenza combinata inizia a febbraio 1986, perché richiede anche l’osservazione di tredici mesi prima.
+
+## 2. Confrontare la dipendenza
+
+La trasformazione stagionale riduce la ripetizione annuale, ma può lasciare andamento graduale e dipendenza residua. Le ACF si leggono insieme alla forma delle serie.
+
+```{r passo_02}
+serie <- list(livello=y,diff1=d1,diff12=d12,combinata=d1d12)
+par(mfrow=c(2,2),mar=c(4.1,4.5,3.3,1.2))
+for(n in names(serie)) acf(serie[[n]],lag.max=36,main=n)
+```
+
+**Lettura del risultato.** Per oggetti ts mensili l’asse del grafico acf è espresso in anni: il punto a 1 corrisponde a dodici mesi. Per avere lag interi mensili bisogna passare un vettore numerico e dichiarare l’unità.
+
+## 3. Verificare l’operatore combinato
+
+La formula esplicita è $X_t-X_{t-1}-X_{t-12}+X_{t-13}$. L’ordine delle due differenze commuta, purché si mantenga l’allineamento dei tempi.
+
+```{r passo_03}
+x <- as.numeric(y); n <- length(x)
+esplicita <- x[14:n]-x[13:(n-1)]-x[2:(n-12)]+x[1:(n-13)]
+altra <- diff(diff(y),lag=12)
+c(errore_formula=max(abs(esplicita-as.numeric(d1d12))),
+ errore_commutazione=max(abs(as.numeric(altra-d1d12))))
+stopifnot(max(abs(esplicita-as.numeric(d1d12)))<1e-10)
+```
+
+**Lettura del risultato.** La verifica distingue una differenza stagionale da dodici differenze consecutive. Le due operazioni hanno coefficienti e significati completamente diversi.
+
+## Variante svolta
+
+Esportare le quattro serie sul calendario originale, mantenendo NA iniziali.
+
+```{r variante}
+tab <- data.frame(data=d$data,livello=as.numeric(y),
+ diff1=c(NA,as.numeric(d1)),diff12=c(rep(NA,12),as.numeric(d12)),
+ combinata=c(rep(NA,13),as.numeric(d1d12)))
+write.csv(tab,percorso_risultati("co2_trasformazioni_allineate.csv"),row.names=FALSE)
+head(tab,15)
+```
+
+La tabella conserva la data di riferimento di ogni differenza. Gli NA iniziali indicano la mancanza dei predecessori richiesti, non misure ambientali assenti nell’archivio originale.
+
+## Errore da riconoscere
+
+Usare diff(y,differences=12) pensando di ottenere una differenza stagionale annuale. Il parametro appropriato è lag=12.
+
+## Risposta alla domanda
+
+Le trasformazioni confrontano tempi diversi, perdono un numero definito di osservazioni e cambiano la risposta. La diagnosi residua va ripetuta dopo ciascuna.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M09_N17` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M09/M09_N17.R).

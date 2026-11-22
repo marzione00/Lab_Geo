@@ -1,0 +1,128 @@
+---
+title: "Media cumulativa e convergenza"
+subtitle: "M05_N02 \u00b7 Pelago"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Che cosa significa stabilizzazione della media quando aumentiamo il numero di osservazioni indipendenti?
+
+## Obiettivi
+
+- Costruire una media cumulativa.
+- Distinguere convergenza e miglioramento monotono.
+
+**Prima di iniziare.** Vettori, indicizzazione, media, varianza e grafici di base in R.
+
+**Dati e unità.** Simuliamo osservazioni indipendenti da una distribuzione lognormale, in unità convenzionali; il parametro è noto dal modello.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M05_N02/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M05_N02")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(5002)
+```
+
+## 1. Esplicitare il modello e il valore atteso
+
+Usiamo valori positivi e asimmetrici per evitare di associare la convergenza soltanto alla forma normale. Se il logaritmo ha media a e deviazione standard b, il valore atteso è exp(a + b²/2). Questa quantità non è la mediana.
+
+```{r passo_01}
+set.seed(503)
+a <- 1
+b <- 0.65
+mu <- exp(a + b^2 / 2)
+x <- rlnorm(2000, meanlog = a, sdlog = b)
+k <- seq_along(x)
+media_cumulativa <- cumsum(x) / k
+print(c(media_teorica = mu, mediana_teorica = exp(a)))
+```
+
+**Lettura del risultato.** La differenza fra media e mediana dipende dall'asimmetria della popolazione. Il riferimento della media cumulativa deve essere la media teorica, non un altro indice di posizione.
+
+## 2. Leggere una traiettoria
+
+Ogni punto riutilizza tutte le osservazioni precedenti: le medie cumulative sono quindi fortemente dipendenti tra loro. Osserviamo la traiettoria e lo scarto assoluto, senza trattare i duemila punti come duemila indagini indipendenti.
+
+```{r passo_02}
+errore <- abs(media_cumulativa - mu)
+plot(k, media_cumulativa, type = "l", col = "#27647B",
+     xlab = "Osservazioni accumulate", ylab = "Media (u.c.)",
+     main = "Una traiettoria della media cumulativa")
+abline(h = mu, col = "#A33B31", lwd = 2)
+print(data.frame(n = c(10, 50, 200, 1000, 2000),
+                 media = media_cumulativa[c(10, 50, 200, 1000, 2000)]))
+print(c(passaggi_che_aumentano_errore = sum(diff(errore) > 0)))
+```
+
+**Lettura del risultato.** Un aumento locale dell'errore non contraddice la legge dei grandi numeri. La convergenza riguarda il comportamento al crescere della numerosità, non l'ordine dei singoli miglioramenti.
+
+## 3. Confrontare molte traiettorie alla stessa numerosità
+
+Per quantificare l'effetto di n servono campioni ripetuti. A ogni numerosità produciamo mille campioni indipendenti e misuriamo l'errore quadratico medio rispetto al valore atteso, mantenendo invariato il modello generatore.
+
+```{r passo_03}
+numerosita <- c(10, 50, 200, 1000)
+B <- 1000
+rmse <- sapply(numerosita, function(nn) {
+  stime <- replicate(B, mean(rlnorm(nn, a, b)))
+  sqrt(mean((stime - mu)^2))
+})
+print(data.frame(n = numerosita, RMSE = rmse))
+```
+
+**Lettura del risultato.** Il confronto riguarda distribuzioni di stime a n fissato. La tendenza prevista è una riduzione dell'errore tipico; i risultati numerici conservano una componente Monte Carlo.
+
+## Variante svolta
+
+Riordinare gli stessi valori dal più piccolo al più grande e confrontare le medie intermedie.
+
+```{r variante}
+cumulativa_ordinata <- cumsum(sort(x)) / k
+print(data.frame(n = c(50, 500, 2000),
+  casuale = media_cumulativa[c(50, 500, 2000)],
+  ordinata = cumulativa_ordinata[c(50, 500, 2000)]))
+stopifnot(isTRUE(all.equal(tail(cumulativa_ordinata, 1), mean(x))))
+```
+
+La media finale è identica, ma i prefissi ordinati selezionano deliberatamente valori piccoli. La loro traiettoria non rappresenta un'acquisizione casuale indipendente dalla misura.
+
+## Errore da riconoscere
+
+Non interpretare ogni oscillazione come un errore del codice: verificare piuttosto indipendenza, popolazione di riferimento e possibile ordine selettivo dei dati.
+
+## Risposta alla domanda
+
+La media può stabilizzarsi con campioni crescenti senza avvicinarsi al parametro a ogni nuovo dato. Il processo di acquisizione resta parte dell'interpretazione.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M05_N02` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M05/M05_N02.R).

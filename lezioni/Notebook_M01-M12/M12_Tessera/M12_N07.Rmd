@@ -1,0 +1,140 @@
+---
+title: "Aggregazione 2×2 e conservazione della media"
+subtitle: "M12_N07 · Tessera"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Perché una media aggregata 2 × 2 può conservare la media globale ma perdere estremi?
+
+## Obiettivi
+
+- Aggregare blocchi completi di quattro celle.
+- Verificare media, range e nuovo passo.
+- Mostrare il ruolo delle numerosità con NoData.
+
+**Prima di iniziare.** Sono richiesti vettori, matrici, tabelle e funzioni R di base. Eseguire i blocchi in ordine; ogni notebook è autonomo rispetto agli altri. I calcoli usano R base e i pacchetti standard.
+
+**Dati e unità.** Il raster è interamente sintetico: 24 righe × 30 colonne, 720 celle quadrate di lato 30 m. Nel CSV riga e colonna partono da zero; x_m = 30 × colonna e y_m = 30 × riga indicano i centri nel piano locale. La riga 0 è a Sud; la riga 23 è a Nord. Le quote sono in metri sintetici. I dati non descrivono un rilievo reale.
+
+**Relazione usata.** $\overline z=\frac{\sum_b n_b\overline z_b}{\sum_b n_b}.$ Con blocchi completi 2 × 2, tutti i pesi sono quattro.
+
+## Preparazione
+
+Aprire il progetto autonomo di Tessera o quello generale dei notebook. I file originali restano invariati. Gli output vanno in `Risultati/M12_N07/`. Nessun download o installazione avviene nei blocchi.
+
+```{r preparazione}
+# Trova il modulo dal progetto autonomo o da quello generale dei notebook.
+.gs_cerca <- normalizePath(getwd(),winslash="/",mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca,file.path(.gs_cerca,"M12_Tessera"),
+    file.path(.gs_cerca,"03_Notebook_svolti","M12_Tessera"),
+    file.path(.gs_cerca,"M12","03_Notebook_svolti","M12_Tessera"))
+  .gs_ok <- file.exists(file.path(.gs_candidati,"M12_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati,"R","funzioni_notebook.R"))
+  if(any(.gs_ok)) { .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]];break }
+  .gs_padre <- dirname(.gs_cerca)
+  if(.gs_padre==.gs_cerca) stop("Aprire il progetto M12_Tessera o quello generale dei notebook.")
+  .gs_cerca <- .gs_padre
+}
+source(file.path(.gs_modulo,"R","funzioni_notebook.R"),local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo,"M12_N07")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88,digits=6)
+if(requireNamespace("knitr",quietly=TRUE)) {
+  knitr::opts_chunk$set(echo=TRUE,error=FALSE,warning=TRUE,message=TRUE,
+    fig.width=8,fig.height=5,dpi=150,fig.align="center")
+}
+set.seed(20261104)
+```
+
+## 1. Il nuovo supporto contiene quattro celle originali
+
+Ogni valore aggregato è la media di un blocco 2 × 2. I centri dei nuovi blocchi partono da 15 m.
+
+```{r passo_01}
+d <- carica_dati("raster_v3.csv")
+audit_raster(d)
+d <- d[order(d$riga,d$colonna),]
+Z <- matrice_quote(d)
+ ag <- aggrega_blocchi(Z,2,2);A <- ag$media
+ risultato <- data.frame(griglia=c("30 m","60 m"),celle=c(length(Z),length(A)),
+   media=c(mean(Z),mean(A)),minimo=c(min(Z),min(A)),massimo=c(max(Z),max(A)))
+ risultato
+ stopifnot(identical(dim(A),c(12L,15L)),all(ag$numero==4L),
+   abs(mean(Z)-mean(A))<1e-10,min(A)>=min(Z),max(A)<=max(Z))
+```
+
+**Lettura del risultato.** La media globale si conserva perché tutti i blocchi hanno lo stesso numero di celle della stessa area. Gli estremi locali vengono attenuati dalla media.
+
+## 2. Il dominio resta lo stesso, il supporto cambia
+
+Confrontiamo coordinate dei centri e bordi dell’aggregato.
+
+```{r passo_02}
+xa <- seq(15,855,60);ya <- seq(15,675,60)
+data.frame(asse=c("x","y"),primo_centro=c(xa[1],ya[1]),
+  ultimo_centro=c(tail(xa,1),tail(ya,1)),bordo_min=c(xa[1],ya[1])-30,
+  bordo_max=c(tail(xa,1),tail(ya,1))+30)
+stopifnot(length(A)*60^2==length(Z)*30^2)
+```
+
+**Lettura del risultato.** Aggregazione e interpolazione non sono sinonimi. Il nuovo valore riassume un supporto più ampio, pur coprendo lo stesso dominio.
+
+## 3. La carta aggregata usa la scala originale
+
+Conserviamo la stessa legenda per mostrare la perdita di dettaglio.
+
+```{r passo_03}
+mappa_matrice(A,xa,ya,titolo="Aggregazione 2 x 2: 180 celle da 60 m",limiti=range(Z))
+write.csv(risultato,percorso_risultati("confronto_aggregazione.csv"),row.names=FALSE)
+write.csv(data.frame(x_m=rep(xa,12),y_m=rep(ya,each=15),quota_media_m=as.vector(t(A))),
+  percorso_risultati("celle_60m.csv"),row.names=FALSE)
+```
+
+**Lettura del risultato.** Più o meno pixel sullo schermo non cambiano questo supporto. Il confronto conserva unità e scala cromatica.
+
+## Variante svolta
+
+**Un blocco con tre celle disponibili pesa quanto gli altri?.** Rimuovere una sola quota dal primo blocco e confrontare media semplice e media pesata dei blocchi.
+
+```{r variante}
+incompleta <- Z;incompleta[1,1] <- NA_real_
+a_na <- aggrega_blocchi(incompleta,2,2)
+confronto <- data.frame(media_celle=mean(incompleta,na.rm=TRUE),
+  media_blocchi=mean(a_na$media),media_pesata=weighted.mean(a_na$media,a_na$numero))
+confronto
+stopifnot(abs(confronto$media_celle-confronto$media_pesata)<1e-10)
+```
+
+Con numerosità diverse, la media semplice dei blocchi assegna lo stesso peso a blocchi con quantità di dati diverse. I pesi ripristinano la media delle celle disponibili, non necessariamente quella dell’intero territorio.
+
+## Errore da riconoscere
+
+Generalizzare la conservazione della media a blocchi incompleti senza pesi o interpretare l’aggregato come nuova misura al centro.
+
+## Risposta alla domanda
+
+L’aggregazione 2 × 2 conserva la media qui perché i blocchi sono completi ed equiponderati. Cambia il supporto dei valori e attenua gli estremi; NoData e aree differenti richiedono una regola di ponderazione esplicita.
+
+## Raccordo con le slide
+
+[Slide 34–37, 47 della lezione Tessera](../../02_PDF/M12_Tessera/Tessera_M12_raster_telerilevamento_morfometria.pdf#page=34). La [mappa dei notebook e delle slide](MAPPA_SLIDE.csv) conserva il raccordo puntuale con la lezione estesa.
+
+## Riferimenti e provenienza
+
+Questo svolgimento sviluppa `M12_N07` del [modulo M12 del corso](https://marzione00.github.io/Lab_Geo/#modulo-M12). Il [codice originale](https://github.com/marzione00/Lab_Geo/blob/649f7cc577b96bd1044d81e78a2f530813e4f96b/materiali/laboratori/M12/M12_N07.R) è conservato immutato in `R/Originali_corso/`. Dati e originali hanno SHA-256 e SHA-1 Git verificati; gli ampliamenti sono dichiarati nella [mappa degli originali](MAPPA_ORIGINALI.csv).
+
+Documentazione primaria delle operazioni: [R, matrix](https://stat.ethz.ch/R-manual/R-devel/library/base/html/matrix.html), [R, image](https://stat.ethz.ch/R-manual/R-devel/library/graphics/html/image.html), [R, quantile](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/quantile.html). Le ipotesi e le convenzioni specifiche sono esplicitate nello svolgimento.

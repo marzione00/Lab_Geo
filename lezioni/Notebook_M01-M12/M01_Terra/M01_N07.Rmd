@@ -1,0 +1,127 @@
+---
+title: "Calcolare e verificare la densit\u00e0 di tutti i provini"
+subtitle: "M01_N07 \u00b7 Terra"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come possiamo applicare la formula della densità a ogni provino e controllare che il risultato sia coerente?
+
+## Obiettivi
+
+- Applicare operazioni vettoriali dopo controlli fisici.
+- Verificare un calcolo mediante una relazione inversa e una conversione.
+
+**Prima di iniziare.** Saper eseguire una cella R e riconoscere vettori, assegnamenti e nomi di colonne.
+
+**Dati e unità.** Si usano massa in grammi e volume in centimetri cubi dei 24 provini sintetici. Il rapporto produce una densità in g/cm³ per ciascuna riga.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M01_N07/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M01_N07")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(1007)
+```
+
+## 1. Verificare gli ingressi della formula
+
+Una divisione richiede dati numerici e un denominatore utilizzabile. In questo esercizio masse e volumi devono essere finiti e positivi. Teniamo separati i controlli, così un eventuale problema indicherebbe quale grandezza impedisce il calcolo.
+
+```{r passo_01}
+# Ogni esecuzione riparte dal CSV condiviso, senza modificare il file.
+d <- carica_dati("campioni_modulo1.csv", stringsAsFactors = FALSE)
+stopifnot(nrow(d) == 24L, !anyDuplicated(d$id))
+
+stopifnot(is.numeric(d$massa_g), is.numeric(d$volume_cm3))
+massa_ok <- is.finite(d$massa_g) & d$massa_g > 0
+volume_ok <- is.finite(d$volume_cm3) & d$volume_cm3 > 0
+print(table(massa_ok, volume_ok))
+stopifnot(all(massa_ok), all(volume_ok))
+```
+
+**Lettura del risultato.** Un valore mancante o infinito non supera il controllo. La positività è una condizione fisica pertinente al caso: superarla rende possibile la formula, ma non dimostra che lo strumento sia calibrato o che le unità siano corrette.
+
+## 2. Calcolare un valore per riga
+
+R divide i due vettori elemento per elemento. Poiché entrambe le colonne appartengono alla stessa tabella, l'abbinamento segue i provini. Conserviamo il risultato in una nuova colonna con un nome che dichiara l'unità.
+
+```{r passo_02}
+d$densita_g_cm3 <- d$massa_g / d$volume_cm3
+print(head(d[c("id", "massa_g", "volume_cm3", "densita_g_cm3")], 6))
+print(range(d$densita_g_cm3))
+stopifnot(length(d$densita_g_cm3) == nrow(d))
+stopifnot(all(is.finite(d$densita_g_cm3)))
+stopifnot(abs(d$densita_g_cm3[d$id == "C01"] - 2.68) < 1e-12)
+```
+
+**Lettura del risultato.** Il controllo su C01 collega l'operazione vettoriale al calcolo manuale precedente. L'intervallo osservato riassume gli estremi del campione; non è un intervallo di confidenza né una stima dell'errore di misura.
+
+## 3. Controllare la relazione inversa
+
+Moltiplicando la densità ottenuta per il volume dobbiamo ricostruire la massa usata nel rapporto. Questa prova intercetta errori di formula o di abbinamento. Il grafico mette poi in relazione le due grandezze originali.
+
+```{r passo_03}
+massa_ricostruita <- d$densita_g_cm3 * d$volume_cm3
+scarto <- massa_ricostruita - d$massa_g
+print(max(abs(scarto)))
+stopifnot(isTRUE(all.equal(massa_ricostruita, d$massa_g)))
+d$densita_kg_m3 <- 1000 * d$densita_g_cm3
+plot(d$volume_cm3, d$massa_g, pch = 19, col = "steelblue",
+     xlab = "Volume (cm^3)", ylab = "Massa (g)")
+```
+
+**Lettura del risultato.** Scarti numerici trascurabili confermano la coerenza algebrica. Nel grafico una retta passante per l'origine rappresenterebbe densità costante: provini con rapporti differenti possono discostarsi da una singola retta.
+
+## Variante svolta
+
+Gestire un volume nullo in un esempio costruito senza generare un infinito.
+
+```{r variante}
+esempio <- data.frame(massa_g = c(10, 12), volume_cm3 = c(5, 0))
+valido <- is.finite(esempio$volume_cm3) & esempio$volume_cm3 > 0
+esempio$densita_g_cm3 <- NA_real_
+esempio$densita_g_cm3[valido] <- esempio$massa_g[valido] / esempio$volume_cm3[valido]
+print(esempio)
+```
+
+Il valore non calcolabile rimane NA e la riga viene conservata. La soluzione mantiene visibile la mancanza di una densità utilizzabile, invece di produrre un numero infinito o cancellare il provino.
+
+## Errore da riconoscere
+
+La media delle masse divisa per la media dei volumi non coincide in generale con la media delle densità individuali. Prima si chiarisce quale quantità interessa, poi si sceglie l'ordine delle operazioni.
+
+## Risposta alla domanda
+
+Ogni provino dispone ora di una densità accompagnata da controlli espliciti. Le verifiche proteggono il calcolo, mentre validità del campionamento e incertezza sperimentale rimangono questioni ulteriori.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M01_N07` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M01/M01_N07.R).

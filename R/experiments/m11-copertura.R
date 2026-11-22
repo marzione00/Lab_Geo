@@ -2,6 +2,8 @@
 # Misurare la distanza delle aree dai siti osservati.
 # Dati sintetici; parametri e ambiente dichiarati.
 # Dipendenze: install.packages(c("ggplot2", "jsonlite", "svglite"))
+# Codice: PolyForm Noncommercial 1.0.0, https://polyformproject.org/licenses/noncommercial/1.0.0
+# Required Notice: Copyright 2026 Marzio De Corato (https://github.com/marzione00/Lab_Geo)
 
 # GeoStat Lab — funzioni comuni. R >= 4.3; ggplot2 >= 3.4; jsonlite.
 suppressPackageStartupMessages(library(ggplot2))
@@ -62,8 +64,9 @@ grid$z <- apply(dist_cross(as.matrix(grid), xy), 1, min)
 
 data <- grid
 
-plots <- list(map_plot(data, title = "Distanza al sito più vicino") + geom_point(data = data.frame(x = xy[, 
-    1], y = xy[, 2]), aes(x, y), inherit.aes = FALSE, size = 1.5))
+plots <- list(map_plot(data, title = "Distanza al sito più vicino") +
+    geom_point(data = data.frame(x = xy[, 1], y = xy[, 2]), aes(x, y),
+    inherit.aes = FALSE, size = 1.5))
 
 metrics <- metric(`Distanza massima [km]` = f(max(grid$z)), `Distanza media [km]` = f(mean(grid$z)))
 

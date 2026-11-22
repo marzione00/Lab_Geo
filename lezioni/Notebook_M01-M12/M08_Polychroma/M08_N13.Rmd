@@ -1,0 +1,143 @@
+---
+title: "Confrontare k senza imporre la risposta attesa"
+subtitle: "M08_N13 \u00b7 Polychroma"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Quali indicazioni forniscono WSS e silhouette quando il numero di gruppi è ancora da scegliere?
+
+## Obiettivi
+
+- Confrontare più k con una procedura riproducibile.
+- Distinguere compattezza e separazione.
+- Usare il generatore soltanto nel controllo finale.
+
+**Prima di iniziare.** Lettura di un CSV, vettori, matrici, indicizzazione e funzioni di base in R.
+
+**Dati e unità.** Novanta rocce sintetiche del corso. SiO2, CaO, MgO e FeO sono percentuali in massa; densita è espressa in g/cm³ e grana_mm in millimetri. colore e fossili sono indici numerici convenzionali del simulatore, non misure mineralogiche o conteggi reali. La colonna litologia_generatrice descrive il gruppo usato nella simulazione e viene esclusa dalle stime.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Polychroma oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M08_Polychroma` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M08_Polychroma/Risultati/M08_N13/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M08_Polychroma"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M08_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M08_Polychroma o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M08_N13")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(8013)
+```
+
+## 1. La stessa matrice per ogni confronto
+
+Confrontiamo da due a sette gruppi usando la stessa matrice standardizzata, gli stessi parametri dell’algoritmo e un seme dichiarato. L’etichetta del simulatore rimane esclusa.
+
+```{r passo_01}
+# Seleziona le misure per nome: ID ed etichetta non entrano nella matrice.
+r <- carica_dati("rocce_simulate.csv")
+v <- c("SiO2", "CaO", "MgO", "FeO", "densita", "grana_mm", "colore", "fossili")
+X <- as.matrix(r[v])
+stopifnot(nrow(X)==90L, ncol(X)==8L, !anyDuplicated(r$id),
+          all(is.finite(X)), all(apply(X,2,sd)>0))
+Z <- scale(X)
+D <- dist(Z)
+ks <- 2:7
+set.seed(817)
+modelli <- lapply(ks,function(k) kmeans(Z,k,nstart=50,iter.max=100))
+tab <- data.frame(k=ks,
+ WSS=vapply(modelli,function(m)m$tot.withinss,numeric(1)),
+ silhouette=vapply(modelli,function(m)mean(silhouette_base(m$cluster,D)),numeric(1)))
+tab
+write.csv(tab,percorso_risultati("confronto_k.csv"),row.names=FALSE)
+```
+
+**Lettura del risultato.** La WSS cala da circa 372,18 a 76,25. La silhouette media raggiunge il massimo, circa 0,626, con tre gruppi in questo insieme di candidati.
+
+## 2. Due criteri con significati diversi
+
+Aumentare il numero di gruppi rende possibile diminuire l’ottimo globale di WSS, anche quando la divisione aggiuntiva è poco utile. K-means trova soluzioni locali: gli avvii multipli riducono, senza eliminare in generale, questo limite.
+
+```{r passo_02}
+op <- par(mfrow=c(1,2),mar=c(4,4,2,1))
+plot(tab$k,tab$WSS,type="b",pch=19,col="#087C74",
+ xlab="Numero di gruppi k",ylab="WSS")
+plot(tab$k,tab$silhouette,type="b",pch=19,col="#7363AA",
+ xlab="Numero di gruppi k",ylab="Silhouette media",ylim=c(0,.7))
+par(op)
+tab$riduzione_WSS <- c(NA,-diff(tab$WSS))
+tab
+```
+
+**Lettura del risultato.** Il calo della WSS è particolarmente marcato passando da due a tre gruppi. Oltre tre la silhouette media diminuisce. Le curve sostengono una scelta operativa, ma non identificano da sole un numero universale di litologie.
+
+## 3. Interpretare dopo la scelta
+
+Scegliamo il candidato con silhouette più alta fra quelli provati; solo ora riapriamo il metadato del generatore. È un controllo didattico possibile perché i dati sono simulati.
+
+```{r passo_03}
+scelto <- which.max(tab$silhouette)
+migliore <- modelli[[scelto]]
+c(k_selezionato=ks[scelto],silhouette=tab$silhouette[scelto])
+table(cluster=migliore$cluster,generatore=r$litologia_generatrice)
+indice_rand_corretto(migliore$cluster,r$litologia_generatrice)
+```
+
+**Lettura del risultato.** In questo esempio la partizione selezionata coincide con i tre gruppi del simulatore. Il risultato misura il recupero di una struttura sintetica nota; non dimostra prestazioni analoghe su rocce reali.
+
+## Variante svolta
+
+Ricalcolare il confronto assegnando peso doppio alla granulometria.
+
+```{r variante}
+pesi <- rep(1,ncol(Z)); pesi[which(v=="grana_mm")] <- 2
+Zw <- sweep(Z,2,sqrt(pesi),"*"); Dw <- dist(Zw)
+set.seed(817)
+modelli_w <- lapply(ks,function(k)kmeans(Zw,k,nstart=50,iter.max=100))
+data.frame(k=ks,s_originale=tab$silhouette,
+ s_grana_peso2=vapply(modelli_w,function(m)mean(silhouette_base(m$cluster,Dw)),numeric(1)))
+```
+
+Il confronto esplicita quanto le indicazioni dipendano dalla geometria. Un peso non si sceglie per ottenere il numero atteso di gruppi: serve una motivazione scientifica e una valutazione delle conseguenze.
+
+## Errore da riconoscere
+
+Scegliere tre gruppi perché il file contiene tre etichette e poi presentare la coincidenza come una scoperta indipendente.
+
+## Risposta alla domanda
+
+WSS, silhouette, stabilità e interpretazione forniscono informazioni complementari. Tutte le scelte e l’intervallo di k esaminato devono essere dichiarati.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M08_N13` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M08/M08_N13.R).

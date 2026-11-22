@@ -1,0 +1,718 @@
+{
+ "R": "R version 4.6.0 (2026-04-24)",
+ "fragments": {
+  "03_avvio.R": {
+   "status": "ok",
+   "output": "> # Aprire Aurea_M04.Rproj.\n> source(\"setup.R\", encoding = \"UTF-8\")\n> # Parametri del caso fisico finale\n> parametri_densita\n  massa_media_g volume_medio_cm3 sd_massa_g sd_volume_cm3\n1           106               40          1           0.6\n> # Guida alle distribuzioni in R\n> help(\"Distributions\")\nDistributions              package:stats               R Documentation\n\nDistributions in the 'stats' Package\n\nDescription:\n\n     Density, cumulative distribution function, quantile function and\n     random variate generation for many standard probability\n     distributions are available in the ‘stats’ package.\n\nDetails:\n\n     The functions for the density/mass function, cumulative\n     distribution function, quantile function and random variate\n     generation are named in the form ‘dxxx’, ‘pxxx’, ‘qxxx’ and ‘rxxx’\n     respectively.\n\n     For the beta distribution see ‘dbeta’.\n\n     For the binomial (including Bernoulli) distribution see ‘dbinom’.\n\n     For the Cauchy distribution see ‘dcauchy’.\n\n     For the chi-squared distribution see ‘dchisq’.\n\n     For the exponential distribution see ‘dexp’.\n\n     For the F distribution see ‘df’.\n\n     For the gamma distribution see ‘dgamma’.\n\n     For the geometric distribution see ‘dgeom’.  (This is also a\n     special case of the negative binomial.)\n\n     For the hypergeometric distribution see ‘dhyper’.\n\n     For the log-normal distribution see ‘dlnorm’.\n\n     For the logistic distribution see ‘dlogis’.\n\n     For the multinomial distribution see ‘dmultinom’.\n\n     For the negative binomial distribution see ‘dnbinom’.\n\n     For the normal distribution see ‘dnorm’.\n\n     For the Poisson distribution see ‘dpois’.\n\n     For the Student's t distribution see ‘dt’.\n\n     For the uniform distribution see ‘dunif’.\n\n     For the Weibull distribution see ‘dweibull’.\n\n     For less common distributions of test statistics see ‘pbirthday’,\n     ‘dsignrank’, ‘psmirnov’, ‘ptukey’ and ‘dwilcox’ (and see the ‘See\n     Also’ section of ‘cor.test’).\n\nSee Also:\n\n     ‘RNG’ about random number generation in R.\n\n     The CRAN task view on probability distributions,\n     <https://CRAN.R-project.org/view=Distributions>, lists R packages\n     that provide additional distributions.\n",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "f94aac9ca7b5d357fa1d",
+   "seconds": 50.9
+  },
+  "05_eventi.R": {
+   "status": "ok",
+   "output": "> # Un prelievo uniforme fra 6 provini\n> m05 <- c(104,106,108,110,112,114)\n> tipo05 <- c(\"F\",\"M\",\"F\",\"M\",\"F\",\"M\")\n> A05 <- m05 >= 110   # massa in g\n> B05 <- tipo05 == \"M\"\n> mean(A05)           # P(A) = 3/6\n[1] 0.5\n> which(A05)          # provini 4,5,6\n[1] 4 5 6",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "5fe8716eec48b806da2a",
+   "seconds": 0.0
+  },
+  "06_operazioni.R": {
+   "status": "ok",
+   "output": "> # A: massa >=110 g; B: tipo M\n> mean(A05 & B05)  # entrambi: 2/6\n[1] 0.3333333\n> mean(A05 | B05)  # almeno uno: 4/6\n[1] 0.6666667\n> mean(!A05)       # complemento: 3/6\n[1] 0.5\n> # Controllo della formula dell'unione\n> mean(A05) + mean(B05) -\n+   mean(A05 & B05)\n[1] 0.6666667",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "1cf40b039086209ef9f9",
+   "seconds": 0.0
+  },
+  "07_frequenza.R": {
+   "status": "ok",
+   "output": "> set.seed(17)  # sequenza riproducibile\n> x07 <- rbinom(200, 1, prob = .3)\n> k07 <- seq_along(x07)\n> f07 <- cumsum(x07) / k07\n> plot(k07, f07, type = \"l\",\n+   ylim = c(0, 1), xlab = \"Prove\",\n+   ylab = \"Frequenza cumulativa\")\n> abline(h = .3, lty = 2)",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "86fced3396c101a574ad",
+   "seconds": 0.1
+  },
+  "08_atteso.R": {
+   "status": "ok",
+   "output": "> # Modello costruito per un conteggio\n> k08 <- 0:2\n> p08 <- c(.2, .5, .3)\n> sum(p08)           # normalizzazione\n[1] 1\n> sum(k08 * p08)     # E(K) = 1.1\n[1] 1.1\n> set.seed(17)\n> x08 <- sample(k08, 1000,\n+   replace = TRUE, prob = p08)\n> mean(x08)          # media simulata\n[1] 1.117",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "1287305dad56a56657fa",
+   "seconds": 0.0
+  },
+  "09_lab_eventi.R": {
+   "status": "ok",
+   "output": "> a09 <- lab_eventi(prob=.3, n=200)\n> b09 <- lab_eventi(prob=.3, n=800)\n> a09$indicatori\nprobabilita_teorica    frequenza_finale \n              0.300               0.295 \n> b09$indicatori\nprobabilita_teorica    frequenza_finale \n            0.30000             0.29875 \n> # Cambia la sequenza, lascia fisso p\n> c09 <- lab_eventi(prob=.3,\n+   n=800, seed=21)\n> c09$indicatori\nprobabilita_teorica    frequenza_finale \n            0.30000             0.31375 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "33879fcccd87489e3891",
+   "seconds": 0.0
+  },
+  "10_condizionata.R": {
+   "status": "ok",
+   "output": "> # Numeri attesi per 100 casi\n> t10 <- matrix(c(32,12,8,48), nrow=2,\n+   dimnames=list(c(\"B\",\"nonB\"),\n+                 c(\"A\",\"nonA\")))\n> t10\n      A nonA\nB    32    8\nnonB 12   48\n> t10[\"B\",\"A\"] / sum(t10[\"B\",])\n[1] 0.8\n> # Fra tutti i casi: P(A)=44/100\n> sum(t10[,\"A\"]) / sum(t10)\n[1] 0.44",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "45d8229c9961c2e7a3ca",
+   "seconds": 0.0
+  },
+  "11_totale.R": {
+   "status": "ok",
+   "output": "> prior11 <- .4    # P(B)\n> pa11 <- .8       # P(A dato B)\n> pb11 <- .2       # P(A dato nonB)\n> joint11 <- c(prior11 * pa11,\n+   (1-prior11) * pb11)\n> joint11         # .32 e .12\n[1] 0.32 0.12\n> sum(joint11)    # P(A) = .44\n[1] 0.44",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "a831f33e72b6d2777ab2",
+   "seconds": 0.0
+  },
+  "12_indipendenza.R": {
+   "status": "ok",
+   "output": "> # Esempio indipendente\n> pA12 <- .4; pB12 <- .5\n> pAB12 <- .2\n> pAB12 / pB12       # .4 = P(A)\n[1] 0.4\n> isTRUE(all.equal(pAB12, pA12*pB12))\n[1] TRUE\n> # Incompatibili: P(A e B)=0\n> 0 == pA12*pB12     # FALSE\n[1] FALSE",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "3cfcf48683c5c6b7bd3e",
+   "seconds": 0.0
+  },
+  "13_bayes.R": {
+   "status": "ok",
+   "output": "> prior13 <- .4\n> pa13 <- .8; pb13 <- .2\n> pA13 <- pa13*prior13 +\n+   pb13*(1-prior13)\n> post13 <- pa13*prior13 / pA13\n> c(P_A = pA13, P_B_dato_A = post13)\n       P_A P_B_dato_A \n 0.4400000  0.7272727 \n> # .44 e circa .72727",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "c4641903f3b7c20afd82",
+   "seconds": 0.0
+  },
+  "14_prevalenza.R": {
+   "status": "ok",
+   "output": "> prior14 <- c(.1, .4, .8)\n> pa14 <- .8; pb14 <- .2\n> pA14 <- pa14*prior14 +\n+   pb14*(1-prior14)\n> post14 <- pa14*prior14/pA14\n> data.frame(prior14, post14)\n  prior14    post14\n1     0.1 0.3076923\n2     0.4 0.7272727\n3     0.8 0.9411765",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "3e6e3a3392c549e2c772",
+   "seconds": 0.0
+  },
+  "15_mille_casi.R": {
+   "status": "ok",
+   "output": "> # Nuovo esempio: tipo T e segnale S\n> N15 <- 1000\n> nT15 <- N15 * .10\n> segnali15 <- c(T = nT15*.90,\n+   altri = (N15-nT15)*.05)\n> segnali15           # 90 e 45\n    T altri \n   90    45 \n> segnali15[\"T\"] / sum(segnali15)\n        T \n0.6666667 \n> # Due terzi dei segnali attesi",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "e36fa4aa98571df7dbcc",
+   "seconds": 0.0
+  },
+  "16_lab_condizionamento.R": {
+   "status": "ok",
+   "output": "> a16 <- lab_condizionamento(\n+   prior=.4, pa=.8, pb=.2)\n> b16 <- lab_condizionamento(\n+   prior=.1, pa=.8, pb=.2)\n> a16$indicatori\n       prob_A prob_B_dato_A  indipendenza \n    0.4400000     0.7272727     0.0000000 \n> b16$indicatori\n       prob_A prob_B_dato_A  indipendenza \n    0.2600000     0.3076923     0.0000000 \n> # Uguale probabilita' nei due gruppi\n> c16 <- lab_condizionamento(\n+   prior=.4, pa=.2, pb=.2)\n> c16$indicatori\n       prob_A prob_B_dato_A  indipendenza \n          0.2           0.4           1.0 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "12d6668949e962c1cb85",
+   "seconds": 0.0
+  },
+  "17_dominio.R": {
+   "status": "ok",
+   "output": "> # Formula esplicita e denominatore\n> bayes17 <- function(prior, pa, pb) {\n+   pA <- pa*prior + pb*(1-prior)\n+   if (pA == 0) return(NA_real_)\n+   pa*prior/pA\n+ }\n> bayes17(.4, .8, .2)\n[1] 0.7272727\n> bayes17(.4, 0, 0)  # condizione nulla\n[1] NA",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "76632e50f3e6c29db8bb",
+   "seconds": 0.0
+  },
+  "18_variabile.R": {
+   "status": "ok",
+   "output": "> # Due prove indipendenti, p=.3\n> esiti18 <- c(\"00\",\"01\",\"10\",\"11\")\n> x18 <- c(0, 1, 1, 2)  # successi\n> p18 <- c(.49, .21, .21, .09)\n> # Somma i pesi per lo stesso X\n> tapply(p18, x18, sum)\n   0    1    2 \n0.49 0.42 0.09 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "c058dabaf8869fba0137",
+   "seconds": 0.0
+  },
+  "19_massa.R": {
+   "status": "ok",
+   "output": "> k19 <- 0:2\n> p19 <- c(.49, .42, .09)\n> sum(p19)             # 1\n[1] 1\n> sum(p19[k19 >= 1])    # .51\n[1] 0.51\n> sum(k19 * p19)        # atteso .6\n[1] 0.6\n> barplot(p19, names.arg=k19,\n+   xlab=\"Successi\", ylab=\"Probabilita'\")",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "d34d97e9c71cce56c182",
+   "seconds": 0.0
+  },
+  "20_densita.R": {
+   "status": "ok",
+   "output": "> # Modello uniforme fra 0 e 2\n> dunif(.75, min=0, max=2)   # .5\n[1] 0.5\n> # Probabilita' tra .5 e 1\n> punif(1, 0, 2) - punif(.5, 0, 2)\n[1] 0.25\n> # .25: altezza .5 per larghezza .5",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "4ba056a084aa6793851e",
+   "seconds": 0.0
+  },
+  "21_altezza.R": {
+   "status": "ok",
+   "output": "> # X uniforme [0, .2], adimensionale\n> dunif(.1, 0, .2)        # densita' 5\n[1] 5\n> punif(.15, 0, .2) -\n+   punif(.05, 0, .2)     # area .5\n[1] 0.5\n> # Il punto singolo ha area zero\n> punif(.1, 0, .2) - punif(.1, 0, .2)\n[1] 0",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "265d2397a5dd6433ab9a",
+   "seconds": 0.0
+  },
+  "22_cumulativa.R": {
+   "status": "ok",
+   "output": "> k22 <- 0:2\n> p22 <- c(.49, .42, .09)\n> cumsum(p22)           # .49,.91,1\n[1] 0.49 0.91 1.00\n> # Caso continuo: uniforme [0,2]\n> punif(c(0,.5,1,2), 0, 2)\n[1] 0.00 0.25 0.50 1.00\n> # .00, .25, .50, 1.00",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "510f9fc2290ee7a44cf3",
+   "seconds": 0.0
+  },
+  "23_momenti.R": {
+   "status": "ok",
+   "output": "> k23 <- 0:2\n> p23 <- c(.49, .42, .09)\n> mu23 <- sum(k23*p23)\n> v23 <- sum((k23-mu23)^2*p23)\n> c(media=mu23, varianza=v23,\n+   sd=sqrt(v23))\n    media  varianza        sd \n0.6000000 0.4200000 0.6480741 \n> # .6, .42, circa .6481",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "e1ab7389fd1121d76006",
+   "seconds": 0.0
+  },
+  "24_quantile.R": {
+   "status": "ok",
+   "output": "> # Uniforme [0,2]: F(q)=.75\n> qunif(.75, min=0, max=2)  # 1.5\n[1] 1.5\n> # Caso discreto delle pagine 18-23\n> k24 <- 0:2\n> F24 <- cumsum(c(.49,.42,.09))\n> k24[which(F24 >= .75)[1]] # 1\n[1] 1\n> # F(1)=.91: il salto supera .75",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "78c09e6f494a1ac2d9bc",
+   "seconds": 0.0
+  },
+  "25_lab_distribuzione.R": {
+   "status": "ok",
+   "output": "> a25 <- lab_distribuzione(cut=1)\n> a25$indicatori\n   cumulata superamento \n  0.8413447   0.1586553 \n> # Probabilita' esatte della normale\n> pnorm(1)              # circa .8413\n[1] 0.8413447\n> pnorm(1, lower.tail=FALSE)\n[1] 0.1586553\n> b25 <- lab_distribuzione(cut=0)\n> b25$indicatori        # .5 e .5\n   cumulata superamento \n        0.5         0.5 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "cc6b364268b9c75c322a",
+   "seconds": 0.0
+  },
+  "26_bernoulli.R": {
+   "status": "ok",
+   "output": "> # Una prova: evento presente = 1\n> set.seed(17)\n> x26 <- rbinom(12, size = 1,\n+              prob = .3)\n> x26\n [1] 0 1 0 1 0 0 0 0 1 0 0 0\n> mean(x26)  # Frequenza osservata\n[1] 0.25\n> # Media e varianza del modello\n> c(media = .3, varianza = .3*.7)\n   media varianza \n    0.30     0.21 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "a1686dde840948b79db8",
+   "seconds": 0.0
+  },
+  "27_somma_prove.R": {
+   "status": "ok",
+   "output": "> # Una sequenza costruita di 20 prove\n> x27 <- c(1,0,0,1,0, 0,1,0,0,0,\n+          1,0,0,0,1, 0,0,1,0,0)\n> length(x27)  # Numero di prove n\n[1] 20\n> sum(x27)     # Numero di successi K\n[1] 6\n> mean(x27)    # Proporzione K/n\n[1] 0.3",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "5d3f53fb709ee212830d",
+   "seconds": 0.0
+  },
+  "28_probabilita_binomiale.R": {
+   "status": "ok",
+   "output": "> # Esattamente 2 successi su 3\n> p28 <- .3\n> choose(3, 2) * p28^2 * (1-p28)\n[1] 0.189\n> dbinom(2, size = 3, prob = p28)\n[1] 0.189\n> # Esattamente 8 su 20\n> dbinom(8, size = 20, prob = .3)\n[1] 0.1143967",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "e7734597dde3bf459ebd",
+   "seconds": 0.0
+  },
+  "29_centro_dispersione.R": {
+   "status": "ok",
+   "output": "> # Parametri del modello\n> n29 <- 20\n> p29 <- .3\n> c(media = n29*p29,\n+   varianza = n29*p29*(1-p29))\n   media varianza \n     6.0      4.2 \n> k29 <- 0:n29\n> sum(k29 * dbinom(k29, n29, p29))\n[1] 6\n> sqrt(n29*p29*(1-p29))  # SD\n[1] 2.04939",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "11efa9e38d6ce0734302",
+   "seconds": 0.0
+  },
+  "30_coda_binomiale.R": {
+   "status": "ok",
+   "output": "> # Almeno 8: sommare k = 8,...,20\n> sum(dbinom(8:20, 20, .3))\n[1] 0.2277282\n> # lower.tail=FALSE calcola P(K>q)\n> pbinom(7, size = 20, prob = .3,\n+        lower.tail = FALSE)\n[1] 0.2277282\n> # P(K=8) e' una sola probabilita\n> dbinom(8, 20, .3)\n[1] 0.1143967",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "01828680b3416b38e5bc",
+   "seconds": 0.0
+  },
+  "31_quattro_funzioni.R": {
+   "status": "ok",
+   "output": "> # d: probabilita del valore\n> dbinom(8, 20, .3)\n[1] 0.1143967\n> # p: probabilita cumulata\n> pbinom(8, 20, .3)\n[1] 0.8866685\n> # q: primo k con F(k) >= .95\n> qbinom(.95, 20, .3)\n[1] 9\n> # r: cinque conteggi simulati\n> set.seed(17)\n> rbinom(5, size = 20, prob = .3)\n[1]  4 10  6  8  5",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "b48cec21172be0423dfd",
+   "seconds": 0.0
+  },
+  "32_teoria_simulazione.R": {
+   "status": "ok",
+   "output": "> # 400 repliche, 20 prove ciascuna\n> set.seed(17)\n> s32 <- rbinom(400, size=20, prob=.3)\n> f32 <- tabulate(s32+1, nbins=21)/400\n> plot(0:20, dbinom(0:20,20,.3),\n+      type=\"h\", xlab=\"k\", ylab=\"P\")\n> points(0:20, f32, col=\"orange\",pch=16)\n> mean(s32)  # 5.9375; teoria: 6\n[1] 5.9375",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "c3aa8408f9e68808c38f",
+   "seconds": 0.0
+  },
+  "33_lab_binomiale.R": {
+   "status": "ok",
+   "output": "> # Esperimento m04-binomiale\n> a33 <- lab_binomiale(n=20, prob=.3)\n> b33 <- lab_binomiale(n=40, prob=.3)\n> a33$indicatori\n   media_teorica varianza_teorica   media_simulata \n          6.0000           4.2000           5.9375 \n> b33$indicatori\n   media_teorica varianza_teorica   media_simulata \n         12.0000           8.4000          11.9025 \n> # Il sito usa 400 repliche\n> length(a33$simulazioni)\n[1] 400",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "ed608847f4414a45d628",
+   "seconds": 0.0
+  },
+  "34_tasso_esposizione.R": {
+   "status": "ok",
+   "output": "> # Esempio: fratture lungo una linea\n> rate34 <- 2  # Eventi per metro\n> L34 <- 3     # Metri osservati\n> mu34 <- rate34 * L34\n> mu34         # Conteggio atteso: 6\n[1] 6\n> dpois(0, lambda = mu34)\n[1] 0.002478752",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "a7f3e0067dcade8c0aad",
+   "seconds": 0.0
+  },
+  "35_poisson_distribuzione.R": {
+   "status": "ok",
+   "output": "> # Media del conteggio: 6\n> k35 <- 0:qpois(.999, lambda=6)\n> pr35 <- dpois(k35, lambda=6)\n> sum(pr35)  # Quasi 1: coda esclusa\n[1] 0.9994909\n> c(media=6, varianza=6, sd=sqrt(6))\n   media varianza       sd \n 6.00000  6.00000  2.44949 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "dd3133a1e3eb3e877745",
+   "seconds": 0.0
+  },
+  "36_esposizioni.R": {
+   "status": "ok",
+   "output": "> # Stesso tasso: esposizione doppia\n> L36 <- c(3, 6)\n> mu36 <- 2 * L36\n> data.frame(esposizione=L36,\n+            media=mu36,\n+            sd=sqrt(mu36),\n+            cv=1/sqrt(mu36))\n  esposizione media       sd        cv\n1           3     6 2.449490 0.4082483\n2           6    12 3.464102 0.2886751",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "1ce3611aaa301651c337",
+   "seconds": 0.0
+  },
+  "37_coda_poisson.R": {
+   "status": "ok",
+   "output": "> # Almeno 10 eventi, media 6\n> ppois(9, lambda=6,\n+       lower.tail=FALSE)\n[1] 0.08392402\n> # Primo conteggio con cumulata >= .95\n> qpois(.95, lambda=6)\n[1] 10\n> ppois(10, lambda=6)\n[1] 0.9573791",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "be418f49b641c180bffb",
+   "seconds": 0.0
+  },
+  "38_eventi_rari.R": {
+   "status": "ok",
+   "output": "> # Molte prove, p piccolo: n*p=6\n> k38 <- 0:25\n> b38 <- dbinom(k38, 200, .03)\n> p38 <- dpois(k38, 6)\n> max(abs(b38-p38))\n[1] 0.002462848\n> c(var_bin=200*.03*.97, var_pois=6)\n var_bin var_pois \n    5.82     6.00 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "7b9301c173ebea6f2f65",
+   "seconds": 0.0
+  },
+  "39_somma_poisson.R": {
+   "status": "ok",
+   "output": "> # Due conteggi indipendenti\n> set.seed(17)\n> a39 <- rpois(10000, lambda=2)\n> b39 <- rpois(10000, lambda=4)\n> s39 <- a39 + b39\n> c(media=mean(s39), varianza=var(s39))\n   media varianza \n6.022200 6.051712 \n> # La distribuzione esatta e' Pois(6)",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "b3d4acea2798f7343087",
+   "seconds": 0.0
+  },
+  "40_eterogeneita.R": {
+   "status": "ok",
+   "output": "> # Due regimi con uguale probabilita\n> set.seed(17)\n> mu40 <- sample(c(2,10), 10000,\n+                replace=TRUE)\n> k40 <- rpois(10000, lambda=mu40)\n> c(media=mean(k40), varianza=var(k40))\n   media varianza \n 5.98440 22.15637 \n> # Teoria: media 6, varianza 6+16=22",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "04632fafcea1d3733d0a",
+   "seconds": 0.0
+  },
+  "41_lab_poisson.R": {
+   "status": "ok",
+   "output": "> # Stessa media, tassi differenti\n> a41 <- lab_poisson(rate=2,\n+                   exposure=3)\n> b41 <- lab_poisson(rate=1,\n+                   exposure=6)\n> a41$indicatori\nconteggio_atteso            tasso     sd_conteggio \n         6.00000          2.00000          2.44949 \n> b41$indicatori\nconteggio_atteso            tasso     sd_conteggio \n         6.00000          1.00000          2.44949 \n> all.equal(a41$dati, b41$dati)\n[1] TRUE",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "808797a6a252173a5da3",
+   "seconds": 0.0
+  },
+  "42_normale.R": {
+   "status": "ok",
+   "output": "> # Modello continuo: media 10, SD 2\n> x42 <- seq(2, 18, length.out=201)\n> d42 <- dnorm(x42, mean=10, sd=2)\n> plot(x42, d42, type=\"l\",\n+      xlab=\"x\", ylab=\"Densita\")\n> # dnorm restituisce una densita\n> dnorm(10, mean=10, sd=2)\n[1] 0.1994711",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "549973954970d0400747",
+   "seconds": 0.0
+  },
+  "43_posizione_scala.R": {
+   "status": "ok",
+   "output": "> # Stessa variabile, tre modelli\n> x43 <- seq(2, 20, length.out=201)\n> a43 <- dnorm(x43, 10, 1)\n> b43 <- dnorm(x43, 10, 2)\n> c43 <- dnorm(x43, 14, 2)\n> matplot(x43, cbind(a43,b43,c43),\n+         type=\"l\", lty=1,\n+         xlab=\"x\", ylab=\"Densita\")",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "523487fbbf309371f841",
+   "seconds": 0.0
+  },
+  "44_standardizzare.R": {
+   "status": "ok",
+   "output": "> # Valore 14 nel modello N(10, 2^2)\n> z44 <- (14 - 10) / 2\n> z44  # Due deviazioni sopra la media\n[1] 2\n> pnorm(14, mean=10, sd=2)\n[1] 0.9772499\n> pnorm(z44)  # Stessa probabilita\n[1] 0.9772499",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "edb3e73ff6dd06f85c27",
+   "seconds": 0.0
+  },
+  "45_probabilita_intervallo.R": {
+   "status": "ok",
+   "output": "> # Probabilita fra 8 e 12\n> pnorm(12, mean=10, sd=2) -\n+   pnorm(8, mean=10, sd=2)\n[1] 0.6826895\n> # Stesso intervallo: -1 < Z < 1\n> pnorm(1) - pnorm(-1)\n[1] 0.6826895",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "c777e96556aa4a1ab2b3",
+   "seconds": 0.0
+  },
+  "46_quantile_normale.R": {
+   "status": "ok",
+   "output": "> # Soglia con il 95% a sinistra\n> q46 <- qnorm(.95, mean=10, sd=2)\n> q46  # 13.28971\n[1] 13.28971\n> qnorm(.95)  # 1.644854\n[1] 1.644854\n> pnorm(q46, mean=10, sd=2)\n[1] 0.95",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "c12dc80991c92d9c61c1",
+   "seconds": 0.0
+  },
+  "47_intervallo_centrale.R": {
+   "status": "ok",
+   "output": "> # Due code del 2.5% ciascuna\n> i47 <- qnorm(c(.025,.975), 10, 2)\n> i47  # 6.080072, 13.919928\n[1]  6.080072 13.919928\n> diff(pnorm(i47, mean=10, sd=2))\n[1] 0.95\n> # Quantile unilaterale: altra soglia\n> qnorm(.95, mean=10, sd=2)\n[1] 13.28971",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "bde8b3adf8e11055abd3",
+   "seconds": 0.0
+  },
+  "48_limite_normale.R": {
+   "status": "ok",
+   "output": "> # Concentrazione [mg/L], modello\n> # normale con media 1 e SD 0.8\n> pnorm(0, mean=1, sd=.8)\n[1] 0.1056498\n> # Probabilita negativa: circa 10.6%\n> # Con media 10 e SD 2 e' molto minore\n> pnorm(0, mean=10, sd=2)\n[1] 2.866516e-07",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "231a19c01c3603d37e8b",
+   "seconds": 0.0
+  },
+  "49_lab_normale.R": {
+   "status": "ok",
+   "output": "> # Stesso livello, scale differenti\n> a49 <- lab_normale(mu=10, sd=2,\n+                   q=.95)\n> b49 <- lab_normale(mu=20, sd=4,\n+                   q=.95)\n> a49$indicatori\n     quantile_originale quantile_standardizzato \n              13.289707                1.644854 \n> b49$indicatori\n     quantile_originale quantile_standardizzato \n              26.579415                1.644854 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "80d7454942a0dfa940e8",
+   "seconds": 0.0
+  },
+  "50_prodotti.R": {
+   "status": "ok",
+   "output": "> # Fattori positivi adimensionali\n> f50 <- c(1.2, .8, 1.1)\n> prod(f50)       # Prodotto: 1.056\n[1] 1.056\n> exp(sum(log(f50)))\n[1] 1.056\n> # Stesso risultato entro precisione\n> all.equal(log(prod(f50)),\n+           sum(log(f50)))\n[1] TRUE",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "424864148d63d26147e1",
+   "seconds": 0.0
+  },
+  "51_lognormale.R": {
+   "status": "ok",
+   "output": "> # X adimensionale, 500 estrazioni\n> set.seed(17)\n> x51 <- rlnorm(500, 0, .6)\n> range(x51)\n[1] 0.1184006 7.3749700\n> hist(log(x51), probability = TRUE,\n+      main = \"Logaritmo di X\",\n+      xlab = \"log(X)\", col = \"#E0ECEA\")\n> curve(dnorm(x, 0, .6), add = TRUE,\n+       col = \"#087C74\", lwd = 2)",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "4d38a1ea848749f7cb65",
+   "seconds": 0.1
+  },
+  "52_media_mediana.R": {
+   "status": "ok",
+   "output": "> set.seed(17)\n> x52 <- rlnorm(500, 0, .6)\n> c(mediana_teoria = 1,\n+   mediana_sim = median(x52),\n+   media_teoria = exp(.6^2/2),\n+   media_sim = mean(x52))\nmediana_teoria    mediana_sim   media_teoria      media_sim \n     1.0000000      0.9996463      1.1972174      1.1994722 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "c42281f9c2a2f8fee32b",
+   "seconds": 0.0
+  },
+  "53_cv.R": {
+   "status": "ok",
+   "output": "> # X lognormale: formula esatta\n> s53 <- c(.1, .3, .6)\n> cv53 <- sqrt(expm1(s53^2))\n> data.frame(sdlog = s53, CV = cv53,\n+            percento = 100*cv53)\n  sdlog        CV percento\n1   0.1 0.1002505 10.02505\n2   0.3 0.3068783 30.68783\n3   0.6 0.6582776 65.82776",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "fec42ff5a138535c4b1f",
+   "seconds": 0.0
+  },
+  "54_miscela.R": {
+   "status": "ok",
+   "output": "> # Due popolazioni adimensionali\n> set.seed(17)\n> g54 <- rbinom(500, 1, .65)\n> mu54 <- ifelse(g54 == 1, 2, 6)\n> sd54 <- ifelse(g54 == 1, .7, 1)\n> x54 <- rnorm(500, mu54, sd54)\n> hist(x54, probability = TRUE,\n+      main = \"Miscela di due gruppi\",\n+      xlab = \"X\", col = \"#E0ECEA\")",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "363cd93fbb3f28333731",
+   "seconds": 0.0
+  },
+  "55_supporto_modello.R": {
+   "status": "ok",
+   "output": "> # Esempio adimensionale costruito\n> pnorm(0, mean = 1, sd = .6)\n[1] 0.04779035\n> # Probabilita' circa 0.048\n> plnorm(0, meanlog = 0, sdlog = .6)\n[1] 0\n> # Qui P(X <= 0) = 0",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "e80f29bc78cc67d1790f",
+   "seconds": 0.0
+  },
+  "56_lab_lognormale.R": {
+   "status": "ok",
+   "output": "> # Due esperimenti, ciascuno con B=500\n> a56 <- lab_moltiplicazione(\n+   sdlog = .3, seed = 17)\n> b56 <- lab_moltiplicazione(\n+   sdlog = .8, seed = 17)\n> a56$indicatori\nmediana_teorica   media_teorica  media_simulata \n       1.000000        1.046028        1.042107 \n> b56$indicatori\nmediana_teorica   media_teorica  media_simulata \n       1.000000        1.377128        1.392183 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "8ab7918e4f21469c43a7",
+   "seconds": 0.0
+  },
+  "57_monte_carlo.R": {
+   "status": "ok",
+   "output": "> # E[X^2] per X normale standard\n> set.seed(17)\n> B57 <- 5000\n> x57 <- rnorm(B57)\n> y57 <- x57^2\n> c(stima = mean(y57), teoria = 1)\n    stima    teoria \n0.9757894 1.0000000 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "d2d69fe95922c5bc8790",
+   "seconds": 0.0
+  },
+  "58_replica_completa.R": {
+   "status": "ok",
+   "output": "> set.seed(17)\n> B58 <- 10000\n> k58 <- rbinom(B58, 20, .3)\n> i58 <- k58 >= 8\n> c(stima = mean(i58),\n+   esatta = pbinom(7, 20, .3,\n+     lower.tail = FALSE))\n    stima    esatta \n0.2226000 0.2277282 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "6ac1e876ca6076c26bd3",
+   "seconds": 0.0
+  },
+  "59_errore_mc.R": {
+   "status": "ok",
+   "output": "> # p e' noto in questo esempio\n> B59 <- c(200, 800, 3200)\n> p59 <- .1\n> se59 <- sqrt(p59*(1-p59)/B59)\n> data.frame(B = B59, SE_MC = se59)\n     B       SE_MC\n1  200 0.021213203\n2  800 0.010606602\n3 3200 0.005303301",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "7c1e62c20df92fe39c02",
+   "seconds": 0.0
+  },
+  "60_convergenza.R": {
+   "status": "ok",
+   "output": "> set.seed(17)\n> B60 <- 2000\n> i60 <- rbinom(B60, 1, .1)\n> b60 <- seq_len(B60)\n> p60 <- cumsum(i60)/b60\n> plot(b60, p60, type = \"l\",\n+      xlab = \"Repliche B\",\n+      ylab = \"Frequenza cumulativa\")\n> abline(h = .1, col = \"#C57E42\")",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 1,
+   "same": true,
+   "hash": "615abe45162d80fc7972",
+   "seconds": 0.0
+  },
+  "61_numero_repliche.R": {
+   "status": "ok",
+   "output": "> # Obiettivo: SE_MC <= 0.01\n> eps61 <- .01; p61 <- .1\n> B61 <- ceiling((p61/eps61) *\n+                ((1-p61)/eps61))\n> Bmax61 <- ceiling(1/(4*eps61^2))\n> c(con_p_noto = B61,\n+   limite_generale = Bmax61)\n     con_p_noto limite_generale \n            900            2500 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "6f40be53596e1a113476",
+   "seconds": 0.0
+  },
+  "62_seme.R": {
+   "status": "ok",
+   "output": "> set.seed(17)\n> a62 <- rnorm(5)\n> set.seed(17)\n> b62 <- rnorm(5)\n> identical(a62, b62)\n[1] TRUE\n> RNGkind()\n[1] \"Mersenne-Twister\" \"Inversion\"        \"Rejection\"       \n> R.version.string\n[1] \"R version 4.6.0 (2026-04-24)\"",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "50f2e067bda5869f017d",
+   "seconds": 0.0
+  },
+  "63_due_errori.R": {
+   "status": "ok",
+   "output": "> set.seed(17)\n> B63 <- 2000\n> y63 <- rlnorm(B63, 0, .6)\n> s63 <- sd(y63)\n> c(SD_uscita = s63,\n+   SE_media_MC = s63/sqrt(B63))\n  SD_uscita SE_media_MC \n 0.82423487  0.01843045 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "80935444e8c378cfd40c",
+   "seconds": 0.0
+  },
+  "64_bias.R": {
+   "status": "ok",
+   "output": "> # V fissato; scostamento di 2 g noto\n> set.seed(17)\n> m64 <- rnorm(20000, 108, 1)\n> d64 <- m64/40\n> dc64 <- (m64-2)/40\n> c(senza_correzione = mean(d64),\n+   con_correzione = mean(dc64))\nsenza_correzione   con_correzione \n        2.700302         2.650302 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "cb86e017cc444dd84945",
+   "seconds": 0.0
+  },
+  "65_lab_mc.R": {
+   "status": "ok",
+   "output": "> a65 <- lab_monte_carlo(\n+   B = 200, prob = .1, seed = 17)\n> b65 <- lab_monte_carlo(\n+   B = 800, prob = .1, seed = 17)\n> a65$indicatori\n        stima se_mc_teorico \n    0.0750000     0.0212132 \n> b65$indicatori\n        stima se_mc_teorico \n    0.0962500     0.0106066 \n> a65$indicatori[\"se_mc_teorico\"] /\n+   b65$indicatori[\"se_mc_teorico\"]\nse_mc_teorico \n            2 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "0506307901ad15da7bf1",
+   "seconds": 0.1
+  },
+  "66_densita.R": {
+   "status": "ok",
+   "output": "> # Unita': g, cm^3 e g/cm^3\n> m0 <- 106\n> V0 <- 40\n> um <- 1\n> uV <- .6\n> d0 <- m0/V0\n> c(densita = d0, CV_m = um/m0,\n+   CV_V = uV/V0)\n    densita        CV_m        CV_V \n2.650000000 0.009433962 0.015000000 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "e7487027ab43afa6eb42",
+   "seconds": 0.0
+  },
+  "67_rpos.R": {
+   "status": "ok",
+   "output": "> # mu e s: media e SD originali\n> rpos <- function(n, mu, s) {\n+   v <- log1p((s/mu)^2)\n+   rlnorm(n, log(mu)-v/2, sqrt(v))\n+ }\n> set.seed(17)\n> head(rpos(6, mu = 106, s = 1))\n[1] 104.9852 105.9157 105.7626 105.1812 106.7701 105.8298",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "a6bda5d4c43b9574a9ef",
+   "seconds": 0.0
+  },
+  "68_simula_densita.R": {
+   "status": "ok",
+   "output": "> # Ingressi indipendenti, positivi\n> set.seed(17)\n> B68 <- 20000\n> m68 <- rpos(B68, 106, 1)\n> v68 <- rpos(B68, 40, .6)\n> d68 <- m68/v68\n> c(media = mean(d68), SD = sd(d68))\n     media         SD \n2.65102886 0.04697276 \n> quantile(d68, c(.025, .975))\n    2.5%    97.5% \n2.560594 2.744241 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "821efb0eea3f91bb203d",
+   "seconds": 0.0
+  },
+  "69_sensibilita.R": {
+   "status": "ok",
+   "output": "> m0 <- 106; V0 <- 40\n> cm69 <- 1/V0\n> cV69 <- -m0/V0^2\n> c(sensibilita_massa = cm69,\n+   sensibilita_volume = cV69)\n sensibilita_massa sensibilita_volume \n           0.02500           -0.06625 \n> # Effetto di +1 g e di +0.6 cm^3\n> c(cm69*1, cV69*.6)\n[1]  0.02500 -0.03975",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "9bf89c53d1397f23a4e0",
+   "seconds": 0.0
+  },
+  "70_contributi.R": {
+   "status": "ok",
+   "output": "> # Contributi in (g/cm^3)^2\n> q70 <- c(massa = (1/40)^2,\n+          volume = (106*.6/40^2)^2)\n> u70 <- sqrt(sum(q70))\n> c(SD_approssimata = u70)\nSD_approssimata \n     0.04695809 \n> 100*q70/sum(q70)\n   massa   volume \n28.34387 71.65613 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "43a855e2f1f50d4bdb0a",
+   "seconds": 0.0
+  },
+  "71_covarianza.R": {
+   "status": "ok",
+   "output": "> # c: correlazione sulla scala fisica\n> c71 <- c(-.7, 0, .7)\n> a71 <- 1/106\n> b71 <- .6/40\n> u71 <- 2.65*sqrt(a71^2+b71^2 -\n+                  2*c71*a71*b71)\n> data.frame(c = c71, SD = u71)\n     c         SD\n1 -0.7 0.05996926\n2  0.0 0.04695809\n3  0.7 0.02852740",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "f4bb9e34c862a7dc5fc7",
+   "seconds": 0.0
+  },
+  "72_ingressi_correlati.R": {
+   "status": "ok",
+   "output": "> set.seed(17)\n> s72 <- .1; c72 <- .7\n> z72 <- matrix(rnorm(4000), ncol = 2)\n> u72 <- z72[, 1]\n> v72 <- c72*u72 +\n+   sqrt(1-c72^2)*z72[, 2]\n> x72 <- exp(log(10)+s72*u72)\n> y72 <- exp(log(5)+s72*v72)\n> r72 <- x72/y72\n> sd(r72)\n[1] 0.1527805",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "b34ddd1fd00db851c8e4",
+   "seconds": 0.0
+  },
+  "73_rapporto_esatto.R": {
+   "status": "ok",
+   "output": "> s73 <- .1; c73 <- .7\n> t273 <- 2*s73^2*(1-c73)\n> c(mediana = 2,\n+   media = 2*exp(t273/2),\n+   SD = 2*sqrt(expm1(t273) *\n+                  exp(t273)))\n  mediana     media        SD \n2.0000000 2.0060090 0.1556182 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "ede5f94b7ab9496a1a37",
+   "seconds": 0.0
+  },
+  "74_scale_parametri.R": {
+   "status": "ok",
+   "output": "> s74 <- .3; cl74 <- .7\n> CV74 <- sqrt(expm1(s74^2))\n> c74 <- expm1(cl74*s74^2) /\n+        expm1(s74^2)\n> c(SD_log = s74, CV_originale = CV74,\n+   cor_log = cl74, cor_originale = c74)\n       SD_log  CV_originale       cor_log cor_originale \n    0.3000000     0.3068783     0.7000000     0.6904947 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "81b68071b1dd7e76a3cc",
+   "seconds": 0.0
+  },
+  "75_confronto_approssimazione.R": {
+   "status": "ok",
+   "output": "> # Correlazione dei log uguale a 0\n> s75 <- c(.02, .1, .2, .3)\n> t275 <- 2*s75^2\n> a75 <- 2*sqrt(t275)\n> e75 <- 2*sqrt(expm1(t275)*exp(t275))\n> data.frame(sdlog = s75,\n+   approssimata = a75, esatta = e75,\n+   scarto_percento = 100*(e75-a75)/e75)\n  sdlog approssimata     esatta scarto_percento\n1  0.02   0.05656854 0.05660249      0.05998334\n2  0.10   0.28284271 0.28711973      1.48962696\n3  0.20   0.56568542 0.60074555      5.83610200\n4  0.30   0.84852814 0.97182725     12.68734885",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "fafdc76e1ae6c06bcfb9",
+   "seconds": 0.0
+  },
+  "76_lab_propagazione.R": {
+   "status": "ok",
+   "output": "> a76 <- lab_propagazione(\n+   rho = 0, cv = .1, seed = 17)\n> b76 <- lab_propagazione(\n+   rho = .7, cv = .1, seed = 17)\n> c76 <- lab_propagazione(\n+   rho = 0, cv = .3, seed = 17)\n> rbind(A = a76$indicatori,\n+       B = b76$indicatori,\n+       C = c76$indicatori)\n  sd_simulata sd_differenziale_log sd_esatta\nA   0.2869663            0.2828427 0.2871197\nB   0.1527805            0.1549193 0.1556182\nC   0.9718104            0.8485281 0.9718273",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "ee7dcf4ba5e09e6df5dd",
+   "seconds": 0.0
+  },
+  "78_strumenti.R": {
+   "status": "ok",
+   "output": "> # Densita': 106 g / 40 cm^3\n> u78 <- function(um, uV) {\n+   2.65*sqrt((um/106)^2+(uV/40)^2)\n+ }\n> u78(1, .6)    # situazione iniziale\n[1] 0.04695809\n> u78(.5, .6)   # migliora la massa\n[1] 0.04166908\n> u78(1, .3)    # migliora il volume\n[1] 0.03193768\n> # Incertezze in g/cm^3; c=0",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "ce401c3c2cc66fbb83c0",
+   "seconds": 0.0
+  },
+  "80_consegna.R": {
+   "status": "ok",
+   "output": "> # Caso fisico: input indipendenti\n> set.seed(17)\n> B80 <- 20000\n> m80 <- rpos(B80, 106, 1)\n> v80 <- rpos(B80, 40, .6)\n> d80 <- m80/v80\n> dir.create(\"Risultati\",\n+            showWarnings=FALSE)\n> write.csv(data.frame(densita=d80),\n+   \"Risultati/densita.csv\",\n+   row.names=FALSE)",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "0d8cd1b1b53af2b577d7",
+   "seconds": 0.0
+  }
+ },
+ "cards": {
+  "Esercizi/01_eventi.R": {
+   "status": "ok",
+   "tail": "  probabilita_teorica frequenza_finale\nA                 0.3          0.29500\nB                 0.3          0.29875"
+  },
+  "Esercizi/02_condizionamento.R": {
+   "status": "ok",
+   "tail": "  prob_A prob_B_dato_A indipendenza\nA   0.44     0.7272727            0\nB   0.26     0.3076923            0"
+  },
+  "Esercizi/03_distribuzione.R": {
+   "status": "ok",
+   "tail": "   cumulata superamento\nA 0.8413447   0.1586553\nB 0.5000000   0.5000000"
+  },
+  "Esercizi/04_binomiale.R": {
+   "status": "ok",
+   "tail": "  media_teorica varianza_teorica media_simulata\nA             6              4.2         5.9375\nB            12              8.4        11.9025"
+  },
+  "Esercizi/05_poisson.R": {
+   "status": "ok",
+   "tail": "  conteggio_atteso tasso sd_conteggio\nA                6     2     2.449490\nB               12     2     3.464102"
+  },
+  "Esercizi/06_normale.R": {
+   "status": "ok",
+   "tail": "  quantile_originale quantile_standardizzato\nA           13.28971                1.644854\nB           19.93456                1.644854"
+  },
+  "Esercizi/07_moltiplicazione.R": {
+   "status": "ok",
+   "tail": "  mediana_teorica media_teorica media_simulata\nA               1      1.197217       1.199472\nB               1      2.054433       2.143889"
+  },
+  "Esercizi/08_monte-carlo.R": {
+   "status": "ok",
+   "tail": "    stima se_mc_teorico\nA 0.07500     0.0212132\nB 0.09625     0.0106066"
+  },
+  "Esercizi/09_propagazione.R": {
+   "status": "ok",
+   "tail": "  sd_simulata sd_differenziale_log sd_esatta\nA   0.2869663            0.2828427 0.2871197\nB   0.1242126            0.1264911 0.1268712"
+  }
+ }
+}

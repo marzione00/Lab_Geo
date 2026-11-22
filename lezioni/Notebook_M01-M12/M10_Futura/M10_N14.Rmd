@@ -1,0 +1,129 @@
+---
+title: "Approfondimento: un VAR(1) come due regressioni"
+subtitle: "M10_N14 · Futura"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Come si rappresenta la memoria reciproca di due serie?
+
+## Obiettivi
+
+- Costruire ritardi senza disallineare le righe.
+- Stimare le due equazioni sullo stesso campione.
+- Leggere la matrice dei coefficienti.
+
+**Prima di iniziare.** Sono richiesti vettori, tabelle e funzioni R di base. I blocchi vanno eseguiti in ordine. Il notebook è autonomo rispetto agli altri.
+
+**Dati e unità.** Processi sintetici di 300 passi, senza unità fisica. Le colonne x_VAR e y_VAR costituiscono un sistema bivariato. Usiamo i passi 1–250 per stimare e, quando richiesto, 251–260 per una previsione a origine fissa. La prima riga è una condizione iniziale finita: l’esempio non equivale a una nuova serie osservativa.
+
+## Preparazione
+
+Aprire il progetto autonomo di Futura o quello generale del corso. I calcoli usano R base e stats. Gli output del notebook vanno in `Risultati/M10_N14/`; i CSV originali restano invariati.
+
+```{r preparazione}
+# Trova la cartella M10 dal progetto autonomo o dal progetto generale.
+.gs_cerca <- normalizePath(getwd(),winslash="/",mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca,
+    file.path(.gs_cerca,"M10_Futura"),
+    file.path(.gs_cerca,"03_Notebook_svolti","M10_Futura"),
+    file.path(.gs_cerca,"M10","03_Notebook_svolti","M10_Futura"))
+  .gs_ok <- file.exists(file.path(.gs_candidati,"M10_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati,"R","funzioni_notebook.R"))
+  if(any(.gs_ok)) { .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]; break }
+  .gs_padre <- dirname(.gs_cerca)
+  if(.gs_padre==.gs_cerca) stop("Aprire il progetto M10_Futura o quello generale dei notebook.")
+  .gs_cerca <- .gs_padre
+}
+source(file.path(.gs_modulo,"R","funzioni_notebook.R"),local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo,"M10_N14")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88,digits=6)
+if(requireNamespace("knitr",quietly=TRUE)) {
+  knitr::opts_chunk$set(echo=TRUE,error=FALSE,warning=TRUE,message=TRUE,
+    fig.width=8,fig.height=5,dpi=150,fig.align="center")
+}
+set.seed(10014)
+```
+
+## 1. I ritardi mantengono le coppie
+
+Per ogni istante da 2 a 250, i predittori sono X e Y dell’istante precedente. La trasformazione produce 249 coppie complete.
+
+```{r passo_01}
+p <- carica_dati("processi_simulati.csv")
+v <- p[1:250,c("x_VAR","y_VAR")]
+lagged <- data.frame(x=v$x_VAR[-1],y=v$y_VAR[-1],
+  x_lag=head(v$x_VAR,-1),y_lag=head(v$y_VAR,-1))
+head(lagged,4)
+stopifnot(nrow(lagged)==249L,lagged$x_lag[1]==v$x_VAR[1],lagged$x[1]==v$x_VAR[2])
+```
+
+**Lettura del risultato.** Il ritardo costa una riga. Usare serie con lunghezze uguali non basta: ogni risposta deve essere associata ai suoi predittori passati.
+
+## 2. Due equazioni formano il sistema
+
+Il VAR(1) scrive $\boldsymbol z_t=\boldsymbol c+A\boldsymbol z_{t-1}+\boldsymbol\varepsilon_t$. Entrambe le regressioni usano il medesimo insieme di predittori.
+
+```{r passo_02}
+fit_x <- lm(x~x_lag+y_lag,data=lagged)
+fit_y <- lm(y~x_lag+y_lag,data=lagged)
+coefficienti <- rbind(X=coef(fit_x),Y=coef(fit_y))
+coefficienti
+```
+
+**Lettura del risultato.** La riga X descrive la prima equazione, la riga Y la seconda. I coefficienti incrociati riguardano un contributo predittivo condizionato agli altri regressori.
+
+## 3. La matrice conserva la direzione
+
+La riga identifica la risposta e la colonna la variabile ritardata. Questa convenzione è essenziale per la previsione ricorsiva.
+
+```{r passo_03}
+A <- rbind(coef(fit_x)[c("x_lag","y_lag")],coef(fit_y)[c("x_lag","y_lag")])
+rownames(A) <- c("X","Y")
+intercetta <- c(coef(fit_x)[1],coef(fit_y)[1])
+A
+z250 <- as.numeric(v[250,])
+primo <- as.numeric(intercetta+A%*%z250)
+data.frame(variabile=c("X","Y"),prevista_passo251=primo)
+```
+
+**Lettura del risultato.** L’operazione matrice per stato usa il valore al passo 250 per produrre il 251. Il futuro osservato non entra in questa operazione.
+
+## Variante svolta
+
+**Il modello senza contributi incrociati.** Stimare separatamente due AR(1) per comprendere le restrizioni imposte.
+
+```{r variante}
+rid_x <- lm(x~x_lag,data=lagged); rid_y <- lm(y~y_lag,data=lagged)
+data.frame(equazione=c("X","Y"),AIC_VAR=c(AIC(fit_x),AIC(fit_y)),
+  AIC_solo_memoria_propria=c(AIC(rid_x),AIC(rid_y)))
+```
+
+L’esercizio riguarda l’adattamento nel train. Un vantaggio AIC non prova né causalità né superiorità predittiva su dati esclusi.
+
+## Errore da riconoscere
+
+Trasporre la matrice dei coefficienti o allineare X del tempo t con Y del tempo t anziché con il ritardo dichiarato.
+
+## Risposta alla domanda
+
+Il VAR(1) coordina due regressioni con i medesimi predittori ritardati. La matrice A rende esplicite memoria propria e dipendenza incrociata, da verificare prima dell’uso predittivo.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M10_N14` di [GeoStat Lab M10](https://marzione00.github.io/Lab_Geo/#indice). Il [codice originale del laboratorio](https://github.com/marzione00/Lab_Geo/blob/649f7cc577b96bd1044d81e78a2f530813e4f96b/materiali/laboratori/M10/M10_N14.R) è conservato anche in `R/Originali_corso`. Gli ampliamenti e le varianti sono identificati nella mappa allegata.
+
+Documentazione dei metodi: [R stats, arima](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/arima.html), [predict.Arima](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/predict.arima.html), [Box.test](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/box.test.html) e [p.adjust](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/p.adjust.html).

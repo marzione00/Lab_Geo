@@ -2,6 +2,8 @@
 # Seguire assegnazione ai centroidi e aggiornamento delle posizioni.
 # Dati sintetici; parametri e ambiente dichiarati.
 # Dipendenze: install.packages(c("ggplot2", "jsonlite", "svglite"))
+# Codice: PolyForm Noncommercial 1.0.0, https://polyformproject.org/licenses/noncommercial/1.0.0
+# Required Notice: Copyright 2026 Marzio De Corato (https://github.com/marzione00/Lab_Geo)
 
 # GeoStat Lab — funzioni comuni. R >= 4.3; ggplot2 >= 3.4; jsonlite.
 suppressPackageStartupMessages(library(ggplot2))
@@ -68,8 +70,9 @@ for (it in seq_len(p$iterations)) {
 
 data <- data.frame(x = x[, 1], y = x[, 2], gruppo = factor(cl))
 
-plots <- list(point_plot(data, title = "Assegnazioni e centroidi", group = "gruppo") + geom_point(data = data.frame(x = cent[, 
-    1], y = cent[, 2]), aes(x, y), inherit.aes = FALSE, shape = 4, size = 6, stroke = 2))
+plots <- list(point_plot(data, title = "Assegnazioni e centroidi", group = "gruppo") +
+    geom_point(data = data.frame(x = cent[, 1], y = cent[, 2]), aes(x, y),
+    inherit.aes = FALSE, shape = 4, size = 6, stroke = 2))
 
 metrics <- metric(`Somma quadratica entro gruppi` = f(sum((x - cent[cl, ])^2)), Iterazioni = p$iterations)
 

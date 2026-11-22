@@ -2,6 +2,8 @@
 # Confrontare media, ultimo valore e riferimento stagionale.
 # Dati sintetici; parametri e ambiente dichiarati.
 # Dipendenze: install.packages(c("ggplot2", "jsonlite", "svglite"))
+# Codice: PolyForm Noncommercial 1.0.0, https://polyformproject.org/licenses/noncommercial/1.0.0
+# Required Notice: Copyright 2026 Marzio De Corato (https://github.com/marzione00/Lab_Geo)
 
 # GeoStat Lab — funzioni comuni. R >= 4.3; ggplot2 >= 3.4; jsonlite.
 suppressPackageStartupMessages(library(ggplot2))
@@ -64,8 +66,8 @@ h <- 1:12
 
 actual <- y[o + h]
 
-pred <- cbind(Media = rep(mean(y[1:o]), 12), Ultimo = rep(y[o], 12), Stagionale = y[(o - 
-    11):o])
+pred <- cbind(Media = rep(mean(y[1:o]), 12), Ultimo = rep(y[o], 12),
+    Stagionale = y[(o - 11):o])
 
 data <- data.frame(x = rep(o + h, 4), y = c(actual, as.vector(pred)), metodo = rep(c("Osservato", 
     colnames(pred)), each = 12))

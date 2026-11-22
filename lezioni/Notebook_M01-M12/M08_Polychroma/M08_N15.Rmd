@@ -1,0 +1,142 @@
+---
+title: "Profili: ritornare alle unit\u00e0 originali"
+subtitle: "M08_N15 \u00b7 Polychroma"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Quali proprietà caratterizzano i gruppi quando ripristiniamo le unità scientifiche?
+
+## Obiettivi
+
+- Calcolare profili in entrambe le scale.
+- Controllare la trasformazione inversa.
+- Separare corrispondenza sintetica e identificazione geologica.
+
+**Prima di iniziare.** Lettura di un CSV, vettori, matrici, indicizzazione e funzioni di base in R.
+
+**Dati e unità.** Novanta rocce sintetiche del corso. SiO2, CaO, MgO e FeO sono percentuali in massa; densita è espressa in g/cm³ e grana_mm in millimetri. colore e fossili sono indici numerici convenzionali del simulatore, non misure mineralogiche o conteggi reali. La colonna litologia_generatrice descrive il gruppo usato nella simulazione e viene esclusa dalle stime.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Polychroma oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M08_Polychroma` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M08_Polychroma/Risultati/M08_N15/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M08_Polychroma"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M08_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M08_Polychroma o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M08_N15")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(8015)
+```
+
+## 1. Medie originali e medie standardizzate
+
+Le coordinate standardizzate rendono confrontabili gli scarti rispetto alla media di ciascuna variabile. Per descrivere i campioni recuperiamo anche densità, granulometria e percentuali nelle unità originali.
+
+```{r passo_01}
+# Seleziona le misure per nome: ID ed etichetta non entrano nella matrice.
+r <- carica_dati("rocce_simulate.csv")
+v <- c("SiO2", "CaO", "MgO", "FeO", "densita", "grana_mm", "colore", "fossili")
+X <- as.matrix(r[v])
+stopifnot(nrow(X)==90L, ncol(X)==8L, !anyDuplicated(r$id),
+          all(is.finite(X)), all(apply(X,2,sd)>0))
+Z <- scale(X)
+D <- dist(Z)
+# Gli avvii multipli confrontano soluzioni locali sullo stesso spazio.
+set.seed(816)
+km <- kmeans(Z, centers=3, nstart=50, iter.max=100)
+profili_x <- aggregate(r[v],list(cluster=km$cluster),mean)
+profili_z <- aggregate(as.data.frame(Z),list(cluster=km$cluster),mean)
+round(profili_x,3)
+round(profili_z,3)
+write.csv(profili_x,percorso_risultati("profili_unita_originali.csv"),row.names=FALSE)
+```
+
+**Lettura del risultato.** Il cluster 1 ha in media CaO circa 49,74%; il cluster 2 SiO2 circa 69,68%; il cluster 3 densità circa 2,95 g/cm³. Gli indici colore e fossili mantengono il significato convenzionale del simulatore.
+
+## 2. Un grafico dei profili standardizzati
+
+Tracciamo le medie standardizzate per leggere quali variabili sono sopra o sotto la media complessiva. La linea zero è il riferimento; la linea che collega variabili diverse è solo un ausilio grafico, non un andamento continuo.
+
+```{r passo_02}
+colori <- c("#087C74", "#C57E42", "#7363AA", "#1D7890", "#A17B19", "#657180", "#B55353")
+op <- par(mar=c(7,4,2,1))
+matplot(seq_along(v),t(as.matrix(profili_z[,-1])),type="b",pch=1:3,lty=1,
+ col=colori[1:3],xaxt="n",xlab="",ylab="Media standardizzata",
+ ylim=c(min(profili_z[,-1])-.1,max(profili_z[,-1])+.65))
+axis(1,at=seq_along(v),labels=v,las=2,cex.axis=.85)
+abline(h=0,lty=3,col="grey50")
+legend("topright",legend=paste("Cluster",1:3),col=colori[1:3],pch=1:3,lty=1,bty="n",horiz=TRUE,cex=.8)
+par(op)
+```
+
+**Lettura del risultato.** Si confrontano gli scarti relativi dalle medie, non la quantità fisica di proprietà con unità diverse. I profili aiutano a descrivere i gruppi senza trasformare i numeri dei cluster in nomi geologici automatici.
+
+## 3. Verifica inversa e metadati del generatore
+
+La trasformazione inversa delle medie standardizzate deve coincidere con la media nelle unità originali. Dopo questa verifica confrontiamo i gruppi con l’origine sintetica dei campioni.
+
+```{r passo_03}
+centri_x <- sweep(sweep(km$centers,2,attr(Z,"scaled:scale"),"*"),
+                  2,attr(Z,"scaled:center"),"+")
+max(abs(centri_x-as.matrix(profili_x[,-1])))
+table(cluster=km$cluster,generatore=r$litologia_generatrice)
+```
+
+**Lettura del risultato.** La corrispondenza è cluster 1–Calcare, 2–Arenaria, 3–Basalto per questo seme e questi dati. È una corrispondenza osservata dopo il fit; su dati reali servirebbero descrizioni e riscontri geologici indipendenti.
+
+## Variante svolta
+
+Aggiungere mediana e intervallo interquartile della granulometria per ogni gruppo.
+
+```{r variante}
+do.call(rbind,lapply(1:3,function(g){
+ x <- r$grana_mm[km$cluster==g]
+ data.frame(cluster=g,media=mean(x),mediana=median(x),Q1=unname(quantile(x,.25)),
+            Q3=unname(quantile(x,.75)),minimo=min(x),massimo=max(x))
+}))
+```
+
+Un centro descrive il livello medio, ma non mostra asimmetria o dispersione. Mediana e quartili completano la descrizione e aiutano a riconoscere gruppi con variabilità interna diversa.
+
+## Errore da riconoscere
+
+Attribuire unità di misura reali agli indici sintetici colore e fossili, o assegnare un nome petrografico sulla sola base di una media.
+
+## Risposta alla domanda
+
+L’interpretazione richiede profili nelle unità originali, distribuzioni interne e conoscenza di come sono state prodotte le misure.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M08_N15` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M08/M08_N15.R).

@@ -1,0 +1,141 @@
+---
+title: "IDW: interpolare con pesi espliciti"
+subtitle: "M11_N18 · Locus"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Come si costruisce una previsione IDW e quali limiti impongono i suoi pesi?
+
+## Obiettivi
+
+- Calcolare le tre potenze originali nel punto (900,900).
+- Verificare normalizzazione e limite all’intervallo osservato.
+- Dichiarare il comportamento con siti coincidenti.
+
+**Prima di iniziare.** Sono richiesti vettori, tabelle, coordinate e funzioni R di base. I blocchi vanno eseguiti in ordine; il notebook è autonomo rispetto agli altri. I calcoli usano R base e i pacchetti standard.
+
+**Dati e unità.** 64 siti sintetici su una griglia 8 × 8, con passo 250 m e coordinate locali x_m e y_m fra 0 e 1750 m. Questo piano locale non ha un codice EPSG. La concentrazione è sintetica, in unità arbitrarie (u.a.); la quota è in metri sintetici. Ogni riga descrive un sito e il suo valore puntuale, non la media di una cella.
+
+## Preparazione
+
+Aprire il progetto autonomo di Locus o quello generale dei notebook. I CSV locali restano invariati. Gli output vanno in `Risultati/M11_N18/`. Nessun download o installazione viene eseguito nei blocchi.
+
+```{r preparazione}
+# Trova il modulo dal progetto autonomo o dal progetto generale dei notebook.
+.gs_cerca <- normalizePath(getwd(),winslash="/",mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca,file.path(.gs_cerca,"M11_Locus"),
+    file.path(.gs_cerca,"03_Notebook_svolti","M11_Locus"),
+    file.path(.gs_cerca,"M11","03_Notebook_svolti","M11_Locus"))
+  .gs_ok <- file.exists(file.path(.gs_candidati,"M11_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati,"R","funzioni_notebook.R"))
+  if(any(.gs_ok)) { .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]];break }
+  .gs_padre <- dirname(.gs_cerca)
+  if(.gs_padre==.gs_cerca) stop("Aprire il progetto M11_Locus o quello generale dei notebook.")
+  .gs_cerca <- .gs_padre
+}
+source(file.path(.gs_modulo,"R","funzioni_notebook.R"),local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo,"M11_N18")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88,digits=6)
+if(requireNamespace("knitr",quietly=TRUE)) {
+  knitr::opts_chunk$set(echo=TRUE,error=FALSE,warning=TRUE,message=TRUE,
+    fig.width=8,fig.height=5,dpi=150,fig.align="center")
+}
+set.seed(11018)
+```
+
+## 1. Il punto richiesto non coincide con un sito
+
+Manteniamo la posizione (900,900)m e le potenze 1,2,3 dello script originale. Non c’è un valore osservato in quella posizione da usare per scegliere la potenza.
+
+```{r passo_01}
+d <- carica_dati("spazio_v3.csv")
+audit_spazio(d)
+ posizione <- c(900,900);xy <- as.matrix(d[c("x_m","y_m")])
+ r <- sqrt((d$x_m-posizione[1])^2+(d$y_m-posizione[2])^2)
+ stopifnot(all(r>0))
+ data.frame(x_m=posizione[1],y_m=posizione[2],distanza_minima_m=min(r),distanza_massima_m=max(r))
+```
+
+**Lettura del risultato.** La richiesta è una previsione puntuale nel piano locale. La posizione e l’esponente vanno dichiarati prima di interpretare il numero restituito.
+
+## 2. I pesi sono positivi e sommano a uno
+
+Per distanze positive, $w_i=r_i^{-p}/\sum_jr_j^{-p}$ e $\hat z=\sum_iw_i z_i$. L’esponente maggiore concentra più peso sui siti vicini.
+
+```{r passo_02}
+potenze <- 1:3
+pesi <- sapply(potenze,function(p) {w<-r^-p;w/sum(w)})
+q <- as.numeric(crossprod(d$concentrazione,pesi))
+risultato <- data.frame(potenza=potenze,previsione=q,somma_pesi=colSums(pesi),
+  peso_massimo=apply(pesi,2,max))
+risultato
+stopifnot(max(abs(colSums(pesi)-1))<1e-12,all(pesi>=0),
+  all(q>=min(d$concentrazione)&q<=max(d$concentrazione)))
+```
+
+**Lettura del risultato.** La previsione è una combinazione convessa dei valori usati. Non può oltrepassarne l’intervallo e non possiede automaticamente un intervallo d’incertezza statistica.
+
+## 3. Il registro rende esplicita l’influenza dei siti
+
+Confrontiamo i pesi in funzione della distanza e salviamo ogni contributo.
+
+```{r passo_03}
+ordine <- order(r)
+stile_grafico()
+matplot(r[ordine],pesi[ordine,],type="l",lty=1,col=palette_geo[1:3],lwd=2,
+  xlab="Distanza dal punto richiesto (m)",ylab="Peso normalizzato",main="IDW: sensibilita alla potenza")
+legend("topright",paste("p=",potenze),col=palette_geo[1:3],lty=1,lwd=2,bty="n")
+write.csv(risultato,percorso_risultati("IDW_potenze.csv"),row.names=FALSE)
+write.csv(data.frame(id=d$id,distanza_m=r,p1=pesi[,1],p2=pesi[,2],p3=pesi[,3]),
+  percorso_risultati("IDW_pesi.csv"),row.names=FALSE)
+stopifnot(abs(idw_pred(xy,d$concentrazione,matrix(posizione,nrow=1),2)-q[2])<1e-12)
+```
+
+**Lettura del risultato.** Una sensibilità alla potenza non dice quale previsione sia più accurata. La verifica richiede bersagli esclusi e un protocollo separato, come in N19.
+
+## Variante svolta
+
+**Coincidenza e duplicati hanno una regola esplicita.** La funzione assegna tutto il peso ai siti coincidenti entro 10⁻¹⁰ m e, se sono più di uno, usa la loro media.
+
+```{r variante}
+esatto <- idw_pred(xy,d$concentrazione,xy[1,,drop=FALSE],2)
+duplicati <- matrix(c(0,0,0,0,100,0),ncol=2,byrow=TRUE)
+esempio <- idw_pred(duplicati,c(10,14,100),matrix(c(0,0),nrow=1),2)
+data.frame(caso=c("S01 osservato","Due valori coincidenti 10 e 14"),previsione=c(esatto,esempio))
+stopifnot(abs(esatto-d$concentrazione[1])<1e-12,esempio==12)
+```
+
+La media dei coincidenti è una politica computazionale dichiarata. Prima di applicarla a dati reali si deve capire se si tratta di repliche, duplicati o errori di posizione.
+
+## Errore da riconoscere
+
+Calcolare 0 elevato a una potenza negativa, scegliere p usando un bersaglio non osservato o interpretare la superficie IDW come una misura.
+
+## Risposta alla domanda
+
+IDW media valori con pesi espliciti legati alla distanza. La potenza controlla la località e la previsione resta nell’intervallo dei dati usati. Coincidenze, unità e scelta dei parametri vanno dichiarate; la precisione richiede una verifica indipendente.
+
+## Raccordo con le slide
+
+[Slide 92–95 della lezione Locus](../../02_PDF/M11_Locus/Locus_M11_statistica_spaziale.pdf#page=92). Il notebook conserva il tema del laboratorio originale e aggiunge verifiche e una variante svolta.
+
+
+## Riferimenti e provenienza
+
+Questo svolgimento sviluppa `M11_N18` del [modulo M11 del corso](https://marzione00.github.io/Lab_Geo/#modulo-M11). Il [codice originale](https://github.com/marzione00/Lab_Geo/blob/649f7cc577b96bd1044d81e78a2f530813e4f96b/materiali/laboratori/M11/M11_N18.R) è conservato immutato in `R/Originali_corso/`; la mappa allegata documenta gli ampliamenti. Dati e originali hanno impronte SHA-256 e SHA-1 Git verificate.
+
+Documentazione primaria delle operazioni: [R, dist](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/dist.html), [R, aggregate](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/aggregate.html), [R, sample](https://stat.ethz.ch/R-manual/R-devel/library/base/html/sample.html). Le definizioni spaziali e il riferimento inferenziale seguono il laboratorio originale, con le distinzioni esplicitate nel testo.

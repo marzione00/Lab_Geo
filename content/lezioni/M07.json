@@ -1,0 +1,6605 @@
+{
+ "id": "M07",
+ "title": "Relazioni tra variabili e regressione",
+ "planet": "Annula",
+ "world": "M07-e",
+ "exercisesWorld": "M07-c",
+ "pages": 100,
+ "pdf": "assets/lezioni/M07/Annula_M07_regressione.pdf",
+ "project": {
+  "dir": "annula",
+  "files": [
+   "Dati/fossili_simulati.csv",
+   "R/protocollo.R",
+   "setup.R"
+  ],
+  "setup": "setup.R"
+ },
+ "reference": {
+  "R": "R version 4.6.0 (2026-04-24), webR nel browser",
+  "native": "R version 4.3.3 (2024-02-29)",
+  "note": "Uscite registrate eseguendo il codice delle slide in ordine nel browser."
+ },
+ "sections": [
+  {
+   "title": "COPERTINA",
+   "first": 1,
+   "last": 1
+  },
+  {
+   "title": "I · RISPOSTA E RELAZIONE",
+   "first": 2,
+   "last": 13
+  },
+  {
+   "title": "II · MODELLO LINEARE",
+   "first": 14,
+   "last": 29
+  },
+  {
+   "title": "III · INCERTEZZA E PREVISIONE",
+   "first": 30,
+   "last": 41
+  },
+  {
+   "title": "IV · DIAGNOSTICA",
+   "first": 42,
+   "last": 55
+  },
+  {
+   "title": "V · PREDITTORI E INTERAZIONI",
+   "first": 56,
+   "last": 70
+  },
+  {
+   "title": "VI · RISPOSTE BINARIE",
+   "first": 71,
+   "last": 81
+  },
+  {
+   "title": "VII · VALUTAZIONE SU NUOVI DATI",
+   "first": 82,
+   "last": 93
+  },
+  {
+   "title": "VIII · UN’ANALISI COMPLETA",
+   "first": 94,
+   "last": 100
+  }
+ ],
+ "slides": [
+  {
+   "page": 1,
+   "items": [],
+   "title": "Relazioni tra variabili e regressione",
+   "section": "COPERTINA",
+   "lines": [
+    "ANNULA",
+    "MODULO M07 · SCIENZE DELLA TERRA",
+    "Relazioni tra variabili e regressione",
+    "Stima, diagnostica e previsione in R",
+    "Marzio De Corato",
+    "© 2026 · CC BY-NC-SA 4.0"
+   ],
+   "recall": []
+  },
+  {
+   "page": 2,
+   "title": "Una relazione descrive una risposta condizionata",
+   "section": "I · RISPOSTA E RELAZIONE",
+   "recall": [
+    "Il modello collega una risposta alle informazioni disponibili e conserva l’incertezza delle osservazioni."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Un fossile di diametro totale noto"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "002-1",
+     "w": 264,
+     "h": 160,
+     "src": "assets/lezioni/M07/figure/002-1.svg",
+     "ratio": 0.927
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il diametro totale aiuta a prevedere il diametro interno. A parità di diametro totale, i fossili conservano una variabilità."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "Y=m(X)+\\varepsilon,\\qquad E(\\varepsilon\\mid X)=0.",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La funzione ",
+      {
+       "t": "m",
+       "v": "m(x)"
+      },
+      " descrive la risposta media. L’errore ",
+      {
+       "t": "m",
+       "v": "\\varepsilon"
+      },
+      " rappresenta gli scarti individuali attorno a quella media."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "La domanda scientifica precisa quali variabili sono disponibili quando occorre fare la previsione."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 3,
+   "title": "Risposta, predittore e unità di osservazione",
+   "section": "I · RISPOSTA E RELAZIONE",
+   "recall": [
+    "Prima della formula: un’unità di osservazione, una risposta, predittori disponibili e unità di misura."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "La stessa tabella, una domanda precisa"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "003-1",
+     "w": 261,
+     "h": 126,
+     "src": "assets/lezioni/M07/figure/003-1.svg",
+     "ratio": 0.916
+    },
+    {
+     "t": "p",
+     "c": [
+      "Scambiare risposta e predittore cambia la domanda e il criterio di adattamento della regressione."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · leggere le coppie di misure",
+     "file": "003_dati.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Il file ",
+      {
+       "t": "c",
+       "v": "setup.R"
+      },
+      " carica i dati in ",
+      {
+       "t": "c",
+       "v": "f"
+      },
+      ". La sigla ",
+      {
+       "t": "c",
+       "v": "um"
+      },
+      " nei nomi indica micrometri."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Sono dati sintetici del corso. I risultati descrivono questo esempio didattico."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 4,
+   "title": "La geometria lega i due diametri",
+   "section": "I · RISPOSTA E RELAZIONE",
+   "recall": [
+    "Una correlazione elevata può riflettere una definizione condivisa delle misure."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "004-1",
+     "w": 172,
+     "h": 162,
+     "src": "assets/lezioni/M07/figure/004-1.svg",
+     "ratio": 0.604
+    },
+    {
+     "t": "info",
+     "c": [
+      "Ricostruire ",
+      {
+       "t": "m",
+       "v": "D_{\\rm int}"
+      },
+      " da ",
+      {
+       "t": "m",
+       "v": "D_{\\rm tot}"
+      },
+      " e ",
+      {
+       "t": "m",
+       "v": "s"
+      },
+      " applica l’identità geometrica: la domanda deve dichiararlo."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "D_{\\rm int}=D_{\\rm tot}-2s.",
+     "col": "R"
+    },
+    {
+     "t": "code",
+     "title": "R · controllare l’identità",
+     "file": "004_geometria.R",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Una parte dell’associazione nasce dalla definizione delle variabili. La dispersione dello spessore contribuisce alla dispersione del diametro interno."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 5,
+   "title": "La nuvola conserva le coppie di osservazioni",
+   "section": "I · RISPOSTA E RELAZIONE",
+   "recall": [
+    "Ogni punto mantiene l’abbinamento tra le due misure dello stesso fossile."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "005-1",
+     "w": 273,
+     "h": 151,
+     "src": "assets/lezioni/M07/figure/005-1.svg",
+     "ratio": 0.958
+    },
+    {
+     "t": "info",
+     "c": [
+      "Una figura iniziale aiuta a riconoscere forma, dominio e osservazioni insolite prima di sintetizzare tutto con un coefficiente."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · rappresentare le due variabili",
+     "file": "005_nuvola.R",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "L’andamento è crescente. I colori mantengono visibile il morfotipo e permettono di cercare differenze a parità di diametro totale."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 6,
+   "title": "Media marginale e media condizionata",
+   "section": "I · RISPOSTA E RELAZIONE",
+   "recall": [
+    "La regressione usa informazioni sul singolo caso per modificare la previsione della risposta."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "006-1",
+     "w": 244,
+     "h": 157,
+     "src": "assets/lezioni/M07/figure/006-1.svg",
+     "ratio": 0.856
+    },
+    {
+     "t": "label",
+     "c": [
+      "Quanto aiuta conoscere il predittore?"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La media marginale assegna la stessa previsione a ogni fossile. La media condizionata cambia al variare del diametro totale."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "\\hat y_{\\rm base}=\\bar y,\\qquad \\hat y(x)=\\hat m(x).",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La variabilità residua riguarda esemplari confrontabili per ",
+      {
+       "t": "m",
+       "v": "x"
+      },
+      ". Resta anche quando la retta descrive bene l’andamento medio."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 7,
+   "title": "Il dominio osservato delimita l’esperienza",
+   "section": "I · RISPOSTA E RELAZIONE",
+   "recall": [
+    "L’estrapolazione aggiunge un’ipotesi sulla validità del modello in condizioni non osservate."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "007-1",
+     "w": 248,
+     "h": 119,
+     "src": "assets/lezioni/M07/figure/007-1.svg",
+     "ratio": 0.871
+    },
+    {
+     "t": "code",
+     "title": "R · confrontare nuovo e osservato",
+     "file": "007_dominio.R",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il file copre circa ",
+      {
+       "t": "m",
+       "v": "3{,}68"
+      },
+      "–",
+      {
+       "t": "m",
+       "v": "8{,}62\\ \\mu"
+      },
+      "m. Il valore ",
+      {
+       "t": "m",
+       "v": "9\\ \\mu"
+      },
+      "m è già fuori dal campo osservato."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "lab",
+     "url": "https://marzione00.github.io/Lab_Geo/#laboratorio/m07-dominio",
+     "c": [
+      "Esperimento: dominio"
+     ],
+     "col": "R",
+     "lab": "m07-dominio"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Nel sito la relazione vera è curva. Una retta stimata nel campo osservato può allontanarsi molto oltre quel campo."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 8,
+   "title": "La correlazione riassume gli scarti concordi",
+   "section": "I · RISPOSTA E RELAZIONE",
+   "recall": [
+    "Pearson confronta covariazione e dispersioni delle due variabili."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "008-1",
+     "w": 248,
+     "h": 183,
+     "src": "assets/lezioni/M07/figure/008-1.svg",
+     "ratio": 0.871
+    },
+    {
+     "t": "math",
+     "v": "r=\\frac{\\sum_i(x_i-\\bar x)(y_i-\\bar y)}{\\sqrt{\\sum_i(x_i-\\bar x)^2\\sum_i(y_i-\\bar y)^2}}.",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Gli scarti concordi danno contributi positivi. La normalizzazione elimina le unità e colloca ",
+      {
+       "t": "m",
+       "v": "r"
+      },
+      " tra ",
+      {
+       "t": "m",
+       "v": "-1"
+      },
+      " e ",
+      {
+       "t": "m",
+       "v": "1"
+      },
+      "."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Il coefficiente è definito quando entrambe le variabili hanno varianza positiva. Riassume l’associazione lineare."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 9,
+   "title": "Correlazione e unità di misura",
+   "section": "I · RISPOSTA E RELAZIONE",
+   "recall": [
+    "Un numero senza unità misura associazione. Per prevedere la risposta serve anche la scala."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "009-1",
+     "w": 273,
+     "h": 151,
+     "src": "assets/lezioni/M07/figure/009-1.svg",
+     "ratio": 0.958
+    },
+    {
+     "t": "info",
+     "c": [
+      "Pearson è simmetrico: ",
+      {
+       "t": "m",
+       "v": "r(x,y)=r(y,x)"
+      },
+      ". La regressione assegna ruoli differenti a risposta e predittore."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · calcolare Pearson",
+     "file": "009_correlazione.R",
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "r=0{,}965\\quad\\text{nei 160 fossili}.",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Passare da micrometri a millimetri lascia invariata la correlazione. La pendenza conserva invece il rapporto fra le unità delle due variabili."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 10,
+   "title": "Monotonia e linearità",
+   "section": "I · RISPOSTA E RELAZIONE",
+   "recall": [
+    "L’associazione monotona riguarda l’ordine. L’associazione lineare riguarda una retta."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Schema di una relazione crescente curva"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "010-1",
+     "w": 273,
+     "h": 151,
+     "src": "assets/lezioni/M07/figure/010-1.svg",
+     "ratio": 0.958
+    },
+    {
+     "t": "p",
+     "c": [
+      "Spearman riassume la concordanza degli ordinamenti. Una curva strettamente crescente può avere ",
+      {
+       "t": "m",
+       "v": "r_S=1"
+      },
+      " anche se la pendenza cambia con ",
+      {
+       "t": "m",
+       "v": "x"
+      },
+      "."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "r_S=\\operatorname{cor}\\{\\operatorname{rank}(X),\\operatorname{rank}(Y)\\}.",
+     "col": "R"
+    },
+    {
+     "t": "code",
+     "title": "R · confrontare i ranghi",
+     "file": "010_ranghi.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Nei fossili: Pearson ",
+      {
+       "t": "m",
+       "v": "0{,}965"
+      },
+      ", Spearman ",
+      {
+       "t": "m",
+       "v": "0{,}952"
+      },
+      ". La figura resta necessaria per capire la forma."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 11,
+   "title": "Una relazione curva può avere correlazione nulla",
+   "section": "I · RISPOSTA E RELAZIONE",
+   "recall": [
+    "Una correlazione vicina a zero esclude una forte associazione lineare, non ogni relazione."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "011-1",
+     "w": 273,
+     "h": 151,
+     "src": "assets/lezioni/M07/figure/011-1.svg",
+     "ratio": 0.958
+    },
+    {
+     "t": "math",
+     "v": "Y=X^2,\\qquad X\\sim U(-a,a).",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Per simmetria, ",
+      {
+       "t": "m",
+       "v": "E(X)=E(X^3)=0"
+      },
+      ", quindi ",
+      {
+       "t": "m",
+       "v": "\\operatorname{Cov}(X,X^2)=0"
+      },
+      ". Eppure conoscere ",
+      {
+       "t": "m",
+       "v": "X"
+      },
+      " determina esattamente ",
+      {
+       "t": "m",
+       "v": "Y"
+      },
+      "."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "code",
+     "title": "R · verificare un controesempio",
+     "file": "011_curvatura.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Il diagramma riproduce la forma a U su assi traslati e riscalati. La retta orizzontale ignora la sua struttura."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 12,
+   "title": "La restrizione del campo cambia la correlazione",
+   "section": "I · RISPOSTA E RELAZIONE",
+   "recall": [
+    "La correlazione dipende anche dal campo dei predittori presente nel campione."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Modello ",
+      {
+       "t": "m",
+       "v": "Y=2X+\\varepsilon"
+      },
+      " con rumore invariato"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "012-1",
+     "w": 244,
+     "h": 167,
+     "src": "assets/lezioni/M07/figure/012-1.svg",
+     "ratio": 0.856
+    },
+    {
+     "t": "math",
+     "v": "\\rho^2=\\frac{\\beta_1^2\\operatorname{Var}(X)}{\\beta_1^2\\operatorname{Var}(X)+\\sigma^2}.",
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · restringere il campione",
+     "file": "012_campo.R",
+     "col": "R"
+    },
+    {
+     "t": "lab",
+     "url": "https://marzione00.github.io/Lab_Geo/#laboratorio/m07-correlazione",
+     "c": [
+      "Esperimento: correlazione"
+     ],
+     "col": "R",
+     "lab": "m07-correlazione"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Con errore indipendente da ",
+      {
+       "t": "m",
+       "v": "X"
+      },
+      ", la riduzione di ",
+      {
+       "t": "m",
+       "v": "\\operatorname{Var}(X)"
+      },
+      " rende più grande il peso relativo del rumore."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 13,
+   "title": "Una causa comune può generare associazione",
+   "section": "I · RISPOSTA E RELAZIONE",
+   "recall": [
+    "La regressione descrive una relazione condizionata. Un’interpretazione causale richiede un disegno e ipotesi specifici."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "013-1",
+     "w": 255,
+     "h": 165,
+     "src": "assets/lezioni/M07/figure/013-1.svg",
+     "ratio": 0.895
+    },
+    {
+     "t": "p",
+     "c": [
+      "Una variabile comune può modificare entrambe le misure. Una relazione osservata tra ",
+      {
+       "t": "m",
+       "v": "X"
+      },
+      " e ",
+      {
+       "t": "m",
+       "v": "Y"
+      },
+      " può quindi dipendere dalla composizione del campione."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "E(Y\\mid X=x)\\quad\\text{e}\\quad E\\{Y\\mid \\operatorname{do}(X=x)\\}",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "La prima quantità è osservativa. La seconda descrive un intervento e richiede ipotesi causali aggiuntive. La notazione serve a distinguere le domande."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Aggiungere variabili a una regressione richiede una ragione scientifica. La sola disponibilità di una colonna non basta."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 14,
+   "title": "Il modello lineare per la risposta media",
+   "section": "II · MODELLO LINEARE",
+   "recall": [
+    "La linearità riguarda la media della risposta, non l’allineamento perfetto di tutti i punti."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "014-1",
+     "w": 273,
+     "h": 151,
+     "src": "assets/lezioni/M07/figure/014-1.svg",
+     "ratio": 0.958
+    },
+    {
+     "t": "math",
+     "v": "Y_i=\\beta_0+\\beta_1x_i+\\varepsilon_i.",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Assumendo ",
+      {
+       "t": "m",
+       "v": "E(\\varepsilon_i\\mid x_i)=0"
+      },
+      ", la risposta media condizionata è una retta:"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "E(Y_i\\mid x_i)=\\beta_0+\\beta_1x_i.",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "I parametri ",
+      {
+       "t": "m",
+       "v": "\\beta_0"
+      },
+      " e ",
+      {
+       "t": "m",
+       "v": "\\beta_1"
+      },
+      " descrivono la popolazione nel modello. I dati producono le stime ",
+      {
+       "t": "m",
+       "v": "\\hat\\beta_0"
+      },
+      " e ",
+      {
+       "t": "m",
+       "v": "\\hat\\beta_1"
+      },
+      "."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Il diagramma è schematico. La scelta di una retta richiede un controllo della forma sui dati."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 15,
+   "title": "Intercetta e pendenza hanno un significato diverso",
+   "section": "II · MODELLO LINEARE",
+   "recall": [
+    "Il valore algebrico dell’intercetta può essere utile al calcolo senza rappresentare un esemplare possibile."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "015-1",
+     "w": 242,
+     "h": 153,
+     "src": "assets/lezioni/M07/figure/015-1.svg",
+     "ratio": 0.849
+    },
+    {
+     "t": "math",
+     "v": "\\beta_1=\\frac{\\Delta E(Y\\mid x)}{\\Delta x}.",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La pendenza indica quanto cambia la risposta media per un’unità in più del predittore. Ha unità ",
+      {
+       "t": "m",
+       "v": "[Y]/[X]"
+      },
+      "."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "L’intercetta è la media a ",
+      {
+       "t": "m",
+       "v": "x=0"
+      },
+      ". La sua interpretazione fisica dipende dal dominio. Per i fossili, un diametro totale nullo è fuori dalle condizioni del campione."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 16,
+   "title": "Errori del modello e residui osservabili",
+   "section": "II · MODELLO LINEARE",
+   "recall": [
+    "Un residuo è una differenza calcolata rispetto a una funzione stimata dagli stessi dati."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "016-1",
+     "w": 247,
+     "h": 158,
+     "src": "assets/lezioni/M07/figure/016-1.svg",
+     "ratio": 0.867
+    },
+    {
+     "t": "math",
+     "v": "\\varepsilon_i=y_i-E(Y_i\\mid x_i),\\qquad e_i=y_i-\\hat y_i.",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il residuo si calcola dopo la stima. L’errore rispetto alla media vera rimane generalmente ignoto."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Le ipotesi probabilistiche riguardano gli errori. I grafici dei residui permettono di cercare incompatibilità con quelle ipotesi."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "I residui di una regressione condividono i parametri stimati e non sono indipendenti tra loro."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 17,
+   "title": "I minimi quadrati misurano scarti verticali",
+   "section": "II · MODELLO LINEARE",
+   "recall": [
+    "La regressione ordinaria minimizza gli scarti lungo l’asse della risposta."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "017-1",
+     "w": 273,
+     "h": 151,
+     "src": "assets/lezioni/M07/figure/017-1.svg",
+     "ratio": 0.958
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il criterio somma le distanze verticali al quadrato. Un grande scarto pesa più di diversi piccoli scarti della stessa somma assoluta."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "lab",
+     "url": "https://marzione00.github.io/Lab_Geo/#laboratorio/m07-minimi-quadrati",
+     "c": [
+      "Esperimento: minimi quadrati"
+     ],
+     "col": "L",
+     "lab": "m07-minimi-quadrati"
+    },
+    {
+     "t": "math",
+     "v": "S(b_0,b_1)=\\sum_{i=1}^{n}\\{y_i-(b_0+b_1x_i)\\}^2.",
+     "col": "R"
+    },
+    {
+     "t": "code",
+     "title": "R · confrontare una retta proposta",
+     "file": "017_scarti.R",
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 18,
+   "title": "La somma dei quadrati ha un minimo",
+   "section": "II · MODELLO LINEARE",
+   "recall": [
+    "La variabilità di X permette di identificare la pendenza."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "018-1",
+     "w": 247,
+     "h": 181,
+     "src": "assets/lezioni/M07/figure/018-1.svg",
+     "ratio": 0.867
+    },
+    {
+     "t": "math",
+     "v": "S(b_1)=\\sum_i\\{(y_i-\\bar y)-b_1(x_i-\\bar x)\\}^2.",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Dopo avere centrato le variabili, resta da scegliere una pendenza. Il criterio è una parabola convessa in ",
+      {
+       "t": "m",
+       "v": "b_1"
+      },
+      "."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "\\frac{\\partial^2 S}{\\partial b_1^2}=2\\sum_i(x_i-\\bar x)^2>0.",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "La disuguaglianza richiede almeno due valori diversi del predittore. In quel caso il minimo è unico."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 19,
+   "title": "La prima equazione impone residui a somma zero",
+   "section": "II · MODELLO LINEARE",
+   "recall": [
+    "La somma zero dei residui è una conseguenza algebrica della stima con intercetta."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Derivata rispetto all’intercetta"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\frac{\\partial S}{\\partial b_0}=-2\\sum_i(y_i-b_0-b_1x_i).",
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\sum_i y_i-n\\hat\\beta_0-\\hat\\beta_1\\sum_i x_i=0.",
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\boxed{\\hat\\beta_0=\\bar y-\\hat\\beta_1\\bar x}",
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La retta stimata attraversa il punto delle medie ",
+      {
+       "t": "m",
+       "v": "(\\bar x,\\bar y)"
+      },
+      ". Il suo livello verticale si adatta alla media osservata."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "R",
+     "fig": "019-1",
+     "w": 201,
+     "h": 128,
+     "src": "assets/lezioni/M07/figure/019-1.svg",
+     "ratio": 0.939
+    },
+    {
+     "t": "info",
+     "c": [
+      "La proprietà vale per minimi quadrati ordinari con intercetta. Non garantisce che il modello descriva bene la forma."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 20,
+   "title": "La seconda equazione determina la pendenza",
+   "section": "II · MODELLO LINEARE",
+   "recall": [
+    "La pendenza divide covariazione per dispersione del predittore."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Derivata rispetto alla pendenza"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\frac{\\partial S}{\\partial b_1}=-2\\sum_i x_i(y_i-b_0-b_1x_i).",
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Sostituendo l’espressione dell’intercetta e raccogliendo gli scarti centrati:"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\sum_i(x_i-\\bar x)(y_i-\\bar y)=\\hat\\beta_1\\sum_i(x_i-\\bar x)^2.",
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\boxed{\\hat\\beta_1=\\frac{S_{xy}}{S_{xx}}}",
+     "col": "L"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Due quantità con ruoli diversi"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "S_{xy}=\\sum_i(x_i-\\bar x)(y_i-\\bar y),",
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "S_{xx}=\\sum_i(x_i-\\bar x)^2.",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il numeratore misura la covariazione. Il denominatore misura la dispersione del predittore."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Se ",
+      {
+       "t": "m",
+       "v": "S_{xx}=0"
+      },
+      ", tutti i valori di ",
+      {
+       "t": "m",
+       "v": "x"
+      },
+      " coincidono. I dati non separano intercetta e pendenza."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 21,
+   "title": "La retta attraversa il baricentro della nuvola",
+   "section": "II · MODELLO LINEARE",
+   "recall": [
+    "Centrare il predittore cambia l’intercetta, mentre pendenza e valori stimati restano uguali."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "021-1",
+     "w": 273,
+     "h": 151,
+     "src": "assets/lezioni/M07/figure/021-1.svg",
+     "ratio": 0.958
+    },
+    {
+     "t": "math",
+     "v": "\\hat y=\\bar y+\\hat\\beta_1(x-\\bar x).",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Questa forma mette in evidenza il riferimento: la previsione parte dalla media della risposta e cambia secondo la distanza di ",
+      {
+       "t": "m",
+       "v": "x"
+      },
+      " dalla sua media."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "\\bar x=6{,}355\\ \\mu\\mathrm m,\\qquad \\bar y=5{,}381\\ \\mu\\mathrm m.",
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "La retta nella figura è stimata su tutti i 160 fossili per descrivere il campione. La valutazione predittiva userà un protocollo separato."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 22,
+   "title": "La formula e il calcolo in R coincidono",
+   "section": "II · MODELLO LINEARE",
+   "recall": [
+    "Ricostruire una stima semplice aiuta a capire che cosa calcola la funzione."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Stime sui 160 fossili"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\hat\\beta_0=-0{,}700282,\\qquad\\hat\\beta_1=0{,}956997.",
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "022-1",
+     "w": 258,
+     "h": 90,
+     "src": "assets/lezioni/M07/figure/022-1.svg",
+     "ratio": 0.906
+    },
+    {
+     "t": "code",
+     "title": "R · ricostruire le stime",
+     "file": "022_minimi_mano.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      {
+       "t": "c",
+       "v": "unname()"
+      },
+      " rimuove solo i nomi dei coefficienti. ",
+      {
+       "t": "c",
+       "v": "all.equal()"
+      },
+      " confronta valori numerici con una tolleranza."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 23,
+   "title": "La formula di R assegna i ruoli alle variabili",
+   "section": "II · MODELLO LINEARE",
+   "recall": [
+    "Un oggetto lm conserva una procedura di stima e permette di interrogare risultati diversi."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "023-1",
+     "w": 264,
+     "h": 117,
+     "src": "assets/lezioni/M07/figure/023-1.svg",
+     "ratio": 0.927
+    },
+    {
+     "t": "code",
+     "title": "R · stimare e interrogare il modello",
+     "file": "023_lm.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      {
+       "t": "c",
+       "v": "m0"
+      },
+      " conserva dati, formula e risultati. Le funzioni successive estraggono componenti specifiche senza ristimare manualmente il modello."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 24,
+   "title": "La pendenza traduce un incremento nelle unità",
+   "section": "II · MODELLO LINEARE",
+   "recall": [
+    "Specificare incremento, unità e condizioni rende interpretabile un coefficiente."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "La retta stimata sui fossili"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\widehat D_{\\rm int}=-0{,}700+0{,}957D_{\\rm tot}.",
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "024-1",
+     "w": 260,
+     "h": 84,
+     "src": "assets/lezioni/M07/figure/024-1.svg",
+     "ratio": 0.913
+    },
+    {
+     "t": "info",
+     "c": [
+      "Questa stima riassume l’associazione campionaria. Non quantifica l’effetto di modificare fisicamente un fossile."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · interpretare un incremento",
+     "file": "024_pendenza.R",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il coefficiente è circa ",
+      {
+       "t": "m",
+       "v": "0{,}957\\ \\mu"
+      },
+      "m per ",
+      {
+       "t": "m",
+       "v": "\\mu"
+      },
+      "m. Le stesse unità al numeratore e denominatore si semplificano, ma l’interpretazione resta legata alle due misure."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 25,
+   "title": "Le ipotesi sostengono conclusioni diverse",
+   "section": "II · MODELLO LINEARE",
+   "recall": [
+    "Una formula di stima e una formula d’incertezza possono richiedere condizioni differenti."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Dal calcolo all’inferenza"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "table",
+     "head": [
+      [
+       {
+        "c": [
+         {
+          "t": "b",
+          "c": [
+           "Condizione"
+          ]
+         }
+        ]
+       },
+       {
+        "c": [
+         {
+          "t": "b",
+          "c": [
+           "Che cosa sostiene"
+          ]
+         }
+        ]
+       }
+      ]
+     ],
+     "rows": [
+      [
+       {
+        "c": [
+         "Matrice ",
+         {
+          "t": "m",
+          "v": "X"
+         },
+         " a rango pieno"
+        ]
+       },
+       {
+        "c": [
+         "Stima univoca dei coefficienti"
+        ]
+       }
+      ],
+      [
+       {
+        "c": [
+         {
+          "t": "m",
+          "v": "E(\\varepsilon\\mid X)=0"
+         }
+        ]
+       },
+       {
+        "c": [
+         "Non distorsione di OLS nel modello"
+        ]
+       }
+      ],
+      [
+       {
+        "c": [
+         {
+          "t": "m",
+          "v": "\\operatorname{Var}(\\varepsilon\\mid X)=\\sigma^2I"
+         }
+        ]
+       },
+       {
+        "c": [
+         "Formule classiche della varianza"
+        ]
+       }
+      ],
+      [
+       {
+        "c": [
+         "Normalità degli errori"
+        ]
+       },
+       {
+        "c": [
+         "Intervalli e test t esatti a campione finito"
+        ]
+       }
+      ]
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La retta dei minimi quadrati si può calcolare senza assumere normalità. Per interpretare l’incertezza occorre dichiarare ipotesi sulla generazione dei dati."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Indipendenza e campionamento coerente con la popolazione sono questioni del disegno. Un grafico dei residui può segnalare problemi, ma da solo non certifica il disegno."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Nel seguito le formule classiche usano errori indipendenti, varianza costante e, per gli intervalli t esatti, normalità condizionata."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 26,
+   "title": "La matrice del disegno raccoglie i predittori",
+   "section": "II · MODELLO LINEARE",
+   "recall": [
+    "La matrice X rende esplicito ciò che la formula chiede al modello di stimare."
+   ],
+   "items": [
+    {
+     "t": "math",
+     "v": "\\underbrace{\\begin{pmatrix}y_1\\\\y_2\\\\\\vdots\\\\y_n\\end{pmatrix}}_{n\\times1} =\\underbrace{\\begin{pmatrix}1&x_1\\\\1&x_2\\\\\\vdots&\\vdots\\\\1&x_n\\end{pmatrix}}_{X:\\ n\\times2} \\underbrace{\\begin{pmatrix}\\beta_0\\\\\\beta_1\\end{pmatrix}}_{2\\times1} +\\underbrace{\\begin{pmatrix}\\varepsilon_1\\\\\\varepsilon_2\\\\\\vdots\\\\\\varepsilon_n\\end{pmatrix}}_{n\\times1}.",
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Ogni riga descrive un’osservazione. Ogni colonna rappresenta un termine della formula, compresa l’intercetta."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\mathbf y=X\\boldsymbol\\beta+\\boldsymbol\\varepsilon.",
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · vedere il disegno usato da lm",
+     "file": "026_matrice.R",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Con ",
+      {
+       "t": "m",
+       "v": "p"
+      },
+      " coefficienti, ",
+      {
+       "t": "m",
+       "v": "X"
+      },
+      " ha ",
+      {
+       "t": "m",
+       "v": "p"
+      },
+      " colonne. Qui ",
+      {
+       "t": "m",
+       "v": "p=2"
+      },
+      ". Nei modelli con gruppi, interazioni e trasformazioni sarà importante contare i coefficienti effettivi."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Useremo ",
+      {
+       "t": "m",
+       "v": "p"
+      },
+      " includendo l’intercetta. I gradi di libertà residui sono ",
+      {
+       "t": "m",
+       "v": "n-p"
+      },
+      " se il rango è pieno."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 27,
+   "title": "I minimi quadrati sono una proiezione",
+   "section": "II · MODELLO LINEARE",
+   "recall": [
+    "L’ortogonalità dei residui esprime il criterio dei minimi quadrati in forma geometrica."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "027-1",
+     "w": 234,
+     "h": 179,
+     "src": "assets/lezioni/M07/figure/027-1.svg",
+     "ratio": 0.821
+    },
+    {
+     "t": "math",
+     "v": "X^\\top(\\mathbf y-X\\hat{\\boldsymbol\\beta})=\\mathbf0.",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il residuo è ortogonale a ogni colonna del disegno. La previsione è il punto dello spazio del modello più vicino a ",
+      {
+       "t": "m",
+       "v": "\\mathbf y"
+      },
+      "."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "\\hat{\\boldsymbol\\beta}=(X^\\top X)^{-1}X^\\top\\mathbf y.",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "L’espressione con l’inversa richiede rango pieno. Il diagramma rappresenta uno spazio a ",
+      {
+       "t": "m",
+       "v": "n"
+      },
+      " dimensioni mediante uno schema tridimensionale."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 28,
+   "title": "La decomposizione QR esegue il calcolo",
+   "section": "II · MODELLO LINEARE",
+   "recall": [
+    "Le formule spiegano il problema. Gli algoritmi numerici lo risolvono in modo stabile."
+   ],
+   "items": [
+    {
+     "t": "math",
+     "v": "X=QR,\\qquad Q^\\top Q=I.",
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "R\\hat{\\boldsymbol\\beta}=Q^\\top\\mathbf y.",
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "028-1",
+     "w": 261,
+     "h": 84,
+     "src": "assets/lezioni/M07/figure/028-1.svg",
+     "ratio": 0.916
+    },
+    {
+     "t": "code",
+     "title": "R · verificare stima e ortogonalità",
+     "file": "028_qr.R",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La formula con l’inversa è utile per ragionare. Per il calcolo numerico ",
+      {
+       "t": "c",
+       "v": "lm()"
+      },
+      " usa QR."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Valori residui dell’ordine della precisione numerica sono compatibili con lo zero teorico. Il controllo usa tolleranze."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 29,
+   "title": "Correlazione e pendenza sono collegate",
+   "section": "II · MODELLO LINEARE",
+   "recall": [
+    "La pendenza conserva le scale delle variabili, mentre la correlazione le standardizza."
+   ],
+   "items": [
+    {
+     "t": "math",
+     "v": "\\hat\\beta_1=r\\frac{s_y}{s_x}.",
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "029-1",
+     "w": 258,
+     "h": 90,
+     "src": "assets/lezioni/M07/figure/029-1.svg",
+     "ratio": 0.906
+    },
+    {
+     "t": "info",
+     "c": [
+      "L’identità ",
+      {
+       "t": "m",
+       "v": "R^2=r^2"
+      },
+      " riguarda la regressione semplice con intercetta. Nei modelli multipli non si trasferisce a una singola correlazione."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · controllare due identità",
+     "file": "029_identita.R",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Se la dispersione della risposta raddoppia mentre ",
+      {
+       "t": "m",
+       "v": "r"
+      },
+      " resta uguale, la pendenza raddoppia a parità di ",
+      {
+       "t": "m",
+       "v": "s_x"
+      },
+      "."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 30,
+   "title": "La variabilità si scompone con l’intercetta",
+   "section": "III · INCERTEZZA E PREVISIONE",
+   "recall": [
+    "La somma dei quadrati residua misura la parte rimasta attorno alla media stimata."
+   ],
+   "items": [
+    {
+     "t": "math",
+     "v": "y_i-\\bar y=(\\hat y_i-\\bar y)+e_i.",
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\underbrace{\\sum_i(y_i-\\bar y)^2}_{SST} =\\underbrace{\\sum_i(\\hat y_i-\\bar y)^2}_{SSR} +\\underbrace{\\sum_i e_i^2}_{SSE}.",
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "030-1",
+     "w": 247,
+     "h": 68,
+     "src": "assets/lezioni/M07/figure/030-1.svg",
+     "ratio": 0.867
+    },
+    {
+     "t": "small",
+     "c": [
+      "La scomposizione usa l’ortogonalità dei residui. Vale per OLS con intercetta sugli stessi casi."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · verificare le somme dei quadrati",
+     "file": "030_scomposizione.R",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Per i fossili, ",
+      {
+       "t": "m",
+       "v": "SST=156{,}647"
+      },
+      " e ",
+      {
+       "t": "m",
+       "v": "SSE=10{,}646\\ \\mu\\mathrm m^2"
+      },
+      ". Una retta riduce molto lo scarto rispetto alla sola media."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Il confronto descrive l’adattamento sui dati usati per stimare il modello."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 31,
+   "title": "R quadrato misura una riduzione relativa",
+   "section": "III · INCERTEZZA E PREVISIONE",
+   "recall": [
+    "R quadrato è una misura relativa di adattamento, riferita a una precisa risposta e a un preciso campione."
+   ],
+   "items": [
+    {
+     "t": "math",
+     "v": "R^2=1-\\frac{SSE}{SST}=0{,}932.",
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "031-1",
+     "w": 256,
+     "h": 111,
+     "src": "assets/lezioni/M07/figure/031-1.svg",
+     "ratio": 0.899
+    },
+    {
+     "t": "p",
+     "c": [
+      "Nel campione, la retta riduce la somma dei quadrati del ",
+      {
+       "t": "m",
+       "v": "93{,}2\\%"
+      },
+      " rispetto alla media."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il valore non significa che il ",
+      {
+       "t": "m",
+       "v": "93{,}2\\%"
+      },
+      " dei fossili abbia una previsione corretta. Per quantificare gli errori in micrometri serve una misura sulla scala della risposta."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "La relazione geometrica tra le variabili contribuisce al valore elevato di ",
+      {
+       "t": "m",
+       "v": "R^2"
+      },
+      "."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 32,
+   "title": "Un R quadrato alto lascia aperte altre domande",
+   "section": "III · INCERTEZZA E PREVISIONE",
+   "recall": [
+    "La bontà dell’adattamento non basta per scegliere la complessità o sostenere una previsione."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "032-1",
+     "w": 232,
+     "h": 128,
+     "src": "assets/lezioni/M07/figure/032-1.svg",
+     "ratio": 0.814
+    },
+    {
+     "t": "p",
+     "c": [
+      "Aggiungendo termini a un modello OLS annidato, la somma dei quadrati nel training non aumenta. Il valore di ",
+      {
+       "t": "m",
+       "v": "R^2"
+      },
+      " può crescere anche con termini inutili."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il confronto tra modelli deve quindi considerare diagnostica, complessità e prestazioni su nuovi casi."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Per confrontare ",
+      {
+       "t": "m",
+       "v": "R^2"
+      },
+      " tra modelli, risposta e casi devono coincidere. Una trasformazione della risposta cambia il confronto."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 33,
+   "title": "La dispersione residua conserva le unità",
+   "section": "III · INCERTEZZA E PREVISIONE",
+   "recall": [
+    "La deviazione residua misura una scala di variabilità condizionata, non l’errore della pendenza."
+   ],
+   "items": [
+    {
+     "t": "math",
+     "v": "s^2=\\frac{\\sum_i e_i^2}{n-p},\\qquad s=0{,}260\\ \\mu\\mathrm m.",
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "033-1",
+     "w": 251,
+     "h": 112,
+     "src": "assets/lezioni/M07/figure/033-1.svg",
+     "ratio": 0.881
+    },
+    {
+     "t": "code",
+     "title": "R · stimare la deviazione residua",
+     "file": "033_sigma.R",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Si sottraggono i ",
+      {
+       "t": "m",
+       "v": "p"
+      },
+      " coefficienti stimati dai ",
+      {
+       "t": "m",
+       "v": "n"
+      },
+      " dati. Qui ",
+      {
+       "t": "m",
+       "v": "n-p=158"
+      },
+      ". Sotto le ipotesi classiche, ",
+      {
+       "t": "m",
+       "v": "s^2"
+      },
+      " stima ",
+      {
+       "t": "m",
+       "v": "\\sigma^2"
+      },
+      "."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      {
+       "t": "m",
+       "v": "s"
+      },
+      " e RMSE nel campione usano denominatori diversi. Entrambi sono espressi in micrometri, ma hanno ruoli differenti."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 34,
+   "title": "La precisione della pendenza dipende dal disegno",
+   "section": "III · INCERTEZZA E PREVISIONE",
+   "recall": [
+    "La precisione dipende sia dal numero di osservazioni sia da dove si trovano i predittori."
+   ],
+   "items": [
+    {
+     "t": "math",
+     "v": "\\operatorname{SE}(\\hat\\beta_1)=\\frac{s}{\\sqrt{\\sum_i(x_i-\\bar x)^2}}.",
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "034-1",
+     "w": 242,
+     "h": 125,
+     "src": "assets/lezioni/M07/figure/034-1.svg",
+     "ratio": 0.849
+    },
+    {
+     "t": "p",
+     "c": [
+      "A parità di ",
+      {
+       "t": "m",
+       "v": "s"
+      },
+      ", una maggiore dispersione di ",
+      {
+       "t": "m",
+       "v": "X"
+      },
+      " riduce l’errore standard della pendenza. Una maggiore variabilità residua lo aumenta."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Ampliare il campo di misura può migliorare la precisione, purché la forma del modello e la popolazione restino appropriate."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "La formula assume errori a varianza costante e non correlati. Con dipendenze spaziali o temporali occorre un modello della covarianza."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 35,
+   "title": "Un intervallo accompagna la stima della pendenza",
+   "section": "III · INCERTEZZA E PREVISIONE",
+   "recall": [
+    "Un intervallo richiede un parametro definito, una procedura e condizioni esplicite."
+   ],
+   "items": [
+    {
+     "t": "math",
+     "v": "\\hat\\beta_1\\pm t_{n-p,\\,1-\\alpha/2}\\operatorname{SE}(\\hat\\beta_1).",
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "035-1",
+     "w": 248,
+     "h": 130,
+     "src": "assets/lezioni/M07/figure/035-1.svg",
+     "ratio": 0.871
+    },
+    {
+     "t": "info",
+     "c": [
+      "La copertura del 95% riguarda la procedura in campioni ripetuti sotto le ipotesi, come discusso in Pelago."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · intervalli dei coefficienti",
+     "file": "035_ci_coef.R",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "L’intervallo descrive l’incertezza della pendenza nel modello dichiarato. Non incorpora automaticamente errori di misura, distorsioni del campionamento o una forma media sbagliata."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 36,
+   "title": "L’intervallo per la risposta media",
+   "section": "III · INCERTEZZA E PREVISIONE",
+   "recall": [
+    "L’intervallo della media quantifica l’incertezza sulla posizione della funzione media."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Media condizionata a un valore fissato"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\hat y_0=\\hat\\beta_0+\\hat\\beta_1x_0,\\qquad h_0=\\frac1n+\\frac{(x_0-\\bar x)^2}{S_{xx}}.",
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\operatorname{SE}(\\hat y_0)=s\\sqrt{h_0}.",
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\boxed{\\hat y_0\\pm t_{n-p,\\,1-\\alpha/2}\\,s\\sqrt{h_0}}",
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "L’intervallo riguarda ",
+      {
+       "t": "m",
+       "v": "E(Y\\mid X=x_0)"
+      },
+      ". È più stretto vicino a ",
+      {
+       "t": "m",
+       "v": "\\bar x"
+      },
+      ", dove il disegno sostiene meglio la stima della media."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "R",
+     "fig": "036-1",
+     "w": 191,
+     "h": 173,
+     "src": "assets/lezioni/M07/figure/036-1.svg",
+     "ratio": 0.892
+    },
+    {
+     "t": "small",
+     "c": [
+      "Per un modello multiplo, ",
+      {
+       "t": "m",
+       "v": "h_0=\\mathbf x_0^\\top(X^\\top X)^{-1}\\mathbf x_0"
+      },
+      ", con intercetta inclusa in ",
+      {
+       "t": "m",
+       "v": "\\mathbf x_0"
+      },
+      "."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 37,
+   "title": "Un nuovo individuo aggiunge la propria variabilità",
+   "section": "III · INCERTEZZA E PREVISIONE",
+   "recall": [
+    "Una media stimata con precisione può convivere con una forte variabilità individuale."
+   ],
+   "items": [
+    {
+     "t": "math",
+     "v": "Y_{\\rm nuovo}-\\hat y_0=\\varepsilon_{\\rm nuovo}+ \\{E(Y\\mid x_0)-\\hat y_0\\}.",
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\operatorname{SE}_{\\rm pred}=s\\sqrt{1+h_0}.",
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\boxed{\\hat y_0\\pm t_{n-p,\\,1-\\alpha/2}\\,s\\sqrt{1+h_0}}",
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il termine ",
+      {
+       "t": "m",
+       "v": "1"
+      },
+      " corrisponde alla variabilità del nuovo individuo. L’altro termine riguarda la stima della media."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "R",
+     "fig": "037-1",
+     "w": 186,
+     "h": 134,
+     "src": "assets/lezioni/M07/figure/037-1.svg",
+     "ratio": 0.869
+    },
+    {
+     "t": "info",
+     "c": [
+      "La previsione classica assume un nuovo errore indipendente, con la stessa varianza. La normalità rende esatta la copertura t a campione finito."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 38,
+   "title": "Le due bande rispondono a domande differenti",
+   "section": "III · INCERTEZZA E PREVISIONE",
+   "recall": [
+    "Il livello nominale coincide, mentre cambia la quantità a cui si riferisce l’intervallo."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "038-1",
+     "w": 273,
+     "h": 151,
+     "src": "assets/lezioni/M07/figure/038-1.svg",
+     "ratio": 0.958
+    },
+    {
+     "t": "label",
+     "c": [
+      "Stesso modello e stesso livello 95%"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La banda interna verde riguarda la risposta media. La banda esterna azzurra riguarda una nuova osservazione."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "I punti sono i 160 fossili sintetici. La retta e le bande derivano dal modello semplice con intercetta."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "lab",
+     "url": "https://marzione00.github.io/Lab_Geo/#laboratorio/m07-previsione",
+     "c": [
+      "Esperimento: previsione"
+     ],
+     "col": "R",
+     "lab": "m07-previsione"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Sono intervalli puntuali al variare di ",
+      {
+       "t": "m",
+       "v": "x"
+      },
+      ". La copertura simultanea dell’intera curva richiede una procedura diversa."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 39,
+   "title": "predict distingue media e osservazione",
+   "section": "III · INCERTEZZA E PREVISIONE",
+   "recall": [
+    "L’argomento interval esprime la domanda statistica, non una preferenza grafica."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "039-1",
+     "w": 261,
+     "h": 85,
+     "src": "assets/lezioni/M07/figure/039-1.svg",
+     "ratio": 0.916
+    },
+    {
+     "t": "small",
+     "c": [
+      "A ",
+      {
+       "t": "m",
+       "v": "x_0=7\\ \\mu"
+      },
+      "m, la previsione media è ",
+      {
+       "t": "m",
+       "v": "5{,}999\\ \\mu"
+      },
+      "m. L’intervallo della media è ",
+      {
+       "t": "m",
+       "v": "[5{,}950;\\ 6{,}047]"
+      },
+      " e quello individuale ",
+      {
+       "t": "m",
+       "v": "[5{,}484;\\ 6{,}514]"
+      },
+      "."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · richiedere l’intervallo corretto",
+     "file": "039_predict.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      {
+       "t": "c",
+       "v": "newdata"
+      },
+      " deve contenere nomi e tipi coerenti con la formula. Per i gruppi servono livelli già presenti nella stima."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Il livello predefinito è 0,95. Una scelta diversa va dichiarata con ",
+      {
+       "t": "c",
+       "v": "level"
+      },
+      "."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 40,
+   "title": "La formula continua oltre i dati",
+   "section": "III · INCERTEZZA E PREVISIONE",
+   "recall": [
+    "Un intervallo numerico oltre il dominio resta condizionato all’ipotesi di continuazione del modello."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "040-1",
+     "w": 250,
+     "h": 158,
+     "src": "assets/lezioni/M07/figure/040-1.svg",
+     "ratio": 0.878
+    },
+    {
+     "t": "code",
+     "title": "R · riconoscere un caso esterno",
+     "file": "040_estrapolazione.R",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il calcolo dell’intervallo non protegge da una forma media sbagliata fuori dal campione. Il modello potrebbe trascurare soglie, limiti fisici o cambiamenti di processo."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Il diagramma confronta due andamenti ipotetici che divergono oltre il campo osservato."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 41,
+   "title": "Campione, distanza e variabilità",
+   "section": "III · INCERTEZZA E PREVISIONE",
+   "recall": [
+    "La diagnostica controlla se il modello offre una base adeguata per le formule d’incertezza."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "041-1",
+     "w": 264,
+     "h": 143,
+     "src": "assets/lezioni/M07/figure/041-1.svg",
+     "ratio": 0.927
+    },
+    {
+     "t": "math",
+     "v": "\\operatorname{SE}_{\\rm media}=s\\sqrt{h_0},\\qquad \\operatorname{SE}_{\\rm pred}=s\\sqrt{1+h_0}.",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Anche se ",
+      {
+       "t": "m",
+       "v": "h_0"
+      },
+      " diventa molto piccolo, l’incertezza individuale resta legata a ",
+      {
+       "t": "m",
+       "v": "s"
+      },
+      ". Aumentare il campione non elimina la variabilità dei nuovi esemplari."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Queste relazioni valgono nel modello. Prima di usarle occorre esaminare forma media, varianza e dipendenze."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 42,
+   "title": "Residui e valori stimati",
+   "section": "IV · DIAGNOSTICA",
+   "recall": [
+    "Un residuo è uno scarto stimato. La sua struttura suggerisce quali aspetti del modello riesaminare."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Una figura per la forma media"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "042-1",
+     "w": 260,
+     "h": 140,
+     "src": "assets/lezioni/M07/figure/042-1.svg",
+     "ratio": 0.913
+    },
+    {
+     "t": "p",
+     "c": [
+      "Ogni punto associa il residuo di un fossile al suo valore stimato. Una struttura sistematica può indicare informazione che il modello lascia nei residui."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · residui e curva locale",
+     "file": "042_residui.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      {
+       "t": "c",
+       "v": "residuals()"
+      },
+      " restituisce ",
+      {
+       "t": "m",
+       "v": "y_i-\\widehat y_i"
+      },
+      ". ",
+      {
+       "t": "c",
+       "v": "fitted()"
+      },
+      " restituisce i valori stimati sulle righe usate nel modello."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "La curva locale va letta tenendo conto della numerosità."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 43,
+   "title": "La media dei residui e i pattern",
+   "section": "IV · DIAGNOSTICA",
+   "recall": [
+    "I vincoli algebrici della stima vanno distinti dalle ipotesi sul processo che ha generato le osservazioni."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Un vincolo prodotto dalla stima"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\sum_{i=1}^n e_i=0,\\qquad \\mathbf X^\\top\\mathbf e=\\mathbf0",
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Nel modello dei minimi quadrati con intercetta, residui positivi e negativi si compensano. Questa proprietà vale anche quando la relazione media ha una forma inadeguata."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "043-1",
+     "w": 248,
+     "h": 82,
+     "src": "assets/lezioni/M07/figure/043-1.svg",
+     "ratio": 0.871
+    },
+    {
+     "t": "code",
+     "title": "R · controllare le identità",
+     "file": "043_vincoli.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Valori dell’ordine dell’errore numerico rappresentano lo zero. Una media residua quasi nulla, da sola, non dimostra che il modello descriva bene i dati."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 44,
+   "title": "Curvatura della risposta media",
+   "section": "IV · DIAGNOSTICA",
+   "recall": [
+    "Una maggiore flessibilità deve risolvere un problema scientifico e mantenere capacità predittiva fuori campione."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Un andamento che resta nei residui"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "044-1",
+     "w": 260,
+     "h": 140,
+     "src": "assets/lezioni/M07/figure/044-1.svg",
+     "ratio": 0.913
+    },
+    {
+     "t": "p",
+     "c": [
+      "Una curva nei residui suggerisce di rivedere ",
+      {
+       "t": "m",
+       "v": "E(Y\\mid x)"
+      },
+      ". Un termine quadratico è una possibilità da motivare e poi valutare su nuovi dati."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "E(Y\\mid x)=\\beta_0+\\beta_1x+\\beta_2x^2",
+     "col": "R"
+    },
+    {
+     "t": "code",
+     "title": "R · una forma media alternativa",
+     "file": "044_curvatura.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      {
+       "t": "c",
+       "v": "I(x\\^{}2)"
+      },
+      " chiede a R di calcolare il quadrato. Aggiungere un termine riduce o lascia invariata la somma degli scarti sul campione di stima."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 45,
+   "title": "Varianza condizionale variabile",
+   "section": "IV · DIAGNOSTICA",
+   "recall": [
+    "Forma della media e dispersione condizionale sono proprietà diverse, da controllare separatamente."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Una dispersione a ventaglio"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "045-1",
+     "w": 260,
+     "h": 140,
+     "src": "assets/lezioni/M07/figure/045-1.svg",
+     "ratio": 0.913
+    },
+    {
+     "t": "p",
+     "c": [
+      "Qui la dispersione cresce con il valore stimato. La media può essere ben descritta, mentre l’ipotesi di varianza costante richiede una revisione."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\operatorname{Var}(Y\\mid x)=\\sigma^2(x)",
+     "col": "R"
+    },
+    {
+     "t": "code",
+     "title": "R · il grafico della dispersione",
+     "file": "045_dispersione.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "La trasformazione, un modello della varianza o errori standard robusti rispondono a obiettivi diversi. Pesi arbitrari non risolvono il problema."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 46,
+   "title": "Residui e ordine delle osservazioni",
+   "section": "IV · DIAGNOSTICA",
+   "recall": [
+    "La verifica dell’indipendenza comincia dal disegno di campionamento e dal significato dell’ordine delle osservazioni."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Il tempo o la posizione aggiungono informazione"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "046-1",
+     "w": 247,
+     "h": 128,
+     "src": "assets/lezioni/M07/figure/046-1.svg",
+     "ratio": 0.867
+    },
+    {
+     "t": "p",
+     "c": [
+      "Sequenze di residui con lo stesso segno possono segnalare dipendenza. L’ordine delle righe ha significato soltanto se corrisponde al disegno di raccolta."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · una dipendenza simulata",
+     "file": "046_ordine.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      {
+       "t": "c",
+       "v": "acf()"
+      },
+      " confronta una serie con copie ritardate. Nel file dei fossili, l’identificativo non rappresenta automaticamente il tempo o la distanza."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 47,
+   "title": "Dipendenza entro stazioni",
+   "section": "IV · DIAGNOSTICA",
+   "recall": [
+    "Il numero delle righe e il numero delle unità indipendenti possono essere diversi."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Unità raggruppate sul terreno"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "047-1",
+     "w": 259,
+     "h": 110,
+     "src": "assets/lezioni/M07/figure/047-1.svg",
+     "ratio": 0.909
+    },
+    {
+     "t": "p",
+     "c": [
+      "Campioni della stessa stazione possono condividere litologia, storia e strumenti. Aumentare le righe entro una stazione non equivale ad aggiungere stazioni indipendenti."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "Y_{ij}=\\beta_0+\\beta_1x_{ij}+b_j+\\varepsilon_{ij}",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      {
+       "t": "m",
+       "v": "j"
+      },
+      " identifica la stazione. Il contributo comune ",
+      {
+       "t": "m",
+       "v": "b_j"
+      },
+      " induce una somiglianza tra osservazioni dello stesso gruppo."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Un modello con struttura di gruppo o una procedura che rispetti i gruppi può essere necessario. Nella validazione, tenere insieme i campioni della stessa stazione evita che informazione locale passi da training a test."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Schema concettuale per dati di campo. I fossili sintetici del corso non contengono una variabile stazione."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 48,
+   "title": "QQ plot dei residui",
+   "section": "IV · DIAGNOSTICA",
+   "recall": [
+    "Un QQ plot quasi rettilineo sostiene un’approssimazione, senza dimostrare tutte le ipotesi del modello."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Un confronto tra quantili"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "048-1",
+     "w": 243,
+     "h": 142,
+     "src": "assets/lezioni/M07/figure/048-1.svg",
+     "ratio": 0.853
+    },
+    {
+     "t": "p",
+     "c": [
+      "Scostamenti nelle code richiedono attenzione alle osservazioni estreme e agli intervalli. Il grafico valuta l’approssimazione normale degli errori, tenendo conto che i residui derivano da un modello stimato."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · quantili e retta di riferimento",
+     "file": "048_qqplot.R",
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "r_i=\\frac{e_i}{s\\sqrt{1-h_{ii}}}",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "La normalità serve per l’inferenza classica esatta a campione finito. La stima dei coefficienti con minimi quadrati non richiede, da sola, errori normali."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 49,
+   "title": "La leva dipende dai predittori",
+   "section": "IV · DIAGNOSTICA",
+   "recall": [
+    "La leva descrive la posizione nei predittori. Il residuo descrive lo scarto nella risposta."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Una distanza rispetto al disegno"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "h_{ii}=\\frac1n+\\frac{(x_i-\\bar x)^2}{\\sum_j(x_j-\\bar x)^2}",
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "049-1",
+     "w": 246,
+     "h": 112,
+     "src": "assets/lezioni/M07/figure/049-1.svg",
+     "ratio": 0.864
+    },
+    {
+     "t": "p",
+     "c": [
+      "Punti lontani dalla media di ",
+      {
+       "t": "m",
+       "v": "x"
+      },
+      " possono orientare maggiormente la retta. La leva non dipende dal valore osservato della risposta."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · le leve del modello",
+     "file": "049_leva.R",
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "\\sum_i h_{ii}=p,\\qquad \\bar h=\\frac pn",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      {
+       "t": "m",
+       "v": "p"
+      },
+      " è il rango della matrice del modello, inclusa l’intercetta. La formula in alto riguarda una sola variabile quantitativa con intercetta."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 50,
+   "title": "Residuo, leva e influenza",
+   "section": "IV · DIAGNOSTICA",
+   "recall": [
+    "La parola “anomalo” è troppo generica. Occorre precisare se si parla di leva, residuo o influenza."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Tre proprietà da distinguere"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "050-1",
+     "w": 241,
+     "h": 140,
+     "src": "assets/lezioni/M07/figure/050-1.svg",
+     "ratio": 0.846
+    },
+    {
+     "t": "p",
+     "c": [
+      "Un punto estremo in ",
+      {
+       "t": "m",
+       "v": "x"
+      },
+      ", vicino alla retta, può avere residuo piccolo. Un punto lontano verticalmente può avere leva ordinaria. L’influenza riguarda il cambiamento della stima."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "label",
+     "c": [
+      "La domanda dell’analisi di influenza"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "\\widehat{\\boldsymbol\\beta} \\quad\\hbox{e}\\quad \\widehat{\\boldsymbol\\beta}_{(-i)}",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Quanto cambiano coefficienti e previsioni quando il caso ",
+      {
+       "t": "m",
+       "v": "i"
+      },
+      " viene escluso dal calcolo?"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "lab",
+     "url": "https://marzione00.github.io/Lab_Geo/#laboratorio/m07-influenza",
+     "c": [
+      "Esperimento · leva e influenza"
+     ],
+     "col": "R",
+     "lab": "m07-influenza"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Spostare il punto aggiunto prima lungo ",
+      {
+       "t": "m",
+       "v": "x"
+      },
+      ", poi lungo ",
+      {
+       "t": "m",
+       "v": "y"
+      },
+      ". Confrontare le due rette e osservare come cambiano leva e distanza di Cook."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 51,
+   "title": "La distanza di Cook",
+   "section": "IV · DIAGNOSTICA",
+   "recall": [
+    "Un valore elevato di Cook richiede un controllo e un’analisi di sensibilità, senza implicare un errore nei dati."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Residuo e leva nella stessa misura"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "D_i=\\frac{e_i^2}{p\\,s^2}\\, \\frac{h_{ii}}{(1-h_{ii})^2}",
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La prima parte misura lo scarto rispetto alla variabilità residua. La seconda aumenta quando la leva si avvicina a uno."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "051-1",
+     "w": 248,
+     "h": 106,
+     "src": "assets/lezioni/M07/figure/051-1.svg",
+     "ratio": 0.871
+    },
+    {
+     "t": "code",
+     "title": "R · individuare il caso influente",
+     "file": "051_cook.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Una soglia pratica è un criterio di segnalazione. La provenienza della misura e il dominio scientifico devono guidare la decisione sul caso."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "La formula riguarda il modello lineare ordinario. Le misure per modelli generalizzati usano approssimazioni specifiche."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 52,
+   "title": "L’analisi di sensibilità di un caso",
+   "section": "IV · DIAGNOSTICA",
+   "recall": [
+    "La sensibilità del risultato è informazione scientifica da riportare, anche quando il caso risulta corretto."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Il risultato completo resta il riferimento"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "052-1",
+     "w": 241,
+     "h": 105,
+     "src": "assets/lezioni/M07/figure/052-1.svg",
+     "ratio": 0.846
+    },
+    {
+     "t": "p",
+     "c": [
+      "Si riportano la variazione dei coefficienti, delle previsioni e della conclusione scientifica. Una correzione o esclusione richiede una motivazione documentabile."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · rifare il calcolo senza un caso",
+     "file": "052_sensibilita.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      {
+       "t": "c",
+       "v": "update()"
+      },
+      " conserva la formula e ristima il modello sul sottoinsieme. Il file originale rimane disponibile per confrontare i risultati."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Controlli utili: unità di misura, trascrizione, metodo di raccolta, condizioni diverse e campo di validità dichiarato."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 53,
+   "title": "Errore di misura nel predittore",
+   "section": "IV · DIAGNOSTICA",
+   "recall": [
+    "La precisione del predittore è parte del modello. L’attenuazione richiede ipotesi specifiche sull’errore di misura."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Il valore misurato differisce da quello latente"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "053-1",
+     "w": 210,
+     "h": 95,
+     "src": "assets/lezioni/M07/figure/053-1.svg",
+     "ratio": 0.737
+    },
+    {
+     "t": "math",
+     "v": "\\operatorname{plim}\\widehat\\beta_W =\\beta_X\\frac{\\operatorname{Var}(X)}{\\operatorname{Var}(X)+\\operatorname{Var}(U)}",
+     "col": "L"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Modello classico: errore additivo centrato, indipendente da ",
+      {
+       "t": "m",
+       "v": "X"
+      },
+      " e dall’errore della risposta. Il rapporto attenua la pendenza verso zero."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · osservare l’attenuazione",
+     "file": "053_errore_misura.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "La formula descrive un limite con campioni grandi. Un singolo campione può discostarsene. Altri meccanismi di errore possono produrre effetti diversi."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 54,
+   "title": "La scala logaritmica",
+   "section": "IV · DIAGNOSTICA",
+   "recall": [
+    "La scala deve seguire la domanda e il processo di misura. Il logaritmo richiede valori strettamente positivi."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Una relazione moltiplicativa"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\log Y=\\beta_0+\\beta_1\\log X+\\varepsilon",
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "Y=e^{\\beta_0}X^{\\beta_1}e^\\varepsilon",
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "054-1",
+     "w": 258,
+     "h": 78,
+     "src": "assets/lezioni/M07/figure/054-1.svg",
+     "ratio": 0.906
+    },
+    {
+     "t": "p",
+     "c": [
+      "Per piccoli cambiamenti relativi, ",
+      {
+       "t": "m",
+       "v": "\\beta_1"
+      },
+      " descrive l’elasticità della risposta. La trasformazione modifica l’oggetto interpretato e richiede nuovi controlli dei residui."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · stimare sulla scala logaritmica",
+     "file": "054_loglog.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Nel modello log–log, una variazione dell’1% in ",
+      {
+       "t": "m",
+       "v": "X"
+      },
+      " corrisponde approssimativamente a una variazione del ",
+      {
+       "t": "m",
+       "v": "\\beta_1"
+      },
+      "% nella mediana di ",
+      {
+       "t": "m",
+       "v": "Y"
+      },
+      ", alle condizioni indicate."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 55,
+   "title": "Ritornare alla scala originale",
+   "section": "IV · DIAGNOSTICA",
+   "recall": [
+    "Applicare exp() alla previsione logaritmica non restituisce in generale la media aritmetica della risposta."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Media logaritmica e media aritmetica"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\eta(x)=\\beta_0+\\beta_1\\log x",
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\operatorname{Med}(Y\\mid x)=e^{\\eta(x)}",
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "E(Y\\mid x)=e^{\\eta(x)+\\sigma^2/2}",
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Le ultime due espressioni valgono se ",
+      {
+       "t": "m",
+       "v": "\\varepsilon\\sim N(0,\\sigma^2)"
+      },
+      " sulla scala logaritmica. La dispersione sposta la media aritmetica rispetto alla mediana."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "055-1",
+     "w": 245,
+     "h": 78,
+     "src": "assets/lezioni/M07/figure/055-1.svg",
+     "ratio": 0.86
+    },
+    {
+     "t": "code",
+     "title": "R · due previsioni con significati diversi",
+     "file": "055_ritrasformazione.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Il codice usa una correzione parametrica stimata. Se la varianza cambia con ",
+      {
+       "t": "m",
+       "v": "x"
+      },
+      " o gli errori logaritmici hanno altra forma, occorre una ritrasformazione appropriata."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 56,
+   "title": "Il modello con più predittori",
+   "section": "V · PREDITTORI E INTERAZIONI",
+   "recall": [
+    "Ogni previsione del modello multiplo riguarda una combinazione specifica dei predittori."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "La risposta dipende da un profilo"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "Y_i=\\beta_0+\\beta_1x_{i1}+\\beta_2x_{i2}+\\varepsilon_i",
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "056-1",
+     "w": 250,
+     "h": 98,
+     "src": "assets/lezioni/M07/figure/056-1.svg",
+     "ratio": 0.878
+    },
+    {
+     "t": "p",
+     "c": [
+      "Nei fossili aggiungiamo il morfotipo al diametro totale. Il modello confronta risposte medie per profili con lo stesso diametro e diverso gruppo."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · aggiungere il morfotipo",
+     "file": "056_multiplo.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Il simbolo ",
+      {
+       "t": "c",
+       "v": "+"
+      },
+      " include i contributi dei due predittori. In questa formula la pendenza rispetto al diametro è comune ai gruppi."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "L’informazione di gruppo deve essere disponibile nel momento in cui si intende usare il modello."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 57,
+   "title": "Coefficienti condizionati",
+   "section": "V · PREDITTORI E INTERAZIONI",
+   "recall": [
+    "Il significato di un coefficiente dipende dagli altri termini inclusi e dal dominio in cui il confronto è sostenuto dai dati."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "La variazione a parità degli altri predittori"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "E(Y\\mid x_1,x_2)=\\beta_0+\\beta_1x_1+\\beta_2x_2",
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "E(Y\\mid x_1+\\delta,x_2)-E(Y\\mid x_1,x_2)=\\beta_1\\delta",
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "057-1",
+     "w": 241,
+     "h": 101,
+     "src": "assets/lezioni/M07/figure/057-1.svg",
+     "ratio": 0.846
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il coefficiente descrive un confronto condizionato dal modello. Il confronto marginale, ottenuto ignorando gli altri predittori, può avere dimensione o segno diverso."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "“A parità di” richiede combinazioni dei predittori compatibili con i dati. Con scarso supporto comune, il confronto dipende maggiormente dall’estrapolazione."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Interpretazione causale e aggiustamento statistico richiedono ipotesi sul disegno e sulle variabili coinvolte. L’aggiunta di covariate, da sola, non stabilisce un effetto causale."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 58,
+   "title": "Un indicatore per il morfotipo",
+   "section": "V · PREDITTORI E INTERAZIONI",
+   "recall": [
+    "Riportare il gruppo di riferimento è necessario per interpretare segno e significato del coefficiente categoriale."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "La codifica rende esplicito il confronto"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "G_i=\\begin{cases}0&\\text{Rounded}\\\\1&\\text{Spiky}\\end{cases}",
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "E(Y\\mid x,G)=\\beta_0+\\beta_1x+\\beta_2G",
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "058-1",
+     "w": 250,
+     "h": 65,
+     "src": "assets/lezioni/M07/figure/058-1.svg",
+     "ratio": 0.878
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il coefficiente del gruppo è una differenza nella risposta media a pari ",
+      {
+       "t": "m",
+       "v": "x"
+      },
+      ", sotto l’ipotesi di pendenza comune."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · fissare Rounded come riferimento",
+     "file": "058_riferimento.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      {
+       "t": "c",
+       "v": "relevel()"
+      },
+      " rende esplicito il riferimento. Il codice usa i contrasti di trattamento predefiniti per un fattore non ordinato."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 59,
+   "title": "La matrice del modello in R",
+   "section": "V · PREDITTORI E INTERAZIONI",
+   "recall": [
+    "La matrice del modello collega una formula R alla parametrizzazione matematica effettivamente stimata."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Ogni riga descrive un fossile"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\mathbf X= \\begin{pmatrix} 1&x_1&0\\\\ 1&x_2&1\\\\ 1&x_3&0\\\\ \\vdots&\\vdots&\\vdots \\end{pmatrix} \\quad \\boldsymbol\\beta= \\begin{pmatrix}\\beta_0\\\\\\beta_1\\\\\\beta_2\\end{pmatrix}",
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "059-1",
+     "w": 261,
+     "h": 70,
+     "src": "assets/lezioni/M07/figure/059-1.svg",
+     "ratio": 0.916
+    },
+    {
+     "t": "code",
+     "title": "R · ispezionare model.matrix()",
+     "file": "059_matrice.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "I nomi delle colonne chiariscono quale coefficiente moltiplica ciascun termine. Per una riga ",
+      {
+       "t": "m",
+       "v": "\\mathbf x_i^\\top"
+      },
+      ", il valore stimato è ",
+      {
+       "t": "m",
+       "v": "\\mathbf x_i^\\top\\widehat{\\boldsymbol\\beta}"
+      },
+      "."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Una variabile con ",
+      {
+       "t": "m",
+       "v": "k"
+      },
+      " categorie richiede normalmente ",
+      {
+       "t": "m",
+       "v": "k-1"
+      },
+      " indicatori quando il modello include l’intercetta."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 60,
+   "title": "Il modello additivo",
+   "section": "V · PREDITTORI E INTERAZIONI",
+   "recall": [
+    "L’assenza di interazione impone una pendenza comune e una differenza di gruppo costante."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Due rette con pendenza comune"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "060-1",
+     "w": 247,
+     "h": 139,
+     "src": "assets/lezioni/M07/figure/060-1.svg",
+     "ratio": 0.867
+    },
+    {
+     "t": "math",
+     "v": "\\Delta(x)=E(Y\\mid x,G=1)-E(Y\\mid x,G=0)=\\beta_2",
+     "col": "L"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Le rette parallele impongono un contrasto costante lungo il dominio."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · leggere il contrasto condizionato",
+     "file": "060_additivo.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Le due righe di ",
+      {
+       "t": "c",
+       "v": "newdata"
+      },
+      " differiscono soltanto per il morfotipo. Il confronto deve riguardare diametri presenti nel supporto comune dei gruppi."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 61,
+   "title": "Pendenze diverse tra gruppi",
+   "section": "V · PREDITTORI E INTERAZIONI",
+   "recall": [
+    "In R, x * gruppo equivale a x + gruppo + x:gruppo."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Un prodotto aggiunge l’interazione"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "061-1",
+     "w": 247,
+     "h": 139,
+     "src": "assets/lezioni/M07/figure/061-1.svg",
+     "ratio": 0.867
+    },
+    {
+     "t": "math",
+     "v": "E(Y\\mid x,G)=\\beta_0+\\beta_1x+\\beta_2G+\\beta_3xG",
+     "col": "L"
+    },
+    {
+     "t": "small",
+     "c": [
+      "La pendenza è ",
+      {
+       "t": "m",
+       "v": "\\beta_1"
+      },
+      " per Rounded e ",
+      {
+       "t": "m",
+       "v": "\\beta_1+\\beta_3"
+      },
+      " per Spiky. Il coefficiente ",
+      {
+       "t": "m",
+       "v": "\\beta_3"
+      },
+      " misura la differenza tra pendenze."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · stimare pendenze di gruppo",
+     "file": "061_interazione.R",
+     "col": "R"
+    },
+    {
+     "t": "lab",
+     "url": "https://marzione00.github.io/Lab_Geo/#laboratorio/m07-interazioni",
+     "c": [
+      "Esperimento · interazioni"
+     ],
+     "col": "R",
+     "lab": "m07-interazioni"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Nel simulatore modificare il termine ",
+      {
+       "t": "m",
+       "v": "xG"
+      },
+      ". Osservare come cambia la differenza fra le pendenze, mantenendo riconoscibili i due gruppi."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 62,
+   "title": "Il contrasto dipende da x",
+   "section": "V · PREDITTORI E INTERAZIONI",
+   "recall": [
+    "Con un’interazione, il contrasto di gruppo è una funzione del predittore."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "La distanza verticale cambia lungo la scala"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "062-1",
+     "w": 247,
+     "h": 139,
+     "src": "assets/lezioni/M07/figure/062-1.svg",
+     "ratio": 0.867
+    },
+    {
+     "t": "math",
+     "v": "\\Delta(x)=\\beta_2+\\beta_3x",
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Con l’interazione, il confronto dipende dal diametro. Un solo coefficiente non lo riassume."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · contrasti per valori dichiarati",
+     "file": "062_contrasto.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Il codice produce confronti puntuali. Prima di interpretarli si controlla il dominio di ciascun morfotipo, soprattutto vicino agli estremi."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 63,
+   "title": "Centrare il predittore",
+   "section": "V · PREDITTORI E INTERAZIONI",
+   "recall": [
+    "Centrare cambia la parametrizzazione e il significato dell’intercetta, conservando le previsioni del modello equivalente."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Un’origine interpretabile"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "x_c=x-x_0,\\qquad x_0=7\\ \\mu\\mathrm m",
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "E(Y\\mid x_c,G)=\\alpha_0+\\alpha_1x_c+\\alpha_2G+\\alpha_3x_cG",
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\alpha_2=\\beta_2+\\beta_3x_0=\\Delta(x_0)",
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "063-1",
+     "w": 242,
+     "h": 94,
+     "src": "assets/lezioni/M07/figure/063-1.svg",
+     "ratio": 0.849
+    },
+    {
+     "t": "code",
+     "title": "R · cambiare l’origine della scala",
+     "file": "063_centrare.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Il coefficiente di gruppo ora descrive Spiky meno Rounded a ",
+      {
+       "t": "m",
+       "v": "7\\,\\mu"
+      },
+      "m. Il modello rappresenta le stesse rette, con coefficienti più comodi da interpretare."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 64,
+   "title": "Incertezza di un contrasto",
+   "section": "V · PREDITTORI E INTERAZIONI",
+   "recall": [
+    "L’incertezza di una combinazione di coefficienti dipende anche dalle covarianze tra le stime."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "La covarianza dei coefficienti conta"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\widehat\\Delta(x)=\\mathbf c(x)^\\top\\widehat{\\boldsymbol\\beta}, \\quad \\mathbf c(x)=(0,0,1,x)^\\top",
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\operatorname{SE}\\{\\widehat\\Delta(x)\\} =\\sqrt{\\mathbf c(x)^\\top\\widehat{\\operatorname{Var}}(\\widehat{\\boldsymbol\\beta})\\mathbf c(x)}",
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\widehat\\Delta(x)\\ \\pm\\ t_{n-p,\\,0.975}\\, \\operatorname{SE}\\{\\widehat\\Delta(x)\\}",
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il vettore ",
+      {
+       "t": "m",
+       "v": "\\mathbf c(x)"
+      },
+      " usa l’ordine intercetta, ",
+      {
+       "t": "m",
+       "v": "x"
+      },
+      ", gruppo, interazione. Dopo il centraggio in ",
+      {
+       "t": "m",
+       "v": "x_0"
+      },
+      ", il contrasto in ",
+      {
+       "t": "m",
+       "v": "x_0"
+      },
+      " coincide con il coefficiente di gruppo."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Intervallo puntuale al 95% nel modello lineare classico con errori normali indipendenti e varianza costante. Una banda simultanea è un oggetto diverso."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · intervallo a 7 micrometri",
+     "file": "064_intervallo_contrasto.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      {
+       "t": "c",
+       "v": "vcov()"
+      },
+      " restituisce la matrice delle covarianze stimate. Per altri valori di ",
+      {
+       "t": "m",
+       "v": "x"
+      },
+      " bisogna includere anche il termine di interazione e la sua covarianza."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 65,
+   "title": "Prevedere per un profilo",
+   "section": "V · PREDITTORI E INTERAZIONI",
+   "recall": [
+    "La validità di una previsione dipende dalla combinazione dei predittori, oltre che dall’intervallo di ogni singola variabile."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Una nuova riga della matrice del modello"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\mathbf x_0^\\top=(1,\\ x_0,\\ G_0,\\ x_0G_0)",
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\widehat y_0=\\mathbf x_0^\\top\\widehat{\\boldsymbol\\beta}",
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "065-1",
+     "w": 255,
+     "h": 73,
+     "src": "assets/lezioni/M07/figure/065-1.svg",
+     "ratio": 0.895
+    },
+    {
+     "t": "p",
+     "c": [
+      "Un livello categoriale mai osservato non ha un coefficiente stimato. Anche una combinazione nuova di valori già presenti può richiedere estrapolazione."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · due profili completi",
+     "file": "065_profilo.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "L’intervallo di confidenza riguarda la media condizionata. L’intervallo di previsione include anche la variabilità di un nuovo fossile."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 66,
+   "title": "Collinearità tra predittori",
+   "section": "V · PREDITTORI E INTERAZIONI",
+   "recall": [
+    "Una buona previsione entro il campione non garantisce che i contributi dei singoli predittori siano ben separati."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Quando i contributi diventano difficili da separare"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "066-1",
+     "w": 241,
+     "h": 144,
+     "src": "assets/lezioni/M07/figure/066-1.svg",
+     "ratio": 0.846
+    },
+    {
+     "t": "p",
+     "c": [
+      "Se ",
+      {
+       "t": "m",
+       "v": "x_1"
+      },
+      " e ",
+      {
+       "t": "m",
+       "v": "x_2"
+      },
+      " variano quasi insieme, il campione informa poco sul cambiamento di uno a parità dell’altro. I singoli coefficienti possono diventare instabili."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\widehat{\\operatorname{Var}}(\\widehat{\\boldsymbol\\beta}) =s^2(\\mathbf X^\\top\\mathbf X)^{-1}",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Vicino a una dipendenza lineare, alcune direzioni contengono poca informazione. Intervalli ampi e coefficienti sensibili a piccole modifiche possono coesistere con previsioni stabili entro il dominio osservato."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Centrare o cambiare unità può migliorare il calcolo numerico. Non crea nuove combinazioni dei predittori nel campione."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 67,
+   "title": "L’identità geometrica dei fossili",
+   "section": "V · PREDITTORI E INTERAZIONI",
+   "recall": [
+    "Prima di interpretare una correlazione occorre conoscere come ciascuna variabile è definita e calcolata."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Una relazione costruita per definizione"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "067-1",
+     "w": 230,
+     "h": 135,
+     "src": "assets/lezioni/M07/figure/067-1.svg",
+     "ratio": 0.807
+    },
+    {
+     "t": "p",
+     "c": [
+      "Nel dataset sintetico, diametri e spessore soddisfano questa identità, salvo arrotondamenti. La relazione algebrica deve entrare nella scelta delle variabili."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · verificare la definizione",
+     "file": "067_identita.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Usare simultaneamente queste tre quantità come predittori genera ridondanza esatta o quasi esatta. Usare una quantità che ricostruisce direttamente la risposta può rendere la previsione priva dell’utilità prevista."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 68,
+   "title": "Rango e coefficienti identificabili",
+   "section": "V · PREDITTORI E INTERAZIONI",
+   "recall": [
+    "Identificabilità dei coefficienti e qualità delle previsioni sono problemi distinti."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Una combinazione delle colonne vale zero"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\mathbf X\\mathbf a=\\mathbf0,\\qquad \\mathbf a\\ne\\mathbf0",
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\mathbf X(\\boldsymbol\\beta+t\\mathbf a)=\\mathbf X\\boldsymbol\\beta",
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "068-1",
+     "w": 249,
+     "h": 95,
+     "src": "assets/lezioni/M07/figure/068-1.svg",
+     "ratio": 0.874
+    },
+    {
+     "t": "small",
+     "c": [
+      "Se il rango è minore del numero di colonne, i coefficienti non hanno una soluzione unica. La formula con l’inversa ordinaria di ",
+      {
+       "t": "m",
+       "v": "\\mathbf X^\\top\\mathbf X"
+      },
+      " non è applicabile."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · confrontare rango e colonne",
+     "file": "068_rango.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Qui ",
+      {
+       "t": "m",
+       "v": "z=x-2s"
+      },
+      " viene ricostruita per mostrare una dipendenza esatta. Nei dati arrotondati, il rango numerico dipende anche dalla tolleranza e dalla scala."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "La scelta delle colonne deve conservare un significato scientifico leggibile."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 69,
+   "title": "Confrontare modelli motivati",
+   "section": "V · PREDITTORI E INTERAZIONI",
+   "recall": [
+    "Il confronto tra modelli comincia dalle ipotesi che ogni formula impone alla relazione scientifica."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Ogni formula rappresenta un’ipotesi"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "069-1",
+     "w": 262,
+     "h": 133,
+     "src": "assets/lezioni/M07/figure/069-1.svg",
+     "ratio": 0.92
+    },
+    {
+     "t": "p",
+     "c": [
+      "La scelta dipende dalla domanda, dalla disponibilità dei predittori e dalle prestazioni su dati lasciati fuori dalla stima."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · dichiarare i modelli candidati",
+     "file": "069_modelli.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Una ricerca automatica su molte formule può adattarsi alle particolarità del campione. L’intera procedura di selezione deve rientrare nella validazione."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 70,
+   "title": "Interpretare una relazione condizionata",
+   "section": "V · PREDITTORI E INTERAZIONI",
+   "recall": [
+    "Una conclusione statistica acquista significato quando variabile, unità, confronto e dominio sono espliciti."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "La conclusione deve indicare il confronto"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "070-1",
+     "w": 256,
+     "h": 129,
+     "src": "assets/lezioni/M07/figure/070-1.svg",
+     "ratio": 0.899
+    },
+    {
+     "t": "p",
+     "c": [
+      "Un risultato interpretabile riporta stima e intervallo, forma del modello e limiti del campionamento. L’interazione richiede di specificare il valore di ",
+      {
+       "t": "m",
+       "v": "x"
+      },
+      "."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Una domanda di lettura"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Che cosa significa il coefficiente di Spiky dopo aver centrato il diametro totale a ",
+      {
+       "t": "m",
+       "v": "7\\,\\mu"
+      },
+      "m?"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "È la differenza media Spiky meno Rounded a ",
+      {
+       "t": "m",
+       "v": "7\\,\\mu"
+      },
+      "m, secondo il modello. L’intervallo misura l’incertezza di questo contrasto alle ipotesi dichiarate."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "I fossili sono sintetici. Il risultato descrive il caso didattico e non costituisce una conclusione empirica su una popolazione paleontologica."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 71,
+   "title": "Una risposta binaria",
+   "section": "VI · RISPOSTE BINARIE",
+   "recall": [
+    "Una regressione per risposte binarie descrive la probabilità dell’evento dichiarato."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Il parametro di interesse è una probabilità"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "Y_i\\mid\\mathbf x_i\\sim\\operatorname{Bernoulli}(p_i)",
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "E(Y_i\\mid\\mathbf x_i)=p_i,\\qquad \\operatorname{Var}(Y_i\\mid\\mathbf x_i)=p_i(1-p_i)",
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "071-1",
+     "w": 260,
+     "h": 97,
+     "src": "assets/lezioni/M07/figure/071-1.svg",
+     "ratio": 0.913
+    },
+    {
+     "t": "code",
+     "title": "R · costruire la risposta 0/1",
+     "file": "071_risposta_binaria.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "La codifica stabilisce quale evento ha probabilità ",
+      {
+       "t": "m",
+       "v": "p_i"
+      },
+      ". La media dei valori 0/1 è la frequenza dell’evento nel gruppo considerato."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Qui descriviamo l’etichetta sintetica Spiky. Una regola tassonomica per nuovi fossili richiederebbe una validazione specifica."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 72,
+   "title": "Logit, odds e probabilità",
+   "section": "VI · RISPOSTE BINARIE",
+   "recall": [
+    "Odds e probabilità hanno significati e scale diversi. Una variazione negli odds non è una variazione uguale nella probabilità."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Tre scale con intervalli differenti"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\operatorname{odds}=\\frac{p}{1-p},\\qquad \\eta=\\operatorname{logit}(p)=\\log\\frac{p}{1-p}",
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "072-1",
+     "w": 248,
+     "h": 97,
+     "src": "assets/lezioni/M07/figure/072-1.svg",
+     "ratio": 0.871
+    },
+    {
+     "t": "small",
+     "c": [
+      "Esempi di conversione. Gli odds possono superare uno, mentre una probabilità rimane tra zero e uno."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · qlogis() e plogis()",
+     "file": "072_odds.R",
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "p=\\frac{1}{1+e^{-\\eta}}",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      {
+       "t": "c",
+       "v": "qlogis()"
+      },
+      " passa dalla probabilità al logit. ",
+      {
+       "t": "c",
+       "v": "plogis()"
+      },
+      " applica la trasformazione inversa."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 73,
+   "title": "La curva logistica",
+   "section": "VI · RISPOSTE BINARIE",
+   "recall": [
+    "Il modello è lineare nella scala del logit. La probabilità segue una curva compresa fra zero e uno."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Il predittore lineare viene trasformato"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "073-1",
+     "w": 267,
+     "h": 138,
+     "src": "assets/lezioni/M07/figure/073-1.svg",
+     "ratio": 0.937
+    },
+    {
+     "t": "math",
+     "v": "\\eta_i=\\beta_0+\\beta_1x_i,\\qquad p_i=\\operatorname{logit}^{-1}(\\eta_i)",
+     "col": "L"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Per ",
+      {
+       "t": "m",
+       "v": "\\eta=0"
+      },
+      ", la probabilità vale ",
+      {
+       "t": "m",
+       "v": "0{,}5"
+      },
+      ". Valori molto positivi o negativi si avvicinano rispettivamente a uno o zero."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · tracciare la funzione inversa",
+     "file": "073_curva_logistica.R",
+     "col": "R"
+    },
+    {
+     "t": "lab",
+     "url": "https://marzione00.github.io/Lab_Geo/#laboratorio/m07-logistica",
+     "c": [
+      "Esperimento · curva logistica"
+     ],
+     "col": "R",
+     "lab": "m07-logistica"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Il simulatore varia coefficienti dichiarati e genera risposte 0/1. La curva teorica è nota: stimare i coefficienti dai dati è il passo successivo."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 74,
+   "title": "Stimare la logistica con glm",
+   "section": "VI · RISPOSTE BINARIE",
+   "recall": [
+    "La regressione logistica stima probabilità tramite una verosimiglianza Bernoulli e richiede il controllo della convergenza."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Risposte condizionatamente indipendenti"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "L(\\boldsymbol\\beta)=\\prod_{i=1}^n p_i^{y_i}(1-p_i)^{1-y_i}",
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\ell(\\boldsymbol\\beta)=\\sum_i \\{y_i\\log p_i+(1-y_i)\\log(1-p_i)\\}",
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La stima sceglie coefficienti che rendono plausibile la sequenza osservata di zeri e uno. ",
+      {
+       "t": "c",
+       "v": "glm()"
+      },
+      " esegue un algoritmo iterativo."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "074-1",
+     "w": 244,
+     "h": 62,
+     "src": "assets/lezioni/M07/figure/074-1.svg",
+     "ratio": 0.856
+    },
+    {
+     "t": "code",
+     "title": "R · una famiglia binomiale",
+     "file": "074_glm.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      {
+       "t": "c",
+       "v": "binomial()"
+      },
+      " usa il logit. Controllare convergenza e avvisi: probabilità estreme possono segnalare separazione."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "La prestazione predittiva richiede dati esclusi dalla stima."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 75,
+   "title": "Il rapporto tra odds",
+   "section": "VI · RISPOSTE BINARIE",
+   "recall": [
+    "Un odds ratio deve sempre essere accompagnato dall’incremento e dall’unità del predittore."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Un incremento del predittore"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\frac{\\operatorname{odds}(x+\\delta)}{\\operatorname{odds}(x)} =e^{\\beta_1\\delta}",
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "075-1",
+     "w": 247,
+     "h": 81,
+     "src": "assets/lezioni/M07/figure/075-1.svg",
+     "ratio": 0.867
+    },
+    {
+     "t": "p",
+     "c": [
+      "Senza interazione, lo stesso incremento moltiplica gli odds per lo stesso fattore. Con più predittori, gli altri termini rimangono fissati."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · esponenziare un coefficiente",
+     "file": "075_odds_ratio.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Il diametro è espresso in micrometri. Il rapporto per mezzo micrometro è ",
+      {
+       "t": "m",
+       "v": "e^{0{,}5\\beta_1}"
+      },
+      ", non metà del rapporto per un micrometro."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Un odds ratio pari a 2 indica odds doppi. L’aumento della probabilità dipende dal valore di partenza."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 76,
+   "title": "L’effetto sulla probabilità",
+   "section": "VI · RISPOSTE BINARIE",
+   "recall": [
+    "Il coefficiente logistico agisce linearmente sul logit, mentre la variazione di probabilità dipende dal profilo iniziale."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Lo stesso coefficiente ha effetti locali diversi"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\frac{dp}{dx}=\\beta_1p(1-p)",
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "076-1",
+     "w": 241,
+     "h": 121,
+     "src": "assets/lezioni/M07/figure/076-1.svg",
+     "ratio": 0.846
+    },
+    {
+     "t": "p",
+     "c": [
+      "Vicino agli estremi zero e uno, la probabilità varia meno per lo stesso incremento di ",
+      {
+       "t": "m",
+       "v": "x"
+      },
+      ". Conviene mostrare probabilità previste per profili scientificamente pertinenti."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · confrontare probabilità previste",
+     "file": "076_effetto_probabilita.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Le differenze in ",
+      {
+       "t": "c",
+       "v": "diff(p76)"
+      },
+      " sono variazioni di probabilità, interpretabili in punti percentuali moltiplicando per 100."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 77,
+   "title": "Probabilità e soglia",
+   "section": "VI · RISPOSTE BINARIE",
+   "recall": [
+    "Il modello fornisce una probabilità. La classificazione aggiunge una soglia e quindi una scelta decisionale."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "La decisione richiede una regola aggiuntiva"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\widehat Y=\\mathbf1(\\widehat p\\ge\\tau)",
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "077-1",
+     "w": 241,
+     "h": 91,
+     "src": "assets/lezioni/M07/figure/077-1.svg",
+     "ratio": 0.846
+    },
+    {
+     "t": "p",
+     "c": [
+      "La soglia traduce una probabilità in un’etichetta. Le probabilità conservano informazione che si perde riducendo ogni caso a zero o uno."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · applicare una soglia dichiarata",
+     "file": "077_soglia.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "La scelta ",
+      {
+       "t": "m",
+       "v": "0{,}5"
+      },
+      " è un riferimento didattico. La soglia adatta all’uso dipende dai costi degli errori e dalla calibrazione delle probabilità."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 78,
+   "title": "La matrice di classificazione",
+   "section": "VI · RISPOSTE BINARIE",
+   "recall": [
+    "La matrice dei conteggi mostra quali errori produce una soglia e quale classe ne sostiene il costo."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Risposta osservata e decisione"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "078-1",
+     "w": 231,
+     "h": 132,
+     "src": "assets/lezioni/M07/figure/078-1.svg",
+     "ratio": 0.811
+    },
+    {
+     "t": "math",
+     "v": "\\operatorname{Accuracy}=\\frac{TP+TN}{n}",
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · conteggi per la soglia scelta",
+     "file": "078_classificazione.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Questi conteggi descrivono il campione di stima. Con una classe dominante, anche una regola costante può avere alta accuratezza."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 79,
+   "title": "Sensibilità, specificità e costi",
+   "section": "VI · RISPOSTE BINARIE",
+   "recall": [
+    "La soglia dipende dallo scopo della decisione. Sensibilità e specificità descrivono aspetti diversi della classificazione."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Le due classi hanno denominatori differenti"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\operatorname{Sensibilità}=\\frac{TP}{TP+FN},\\qquad \\operatorname{Specificità}=\\frac{TN}{TN+FP}",
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Abbassare la soglia aumenta le decisioni positive: possono crescere sia TP sia FP."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\underbrace{C_{FP}(1-p)}_{\\text{costo atteso se decido 1}} \\ \\le\\ \\underbrace{C_{FN}p}_{\\text{costo atteso se decido 0}}",
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\tau^*=\\frac{C_{FP}}{C_{FP}+C_{FN}}",
+     "col": "L"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Con probabilità calibrate, costi positivi costanti e decisioni corrette a costo zero."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · leggere le due proporzioni",
+     "file": "079_sensibilita_specificita.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Le proporzioni richiedono casi osservati in entrambe le classi. La scelta o l’ottimizzazione della soglia deve avvenire senza consultare il test finale."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 80,
+   "title": "Il punteggio di Brier",
+   "section": "VI · RISPOSTE BINARIE",
+   "recall": [
+    "Un modello può produrre le stesse classi di un altro e assegnare probabilità molto diverse."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Valutare direttamente le probabilità"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\operatorname{BS}=\\frac1n\\sum_{i=1}^n(\\widehat p_i-y_i)^2",
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "080-1",
+     "w": 252,
+     "h": 112,
+     "src": "assets/lezioni/M07/figure/080-1.svg",
+     "ratio": 0.885
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il punteggio confronta probabilità e risposte senza soglie. Valori più bassi indicano una perdita minore."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · probabilità contro risposta",
+     "file": "080_brier.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Il valore sul campione di stima è una descrizione dell’adattamento. Per misurare la prestazione predittiva si usa un campione separato e un riferimento stimato solo sul training."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 81,
+   "title": "La calibrazione delle probabilità",
+   "section": "VI · RISPOSTE BINARIE",
+   "recall": [
+    "La calibrazione richiede probabilità, frequenze e numerosità. La verifica predittiva deve usare osservazioni lasciate fuori dalla stima."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Probabilità previste e frequenze osservate"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "081-1",
+     "w": 241,
+     "h": 152,
+     "src": "assets/lezioni/M07/figure/081-1.svg",
+     "ratio": 0.846
+    },
+    {
+     "t": "p",
+     "c": [
+      "Tra casi con probabilità prevista vicina a ",
+      {
+       "t": "m",
+       "v": "0{,}7"
+      },
+      ", ci si aspetta circa il 70% di eventi in ripetizioni adeguate. Gruppi piccoli producono frequenze instabili."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · medie e numerosità per intervallo",
+     "file": "081_calibrazione.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "La tabella confronta probabilità e frequenze medie. ",
+      {
+       "t": "c",
+       "v": "table()"
+      },
+      " mostra le numerosità."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "La figura è uno schema. La calibrazione va poi verificata su nuovi dati."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 82,
+   "title": "La previsione riguarda casi ancora da osservare",
+   "section": "VII · VALUTAZIONE SU NUOVI DATI",
+   "recall": [
+    "La procedura di valutazione deve imitare le condizioni in cui il modello sarà usato."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "082-1",
+     "w": 261,
+     "h": 106,
+     "src": "assets/lezioni/M07/figure/082-1.svg",
+     "ratio": 0.916
+    },
+    {
+     "t": "p",
+     "c": [
+      "Per giudicare la previsione serve una distanza fra costruzione del modello e valutazione. Un errore calcolato sui dati usati per scegliere la formula è ottimistico."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Le figure precedenti descrivono l’intero campione a scopo didattico. Ora ricostruiamo una procedura con divisione fissata, selezione nel training e test separato. Non è una validazione esterna."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La popolazione futura deve essere compatibile con quella rappresentata dai dati."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 83,
+   "title": "La partizione conserva 32 casi per il test",
+   "section": "VII · VALUTAZIONE SU NUOVI DATI",
+   "recall": [
+    "Un identificativo deve appartenere a un solo insieme. La partizione va motivata rispetto al campionamento."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "083-1",
+     "w": 242,
+     "h": 148,
+     "src": "assets/lezioni/M07/figure/083-1.svg",
+     "ratio": 0.849
+    },
+    {
+     "t": "small",
+     "c": [
+      "Il test include ogni quinta riga: 16 fossili per morfotipo. La regola riproduce i notebook originali."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "info",
+     "c": [
+      "In dati reali, ordinamento, stazioni e repliche influenzano la divisione. Questa regola non è una scelta universale."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · costruire insiemi disgiunti",
+     "file": "083_split.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      {
+       "t": "c",
+       "v": "intersect()"
+      },
+      " cerca identificativi presenti in entrambi gli insiemi. Il risultato deve essere vuoto."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 84,
+   "title": "La media del training è un riferimento semplice",
+   "section": "VII · VALUTAZIONE SU NUOVI DATI",
+   "recall": [
+    "Anche il modello di riferimento deve usare soltanto informazioni disponibili al momento della previsione."
+   ],
+   "items": [
+    {
+     "t": "math",
+     "v": "\\hat y_{{\\rm base},i}=\\bar y_{\\rm training}.",
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "084-1",
+     "w": 244,
+     "h": 154,
+     "src": "assets/lezioni/M07/figure/084-1.svg",
+     "ratio": 0.856
+    },
+    {
+     "t": "info",
+     "c": [
+      "La media del test utilizzerebbe risposte ancora ignote nel momento della previsione."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · fissare il confronto di base",
+     "file": "084_riferimento.R",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il modello aggiunge valore se riduce l’errore rispetto a un riferimento pertinente. Qui la media del training fornisce una previsione costante."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 85,
+   "title": "MAE e RMSE pesano gli errori in modo diverso",
+   "section": "VII · VALUTAZIONE SU NUOVI DATI",
+   "recall": [
+    "Una metrica è una scelta su quali errori contano di più."
+   ],
+   "items": [
+    {
+     "t": "math",
+     "v": "\\operatorname{MAE}=\\frac1m\\sum_{i=1}^m|y_i-\\hat y_i|,",
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\operatorname{RMSE}=\\sqrt{\\frac1m\\sum_{i=1}^m(y_i-\\hat y_i)^2}.",
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "085-1",
+     "w": 179,
+     "h": 126,
+     "src": "assets/lezioni/M07/figure/085-1.svg",
+     "ratio": 0.628
+    },
+    {
+     "t": "code",
+     "title": "R · definire le metriche",
+     "file": "085_metriche.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Per gli errori ",
+      {
+       "t": "m",
+       "v": "1,1,4"
+      },
+      ": MAE ",
+      {
+       "t": "m",
+       "v": "=2"
+      },
+      ", RMSE ",
+      {
+       "t": "m",
+       "v": "\\simeq2{,}449"
+      },
+      ". La RMSE pesa maggiormente i grandi scarti."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Le metriche conservano le unità della risposta. La scelta dipende dalle conseguenze degli errori."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 86,
+   "title": "La validazione incrociata riusa il training",
+   "section": "VII · VALUTAZIONE SU NUOVI DATI",
+   "recall": [
+    "La validazione incrociata confronta procedure mediante previsioni fuori dalla stima del singolo giro."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "086-1",
+     "w": 246,
+     "h": 142,
+     "src": "assets/lezioni/M07/figure/086-1.svg",
+     "ratio": 0.864
+    },
+    {
+     "t": "info",
+     "c": [
+      "Il test di 32 casi resta esterno ai giri. Valuterà la procedura selezionata."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · fissare cinque fold",
+     "file": "086_fold.R",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "In ogni giro si stima su quattro parti e si prevede la quinta. Ogni caso del training riceve una previsione da un modello che non lo ha usato nella stima."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 87,
+   "title": "Le trasformazioni fanno parte della procedura",
+   "section": "VII · VALUTAZIONE SU NUOVI DATI",
+   "recall": [
+    "Una trasformazione appresa sui dati deve essere ristimata dentro ogni partizione di addestramento."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "087-1",
+     "w": 258,
+     "h": 113,
+     "src": "assets/lezioni/M07/figure/087-1.svg",
+     "ratio": 0.906
+    },
+    {
+     "t": "code",
+     "title": "R · standardizzare senza anticipare dati",
+     "file": "087_trasformazioni.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "La sola standardizzazione lascia invariate le previsioni OLS con intercetta. La regola è essenziale per selezione, penalizzazione e imputazione."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 88,
+   "title": "Un modello flessibile può inseguire il rumore",
+   "section": "VII · VALUTAZIONE SU NUOVI DATI",
+   "recall": [
+    "L’errore di training misura l’adattamento ai dati già disponibili e tende a favorire la flessibilità."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "088-1",
+     "w": 244,
+     "h": 156,
+     "src": "assets/lezioni/M07/figure/088-1.svg",
+     "ratio": 0.856
+    },
+    {
+     "t": "p",
+     "c": [
+      "Aumentare i gradi di libertà permette di seguire più dettagli del campione. Alcuni dettagli possono essere specifici di quel rumore."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La scelta della complessità deve considerare previsioni su casi esclusi dalla stima, oltre alla plausibilità scientifica della forma."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Lo schema illustra il rischio di sovradattamento. La procedura seguente confronta formule fissate prima del test."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 89,
+   "title": "Le formule si confrontano sugli stessi fold",
+   "section": "VII · VALUTAZIONE SU NUOVI DATI",
+   "recall": [
+    "Il criterio seleziona una procedura nel training. La sua valutazione finale richiede dati tenuti da parte."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "089-1",
+     "w": 276,
+     "h": 148,
+     "src": "assets/lezioni/M07/figure/089-1.svg",
+     "ratio": 0.969
+    },
+    {
+     "t": "small",
+     "c": [
+      {
+       "t": "c",
+       "v": "valida_annula()"
+      },
+      " esegue ",
+      {
+       "t": "c",
+       "v": "lm()"
+      },
+      " e ",
+      {
+       "t": "c",
+       "v": "predict()"
+      },
+      " in ogni fold. Il codice completo è in ",
+      {
+       "t": "c",
+       "v": "R/protocollo.R"
+      },
+      " e nei notebook N12–N13."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Differenze piccole possono dipendere dalla partizione. Il criterio e le formule sono fissati prima del test."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · confrontare la RMSE interna",
+     "file": "089_cv.R",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La media delle cinque RMSE è minore per il modello additivo con morfotipo: ",
+      {
+       "t": "m",
+       "v": "0{,}252\\ \\mu"
+      },
+      "m. Nessuna risposta del test interviene nella scelta."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 90,
+   "title": "Il modello selezionato incontra il test",
+   "section": "VII · VALUTAZIONE SU NUOVI DATI",
+   "recall": [
+    "Dopo avere osservato il test, modificare il modello richiede nuovi dati per una valutazione finale indipendente."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "090-1",
+     "w": 276,
+     "h": 148,
+     "src": "assets/lezioni/M07/figure/090-1.svg",
+     "ratio": 0.969
+    },
+    {
+     "t": "code",
+     "title": "R · valutazione conclusiva",
+     "file": "090_test_finale.R",
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Sui 32 casi esclusi dalla stima, la RMSE vale ",
+      {
+       "t": "m",
+       "v": "0{,}199\\ \\mu"
+      },
+      "m per il modello e ",
+      {
+       "t": "m",
+       "v": "1{,}003\\ \\mu"
+      },
+      "m per la media del training."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "MAE del modello: ",
+      {
+       "t": "m",
+       "v": "0{,}172\\ \\mu"
+      },
+      "m. Il risultato riguarda questa partizione didattica dei dati sintetici."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 91,
+   "title": "Gruppi e tempo richiedono partizioni coerenti",
+   "section": "VII · VALUTAZIONE SU NUOVI DATI",
+   "recall": [
+    "La riga del file e l’unità indipendente di valutazione possono essere diverse."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "091-1",
+     "w": 252,
+     "h": 158,
+     "src": "assets/lezioni/M07/figure/091-1.svg",
+     "ratio": 0.885
+    },
+    {
+     "t": "p",
+     "c": [
+      "Se la domanda riguarda stazioni mai osservate, tutte le misure di una stazione devono rimanere nello stesso insieme."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Per prevedere il futuro, si stima sul passato e si valuta su osservazioni successive. Una divisione casuale può mescolare informazioni temporalmente dipendenti."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "La validazione deve rappresentare il tipo di trasferimento richiesto: nuovo esemplare, nuova stazione o nuovo periodo."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 92,
+   "title": "La simulazione rende visibile il sovradattamento",
+   "section": "VII · VALUTAZIONE SU NUOVI DATI",
+   "recall": [
+    "La simulazione consente di osservare la differenza tra adattamento e previsione sotto una legge nota."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "092-1",
+     "w": 247,
+     "h": 159,
+     "src": "assets/lezioni/M07/figure/092-1.svg",
+     "ratio": 0.867
+    },
+    {
+     "t": "lab",
+     "url": "https://marzione00.github.io/Lab_Geo/#laboratorio/m07-validazione",
+     "c": [
+      "Esperimento: validazione"
+     ],
+     "col": "L",
+     "lab": "m07-validazione"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Nel sito si varia il grado del polinomio. Sceglierlo guardando questi errori rende i nuovi casi parte della selezione. La verifica finale richiederà un altro campione."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · nuovi errori dalla stessa legge",
+     "file": "092_simulazione.R",
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 93,
+   "title": "Anche una metrica sul test è una stima",
+   "section": "VII · VALUTAZIONE SU NUOVI DATI",
+   "recall": [
+    "La generalizzazione richiede sia nuovi casi sia compatibilità tra condizioni di stima e condizioni d’uso."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "093-1",
+     "w": 248,
+     "h": 170,
+     "src": "assets/lezioni/M07/figure/093-1.svg",
+     "ratio": 0.871
+    },
+    {
+     "t": "p",
+     "c": [
+      "La RMSE su 32 casi dipende dai casi disponibili. Una metrica puntuale non descrive tutta l’incertezza sulla prestazione futura."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Repliche della partizione o procedure di ricampionamento possono studiare la stabilità, rispettando gruppi e tempo. Una validazione esterna riguarda anche il trasferimento a un’altra raccolta di dati."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Il risultato ",
+      {
+       "t": "m",
+       "v": "0{,}199\\ \\mu"
+      },
+      "m resta una valutazione interna, legata al protocollo e al campione sintetico."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 94,
+   "title": "Una domanda applicativa guida il confronto",
+   "section": "VIII · UN’ANALISI COMPLETA",
+   "recall": [
+    "La scelta dei termini deve riflettere quale confronto scientifico si vuole rappresentare."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Il diametro totale basta a prevedere quello interno?"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "M_1:\\quad E(Y\\mid x)=\\beta_0+\\beta_1x,",
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "M_2:\\quad E(Y\\mid x,G)=\\beta_0+\\beta_1x+\\beta_2G.",
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "094-1",
+     "w": 260,
+     "h": 83,
+     "src": "assets/lezioni/M07/figure/094-1.svg",
+     "ratio": 0.913
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il modello additivo chiede se, a pari diametro totale, i due morfotipi mostrino un livello medio diverso."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "L’interazione aggiunge una domanda sulla differenza di pendenza. Va motivata dalla forma e dal processo, oltre che esaminata nei dati."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Confronto scientifico e valutazione predittiva restano distinti: lo stesso coefficiente può essere utile a descrivere un contrasto senza migliorare molto la previsione."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 95,
+   "title": "Il contrasto fra morfotipi dipende dal modello",
+   "section": "VIII · UN’ANALISI COMPLETA",
+   "recall": [
+    "Il coefficiente del gruppo descrive un confronto a pari predittore e dipende dai termini inclusi."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Modello additivo sui 160 casi, analisi descrittiva"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\widehat D_{\\rm int}=-0{,}798+0{,}990D_{\\rm tot}-0{,}228G,",
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "G=0\\ (\\text{Rounded}),\\qquad G=1\\ (\\text{Spiky}).",
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "095-1",
+     "w": 244,
+     "h": 108,
+     "src": "assets/lezioni/M07/figure/095-1.svg",
+     "ratio": 0.856
+    },
+    {
+     "t": "p",
+     "c": [
+      "A pari diametro totale, il modello additivo stima per Spiky una media inferiore di circa ",
+      {
+       "t": "m",
+       "v": "0{,}228\\ \\mu"
+      },
+      "m."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "L’IC classico al 95% del contrasto è ",
+      {
+       "t": "m",
+       "v": "[-0{,}305;-0{,}151]\\ \\mu"
+      },
+      "m. Il confronto riguarda l’associazione condizionata nel campione."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Nel modello con interazione, le pendenze stimate sono ",
+      {
+       "t": "m",
+       "v": "0{,}998"
+      },
+      " per Rounded e ",
+      {
+       "t": "m",
+       "v": "0{,}982"
+      },
+      " per Spiky. L’intervallo della differenza include lo zero."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 96,
+   "title": "La media e il nuovo fossile",
+   "section": "VIII · UN’ANALISI COMPLETA",
+   "recall": [
+    "Precisare modello e quantità prevista evita di attribuire un intervallo alla domanda sbagliata."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Esempio descrittivo con il modello semplice"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "D_{\\rm tot}=7\\ \\mu\\mathrm m\\quad\\Longrightarrow\\quad \\hat D_{\\rm int}=5{,}999\\ \\mu\\mathrm m.",
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "096-1",
+     "w": 240,
+     "h": 141,
+     "src": "assets/lezioni/M07/figure/096-1.svg",
+     "ratio": 0.842
+    },
+    {
+     "t": "p",
+     "c": [
+      "Per descrivere una popolazione di fossili di diametro totale ",
+      {
+       "t": "m",
+       "v": "7\\ \\mu"
+      },
+      "m, interessa la media condizionata. Per un nuovo fossile, interessa l’intervallo individuale."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il valore cade nel dominio osservato. Restano da considerare forma, omogeneità della varianza e ragioni di eventuali differenze di gruppo."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Questi intervalli appartengono al modello semplice sull’intero campione. Non sono gli intervalli del modello selezionato sul training."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 97,
+   "title": "Probabilità e classi hanno valutazioni distinte",
+   "section": "VIII · UN’ANALISI COMPLETA",
+   "recall": [
+    "Una buona classificazione a una soglia non garantisce probabilità ben calibrate."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Spiky come risposta binaria, test di 32 casi"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "table",
+     "head": [
+      [
+       {
+        "c": [
+         {
+          "t": "b",
+          "c": [
+           "Osservato"
+          ]
+         }
+        ]
+       },
+       {
+        "c": [
+         {
+          "t": "b",
+          "c": [
+           "Previsto Rounded"
+          ]
+         }
+        ]
+       },
+       {
+        "c": [
+         {
+          "t": "b",
+          "c": [
+           "Previsto Spiky"
+          ]
+         }
+        ]
+       }
+      ]
+     ],
+     "rows": [
+      [
+       {
+        "c": [
+         "Rounded"
+        ]
+       },
+       {
+        "c": [
+         "12"
+        ]
+       },
+       {
+        "c": [
+         "4"
+        ]
+       }
+      ],
+      [
+       {
+        "c": [
+         "Spiky"
+        ]
+       },
+       {
+        "c": [
+         "4"
+        ]
+       },
+       {
+        "c": [
+         "12"
+        ]
+       }
+      ]
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\text{accuratezza}=0{,}75\\qquad (\\text{soglia }0{,}5),",
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\operatorname{Brier}=0{,}159\\quad\\text{contro }0{,}250\\text{ del riferimento}.",
+     "col": "L"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Le probabilità e la soglia hanno ruoli diversi. La matrice dipende dalla soglia, il Brier usa direttamente le probabilità."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · valutare probabilità fuori stima",
+     "file": "097_logistica_test.R",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Le misure geometriche devono essere note quando si prevede il morfotipo."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 98,
+   "title": "Una variabile derivata può rivelare la risposta",
+   "section": "VIII · UN’ANALISI COMPLETA",
+   "recall": [
+    "La disponibilità del predittore nel file non garantisce la sua disponibilità nella previsione reale."
+   ],
+   "items": [
+    {
+     "t": "math",
+     "v": "q=\\frac{D_{\\rm int}}{D_{\\rm tot}}\\quad\\Longrightarrow\\quad D_{\\rm int}=qD_{\\rm tot}.",
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "098-1",
+     "w": 258,
+     "h": 79,
+     "src": "assets/lezioni/M07/figure/098-1.svg",
+     "ratio": 0.906
+    },
+    {
+     "t": "p",
+     "c": [
+      "Se la domanda è prevedere il diametro interno prima di misurarlo, il rapporto interno/totale contiene già l’informazione cercata."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Nella classificazione del morfotipo, invece, le due misure possono essere predittori legittimi se disponibili al momento d’uso."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Il controllo riguarda la domanda e la sequenza di misura. Una colonna può essere appropriata in un’analisi e creare contaminazione in un’altra."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 99,
+   "title": "Il confronto conserva stima e valutazione separate",
+   "section": "VIII · UN’ANALISI COMPLETA",
+   "recall": [
+    "Una conclusione predittiva deve nominare procedura, confronto, unità e popolazione a cui si riferisce."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Stesso training, stessi fold, stesso test"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "table",
+     "head": [
+      [
+       {
+        "c": [
+         {
+          "t": "b",
+          "c": [
+           "Procedura"
+          ]
+         }
+        ]
+       },
+       {
+        "c": [
+         {
+          "t": "b",
+          "c": [
+           "RMSE CV"
+          ]
+         }
+        ]
+       },
+       {
+        "c": [
+         {
+          "t": "b",
+          "c": [
+           "RMSE test"
+          ]
+         }
+        ]
+       }
+      ]
+     ],
+     "rows": [
+      [
+       {
+        "c": [
+         "Media del training"
+        ]
+       },
+       {
+        "c": [
+         "—"
+        ]
+       },
+       {
+        "c": [
+         {
+          "t": "m",
+          "v": "1{,}003"
+         }
+        ]
+       }
+      ],
+      [
+       {
+        "c": [
+         "Lineare semplice"
+        ]
+       },
+       {
+        "c": [
+         {
+          "t": "m",
+          "v": "0{,}273"
+         }
+        ]
+       },
+       {
+        "c": [
+         "—"
+        ]
+       }
+      ],
+      [
+       {
+        "c": [
+         "Con morfotipo"
+        ]
+       },
+       {
+        "c": [
+         {
+          "t": "m",
+          "v": "0{,}252"
+         }
+        ]
+       },
+       {
+        "c": [
+         {
+          "t": "m",
+          "v": "0{,}199"
+         }
+        ]
+       }
+      ],
+      [
+       {
+        "c": [
+         "Polinomio cubico"
+        ]
+       },
+       {
+        "c": [
+         {
+          "t": "m",
+          "v": "0{,}272"
+         }
+        ]
+       },
+       {
+        "c": [
+         "—"
+        ]
+       }
+      ]
+     ],
+     "col": "L"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Valori in ",
+      {
+       "t": "m",
+       "v": "\\mu"
+      },
+      "m. Il test valuta la procedura selezionata e il riferimento fissato. Non viene usato per scegliere fra le tre formule."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "L’informazione di gruppo migliora la previsione interna in questo esempio. La metrica finale è inferiore anche al riferimento costante."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il risultato non dimostra un meccanismo causale né garantisce la stessa prestazione in un altro ambiente deposizionale."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Confrontare ripetutamente tutti i modelli sul test e scegliere il migliore trasformerebbe il test in un insieme di selezione."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 100,
+   "title": "Una relazione utile conserva il proprio dominio",
+   "section": "VIII · UN’ANALISI COMPLETA",
+   "recall": [
+    "Una regressione è interpretabile quando domanda, modello, incertezza e valutazione riguardano lo stesso problema."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "100-1",
+     "w": 261,
+     "h": 127,
+     "src": "assets/lezioni/M07/figure/100-1.svg",
+     "ratio": 0.916
+    },
+    {
+     "t": "p",
+     "c": [
+      "Nei fossili sintetici, il diametro totale descrive gran parte della variazione del diametro interno. Il morfotipo aggiunge informazione condizionata."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La geometria contribuisce all’associazione. Gli intervalli distinguono media e individuo, mentre il test separato misura l’errore della procedura selezionata."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "La conclusione resta legata a misure, dominio e campionamento. Un nuovo contesto richiede nuove verifiche."
+     ],
+     "col": "R"
+    }
+   ]
+  }
+ ],
+ "code": {
+  "003_dati.R": {
+   "code": "# Avvio dalla cartella Annula_M07.\nsource(\"setup.R\", encoding = \"UTF-8\")\n# Una riga corrisponde a un fossile.\nhead(f[, c(\"id\", \"diametro_tot_um\",\n           \"diametro_int_um\")])\nstopifnot(!anyDuplicated(f$id))",
+   "output": "> # Avvio dalla cartella Annula_M07.\n> source(\"setup.R\", encoding = \"UTF-8\")\n> # Una riga corrisponde a un fossile.\n> head(f[, c(\"id\", \"diametro_tot_um\",\n+            \"diametro_int_um\")])\n    id diametro_tot_um diametro_int_um\n1 F001         7.23416         6.35184\n2 F002         5.81023         5.00665\n3 F003         6.63788         5.63158\n4 F004         4.30518         3.50256\n5 F005         6.36402         5.68365\n6 F006         6.93716         6.13993\n> stopifnot(!anyDuplicated(f$id))",
+   "deps": []
+  },
+  "004_geometria.R": {
+   "code": "# La relazione deriva dalla costruzione\n# geometrica delle tre misure.\nscarto <- with(f, diametro_tot_um -\n  diametro_int_um - 2 * spessore_um)\nmax(abs(scarto))\n# Circa 1e-8: arrotondamento del CSV.",
+   "output": "> # La relazione deriva dalla costruzione\n> # geometrica delle tre misure.\n> scarto <- with(f, diametro_tot_um -\n+   diametro_int_um - 2 * spessore_um)\n> max(abs(scarto))\n[1] 1e-08\n> # Circa 1e-8: arrotondamento del CSV.",
+   "deps": []
+  },
+  "005_nuvola.R": {
+   "code": "# Colore secondo il morfotipo.\ncol <- c(\"#1D7890\", \"#C57E42\")\nplot(diametro_int_um ~ diametro_tot_um,\n  data = f, col = col[f$morfotipo],\n  pch = 16, xlab = \"Totale (um)\",\n  ylab = \"Interno (um)\")",
+   "output": "> # Colore secondo il morfotipo.\n> col <- c(\"#1D7890\", \"#C57E42\")\n> plot(diametro_int_um ~ diametro_tot_um,\n+   data = f, col = col[f$morfotipo],\n+   pch = 16, xlab = \"Totale (um)\",\n+   ylab = \"Interno (um)\")",
+   "deps": []
+  },
+  "007_dominio.R": {
+   "code": "# Campo realmente osservato nel file.\nrange(f$diametro_tot_um)\n# Un nuovo valore deve essere esaminato.\nx0 <- 9\nx0 >= min(f$diametro_tot_um) &&\n  x0 <= max(f$diametro_tot_um)",
+   "output": "> # Campo realmente osservato nel file.\n> range(f$diametro_tot_um)\n[1] 3.67789 8.62098\n> # Un nuovo valore deve essere esaminato.\n> x0 <- 9\n> x0 >= min(f$diametro_tot_um) &&\n+   x0 <= max(f$diametro_tot_um)\n[1] FALSE",
+   "deps": []
+  },
+  "009_correlazione.R": {
+   "code": "x <- f$diametro_tot_um\ny <- f$diametro_int_um\ncor(x, y, method = \"pearson\")\n# Cambio di unita positivo: stesso r.\ncor(x / 1000, y / 1000)\n# L'inversione del segno cambia r.\ncor(x, -y)",
+   "output": "> x <- f$diametro_tot_um\n> y <- f$diametro_int_um\n> cor(x, y, method = \"pearson\")\n[1] 0.965421\n> # Cambio di unita positivo: stesso r.\n> cor(x / 1000, y / 1000)\n[1] 0.965421\n> # L'inversione del segno cambia r.\n> cor(x, -y)\n[1] -0.965421",
+   "deps": []
+  },
+  "010_ranghi.R": {
+   "code": "# Spearman applica Pearson ai ranghi.\ncor(x, y, method = \"spearman\")\ncor(rank(x), rank(y))\n# In caso di pareggi R usa ranghi medi.",
+   "output": "> # Spearman applica Pearson ai ranghi.\n> cor(x, y, method = \"spearman\")\n[1] 0.95225\n> cor(rank(x), rank(y))\n[1] 0.95225\n> # In caso di pareggi R usa ranghi medi.",
+   "deps": [
+    "009_correlazione.R"
+   ]
+  },
+  "011_curvatura.R": {
+   "code": "# Esempio costruito, senza rumore.\nu <- seq(-2, 2, length.out = 101)\nv <- u^2\ncor(u, v)  # Praticamente zero.\nplot(u, v, pch = 16)",
+   "output": "> # Esempio costruito, senza rumore.\n> u <- seq(-2, 2, length.out = 101)\n> v <- u^2\n> cor(u, v)  # Praticamente zero.\n[1] 5.91204e-17\n> plot(u, v, pch = 16)",
+   "deps": []
+  },
+  "012_campo.R": {
+   "code": "# Stessa legge, due campi del predittore.\nset.seed(17)\nu <- runif(1000, -4, 4)\nv <- 2 * u + rnorm(1000)\ncentrali <- abs(u) < 1\nc(intero = cor(u, v),\n  ristretto = cor(u[centrali],\n                 v[centrali]))",
+   "output": "> # Stessa legge, due campi del predittore.\n> set.seed(17)\n> u <- runif(1000, -4, 4)\n> v <- 2 * u + rnorm(1000)\n> centrali <- abs(u) < 1\n> c(intero = cor(u, v),\n+   ristretto = cor(u[centrali],\n+                  v[centrali]))\n   intero ristretto \n  0.97839   0.73154 ",
+   "deps": [
+    "011_curvatura.R"
+   ]
+  },
+  "017_scarti.R": {
+   "code": "# Retta proposta, prima dell'ottimizzazione.\na <- -0.5\nb <- 0.9\ne_proposti <- y - (a + b * x)\nsum(e_proposti^2)\n# Confronto con il minimo trovato da lm.\nsum(residuals(m0)^2)",
+   "output": "> # Retta proposta, prima dell'ottimizzazione.\n> a <- -0.5\n> b <- 0.9\n> e_proposti <- y - (a + b * x)\n> sum(e_proposti^2)\n[1] 15.3586\n> # Confronto con il minimo trovato da lm.\n> sum(residuals(m0)^2)\n[1] 10.6461",
+   "deps": [
+    "009_correlazione.R"
+   ]
+  },
+  "022_minimi_mano.R": {
+   "code": "# Scarti dalle rispettive medie.\nxc <- x - mean(x)\nyc <- y - mean(y)\nb1 <- sum(xc * yc) / sum(xc^2)\nb0 <- mean(y) - b1 * mean(x)\nc(intercetta = b0, pendenza = b1)\n# Le due procedure devono coincidere.\nall.equal(unname(coef(m0)), c(b0, b1))",
+   "output": "> # Scarti dalle rispettive medie.\n> xc <- x - mean(x)\n> yc <- y - mean(y)\n> b1 <- sum(xc * yc) / sum(xc^2)\n> b0 <- mean(y) - b1 * mean(x)\n> c(intercetta = b0, pendenza = b1)\nintercetta   pendenza \n -0.700282   0.956997 \n> # Le due procedure devono coincidere.\n> all.equal(unname(coef(m0)), c(b0, b1))\n[1] TRUE",
+   "deps": [
+    "009_correlazione.R"
+   ]
+  },
+  "023_lm.R": {
+   "code": "# La risposta compare a sinistra di ~.\nm0 <- lm(diametro_int_um ~\n           diametro_tot_um, data = f)\ncoef(m0)      # Intercetta e pendenza.\nfitted(m0)    # Valori medi stimati.\nresiduals(m0) # Osservato - stimato.\nsummary(m0)",
+   "output": "> # La risposta compare a sinistra di ~.\n> m0 <- lm(diametro_int_um ~\n+            diametro_tot_um, data = f)\n> coef(m0)      # Intercetta e pendenza.\n    (Intercept) diametro_tot_um \n      -0.700282        0.956997 \n> fitted(m0)    # Valori medi stimati.\n      1       2       3       4       5       6       7       8       9      10      11 \n6.22279 4.86009 5.65215 3.41976 5.39007 5.93856 5.31586 5.75732 3.96654 5.30596 4.94027 \n     12      13      14      15      16      17      18      19      20      21      22 \n5.03763 3.81674 3.05206 5.86687 6.38342 3.70685 5.40944 6.38269 5.10011 5.47388 5.33634 \n     23      24      25      26      27      28      29      30      31      32      33 \n3.94590 4.21184 5.59325 6.39230 3.67896 4.92401 6.53338 4.10524 5.04607 3.88117 5.61493 \n     34      35      36      37      38      39      40      41      42      43      44 \n6.78467 4.36287 4.08975 3.71940 5.25480 4.96901 2.98630 5.71304 4.50520 5.69310 5.83387 \n     45      46      47      48      49      50      51      52      53      54      55 \n4.01164 6.50855 5.73405 4.81601 4.21735 5.16134 3.68021 5.47735 3.55457 3.83769 5.50079 \n     56      57      58      59      60      61      62      63      64      65      66 \n6.53091 5.61510 6.11576 5.28434 5.64634 6.02059 5.99610 5.56254 4.84477 4.45918 5.31859 \n     67      68      69      70      71      72      73      74      75      76      77 \n6.18455 5.54973 7.19425 4.53457 5.29383 5.31371 6.51362 5.43046 3.12680 5.03184 4.19611 \n     78      79      80      81      82      83      84      85      86      87      88 \n5.59316 4.94191 5.23454 6.45024 6.05995 4.56168 5.65867 5.15078 5.01009 5.86775 4.55709 \n     89      90      91      92      93      94      95      96      97      98      99 \n7.20058 4.16516 2.81945 6.10607 5.05067 4.67870 6.93664 5.17584 6.76232 6.40330 5.49087 \n    100     101     102     103     104     105     106     107     108     109     110 \n4.93822 4.80383 6.62318 4.82628 6.54265 5.41295 4.22870 5.77529 4.56723 4.64092 6.07999 \n    111     112     113     114     115     116     117     118     119     120     121 \n5.48602 4.26639 6.04150 5.15512 4.99352 5.54785 6.84364 6.37290 6.46735 7.54997 4.34493 \n    122     123     124     125     126     127     128     129     130     131     132 \n5.38660 6.35947 6.82560 5.60149 5.55832 5.39799 5.90350 5.25384 5.00548 5.16373 5.71756 \n    133     134     135     136     137     138     139     140     141     142     143 \n6.90980 5.63119 6.00547 5.75806 7.05186 3.67983 5.50333 6.54882 7.04251 6.24702 5.29591 \n    144     145     146     147     148     149     150     151     152     153     154 \n7.01732 4.57207 6.57877 5.89961 5.40996 5.80885 6.34958 6.29644 6.26921 5.31568 6.49228 \n    155     156     157     158     159     160 \n5.87918 5.21869 5.88109 5.59504 4.98610 5.73579 \n> residuals(m0) # Osservato - stimato.\n          1           2           3           4           5           6           7 \n 0.12905530  0.14655834 -0.02057676  0.08279975  0.29358735  0.20137079 -0.27606935 \n          8           9          10          11          12          13          14 \n-0.22073832  0.03928342 -0.17700585 -0.41026842  0.21768674  0.03026726 -0.29282695 \n         15          16          17          18          19          20          21 \n-0.06111618  0.26636618  0.48288948  0.03048915  0.09465948  0.32380733  0.07247230 \n         22          23          24          25          26          27          28 \n 0.20991282  0.29801520  0.30931539  0.34488773  0.49393876  0.13746039  0.47937615 \n         29          30          31          32          33          34          35 \n 0.15954748 -0.07650796 -0.03445317  0.03645788  0.32338788  0.43715464  0.08035581 \n         36          37          38          39          40          41          42 \n 0.01155877  0.09049532 -0.09801196  0.51195569  0.31237893  0.22300582  0.54667000 \n         43          44          45          46          47          48          49 \n 0.18342408  0.40906996 -0.05934784 -0.19068665  0.43771939  0.00655042  0.10340760 \n         50          51          52          53          54          55          56 \n 0.33711454 -0.02373924  0.22045200 -0.41154130 -0.31849998  0.30047342 -0.17667238 \n         57          58          59          60          61          62          63 \n-0.02063922  0.17201041 -0.61308590 -0.06360769  0.12911287 -0.12467800  0.30289550 \n         64          65          66          67          68          69          70 \n-0.03311578 -0.27455090  0.20429007  0.25087120 -0.00112421 -0.11897750  0.41568855 \n         71          72          73          74          75          76          77 \n 0.57896463 -0.03287273  0.14090645  0.02985600 -0.21146799  0.14453606 -0.12977412 \n         78          79          80          81          82          83          84 \n 0.64197018  0.11634956  0.28072355  0.06328167 -0.39197479 -0.15302865  0.27573425 \n         85          86          87          88          89          90          91 \n-0.06614810  0.07930792 -0.25655669  0.02400197 -0.26064671 -0.33367405 -0.33676530 \n         92          93          94          95          96          97          98 \n-0.20735517 -0.22293991 -0.08082596  0.10699579  0.25373181  0.03418009  0.41772636 \n         99         100         101         102         103         104         105 \n-0.42355042 -0.18523286 -0.18678909 -0.50506930 -0.21156976 -0.16439609 -0.05918199 \n        106         107         108         109         110         111         112 \n-0.08368195 -0.33639557 -0.17810864 -0.41335133  0.04420061  0.28618383 -0.15570778 \n        113         114         115         116         117         118         119 \n-0.74604311  0.11473754 -0.04507304  0.50406775  0.01545872  0.27948949 -0.18350837 \n        120         121         122         123         124         125         126 \n 0.03276907 -0.15964767  0.29832306 -0.03450070 -0.34730172 -0.28265318 -0.32895175 \n        127         128         129         130         131         132         133 \n-0.33848237 -0.23250455 -0.07642006  0.27942681 -0.44798750 -0.14684341  0.34059719 \n        134         135         136         137         138         139         140 \n-0.02592344  0.03318711 -0.18959846 -0.13520775 -0.14945041 -0.33112084 -0.15689146 \n        141         142         143         144         145         146         147 \n-0.00703922 -0.34215994 -0.16833852 -0.09596163 -0.13217975 -0.35972964  0.03680977 \n        148         149         150         151         152         153         154 \n-0.07211404 -0.19230469 -0.36099292 -0.20149070 -0.08597428  0.02220018  0.17979709 \n        155         156         157         158         159         160 \n-0.09216639 -0.06133673 -0.02070349  0.02528890  0.00449383 -0.34003667 \n> summary(m0)\n\nCall:\nlm(formula = diametro_int_um ~ diametro_tot_um, data = f)\n\nResiduals:\n    Min      1Q  Median      3Q     Max \n-0.7460 -0.1795 -0.0206  0.1807  0.6420 \n\nCoefficients:\n                Estimate Std. Error t value Pr(>|t|)    \n(Intercept)      -0.7003     0.1322    -5.3  3.9e-07 ***\ndiametro_tot_um   0.9570     0.0206    46.5  < 2e-16 ***\n---\nSignif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1\n\nResidual standard error: 0.26 on 158 degrees of freedom\nMultiple R-squared:  0.932,\tAdjusted R-squared:  0.932 \nF-statistic: 2.17e+03 on 1 and 158 DF,  p-value: <2e-16\n",
+   "deps": []
+  },
+  "024_pendenza.R": {
+   "code": "# Incremento medio per +0.5 um in X.\ndelta_x <- 0.5\ncoef(m0)[2] * delta_x\n# Previsione media a diametro totale 7.\npredict(m0, newdata = data.frame(\n  diametro_tot_um = 7))",
+   "output": "> # Incremento medio per +0.5 um in X.\n> delta_x <- 0.5\n> coef(m0)[2] * delta_x\ndiametro_tot_um \n       0.478499 \n> # Previsione media a diametro totale 7.\n> predict(m0, newdata = data.frame(\n+   diametro_tot_um = 7))\n     1 \n5.9987 ",
+   "deps": [
+    "023_lm.R"
+   ]
+  },
+  "026_matrice.R": {
+   "code": "# X contiene una colonna di 1 e il predittore.\nX <- model.matrix(m0)\nhead(X)\ndim(X)       # 160 righe, 2 colonne.\nqr(X)$rank   # Rango della matrice.",
+   "output": "> # X contiene una colonna di 1 e il predittore.\n> X <- model.matrix(m0)\n> head(X)\n  (Intercept) diametro_tot_um\n1           1         7.23416\n2           1         5.81023\n3           1         6.63788\n4           1         4.30518\n5           1         6.36402\n6           1         6.93716\n> dim(X)       # 160 righe, 2 colonne.\n[1] 160   2\n> qr(X)$rank   # Rango della matrice.\n[1] 2",
+   "deps": [
+    "023_lm.R"
+   ]
+  },
+  "028_qr.R": {
+   "code": "X <- model.matrix(m0)\n# QR evita di formare esplicitamente\n# l'inversa di t(X) %*% X.\nb_qr <- qr.coef(qr(X), y)\nmax(abs(b_qr - coef(m0)))\n# Equazioni normali: quasi zero.\nmax(abs(crossprod(X, residuals(m0))))",
+   "output": "> X <- model.matrix(m0)\n> # QR evita di formare esplicitamente\n> # l'inversa di t(X) %*% X.\n> b_qr <- qr.coef(qr(X), y)\n> max(abs(b_qr - coef(m0)))\n[1] 0\n> # Equazioni normali: quasi zero.\n> max(abs(crossprod(X, residuals(m0))))\n[1] 9.32587e-15",
+   "deps": [
+    "009_correlazione.R",
+    "023_lm.R",
+    "026_matrice.R"
+   ]
+  },
+  "029_identita.R": {
+   "code": "# Deviazioni standard con lo stesso denominatore.\nb_da_r <- cor(x, y) * sd(y) / sd(x)\nc(formula = b_da_r,\n  lm = unname(coef(m0)[2]))\n# R2 = r^2: solo regressione semplice\n# OLS con intercetta, sugli stessi casi.\nc(r2 = cor(x, y)^2,\n  R2 = summary(m0)$r.squared)",
+   "output": "> # Deviazioni standard con lo stesso denominatore.\n> b_da_r <- cor(x, y) * sd(y) / sd(x)\n> c(formula = b_da_r,\n+   lm = unname(coef(m0)[2]))\n formula       lm \n0.956997 0.956997 \n> # R2 = r^2: solo regressione semplice\n> # OLS con intercetta, sugli stessi casi.\n> c(r2 = cor(x, y)^2,\n+   R2 = summary(m0)$r.squared)\n      r2       R2 \n0.932037 0.932037 ",
+   "deps": [
+    "009_correlazione.R",
+    "023_lm.R"
+   ]
+  },
+  "030_scomposizione.R": {
+   "code": "SST <- sum((y - mean(y))^2)\nSSE <- sum(residuals(m0)^2)\nSSR <- sum((fitted(m0) - mean(y))^2)\nc(totale = SST, modello = SSR,\n  residua = SSE)\nall.equal(SST, SSR + SSE)",
+   "output": "> SST <- sum((y - mean(y))^2)\n> SSE <- sum(residuals(m0)^2)\n> SSR <- sum((fitted(m0) - mean(y))^2)\n> c(totale = SST, modello = SSR,\n+   residua = SSE)\n  totale  modello  residua \n156.6468 146.0007  10.6461 \n> all.equal(SST, SSR + SSE)\n[1] TRUE",
+   "deps": [
+    "009_correlazione.R",
+    "023_lm.R"
+   ]
+  },
+  "033_sigma.R": {
+   "code": "e <- residuals(m0)\nn <- nobs(m0)\np <- m0$rank\ns <- sqrt(sum(e^2) / (n - p))\nc(calcolo = s, R = sigma(m0))\n# RMSE in campione usa invece n.\nsqrt(mean(e^2))",
+   "output": "> e <- residuals(m0)\n> n <- nobs(m0)\n> p <- m0$rank\n> s <- sqrt(sum(e^2) / (n - p))\n> c(calcolo = s, R = sigma(m0))\n calcolo        R \n0.259578 0.259578 \n> # RMSE in campione usa invece n.\n> sqrt(mean(e^2))\n[1] 0.25795",
+   "deps": [
+    "023_lm.R"
+   ]
+  },
+  "035_ci_coef.R": {
+   "code": "# Intervalli t sotto le ipotesi classiche.\nconfint(m0, level = 0.95)\n# La tabella riporta anche gli errori standard.\ncoef(summary(m0))",
+   "output": "> # Intervalli t sotto le ipotesi classiche.\n> confint(m0, level = 0.95)\n                    2.5 %    97.5 %\n(Intercept)     -0.961481 -0.439083\ndiametro_tot_um  0.916391  0.997603\n> # La tabella riporta anche gli errori standard.\n> coef(summary(m0))\n                 Estimate Std. Error  t value    Pr(>|t|)\n(Intercept)     -0.700282  0.1322465 -5.29528 3.92379e-07\ndiametro_tot_um  0.956997  0.0205589 46.54899 3.68415e-94",
+   "deps": [
+    "023_lm.R"
+   ]
+  },
+  "039_predict.R": {
+   "code": "nuovo <- data.frame(diametro_tot_um = 7)\n# Incertezza della media condizionata.\npredict(m0, newdata = nuovo,\n        interval = \"confidence\")\n# Variabilita di un nuovo individuo.\npredict(m0, newdata = nuovo,\n        interval = \"prediction\")",
+   "output": "> nuovo <- data.frame(diametro_tot_um = 7)\n> # Incertezza della media condizionata.\n> predict(m0, newdata = nuovo,\n+         interval = \"confidence\")\n     fit     lwr     upr\n1 5.9987 5.95043 6.04696\n> # Variabilita di un nuovo individuo.\n> predict(m0, newdata = nuovo,\n+         interval = \"prediction\")\n     fit     lwr     upr\n1 5.9987 5.48374 6.51365",
+   "deps": [
+    "023_lm.R"
+   ]
+  },
+  "040_estrapolazione.R": {
+   "code": "# Lo stesso comando produce numeri\n# anche fuori dal campo osservato.\nfuori <- data.frame(diametro_tot_um = 11)\npredict(m0, newdata = fuori,\n        interval = \"prediction\")\nrange(f$diametro_tot_um)",
+   "output": "> # Lo stesso comando produce numeri\n> # anche fuori dal campo osservato.\n> fuori <- data.frame(diametro_tot_um = 11)\n> predict(m0, newdata = fuori,\n+         interval = \"prediction\")\n      fit    lwr     upr\n1 9.82669 9.2789 10.3745\n> range(f$diametro_tot_um)\n[1] 3.67789 8.62098",
+   "deps": [
+    "023_lm.R"
+   ]
+  },
+  "042_residui.R": {
+   "code": "# m0 descrive il diametro interno.\ne42 <- residuals(m0)\nyhat42 <- fitted(m0)\nplot(yhat42, e42, pch = 19,\n     xlab = \"Valore stimato (um)\",\n     ylab = \"Residuo (um)\")\nabline(h = 0, lty = 2)\n# La curva locale aiuta la lettura.\nlines(lowess(yhat42, e42), col = 2)",
+   "output": "> # m0 descrive il diametro interno.\n> e42 <- residuals(m0)\n> yhat42 <- fitted(m0)\n> plot(yhat42, e42, pch = 19,\n+      xlab = \"Valore stimato (um)\",\n+      ylab = \"Residuo (um)\")\n> abline(h = 0, lty = 2)\n> # La curva locale aiuta la lettura.\n> lines(lowess(yhat42, e42), col = 2)",
+   "deps": [
+    "023_lm.R"
+   ]
+  },
+  "043_vincoli.R": {
+   "code": "# Con intercetta e minimi quadrati:\ne43 <- residuals(m0)\nc(somma = sum(e43),\n  media = mean(e43))\n# Anche X trasposta per e e' quasi 0.\nX43 <- model.matrix(m0)\ndrop(crossprod(X43, e43))",
+   "output": "> # Con intercetta e minimi quadrati:\n> e43 <- residuals(m0)\n> c(somma = sum(e43),\n+   media = mean(e43))\n       somma        media \n-5.88071e-16 -3.67545e-18 \n> # Anche X trasposta per e e' quasi 0.\n> X43 <- model.matrix(m0)\n> drop(crossprod(X43, e43))\n    (Intercept) diametro_tot_um \n   -3.33067e-16     9.32587e-15 ",
+   "deps": [
+    "023_lm.R"
+   ]
+  },
+  "044_curvatura.R": {
+   "code": "# Aggiungiamo un termine quadratico.\nm_quad <- lm(diametro_int_um ~\n  diametro_tot_um +\n  I(diametro_tot_um^2), data = f)\nplot(fitted(m_quad), resid(m_quad),\n     pch = 19, xlab = \"Stima (um)\",\n     ylab = \"Residuo (um)\")\nabline(h = 0, lty = 2)",
+   "output": "> # Aggiungiamo un termine quadratico.\n> m_quad <- lm(diametro_int_um ~\n+   diametro_tot_um +\n+   I(diametro_tot_um^2), data = f)\n> plot(fitted(m_quad), resid(m_quad),\n+      pch = 19, xlab = \"Stima (um)\",\n+      ylab = \"Residuo (um)\")\n> abline(h = 0, lty = 2)",
+   "deps": []
+  },
+  "045_dispersione.R": {
+   "code": "# Scala dei residui standardizzati.\nrs45 <- rstandard(m0)\nplot(fitted(m0), sqrt(abs(rs45)),\n     pch = 19, xlab = \"Stima (um)\",\n     ylab = \"Radice di |residuo std| \")\nlines(lowess(fitted(m0),\n             sqrt(abs(rs45))), col = 2)",
+   "output": "> # Scala dei residui standardizzati.\n> rs45 <- rstandard(m0)\n> plot(fitted(m0), sqrt(abs(rs45)),\n+      pch = 19, xlab = \"Stima (um)\",\n+      ylab = \"Radice di |residuo std| \")\n> lines(lowess(fitted(m0),\n+              sqrt(abs(rs45))), col = 2)",
+   "deps": [
+    "023_lm.R"
+   ]
+  },
+  "046_ordine.R": {
+   "code": "# Esempio simulato: errori correlati.\nset.seed(746)\ne46 <- as.numeric(arima.sim(\n  model = list(ar = 0.75), n = 80))\nplot(e46, type = \"b\",\n     xlab = \"Ordine temporale\",\n     ylab = \"Errore simulato\")\nabline(h = 0, lty = 2)\nacf(e46, main = \"Autocorrelazione\")",
+   "output": "> # Esempio simulato: errori correlati.\n> set.seed(746)\n> e46 <- as.numeric(arima.sim(\n+   model = list(ar = 0.75), n = 80))\n> plot(e46, type = \"b\",\n+      xlab = \"Ordine temporale\",\n+      ylab = \"Errore simulato\")\n> abline(h = 0, lty = 2)\n> acf(e46, main = \"Autocorrelazione\")",
+   "deps": []
+  },
+  "048_qqplot.R": {
+   "code": "# Quantili dei residui standardizzati.\nrs48 <- rstandard(m0)\nqqnorm(rs48, pch = 19,\n       xlab = \"Quantile normale\",\n       ylab = \"Residuo standardizzato\")\nqqline(rs48, col = 2)",
+   "output": "> # Quantili dei residui standardizzati.\n> rs48 <- rstandard(m0)\n> qqnorm(rs48, pch = 19,\n+        xlab = \"Quantile normale\",\n+        ylab = \"Residuo standardizzato\")\n> qqline(rs48, col = 2)",
+   "deps": [
+    "023_lm.R"
+   ]
+  },
+  "049_leva.R": {
+   "code": "# La leva dipende dalla matrice X.\nh49 <- hatvalues(m0)\nplot(f$diametro_tot_um, h49,\n     pch = 19, xlab = \"Diametro (um)\",\n     ylab = \"Leva\")\nc(somma = sum(h49),\n  parametri = m0$rank)",
+   "output": "> # La leva dipende dalla matrice X.\n> h49 <- hatvalues(m0)\n> plot(f$diametro_tot_um, h49,\n+      pch = 19, xlab = \"Diametro (um)\",\n+      ylab = \"Leva\")\n> c(somma = sum(h49),\n+   parametri = m0$rank)\n    somma parametri \n        2         2 ",
+   "deps": [
+    "023_lm.R"
+   ]
+  },
+  "051_cook.R": {
+   "code": "# Una misura del cambiamento globale.\nD51 <- cooks.distance(m0)\nplot(D51, type = \"h\",\n     xlab = \"Indice del fossile\",\n     ylab = \"Distanza di Cook\")\nj51 <- which.max(D51)\nf[j51, c(\"id\", \"morfotipo\")]",
+   "output": "> # Una misura del cambiamento globale.\n> D51 <- cooks.distance(m0)\n> plot(D51, type = \"h\",\n+      xlab = \"Indice del fossile\",\n+      ylab = \"Distanza di Cook\")\n> j51 <- which.max(D51)\n> f[j51, c(\"id\", \"morfotipo\")]\n     id morfotipo\n91 F091     Spiky",
+   "deps": [
+    "023_lm.R"
+   ]
+  },
+  "052_sensibilita.R": {
+   "code": "# Confronto, senza modificare f.\nj52 <- which.max(cooks.distance(m0))\nm_sens <- update(m0, data = f[-j52, ])\nrbind(completo = coef(m0),\n      senza_caso = coef(m_sens))\n# Conserviamo l'identita' del caso.\nf[j52, ]",
+   "output": "> # Confronto, senza modificare f.\n> j52 <- which.max(cooks.distance(m0))\n> m_sens <- update(m0, data = f[-j52, ])\n> rbind(completo = coef(m0),\n+       senza_caso = coef(m_sens))\n           (Intercept) diametro_tot_um\ncompleto     -0.700282        0.956997\nsenza_caso   -0.660192        0.951037\n> # Conserviamo l'identita' del caso.\n> f[j52, ]\n     id morfotipo diametro_tot_um diametro_int_um diaframma_um spessore_um\n91 F091     Spiky         3.67789         2.48269      1.62327    0.597604\n   rapporto_int_tot\n91         0.675029",
+   "deps": [
+    "023_lm.R"
+   ]
+  },
+  "053_errore_misura.R": {
+   "code": "# Esempio classico, tutto simulato.\nset.seed(753)\nx53 <- rnorm(1000)\ny53 <- 2 + 1.5*x53 + rnorm(1000)\nw53 <- x53 + rnorm(1000, sd = 0.8)\nc(latente = coef(lm(y53 ~ x53))[2],\n  misurato = coef(lm(y53 ~ w53))[2])\n# Pendenza limite attesa:\n1.5 / (1 + 0.8^2)",
+   "output": "> # Esempio classico, tutto simulato.\n> set.seed(753)\n> x53 <- rnorm(1000)\n> y53 <- 2 + 1.5*x53 + rnorm(1000)\n> w53 <- x53 + rnorm(1000, sd = 0.8)\n> c(latente = coef(lm(y53 ~ x53))[2],\n+   misurato = coef(lm(y53 ~ w53))[2])\n latente.x53 misurato.w53 \n    1.445182     0.884271 \n> # Pendenza limite attesa:\n> 1.5 / (1 + 0.8^2)\n[1] 0.914634",
+   "deps": []
+  },
+  "054_loglog.R": {
+   "code": "# I logaritmi richiedono valori > 0.\nstopifnot(all(f$diametro_int_um > 0),\n          all(f$diametro_tot_um > 0))\nm_loglog <- lm(log(diametro_int_um) ~\n  log(diametro_tot_um), data = f)\ncoef(m_loglog)\nplot(m_loglog, which = 1)",
+   "output": "> # I logaritmi richiedono valori > 0.\n> stopifnot(all(f$diametro_int_um > 0),\n+           all(f$diametro_tot_um > 0))\n> m_loglog <- lm(log(diametro_int_um) ~\n+   log(diametro_tot_um), data = f)\n> coef(m_loglog)\n         (Intercept) log(diametro_tot_um) \n           -0.471418             1.163180 \n> plot(m_loglog, which = 1)",
+   "deps": []
+  },
+  "055_ritrasformazione.R": {
+   "code": "# Profilo dentro il dominio osservato.\nnuovo55 <- data.frame(\n  diametro_tot_um = 7)\neta55 <- predict(m_loglog, nuovo55)\nmediana55 <- exp(eta55)\n# Media con errori log-normali omogenei.\nmedia55 <- exp(eta55 +\n  sigma(m_loglog)^2 / 2)\nc(mediana = mediana55, media = media55)",
+   "output": "> # Profilo dentro il dominio osservato.\n> nuovo55 <- data.frame(\n+   diametro_tot_um = 7)\n> eta55 <- predict(m_loglog, nuovo55)\n> mediana55 <- exp(eta55)\n> # Media con errori log-normali omogenei.\n> media55 <- exp(eta55 +\n+   sigma(m_loglog)^2 / 2)\n> c(mediana = mediana55, media = media55)\nmediana.1   media.1 \n  6.00160   6.00954 ",
+   "deps": [
+    "054_loglog.R"
+   ]
+  },
+  "056_multiplo.R": {
+   "code": "# Un predittore quantitativo e un gruppo.\nm_add <- lm(diametro_int_um ~\n  diametro_tot_um + morfotipo,\n  data = f)\ncoef(m_add)\nsummary(m_add)$sigma",
+   "output": "> # Un predittore quantitativo e un gruppo.\n> m_add <- lm(diametro_int_um ~\n+   diametro_tot_um + morfotipo,\n+   data = f)\n> coef(m_add)\n    (Intercept) diametro_tot_um  morfotipoSpiky \n      -0.797952        0.990321       -0.228186 \n> summary(m_add)$sigma\n[1] 0.235948",
+   "deps": []
+  },
+  "058_riferimento.R": {
+   "code": "# Scegliamo il gruppo di riferimento.\nf$morfotipo <- relevel(\n  factor(f$morfotipo), ref = \"Rounded\")\nlevels(f$morfotipo)\ncontrasts(f$morfotipo)\n# La scelta entra nella parametrizzazione.\nm_add <- lm(diametro_int_um ~\n  diametro_tot_um + morfotipo, data = f)",
+   "output": "> # Scegliamo il gruppo di riferimento.\n> f$morfotipo <- relevel(\n+   factor(f$morfotipo), ref = \"Rounded\")\n> levels(f$morfotipo)\n[1] \"Rounded\" \"Spiky\"  \n> contrasts(f$morfotipo)\n        Spiky\nRounded     0\nSpiky       1\n> # La scelta entra nella parametrizzazione.\n> m_add <- lm(diametro_int_um ~\n+   diametro_tot_um + morfotipo, data = f)",
+   "deps": [
+    "056_multiplo.R"
+   ]
+  },
+  "059_matrice.R": {
+   "code": "# Colonne usate realmente dal modello.\nX59 <- model.matrix(m_add)\ncolnames(X59)\nhead(X59, 6)\n# La colonna iniziale vale sempre 1.\nstopifnot(all(X59[, 1] == 1))",
+   "output": "> # Colonne usate realmente dal modello.\n> X59 <- model.matrix(m_add)\n> colnames(X59)\n[1] \"(Intercept)\"     \"diametro_tot_um\" \"morfotipoSpiky\" \n> head(X59, 6)\n  (Intercept) diametro_tot_um morfotipoSpiky\n1           1         7.23416              0\n2           1         5.81023              0\n3           1         6.63788              0\n4           1         4.30518              0\n5           1         6.36402              0\n6           1         6.93716              0\n> # La colonna iniziale vale sempre 1.\n> stopifnot(all(X59[, 1] == 1))",
+   "deps": [
+    "056_multiplo.R",
+    "058_riferimento.R"
+   ]
+  },
+  "060_additivo.R": {
+   "code": "# Contrasto a diametro totale fissato.\nnuovi60 <- data.frame(\n  diametro_tot_um = c(7, 7),\n  morfotipo = c(\"Rounded\", \"Spiky\"))\nmu60 <- predict(m_add, nuovi60)\ndiff(mu60)\n# Coincide con il coefficiente di gruppo.\ncoef(m_add)[\"morfotipoSpiky\"]",
+   "output": "> # Contrasto a diametro totale fissato.\n> nuovi60 <- data.frame(\n+   diametro_tot_um = c(7, 7),\n+   morfotipo = c(\"Rounded\", \"Spiky\"))\n> mu60 <- predict(m_add, nuovi60)\n> diff(mu60)\n        2 \n-0.228186 \n> # Coincide con il coefficiente di gruppo.\n> coef(m_add)[\"morfotipoSpiky\"]\nmorfotipoSpiky \n     -0.228186 ",
+   "deps": [
+    "056_multiplo.R",
+    "058_riferimento.R"
+   ]
+  },
+  "061_interazione.R": {
+   "code": "# * include effetti principali e prodotto.\nm_int <- lm(diametro_int_um ~\n  diametro_tot_um * morfotipo,\n  data = f)\ncoef(m_int)\n# Le colonne rendono visibile il prodotto.\ncolnames(model.matrix(m_int))",
+   "output": "> # * include effetti principali e prodotto.\n> m_int <- lm(diametro_int_um ~\n+   diametro_tot_um * morfotipo,\n+   data = f)\n> coef(m_int)\n                   (Intercept)                diametro_tot_um \n                    -0.8430629                      0.9977609 \n                morfotipoSpiky diametro_tot_um:morfotipoSpiky \n                    -0.1245462                     -0.0162466 \n> # Le colonne rendono visibile il prodotto.\n> colnames(model.matrix(m_int))\n[1] \"(Intercept)\"                    \"diametro_tot_um\"               \n[3] \"morfotipoSpiky\"                 \"diametro_tot_um:morfotipoSpiky\"",
+   "deps": [
+    "056_multiplo.R",
+    "058_riferimento.R"
+   ]
+  },
+  "062_contrasto.R": {
+   "code": "# Confrontiamo tre diametri scelti.\nx62 <- c(6, 7, 8)\na62 <- data.frame(diametro_tot_um = x62,\n                   morfotipo = \"Rounded\")\nb62 <- a62; b62$morfotipo <- \"Spiky\"\ndelta62 <- predict(m_int, b62) -\n           predict(m_int, a62)\ndata.frame(diametro = x62, delta = delta62)",
+   "output": "> # Confrontiamo tre diametri scelti.\n> x62 <- c(6, 7, 8)\n> a62 <- data.frame(diametro_tot_um = x62,\n+                    morfotipo = \"Rounded\")\n> b62 <- a62; b62$morfotipo <- \"Spiky\"\n> delta62 <- predict(m_int, b62) -\n+            predict(m_int, a62)\n> data.frame(diametro = x62, delta = delta62)\n  diametro     delta\n1        6 -0.222026\n2        7 -0.238272\n3        8 -0.254519",
+   "deps": [
+    "056_multiplo.R",
+    "058_riferimento.R",
+    "061_interazione.R"
+   ]
+  },
+  "063_centrare.R": {
+   "code": "# Il valore 7 um ha significato nel dominio.\nf$x_c <- f$diametro_tot_um - 7\nm_c <- lm(diametro_int_um ~\n  x_c * morfotipo, data = f)\ncoef(m_c)\n# Le previsioni restano uguali.\nmax(abs(fitted(m_c) - fitted(m_int)))",
+   "output": "> # Il valore 7 um ha significato nel dominio.\n> f$x_c <- f$diametro_tot_um - 7\n> m_c <- lm(diametro_int_um ~\n+   x_c * morfotipo, data = f)\n> coef(m_c)\n       (Intercept)                x_c     morfotipoSpiky x_c:morfotipoSpiky \n         6.1412631          0.9977609         -0.2382725         -0.0162466 \n> # Le previsioni restano uguali.\n> max(abs(fitted(m_c) - fitted(m_int)))\n[1] 2.75335e-14",
+   "deps": [
+    "056_multiplo.R",
+    "058_riferimento.R",
+    "061_interazione.R"
+   ]
+  },
+  "064_intervallo_contrasto.R": {
+   "code": "# m_c e' centrato a 7 um.\nj64 <- match(\"morfotipoSpiky\",\n             names(coef(m_c)))\nd64 <- coef(m_c)[j64]\nse64 <- sqrt(vcov(m_c)[j64, j64])\nt64 <- qt(0.975, df.residual(m_c))\nc(stima = d64,\n  basso = d64 - t64*se64,\n  alto = d64 + t64*se64)",
+   "output": "> # m_c e' centrato a 7 um.\n> j64 <- match(\"morfotipoSpiky\",\n+              names(coef(m_c)))\n> d64 <- coef(m_c)[j64]\n> se64 <- sqrt(vcov(m_c)[j64, j64])\n> t64 <- qt(0.975, df.residual(m_c))\n> c(stima = d64,\n+   basso = d64 - t64*se64,\n+   alto = d64 + t64*se64)\nstima.morfotipoSpiky basso.morfotipoSpiky  alto.morfotipoSpiky \n           -0.238272            -0.329328            -0.147217 ",
+   "deps": [
+    "056_multiplo.R",
+    "058_riferimento.R",
+    "061_interazione.R",
+    "063_centrare.R"
+   ]
+  },
+  "065_profilo.R": {
+   "code": "# Stessi nomi e livelli del modello.\nnuovi65 <- data.frame(\n  diametro_tot_um = c(6.5, 7.5),\n  morfotipo = c(\"Rounded\", \"Spiky\"))\npredict(m_int, newdata = nuovi65,\n        interval = \"confidence\")\n# Nuovi individui: intervallo piu' ampio.\npredict(m_int, newdata = nuovi65,\n        interval = \"prediction\")",
+   "output": "> # Stessi nomi e livelli del modello.\n> nuovi65 <- data.frame(\n+   diametro_tot_um = c(6.5, 7.5),\n+   morfotipo = c(\"Rounded\", \"Spiky\"))\n> predict(m_int, newdata = nuovi65,\n+         interval = \"confidence\")\n      fit     lwr     upr\n1 5.64238 5.58533 5.69944\n2 6.39375 6.32222 6.46527\n> # Nuovi individui: intervallo piu' ampio.\n> predict(m_int, newdata = nuovi65,\n+         interval = \"prediction\")\n      fit     lwr     upr\n1 5.64238 5.17161 6.11315\n2 6.39375 5.92100 6.86649",
+   "deps": [
+    "056_multiplo.R",
+    "058_riferimento.R",
+    "061_interazione.R"
+   ]
+  },
+  "067_identita.R": {
+   "code": "# Identita' delle misure sintetiche.\nscarto67 <- with(f, diametro_tot_um -\n  diametro_int_um - 2*spessore_um)\nmax(abs(scarto67))\n# Anche l'arrotondamento conta.\nsummary(scarto67)",
+   "output": "> # Identita' delle misure sintetiche.\n> scarto67 <- with(f, diametro_tot_um -\n+   diametro_int_um - 2*spessore_um)\n> max(abs(scarto67))\n[1] 1e-08\n> # Anche l'arrotondamento conta.\n> summary(scarto67)\n     Min.   1st Qu.    Median      Mean   3rd Qu.      Max. \n-1.00e-08 -1.00e-08  0.00e+00 -6.25e-11  1.00e-08  1.00e-08 ",
+   "deps": [
+    "056_multiplo.R",
+    "058_riferimento.R",
+    "061_interazione.R",
+    "063_centrare.R"
+   ]
+  },
+  "068_rango.R": {
+   "code": "# Esempio con dipendenza esatta costruita.\nx68 <- f$diametro_tot_um\ns68 <- f$spessore_um\nz68 <- x68 - 2*s68\nX68 <- cbind(1, x68, z68, s68)\nc(colonne = ncol(X68),\n  rango = qr(X68)$rank)",
+   "output": "> # Esempio con dipendenza esatta costruita.\n> x68 <- f$diametro_tot_um\n> s68 <- f$spessore_um\n> z68 <- x68 - 2*s68\n> X68 <- cbind(1, x68, z68, s68)\n> c(colonne = ncol(X68),\n+   rango = qr(X68)$rank)\ncolonne   rango \n      4       3 ",
+   "deps": [
+    "056_multiplo.R",
+    "058_riferimento.R",
+    "061_interazione.R",
+    "063_centrare.R"
+   ]
+  },
+  "069_modelli.R": {
+   "code": "# Formule motivate da ipotesi diverse.\nformule69 <- list(\n  comune = diametro_int_um ~\n    diametro_tot_um,\n  additivo = diametro_int_um ~\n    diametro_tot_um + morfotipo,\n  interazione = diametro_int_um ~\n    diametro_tot_um * morfotipo)\n# La valutazione seguira' un protocollo.\nnames(formule69)",
+   "output": "> # Formule motivate da ipotesi diverse.\n> formule69 <- list(\n+   comune = diametro_int_um ~\n+     diametro_tot_um,\n+   additivo = diametro_int_um ~\n+     diametro_tot_um + morfotipo,\n+   interazione = diametro_int_um ~\n+     diametro_tot_um * morfotipo)\n> # La valutazione seguira' un protocollo.\n> names(formule69)\n[1] \"comune\"      \"additivo\"    \"interazione\"",
+   "deps": []
+  },
+  "071_risposta_binaria.R": {
+   "code": "# 1 indica Spiky, 0 indica Rounded.\nf$spiky <- as.integer(\n  f$morfotipo == \"Spiky\")\ntable(f$morfotipo, f$spiky)\nstopifnot(all(f$spiky %in% c(0, 1)))",
+   "output": "> # 1 indica Spiky, 0 indica Rounded.\n> f$spiky <- as.integer(\n+   f$morfotipo == \"Spiky\")\n> table(f$morfotipo, f$spiky)\n         \n           0  1\n  Rounded 80  0\n  Spiky    0 80\n> stopifnot(all(f$spiky %in% c(0, 1)))",
+   "deps": [
+    "056_multiplo.R",
+    "058_riferimento.R",
+    "061_interazione.R",
+    "063_centrare.R"
+   ]
+  },
+  "072_odds.R": {
+   "code": "# Tre scale per la stessa probabilita'.\np72 <- c(0.2, 0.5, 0.8)\ndata.frame(\n  probabilita = p72,\n  odds = p72 / (1 - p72),\n  logit = qlogis(p72))\n# La funzione inversa recupera p.\nplogis(qlogis(p72))",
+   "output": "> # Tre scale per la stessa probabilita'.\n> p72 <- c(0.2, 0.5, 0.8)\n> data.frame(\n+   probabilita = p72,\n+   odds = p72 / (1 - p72),\n+   logit = qlogis(p72))\n  probabilita odds    logit\n1         0.2 0.25 -1.38629\n2         0.5 1.00  0.00000\n3         0.8 4.00  1.38629\n> # La funzione inversa recupera p.\n> plogis(qlogis(p72))\n[1] 0.2 0.5 0.8",
+   "deps": []
+  },
+  "073_curva_logistica.R": {
+   "code": "# Curva teorica: eta varia da -4 a 4.\neta73 <- seq(-4, 4, length.out = 101)\nplot(eta73, plogis(eta73), type = \"l\",\n     xlab = \"Predittore lineare eta\",\n     ylab = \"Probabilita'\", ylim = c(0, 1))\nabline(h = 0.5, v = 0, lty = 2)",
+   "output": "> # Curva teorica: eta varia da -4 a 4.\n> eta73 <- seq(-4, 4, length.out = 101)\n> plot(eta73, plogis(eta73), type = \"l\",\n+      xlab = \"Predittore lineare eta\",\n+      ylab = \"Probabilita'\", ylim = c(0, 1))\n> abline(h = 0.5, v = 0, lty = 2)",
+   "deps": []
+  },
+  "074_glm.R": {
+   "code": "# Stima descrittiva sul campione.\nm_log <- glm(spiky ~ diametro_tot_um,\n  data = f, family = binomial())\nsummary(m_log)$coefficients\nm_log$converged\n# Probabilita' nella scala 0--1.\np_log <- predict(m_log,\n                 type = \"response\")\nrange(p_log)",
+   "output": "> # Stima descrittiva sul campione.\n> m_log <- glm(spiky ~ diametro_tot_um,\n+   data = f, family = binomial())\n> summary(m_log)$coefficients\n                 Estimate Std. Error  z value    Pr(>|z|)\n(Intercept)     -4.050064   1.159767 -3.49214 0.000479176\ndiametro_tot_um  0.636338   0.179876  3.53766 0.000403695\n> m_log$converged\n[1] TRUE\n> # Probabilita' nella scala 0--1.\n> p_log <- predict(m_log,\n+                  type = \"response\")\n> range(p_log)\n[1] 0.153205 0.807802",
+   "deps": [
+    "056_multiplo.R",
+    "058_riferimento.R",
+    "061_interazione.R",
+    "063_centrare.R",
+    "071_risposta_binaria.R"
+   ]
+  },
+  "075_odds_ratio.R": {
+   "code": "# Effetto di +1 um sul rapporto degli odds.\nb75 <- coef(m_log)[\"diametro_tot_um\"]\nc(per_1_um = exp(b75),\n  per_0_5_um = exp(0.5*b75))\n# Cambiare l'unita' cambia l'incremento.",
+   "output": "> # Effetto di +1 um sul rapporto degli odds.\n> b75 <- coef(m_log)[\"diametro_tot_um\"]\n> c(per_1_um = exp(b75),\n+   per_0_5_um = exp(0.5*b75))\n  per_1_um.diametro_tot_um per_0_5_um.diametro_tot_um \n                   1.88955                    1.37461 \n> # Cambiare l'unita' cambia l'incremento.",
+   "deps": [
+    "056_multiplo.R",
+    "058_riferimento.R",
+    "061_interazione.R",
+    "063_centrare.R",
+    "071_risposta_binaria.R",
+    "074_glm.R"
+   ]
+  },
+  "076_effetto_probabilita.R": {
+   "code": "# Probabilita' per profili espliciti.\nnuovi76 <- data.frame(\n  diametro_tot_um = c(6, 7, 8))\np76 <- predict(m_log, nuovi76,\n               type = \"response\")\ndata.frame(nuovi76, probabilita = p76)\n# Differenze per incrementi di 1 um.\ndiff(p76)",
+   "output": "> # Probabilita' per profili espliciti.\n> nuovi76 <- data.frame(\n+   diametro_tot_um = c(6, 7, 8))\n> p76 <- predict(m_log, nuovi76,\n+                type = \"response\")\n> data.frame(nuovi76, probabilita = p76)\n  diametro_tot_um probabilita\n1               6    0.442250\n2               7    0.599721\n3               8    0.738974\n> # Differenze per incrementi di 1 um.\n> diff(p76)\n       2        3 \n0.157471 0.139253 ",
+   "deps": [
+    "056_multiplo.R",
+    "058_riferimento.R",
+    "061_interazione.R",
+    "063_centrare.R",
+    "071_risposta_binaria.R",
+    "074_glm.R"
+   ]
+  },
+  "077_soglia.R": {
+   "code": "# Probabilita' descrittive gia' calcolate.\nsoglia77 <- 0.5\nclasse77 <- as.integer(p_log >= soglia77)\nhead(data.frame(\n  probabilita = p_log,\n  classe = classe77,\n  osservato = f$spiky))",
+   "output": "> # Probabilita' descrittive gia' calcolate.\n> soglia77 <- 0.5\n> classe77 <- as.integer(p_log >= soglia77)\n> head(data.frame(\n+   probabilita = p_log,\n+   classe = classe77,\n+   osservato = f$spiky))\n  probabilita classe osservato\n1    0.634903      1         0\n2    0.412705      0         0\n3    0.543360      1         0\n4    0.212401      0         0\n5    0.499901      0         0\n6    0.590085      1         0",
+   "deps": [
+    "056_multiplo.R",
+    "058_riferimento.R",
+    "061_interazione.R",
+    "063_centrare.R",
+    "071_risposta_binaria.R",
+    "074_glm.R"
+   ]
+  },
+  "078_classificazione.R": {
+   "code": "# Livelli espliciti anche se un conteggio e' 0.\ntab78 <- table(\n  osservato = factor(f$spiky, levels = 0:1),\n  previsto = factor(classe77, levels = 0:1))\ntab78\nsum(diag(tab78)) / sum(tab78)",
+   "output": "> # Livelli espliciti anche se un conteggio e' 0.\n> tab78 <- table(\n+   osservato = factor(f$spiky, levels = 0:1),\n+   previsto = factor(classe77, levels = 0:1))\n> tab78\n         previsto\nosservato  0  1\n        0 46 34\n        1 29 51\n> sum(diag(tab78)) / sum(tab78)\n[1] 0.60625",
+   "deps": [
+    "056_multiplo.R",
+    "058_riferimento.R",
+    "061_interazione.R",
+    "063_centrare.R",
+    "071_risposta_binaria.R",
+    "074_glm.R",
+    "077_soglia.R"
+   ]
+  },
+  "079_sensibilita_specificita.R": {
+   "code": "# tab78: righe osservate, colonne previste.\nTP79 <- tab78[\"1\", \"1\"]\nFN79 <- tab78[\"1\", \"0\"]\nTN79 <- tab78[\"0\", \"0\"]\nFP79 <- tab78[\"0\", \"1\"]\nc(sensibilita = TP79/(TP79+FN79),\n  specificita = TN79/(TN79+FP79))",
+   "output": "> # tab78: righe osservate, colonne previste.\n> TP79 <- tab78[\"1\", \"1\"]\n> FN79 <- tab78[\"1\", \"0\"]\n> TN79 <- tab78[\"0\", \"0\"]\n> FP79 <- tab78[\"0\", \"1\"]\n> c(sensibilita = TP79/(TP79+FN79),\n+   specificita = TN79/(TN79+FP79))\nsensibilita specificita \n     0.6375      0.5750 ",
+   "deps": [
+    "056_multiplo.R",
+    "058_riferimento.R",
+    "061_interazione.R",
+    "063_centrare.R",
+    "071_risposta_binaria.R",
+    "074_glm.R",
+    "077_soglia.R",
+    "078_classificazione.R"
+   ]
+  },
+  "080_brier.R": {
+   "code": "# Valutazione descrittiva sul campione.\nbrier80 <- mean((p_log - f$spiky)^2)\n# Riferimento costante: frequenza osservata.\npbase80 <- mean(f$spiky)\nbase80 <- mean((pbase80 - f$spiky)^2)\nc(modello = brier80, riferimento = base80)",
+   "output": "> # Valutazione descrittiva sul campione.\n> brier80 <- mean((p_log - f$spiky)^2)\n> # Riferimento costante: frequenza osservata.\n> pbase80 <- mean(f$spiky)\n> base80 <- mean((pbase80 - f$spiky)^2)\n> c(modello = brier80, riferimento = base80)\n    modello riferimento \n   0.228958    0.250000 ",
+   "deps": [
+    "056_multiplo.R",
+    "058_riferimento.R",
+    "061_interazione.R",
+    "063_centrare.R",
+    "071_risposta_binaria.R",
+    "074_glm.R"
+   ]
+  },
+  "081_calibrazione.R": {
+   "code": "# Intervalli fissi di probabilita'.\nd81 <- data.frame(\n  bin = cut(p_log, breaks = seq(0, 1, 0.2),\n            include.lowest = TRUE),\n  p = p_log, y = f$spiky)\naggregate(cbind(p, y) ~ bin,\n          data = d81, FUN = mean)\ntable(d81$bin)",
+   "output": "> # Intervalli fissi di probabilita'.\n> d81 <- data.frame(\n+   bin = cut(p_log, breaks = seq(0, 1, 0.2),\n+             include.lowest = TRUE),\n+   p = p_log, y = f$spiky)\n> aggregate(cbind(p, y) ~ bin,\n+           data = d81, FUN = mean)\n        bin        p        y\n1   [0,0.2] 0.169341 0.250000\n2 (0.2,0.4] 0.304215 0.343750\n3 (0.4,0.6] 0.501203 0.475610\n4 (0.6,0.8] 0.675154 0.682927\n5   (0.8,1] 0.807802 1.000000\n> table(d81$bin)\n\n  [0,0.2] (0.2,0.4] (0.4,0.6] (0.6,0.8]   (0.8,1] \n        4        32        82        41         1 ",
+   "deps": [
+    "009_correlazione.R",
+    "023_lm.R",
+    "033_sigma.R",
+    "056_multiplo.R",
+    "058_riferimento.R",
+    "061_interazione.R",
+    "063_centrare.R",
+    "071_risposta_binaria.R",
+    "074_glm.R"
+   ]
+  },
+  "083_split.R": {
+   "code": "# Regola fissata prima della selezione.\nis_test <- seq_len(nrow(f)) %% 5L == 0L\ntraining <- f[!is_test, ]\ntest <- f[is_test, ]\nc(training = nrow(training),\n  test = nrow(test))\nstopifnot(length(intersect(training$id,\n                         test$id)) == 0L)",
+   "output": "> # Regola fissata prima della selezione.\n> is_test <- seq_len(nrow(f)) %% 5L == 0L\n> training <- f[!is_test, ]\n> test <- f[is_test, ]\n> c(training = nrow(training),\n+   test = nrow(test))\ntraining     test \n     128       32 \n> stopifnot(length(intersect(training$id,\n+                          test$id)) == 0L)",
+   "deps": [
+    "056_multiplo.R",
+    "058_riferimento.R",
+    "061_interazione.R",
+    "063_centrare.R",
+    "071_risposta_binaria.R"
+   ]
+  },
+  "084_riferimento.R": {
+   "code": "# Il riferimento usa solo il training.\nmedia_train <- mean(\n  training$diametro_int_um)\nprev_base <- rep(media_train,\n                 nrow(test))\nmedia_train",
+   "output": "> # Il riferimento usa solo il training.\n> media_train <- mean(\n+   training$diametro_int_um)\n> prev_base <- rep(media_train,\n+                  nrow(test))\n> media_train\n[1] 5.41762",
+   "deps": [
+    "056_multiplo.R",
+    "058_riferimento.R",
+    "061_interazione.R",
+    "063_centrare.R",
+    "071_risposta_binaria.R",
+    "083_split.R"
+   ]
+  },
+  "085_metriche.R": {
+   "code": "metriche <- function(osservato, previsto) {\n  e <- osservato - previsto\n  c(MAE = mean(abs(e)),\n    RMSE = sqrt(mean(e^2)))\n}\n# Esempio con scarti noti.\nmetriche(c(0, 0, 0), c(1, 1, 4))",
+   "output": "> metriche <- function(osservato, previsto) {\n+   e <- osservato - previsto\n+   c(MAE = mean(abs(e)),\n+     RMSE = sqrt(mean(e^2)))\n+ }\n> # Esempio con scarti noti.\n> metriche(c(0, 0, 0), c(1, 1, 4))\n    MAE    RMSE \n2.00000 2.44949 ",
+   "deps": [
+    "023_lm.R",
+    "033_sigma.R"
+   ]
+  },
+  "086_fold.R": {
+   "code": "# Cinque parti interne al solo training.\nset.seed(714)\nfold <- sample(rep(1:5,\n  length.out = nrow(training)))\ntable(fold)\n# Il test esterno non compare nei fold.",
+   "output": "> # Cinque parti interne al solo training.\n> set.seed(714)\n> fold <- sample(rep(1:5,\n+   length.out = nrow(training)))\n> table(fold)\nfold\n 1  2  3  4  5 \n26 26 26 25 25 \n> # Il test esterno non compare nei fold.",
+   "deps": [
+    "056_multiplo.R",
+    "058_riferimento.R",
+    "061_interazione.R",
+    "063_centrare.R",
+    "071_risposta_binaria.R",
+    "083_split.R"
+   ]
+  },
+  "087_trasformazioni.R": {
+   "code": "# Parametri appresi soltanto nel training.\nmu_x <- mean(training$diametro_tot_um)\nsd_x <- sd(training$diametro_tot_um)\nz_train <- (training$diametro_tot_um - mu_x) / sd_x\nz_test <- (test$diametro_tot_um - mu_x) / sd_x\n# Nei fold, mu_x e sd_x si ristimano\n# ogni volta sui quattro fold di stima.",
+   "output": "> # Parametri appresi soltanto nel training.\n> mu_x <- mean(training$diametro_tot_um)\n> sd_x <- sd(training$diametro_tot_um)\n> z_train <- (training$diametro_tot_um - mu_x) / sd_x\n> z_test <- (test$diametro_tot_um - mu_x) / sd_x\n> # Nei fold, mu_x e sd_x si ristimano\n> # ogni volta sui quattro fold di stima.",
+   "deps": [
+    "056_multiplo.R",
+    "058_riferimento.R",
+    "061_interazione.R",
+    "063_centrare.R",
+    "071_risposta_binaria.R",
+    "083_split.R"
+   ]
+  },
+  "089_cv.R": {
+   "code": "# Formule definite nel progetto.\nformule <- formule_annula()\n# Stessi fold per tutti i modelli.\ncv <- valida_annula(training, fold,\n                   formule)\ncv[order(cv$RMSE), ]\nscelta <- cv$modello[\n  which.min(cv$RMSE)]",
+   "output": "> # Formule definite nel progetto.\n> formule <- formule_annula()\n> # Stessi fold per tutti i modelli.\n> cv <- valida_annula(training, fold,\n+                    formule)\n> cv[order(cv$RMSE), ]\n        modello      MAE     RMSE\n2 con_morfotipo 0.197218 0.252179\n3    polinomio3 0.220746 0.271853\n1       lineare 0.221272 0.273311\n> scelta <- cv$modello[\n+   which.min(cv$RMSE)]",
+   "deps": [
+    "056_multiplo.R",
+    "058_riferimento.R",
+    "061_interazione.R",
+    "063_centrare.R",
+    "071_risposta_binaria.R",
+    "083_split.R",
+    "086_fold.R"
+   ]
+  },
+  "090_test_finale.R": {
+   "code": "# Ristima sui 128 casi di training.\nmod_finale <- lm(formule[[scelta]],\n                 data = training)\nprev_test <- predict(mod_finale, newdata = test)\nmetriche(test$diametro_int_um, prev_test)\nmetriche(test$diametro_int_um, prev_base)",
+   "output": "> # Ristima sui 128 casi di training.\n> mod_finale <- lm(formule[[scelta]],\n+                  data = training)\n> prev_test <- predict(mod_finale, newdata = test)\n> metriche(test$diametro_int_um, prev_test)\n     MAE     RMSE \n0.172135 0.199439 \n> metriche(test$diametro_int_um, prev_base)\n    MAE    RMSE \n0.74151 1.00291 ",
+   "deps": [
+    "023_lm.R",
+    "033_sigma.R",
+    "056_multiplo.R",
+    "058_riferimento.R",
+    "061_interazione.R",
+    "063_centrare.R",
+    "071_risposta_binaria.R",
+    "083_split.R",
+    "084_riferimento.R",
+    "085_metriche.R",
+    "086_fold.R",
+    "089_cv.R"
+   ]
+  },
+  "092_simulazione.R": {
+   "code": "# Nuovi dati dalla stessa legge.\nset.seed(17)\nsim <- data.frame(\n  x = seq(-1, 1, length.out = 24))\nsim$y <- sin(3 * sim$x) + rnorm(24)\nmp <- lm(y ~ poly(x, 3, raw = TRUE),\n         data = sim)\nnuovi <- data.frame(\n  x = seq(-1, 1, length.out = 150))\nnuovi$y <- sin(3 * nuovi$x) + rnorm(150)\nmetriche(nuovi$y,\n  predict(mp, newdata = nuovi))",
+   "output": "> # Nuovi dati dalla stessa legge.\n> set.seed(17)\n> sim <- data.frame(\n+   x = seq(-1, 1, length.out = 24))\n> sim$y <- sin(3 * sim$x) + rnorm(24)\n> mp <- lm(y ~ poly(x, 3, raw = TRUE),\n+          data = sim)\n> nuovi <- data.frame(\n+   x = seq(-1, 1, length.out = 150))\n> nuovi$y <- sin(3 * nuovi$x) + rnorm(150)\n> metriche(nuovi$y,\n+   predict(mp, newdata = nuovi))\n    MAE    RMSE \n1.01268 1.28102 ",
+   "deps": [
+    "009_correlazione.R",
+    "023_lm.R",
+    "033_sigma.R",
+    "085_metriche.R"
+   ]
+  },
+  "097_logistica_test.R": {
+   "code": "# Risposta: TRUE per i fossili Spiky.\ng_train <- glm(\n  I(morfotipo == \"Spiky\") ~\n    diametro_tot_um +\n    rapporto_int_tot,\n  data = training,\n  family = binomial())\np_test <- predict(g_train,\n  newdata = test, type = \"response\")\ny_test <- as.integer(\n  test$morfotipo == \"Spiky\")\nmean((p_test - y_test)^2) # Brier.\nmean((p_test >= 0.5) == y_test)",
+   "output": "> # Risposta: TRUE per i fossili Spiky.\n> g_train <- glm(\n+   I(morfotipo == \"Spiky\") ~\n+     diametro_tot_um +\n+     rapporto_int_tot,\n+   data = training,\n+   family = binomial())\n> p_test <- predict(g_train,\n+   newdata = test, type = \"response\")\n> y_test <- as.integer(\n+   test$morfotipo == \"Spiky\")\n> mean((p_test - y_test)^2) # Brier.\n[1] 0.159407\n> mean((p_test >= 0.5) == y_test)\n[1] 0.75",
+   "deps": [
+    "056_multiplo.R",
+    "058_riferimento.R",
+    "061_interazione.R",
+    "063_centrare.R",
+    "071_risposta_binaria.R",
+    "083_split.R"
+   ]
+  }
+ },
+ "download": "assets/lezioni/M07/Annula_M07_progetto_R.zip"
+}

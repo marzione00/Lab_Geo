@@ -1,0 +1,131 @@
+---
+title: "Decomposizione STL e ricostruzione"
+subtitle: "M09_N09 \u00b7 Borealis"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Le componenti stimate permettono di ricostruire la serie, e coincidono con quelle del generatore?
+
+## Obiettivi
+
+- Verificare la somma delle componenti.
+- Applicare STL a una griglia mensile.
+- Confrontare ricostruzione e identificazione del generatore.
+
+**Prima di iniziare.** Lettura di CSV, vettori, indicizzazione e funzioni di base in R. I blocchi vanno eseguiti nell’ordine all’interno del singolo notebook.
+
+**Dati e unità.** Temperatura sintetica del corso, in gradi Celsius, dal gennaio 2000 al dicembre 2019. Trend, stagione e residuo sono componenti note del generatore. La base delle anomalie deve essere dichiarata in ogni calcolo.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Borealis oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M09_Borealis` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M09_Borealis/Risultati/M09_N09/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M09_Borealis"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M09_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M09_Borealis o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M09_N09")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(9009)
+```
+
+## 1. Verificare le componenti note
+
+Per i dati sintetici conosciamo la relazione $X_t=T_t+S_t+R_t$. È un vantaggio dell’esperimento simulato: nei dati reali le componenti non sono direttamente osservabili.
+
+```{r passo_01}
+t <- carica_dati("temperatura_simulata.csv")
+t$data <- as.Date(t$data)
+t$mese <- as.integer(format(t$data, "%m"))
+u <- t$temperatura_C
+scarto <- u-t$trend_simulato-t$stagione_simulata-t$residuo_simulato
+max(abs(scarto))
+stopifnot(max(abs(scarto))<2e-8)
+head(t[c("data","temperatura_C","trend_simulato","stagione_simulata","residuo_simulato")],3)
+```
+
+**Lettura del risultato.** Lo scarto è dovuto soltanto all’esportazione numerica. Questa verifica riguarda il generatore, prima di applicare qualsiasi metodo di decomposizione.
+
+## 2. Stimare una decomposizione
+
+STL separa trend, stagione e resto secondo la struttura e i parametri scelti. s.window="periodic" impone una componente stagionale stabile nella stima.
+
+```{r passo_02}
+temp_ts <- ts(u,start=c(2000,1),frequency=12)
+dec <- stl(temp_ts,s.window="periodic")
+par(las=0) # STL usa etichette verticali per le componenti.
+plot(dec)
+ricostruita <- rowSums(dec$time.series)
+max(abs(ricostruita-u))
+stopifnot(max(abs(ricostruita-u))<1e-10)
+```
+
+**Lettura del risultato.** Le tre componenti stimate sommano alla serie. L’uguaglianza della ricostruzione è una proprietà della decomposizione e non prova che le componenti coincidano con il meccanismo generatore.
+
+## 3. Confrontare stima e verità simulata
+
+Valutiamo direttamente quanto differiscono trend e stagione stimati dalle componenti note. Il resto può conservare dipendenza e va esaminato separatamente.
+
+```{r passo_03}
+c(RMSE_trend=sqrt(mean((dec$time.series[,"trend"]-t$trend_simulato)^2)),
+ RMSE_stagione=sqrt(mean((dec$time.series[,"seasonal"]-t$stagione_simulata)^2)))
+acf(dec$time.series[,"remainder"],lag.max=24,main="ACF del resto STL")
+write.csv(data.frame(data=t$data,dec$time.series),
+ percorso_risultati("decomposizione_STL.csv"),row.names=FALSE)
+```
+
+**Lettura del risultato.** Errori piccoli indicano una buona ricostruzione delle componenti in questo caso simulato. Non trasformano il resto in rumore indipendente né garantiscono lo stesso comportamento su dati reali.
+
+## Variante svolta
+
+Confrontare la stima standard con l’opzione robusta.
+
+```{r variante}
+robusta <- stl(temp_ts,s.window="periodic",robust=TRUE)
+c(scarto_trend_max=max(abs(robusta$time.series[,"trend"]-dec$time.series[,"trend"])),
+ pesi_ridotti=sum(robusta$weights<.9))
+```
+
+L’opzione robusta riduce il peso di osservazioni con residui grandi durante la stima. I pesi sono parte dell’algoritmo e non una classificazione automatica di errori strumentali.
+
+## Errore da riconoscere
+
+Scambiare una ricostruzione algebricamente esatta per la dimostrazione che trend e stagione stimati siano gli unici veri.
+
+## Risposta alla domanda
+
+STL produce componenti che ricostruiscono la serie, ma la loro interpretazione dipende dalle ipotesi e dai parametri. I dati sintetici permettono di misurare la differenza rispetto al generatore.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M09_N09` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M09/M09_N09.R).

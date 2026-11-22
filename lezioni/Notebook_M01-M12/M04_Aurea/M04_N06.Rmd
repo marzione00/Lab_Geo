@@ -1,0 +1,131 @@
+---
+title: "Calcolare probabilit\u00e0 di eventi composti"
+subtitle: "M04_N06 \u00b7 Aurea"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Come calcolare in modo verificabile la probabilità di almeno un segnale, almeno quattro segnali e un intervallo di conteggi?
+
+## Obiettivi
+
+- Scegliere fra somma esplicita, cumulativa e complemento.
+- Controllare estremi inclusi in eventi composti.
+
+**Prima di iniziare.** Distribuzione binomiale e operatori logici.
+
+**Dati e unità.** Conteggio X di successi in dieci prove indipendenti, con probabilità p = 0,30 costante. Tutte le probabilità derivano da un modello assegnato.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M04_N06/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M04_N06")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(4006)
+```
+
+## 1. Almeno un successo
+
+Il complemento di almeno un successo è nessun successo. Questa formulazione evita di sommare dieci termini e rende evidente il legame fra un evento semplice e la sua regione complementare.
+
+```{r passo_01}
+n <- 10
+p <- .30
+k <- 0:n
+massa <- dbinom(k, n, p)
+# Il complemento di almeno un successo e il solo esito zero.
+almeno_uno <- 1 - dbinom(0, n, p)
+somma_positivi <- sum(massa[k >= 1])
+print(c(almeno_uno = almeno_uno, somma_positivi = somma_positivi))
+stopifnot(abs(almeno_uno - somma_positivi) < 1e-12)
+```
+
+**Lettura del risultato.** Il complemento funziona perché zero e almeno uno coprono tutti gli esiti possibili e non si sovrappongono. La probabilità di nessun successo non è uno meno dieci volte p: le prove richiedono la regola del prodotto.
+
+## 2. Una coda discreta
+
+Almeno quattro comprende quattro e tutti i conteggi superiori. pbinom con soglia tre e lower.tail = FALSE calcola direttamente questa coda, evitando ambiguità sul valore di confine.
+
+```{r passo_02}
+# lower.tail = FALSE con soglia tre include il valore quattro.
+almeno_quattro <- pbinom(3, n, p, lower.tail = FALSE)
+somma_coda <- sum(massa[k >= 4])
+oltre_quattro <- pbinom(4, n, p, lower.tail = FALSE)
+print(c(almeno4 = almeno_quattro, oltre4 = oltre_quattro,
+        esattamente4 = dbinom(4, n, p)))
+stopifnot(abs(almeno_quattro - somma_coda) < 1e-12)
+stopifnot(abs(almeno_quattro - oltre_quattro - dbinom(4, n, p)) < 1e-12)
+```
+
+**Lettura del risultato.** La differenza fra almeno quattro e più di quattro è tutta concentrata nell'esito quattro. Questo controllo locale è utile quando la frase della consegna contiene parole facilmente confuse.
+
+## 3. Un intervallo di conteggi
+
+Per includere da due a cinque successi sottraiamo alla cumulativa fino a cinque quella fino a uno. La regione esterna comprende invece meno di due oppure più di cinque; le due code sono disgiunte.
+
+```{r passo_03}
+# Sottraiamo fino a uno per conservare il bordo inferiore due.
+fra_due_e_cinque <- pbinom(5, n, p) - pbinom(1, n, p)
+esterno <- pbinom(1, n, p) + pbinom(5, n, p, lower.tail = FALSE)
+print(c(interno = fra_due_e_cinque, esterno = esterno))
+stopifnot(abs(fra_due_e_cinque + esterno - 1) < 1e-12)
+colori <- ifelse(k >= 2 & k <= 5, "#C57E42", "#1D7890")
+barplot(massa, names.arg = k, col = colori, xlab = "Successi (k)",
+        ylab = "Probabilita", main = "Evento: da due a cinque inclusi")
+```
+
+**Lettura del risultato.** Il grafico evidenzia gli esiti la cui probabilità entra nella somma. Le barre rappresentano masse discrete: la probabilità dell'evento è la somma delle altezze selezionate, non l'area di una densità continua.
+
+## Variante svolta
+
+Calcolare la probabilità dell'unione 'al massimo uno oppure almeno otto' e verificarla con una somma diretta.
+
+```{r variante}
+unione <- pbinom(1, n, p) + pbinom(7, n, p, lower.tail = FALSE)
+selezionati <- k <= 1 | k >= 8
+controllo <- sum(massa[selezionati])
+print(data.frame(k = k, incluso = selezionati))
+print(c(unione = unione, somma = controllo))
+stopifnot(abs(unione - controllo) < 1e-12)
+```
+
+Le due code non si sovrappongono e si possono sommare direttamente. Per eventi sovrapposti bisognerebbe sottrarre l'intersezione, altrimenti alcuni esiti verrebbero contati due volte.
+
+## Errore da riconoscere
+
+Non sommare probabilità di eventi sovrapposti senza correggere il doppio conteggio. Nelle distribuzioni discrete verificare sempre se il bordo inferiore viene incluso o escluso dalla cumulativa sottratta.
+
+## Risposta alla domanda
+
+La traduzione dell'evento precede la scelta della funzione. Una somma sugli esiti possibili fornisce un controllo indipendente di cumulative e complementi, soprattutto per soglie e intervalli con estremi inclusi.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M04_N06` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M04/M04_N06.R).

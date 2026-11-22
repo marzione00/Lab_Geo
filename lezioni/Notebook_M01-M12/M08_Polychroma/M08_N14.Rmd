@@ -1,0 +1,146 @@
+---
+title: "Visualizzare i cluster con PCA"
+subtitle: "M08_N14 \u00b7 Polychroma"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "R/stile_notebook.css"
+---
+
+# La domanda
+
+Che cosa possiamo leggere da un grafico dei cluster e che cosa rimane fuori dal piano?
+
+## Obiettivi
+
+- Separare spazio del fit e spazio del grafico.
+- Verificare l’invarianza delle distanze alla rotazione completa.
+- Confrontare partizioni senza dipendere dalle etichette.
+
+**Prima di iniziare.** Lettura di un CSV, vettori, matrici, indicizzazione e funzioni di base in R.
+
+**Dati e unità.** Novanta rocce sintetiche del corso. SiO2, CaO, MgO e FeO sono percentuali in massa; densita è espressa in g/cm³ e grana_mm in millimetri. colore e fossili sono indici numerici convenzionali del simulatore, non misure mineralogiche o conteggi reali. La colonna litologia_generatrice descrive il gruppo usato nella simulazione e viene esclusa dalle stime.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj` di Polychroma oppure il progetto generale dei notebook del corso, quindi eseguire i blocchi nell’ordine. La preparazione individua la cartella `M08_Polychroma` e usa le sue funzioni e i suoi dati. Gli eventuali file vengono scritti in `M08_Polychroma/Risultati/M08_N14/`. Le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova la cartella del modulo, anche dal progetto generale del corso.
+.gs_cerca <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+repeat {
+  .gs_candidati <- c(.gs_cerca, file.path(.gs_cerca, "M08_Polychroma"))
+  .gs_ok <- file.exists(file.path(.gs_candidati, "M08_N01.Rmd")) &
+    file.exists(file.path(.gs_candidati, "R", "funzioni_notebook.R"))
+  if (any(.gs_ok)) {
+    .gs_modulo <- .gs_candidati[which(.gs_ok)[1L]]
+    break
+  }
+  .gs_padre <- dirname(.gs_cerca)
+  if (.gs_padre == .gs_cerca) {
+    stop("Aprire il progetto M08_Polychroma o quello generale dei notebook.")
+  }
+  .gs_cerca <- .gs_padre
+}
+# Usa sempre le funzioni di questo modulo e i suoi dati.
+source(file.path(.gs_modulo, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_modulo, "M08_N14")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(8014)
+```
+
+## 1. Fit completo e proiezione
+
+Calcoliamo k-means sulle otto colonne standardizzate e usiamo le prime due componenti soltanto per disegnare i risultati. La percentuale riportata sugli assi documenta quanta variabilità è visibile.
+
+```{r passo_01}
+# Seleziona le misure per nome: ID ed etichetta non entrano nella matrice.
+r <- carica_dati("rocce_simulate.csv")
+v <- c("SiO2", "CaO", "MgO", "FeO", "densita", "grana_mm", "colore", "fossili")
+X <- as.matrix(r[v])
+stopifnot(nrow(X)==90L, ncol(X)==8L, !anyDuplicated(r$id),
+          all(is.finite(X)), all(apply(X,2,sd)>0))
+Z <- scale(X)
+D <- dist(Z)
+# Gli avvii multipli confrontano soluzioni locali sullo stesso spazio.
+set.seed(816)
+km <- kmeans(Z, centers=3, nstart=50, iter.max=100)
+# La PCA conserva medie, scale e rotazione per eventuali nuovi campioni.
+pc <- prcomp(X, center=TRUE, scale.=TRUE)
+lambda <- pc$sdev^2
+quota <- lambda/sum(lambda)
+colori <- c("#087C74", "#C57E42", "#7363AA", "#1D7890", "#A17B19", "#657180", "#B55353")
+plot(pc$x[,1:2],pch=19,col=colori[km$cluster],asp=1,
+ xlab=sprintf("PC1 (%.2f%%)",100*quota[1]),
+ ylab=sprintf("PC2 (%.2f%%)",100*quota[2]))
+legend("topright",legend=paste("Cluster",1:3),col=colori[1:3],pch=19,bty="n")
+c(varianza_visibile=sum(quota[1:2]),varianza_omessa=sum(quota[-(1:2)]))
+```
+
+**Lettura del risultato.** Il piano mostra circa l’86,59% della variabilità e ne omette il 13,41%. I colori derivano dalla partizione nello spazio completo; non dalla posizione dei punti sullo schermo.
+
+## 2. Usare tutte le componenti conserva le distanze
+
+La rotazione ortogonale completa conserva la distanza euclidea: $\|z_i-z_j\|=\|t_i-t_j\|$. Tenere solo due componenti può invece ridurla.
+
+```{r passo_02}
+d_completo <- as.matrix(D)
+d_scores <- as.matrix(dist(pc$x))
+d_piano <- as.matrix(dist(pc$x[,1:2]))
+c(errore_rotazione=max(abs(d_completo-d_scores)),
+  massima_perdita=max(d_completo-d_piano))
+stopifnot(max(abs(d_completo-d_scores))<1e-10,
+          all(d_piano<=d_completo+1e-10))
+```
+
+**Lettura del risultato.** La differenza per la rotazione completa è solo numerica. La perdita nel piano dipende dalla coppia di campioni: la percentuale globale di varianza non è la percentuale conservata da ogni distanza.
+
+## 3. Clustering sul piano: una procedura distinta
+
+Ripetere k-means usando soltanto due scores modifica i dati forniti all’algoritmo. Confrontiamo le partizioni mediante accordo fra coppie e indice di Rand corretto, entrambi invarianti ai nomi dei cluster.
+
+```{r passo_03}
+set.seed(814)
+km_piano <- kmeans(pc$x[,1:2],3,nstart=50,iter.max=100)
+c(accordo_coppie=accordo_coppie(km$cluster,km_piano$cluster),
+  ARI=indice_rand_corretto(km$cluster,km_piano$cluster))
+table(spazio_completo=km$cluster,piano=km_piano$cluster)
+```
+
+**Lettura del risultato.** Un eventuale accordo in questo dataset non rende le due procedure equivalenti in generale. La stima sul piano ignora la variazione nelle altre sei componenti; il grafico del fit completo non la ignora.
+
+## Variante svolta
+
+Confrontare k-means sulle prime due e sulle prime tre componenti.
+
+```{r variante}
+set.seed(814)
+km_tre <- kmeans(pc$x[,1:3],3,nstart=50,iter.max=100)
+data.frame(componenti=c(2,3),varianza=c(sum(quota[1:2]),sum(quota[1:3])),
+ ARI_con_fit_completo=c(indice_rand_corretto(km_piano$cluster,km$cluster),
+                       indice_rand_corretto(km_tre$cluster,km$cluster)))
+```
+
+La terza componente porta la varianza cumulata a circa il 91,99%. La tabella quantifica anche l’effetto sulla partizione; i due criteri descrivono aspetti diversi.
+
+## Errore da riconoscere
+
+Usare un grafico in due dimensioni come se riportasse tutte le distanze dell’analisi.
+
+## Risposta alla domanda
+
+Ogni figura deve dichiarare dove sono stati stimati i cluster, quali componenti vengono mostrate e quanta variabilità rimane fuori dal piano.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M08_N14` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M08/M08_N14.R).

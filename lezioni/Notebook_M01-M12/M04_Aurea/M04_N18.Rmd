@@ -1,0 +1,141 @@
+---
+title: "Errore casuale e bias non sono la stessa cosa"
+subtitle: "M04_N18 \u00b7 Aurea"
+lang: it-IT
+output:
+  html_document:
+    toc: true
+    self_contained: true
+    theme: null
+    highlight: tango
+    mathjax: null
+    pandoc_args: ["--mathml"]
+    css: "../R/stile_notebook.css"
+---
+
+# La domanda
+
+Che cosa cambia nella densità se la bilancia presenta un errore sistematico di due grammi?
+
+## Obiettivi
+
+- Separare spostamento sistematico e dispersione casuale.
+- Mostrare perché ripetere e mediare non elimina una taratura sbagliata.
+
+**Prima di iniziare.** Propagazione massa-volume, media e deviazione standard.
+
+**Dati e unità.** Parametri didattici della misura: massa nominale 106 g, volume nominale 40 cm³, incertezze standard rispettivamente 1 g e 0,6 cm³. Le estrazioni sono simulate. Nello scenario alterato aggiungiamo un bias fisso di +2 g alla massa.
+
+## Preparazione
+
+Aprire il progetto `GeoStat_Lab_Notebooks.Rproj`, quindi eseguire i blocchi nell’ordine. Le funzioni comuni leggono i dati condivisi e scrivono gli eventuali file in `Risultati/M04_N18/`. I valori visualizzati dipendono dai dati e dai parametri dichiarati; le simulazioni usano un seme fissato.
+
+```{r preparazione}
+# Trova il progetto risalendo le cartelle: nessun percorso personale.
+.gs_radice <- normalizePath(getwd(), winslash="/", mustWork=TRUE)
+while (!file.exists(file.path(.gs_radice, "GeoStat_Lab_Notebooks.Rproj"))) {
+  .gs_padre <- dirname(.gs_radice)
+  if (.gs_padre == .gs_radice) {
+    stop("Aprire il progetto GeoStat_Lab_Notebooks.Rproj prima del notebook.")
+  }
+  .gs_radice <- .gs_padre
+}
+# I dati restano separati dai risultati scritti dall'esercitazione.
+source(file.path(.gs_radice, "R", "funzioni_notebook.R"), local=TRUE)
+.gs_funzioni <- .gs_prepara_notebook(.gs_radice, "M04_N18")
+carica_dati <- .gs_funzioni$carica_dati
+percorso_dati <- .gs_funzioni$percorso_dati
+percorso_risultati <- .gs_funzioni$percorso_risultati
+options(width=88, digits=6)
+# Il seme consente di ripetere le estrazioni casuali di questo notebook.
+set.seed(4018)
+```
+
+## 1. Confrontare sulla stessa coppia di ingressi
+
+Usiamo identiche estrazioni per lo scenario corretto e quello con bias. La differenza fra i due risultati deriva così dalla sola aggiunta sistematica alla massa, senza introdurre un nuovo rumore di simulazione fra scenari.
+
+```{r passo_01}
+p <- carica_dati("parametri_densita.csv")
+m0 <- p$massa_media_g[1]; V0 <- p$volume_medio_cm3[1]
+um <- p$sd_massa_g[1]; uV <- p$sd_volume_cm3[1]
+set.seed(418)
+B <- 3000
+massa <- rnorm(B, m0, um)
+volume <- rnorm(B, V0, uV)
+stopifnot(all(volume > 0))
+bias_g <- 2
+rho <- massa / volume
+# Aggiungiamo lo stesso bias a ogni replica della massa, senza risimulare gli ingressi.
+rho_bias <- (massa + bias_g) / volume
+```
+
+**Lettura del risultato.** Il bias è trattato come uno spostamento fisso noto nello scenario didattico. La sua conoscenza non nasce dalla ripetizione delle misure: in pratica richiederebbe un riferimento o un controllo di calibrazione.
+
+## 2. Separare centro e dispersione
+
+Confrontiamo media e deviazione standard. Aggiungere una costante alla massa lascia invariata la sua deviazione standard, ma quella della densità può cambiare leggermente perché la costante viene divisa per un volume variabile.
+
+```{r passo_02}
+confronto <- rbind(senza_bias = c(media = mean(rho), sd = sd(rho)),
+                   con_bias = c(media = mean(rho_bias), sd = sd(rho_bias)))
+print(confronto)
+# Il confronto appaiato isola l effetto della taratura sulle medesime estrazioni.
+spostamento <- mean(rho_bias - rho)
+print(c(spostamento_medio_g_cm3 = spostamento, approssimazione_nominale = bias_g / V0))
+stopifnot(max(abs((rho_bias - rho) - bias_g / volume)) < 1e-12)
+d0 <- density(rho); d1 <- density(rho_bias)
+plot(d0, xlim = range(c(d0$x, d1$x)), ylim = c(0, max(c(d0$y, d1$y))),
+     col = "#1D7890", lwd = 2, main = "Effetto di una taratura spostata",
+     xlab = "Densita (g/cm^3)", ylab = "Densita di probabilita (cm^3/g)")
+lines(d1, col = "#C57E42", lwd = 2)
+legend("topright", c("Senza bias", "Bias massa +2 g"), col = c("#1D7890", "#C57E42"), lwd = 2, bty = "n")
+```
+
+**Lettura del risultato.** Una distribuzione stretta può essere centrata sul valore sbagliato. Precisione e correttezza della taratura sono proprietà differenti; ridurre la dispersione casuale non garantisce un avvicinamento al riferimento.
+
+## 3. Ripetere una misura di massa
+
+Per isolare il punto teniamo qui fisso il volume nominale e mediamo venti letture di massa. La parte casuale della media si riduce, mentre la costante di due grammi compare in ogni lettura e resta nella media.
+
+```{r passo_03}
+ripetizioni <- 20
+# Ogni riga contiene venti letture indipendenti dello stesso valore nominale.
+letture <- matrix(rnorm(B * ripetizioni, m0, um), nrow = B)
+medie_senza_bias <- rowMeans(letture)
+medie_con_bias <- rowMeans(letture + bias_g)
+print(c(sd_una_lettura = um, sd_medie = sd(medie_senza_bias),
+        sd_teorica_medie = um / sqrt(ripetizioni)))
+print(c(bias_medio_massa = mean(medie_con_bias - medie_senza_bias),
+        bias_densita_volume_fisso = mean((medie_con_bias - medie_senza_bias) / V0)))
+stopifnot(max(abs(medie_con_bias - medie_senza_bias - bias_g)) < 1e-10)
+```
+
+**Lettura del risultato.** Il calcolo riguarda errori casuali indipendenti fra letture. Se parte dell'errore fosse condivisa, anche la riduzione della dispersione con la radice del numero di ripetizioni richiederebbe una revisione.
+
+## Variante svolta
+
+Applicare una correzione esatta del bias noto e verificare la coincidenza con lo scenario iniziale.
+
+```{r variante}
+massa_letta <- massa + bias_g
+massa_corretta <- massa_letta - bias_g
+rho_corretta <- massa_corretta / volume
+print(c(media_corretta = mean(rho_corretta), sd_corretta = sd(rho_corretta)))
+stopifnot(max(abs(rho_corretta - rho)) < 1e-12)
+print(c(massimo_scarto_residuo = max(abs(rho_corretta - rho))))
+```
+
+La coincidenza dipende dal conoscere esattamente il bias introdotto. Una correzione reale può avere a sua volta incertezza: questa dovrebbe entrare come ulteriore contributo nel modello, non essere ignorata.
+
+## Errore da riconoscere
+
+Non dividere il bias per radice del numero di ripetizioni. Non dichiarare che la deviazione standard della densità resti esattamente invariata se lo spostamento della massa è diviso per un volume casuale.
+
+## Risposta alla domanda
+
+Il bias sposta sistematicamente i risultati, mentre il rumore ne descrive la dispersione. Ripetizioni indipendenti possono ridurre la parte casuale, ma una taratura sbagliata richiede una correzione basata su informazioni esterne alle semplici repliche.
+
+## Riferimento nel corso
+
+Questo svolgimento sviluppa il laboratorio `M04_N18` del percorso [GeoStat Lab](https://marzione00.github.io/Lab_Geo/#esperimenti). Il codice di riferimento è disponibile [nel repository del corso](https://github.com/marzione00/Lab_Geo/blob/main/materiali/laboratori/M04/M04_N18.R).
