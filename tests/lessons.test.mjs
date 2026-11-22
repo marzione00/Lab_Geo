@@ -129,9 +129,18 @@ for (const [id, cfg] of Object.entries(config)) {
   });
 
   test(id + ': spiegazioni estese con titoli identici alle slide e solo collegamenti ammessi', { skip: !md }, () => {
-    const { intro, notes } = explanations(read('content/lezioni/' + id + '.md'), L.slides);
+    const { intro, notes, chapters } = explanations(read('content/lezioni/' + id + '.md'), L.slides, L.sections);
     assert.ok(intro.length > 0);
     assert.ok(Object.keys(notes).length > 0);
+    // Ogni capitolo di almeno quattro tappe ha un'introduzione discorsiva, salvo le sezioni di cornice.
+    const frame =
+      /^(COPERTINA|PERCORSO|IL CASO GUIDA|SINTESI|RIFERIMENTI|DOMANDA CENTRALE|CONCLUSIONI|LABORATORI DELLA SPEDIZIONE)$/;
+    const due = L.sections.filter(sec => !frame.test(sec.title) && sec.last - sec.first >= 3).map(sec => sec.first);
+    assert.deepEqual(Object.keys(chapters).map(Number), due, 'introduzioni ai capitoli');
+    assert.throws(
+      () => explanations('## Capitolo · INESISTENTE\n\nTesto.', L.slides, L.sections),
+      /Capitolo inesistente/,
+    );
     assert.throws(() => inline('[x](javascript:alert(1))'), /Destinazione non ammessa/);
     assert.throws(() => explanations('## 16 · Titolo diverso\n\nTesto.', L.slides), /diverso dalla slide/);
     for (const blocks of [intro, ...Object.values(notes)])

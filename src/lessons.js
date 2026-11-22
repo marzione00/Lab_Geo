@@ -502,9 +502,17 @@
       .filter(sec => !L.slides.slice(sec.first - 1, sec.last).every(s => s.lines || s.question))
       .map(sec => {
         const tappe = L.slides.slice(sec.first - 1, sec.last);
-        return html`<article class="lesson-region-card"><p class="eyebrow">Tappe ${sec.first}–${sec.last}</p><h2>${regionName(sec.title)}</h2><p class="lesson-small">${tappe.length} tappe · ${tappe.filter(s => done.has(L.id + ':' + s.page)).length} studiate</p><ol start="${sec.first}">${tappe.map(s => html`<li><a href="#lezione-${L.id}/${s.page}">${s.title}</a></li>`)}</ol></article>`;
+        return html`<article class="lesson-region-card"><p class="eyebrow">Tappe ${sec.first}–${sec.last}</p><h2>${regionName(sec.title)}</h2><p class="lesson-small">${tappe.length} tappe · ${tappe.filter(s => done.has(L.id + ':' + s.page)).length} studiate</p>${L.chapters?.[sec.first] ? html`<div class="lesson-chapter-intro">${blocks(L.chapters[sec.first])}</div>` : ''}<ol start="${sec.first}">${tappe.map(s => html`<li><a href="#lezione-${L.id}/${s.page}">${s.title}</a></li>`)}</ol></article>`;
       })}</section></div>`;
     typeset(main.querySelector('.lesson-intro'));
+    typeset(main.querySelector('.lesson-regions'));
+  }
+  // Introduction of the chapter, on the first tappa of its section.
+  function chapterPanel(L, sec, page) {
+    const text = page === sec.first && L.chapters?.[page];
+    return text
+      ? html`<section class="lesson-panel lesson-notes lesson-chapter" aria-label="Introduzione al capitolo ${regionName(sec.title)}"><p class="eyebrow">Capitolo · ${regionName(sec.title)}</p>${blocks(text)}</section>`
+      : '';
   }
   function notebookPanel(L, page) {
     const list = (L.notebooks || []).filter(nb => nb.pages.includes(page));
@@ -531,7 +539,7 @@
       ],
       prev = L.slides[page - 2],
       next = L.slides[page];
-    main.innerHTML = html`<div class="viewer lesson-viewer">${crumbs(L, 'Tappa ' + page)}<div class="reader-layout">${sidebar(L, page)}<div class="reader-main lesson-main"><div class="reader-title"><h1>${s.title}</h1><span class="page-counter">${String(page).padStart(2, '0')} / ${L.pages}</span></div><div class="reader-tools"><p class="lesson-stop"><span class="lesson-stop-code">${L.planet} · ${page}</span> ${regionName(sec.title)}${sec.first < sec.last ? ' · tappe ' + sec.first + '–' + sec.last : ''}</p><div class="pager"><button data-step="-1" aria-label="Tappa precedente"${prev ? '' : ' disabled'}>←</button><button data-step="1" aria-label="Tappa successiva"${next ? '' : ' disabled'}>→</button></div></div>${slidePanel(L, s)}<div class="slide-caption lesson-caption"><span>Slide originale</span><a href="${L.pdf}#page=${page}" target="_blank" rel="noopener">Pagina ${page} del PDF ↗</a></div>${L.notes[page] ? html`<section class="lesson-panel lesson-notes" aria-label="Commento alla slide ${page}">${blocks(L.notes[page])}</section>` : ''}${codePanel(L, codes)}${notebookPanel(L, page)}${
+    main.innerHTML = html`<div class="viewer lesson-viewer">${crumbs(L, 'Tappa ' + page)}<div class="reader-layout">${sidebar(L, page)}<div class="reader-main lesson-main"><div class="reader-title"><h1>${s.title}</h1><span class="page-counter">${String(page).padStart(2, '0')} / ${L.pages}</span></div><div class="reader-tools"><p class="lesson-stop"><span class="lesson-stop-code">${L.planet} · ${page}</span> ${regionName(sec.title)}${sec.first < sec.last ? ' · tappe ' + sec.first + '–' + sec.last : ''}</p><div class="pager"><button data-step="-1" aria-label="Tappa precedente"${prev ? '' : ' disabled'}>←</button><button data-step="1" aria-label="Tappa successiva"${next ? '' : ' disabled'}>→</button></div></div>${slidePanel(L, s)}<div class="slide-caption lesson-caption"><span>Slide originale</span><a href="${L.pdf}#page=${page}" target="_blank" rel="noopener">Pagina ${page} del PDF ↗</a></div>${chapterPanel(L, sec, page)}${L.notes[page] ? html`<section class="lesson-panel lesson-notes" aria-label="Commento alla slide ${page}">${blocks(L.notes[page])}</section>` : ''}${codePanel(L, codes)}${notebookPanel(L, page)}${
       labs.length
         ? html`<section class="lesson-panel lesson-labs" aria-labelledby="lesson-labs-title"><h2 id="lesson-labs-title">Laboratorio</h2><ul>${labs.map(
             lab => {
