@@ -49,7 +49,7 @@ La grafica planetaria dispone di rendering WebGL e di un’alternativa Canvas 2D
 | `#modulo-M05` | Percorso sperimentale del modulo |
 | `#progetti`, `#modulo-P01` | Indice delle spedizioni e relative fasi |
 | `#catalogo`, `#materiali` | Indice testuale e risorse |
-| `#modulo-M05/slide/44`, `#modulo-M05/codici` | Approfondimento R6 e programmi originali |
+| `#modulo-P01/slide/10`, `#modulo-M05/codici` | Slide R6 dei macroprogetti e programmi originali; per i moduli con una lezione, `#modulo-M05/slide/44` apre `#lezione-M05` |
 
 I percorsi degli asset sono relativi alla radice del sito e supportano sottocartelle GitHub Pages. Le rotte a frammento vanno aperte sul sito avviato, non sulla pagina del repository GitHub.
 

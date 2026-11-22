@@ -87,7 +87,8 @@
     fill();
   }
   function materials(m) {
-    return html`<details class="lab-module-materials"><summary>Materiali di consultazione e riferimenti</summary><p>Presentazione originale, sorgenti e laboratori del corso accompagnano gli esperimenti. Le fonti del corso permettono di approfondire il ragionamento e ricostruire i calcoli.</p><div class="actions">${link(m.pdf, 'Presentazione PDF ↗', 'button secondary')}${link('#modulo-' + m.id + '/codici', 'Codici del corso ↗', 'button secondary')}${link('#modulo-' + m.id + '/slide/3', 'Lettura del fascicolo ↗', 'button secondary')}</div></details>`;
+    const lesson = root.GEO_LESSON_INDEX?.[m.id];
+    return html`<details class="lab-module-materials"><summary>Materiali di consultazione e riferimenti</summary><p>Presentazione originale, sorgenti e laboratori del corso accompagnano gli esperimenti. Le fonti del corso permettono di approfondire il ragionamento e ricostruire i calcoli.</p><div class="actions">${link(lesson?.pdf || m.pdf, 'Presentazione PDF ↗', 'button secondary')}${link('#modulo-' + m.id + '/codici', 'Codici del corso ↗', 'button secondary')}${link(lesson ? '#lezione-' + m.id : '#modulo-' + m.id + '/slide/3', 'Lettura del fascicolo ↗', 'button secondary')}</div></details>`;
   }
   function module(main, m) {
     cleanup();

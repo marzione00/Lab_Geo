@@ -164,11 +164,20 @@ d.getElementById('select-code').value = 'T00_PY_N01';
 d.getElementById('select-code').dispatchEvent(new w.Event('change'));
 assert(d.getElementById('download-code').href.endsWith('T00_N01.py'));
 assert(d.getElementById('current-code').textContent.includes('import'));
-w.location.hash = '#modulo-M05/slide/105';
-await until(() => d.querySelector('.page-counter')?.textContent === '105 / 105');
+w.location.hash = '#modulo-P01/slide/21';
+await until(() => d.querySelector('.page-counter')?.textContent === '21 / 21');
 assert(d.querySelector('[data-step="1"]').disabled);
-w.location.hash = '#modulo-M05/slide/106';
+w.location.hash = '#modulo-P01/slide/22';
 await until(() => d.querySelector('.error h1')?.textContent === 'Pagina non trovata');
+// The earlier slides of a module with a lesson open the tappe of the lesson.
+w.location.hash = '#modulo-M02/slide/3';
+await until(() => w.location.hash === '#lezione-M02' && d.querySelector('.lesson-overview'));
+assert.equal(d.querySelector('.slide-frame'), null);
+w.location.hash = '#modulo-M02';
+await until(() => d.querySelector('.lab-module-materials'));
+const materialLinks = [...d.querySelectorAll('.lab-module-materials a')].map(a => a.getAttribute('href'));
+assert(materialLinks.includes('#lezione-M02'));
+assert(materialLinks.includes('assets/lezioni/M02/Tellus_M02_gestione_dati.pdf'));
 let formulas = 0;
 for (const m of catalog) {
   const data = JSON.parse(fs.readFileSync(path.join(root, 'moduli', m.id, 'modulo.json'), 'utf8'));
