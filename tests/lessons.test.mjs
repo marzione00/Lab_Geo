@@ -13,6 +13,37 @@ const NB = JSON.parse(read('content/notebook.json'));
 await import('../src/core.js');
 const C = globalThis.GeoCore;
 
+// Stile delle spiegazioni estese: prosa accademica senza formule di contrapposizione ricorrenti
+// e senza frasi che descrivono la slide al posto del concetto. Le righe di titolo sono escluse,
+// perché riportano alla lettera i titoli delle slide.
+const STYLE = [
+  /—/,
+  /\bnon solo\b/,
+  /\bnon soltanto\b/,
+  /\b[Ii]noltre\b/,
+  /\bIn sintesi\b/,
+  /\b[Ff]ondamental[ei]\b/,
+  /\b[Cc]rucial[ei]\b/,
+  /\b[Cc]onvien[ea]\b/,
+  /\bProva a\b/,
+  /\bsenza essere\b/,
+  /(?<!\p{L})anziché(?!\p{L})/u,
+  /\bma non\b/,
+  /, e non\b/,
+  /\binvece d(?:i|el|ella|ello|egli|elle|ei)\b/,
+  /\b[Ii]l richiamo (?:riassume|ricorda|indica|fissa|descrive|delimita|applica|distingue|elenca|chiude|sintetizza|dichiara|riprende)\b/,
+  /\bNel richiamo\b/,
+  /\b[Ll]a domanda (?:della slide )?chiede\b/,
+  /\btesto risponde\b/,
+  /\b[Ii]l testo della slide\b/,
+];
+const styleIssues = text =>
+  text
+    .split('\n')
+    .flatMap((line, i) =>
+      line.startsWith('## ') ? [] : STYLE.filter(p => p.test(line)).map(p => i + 1 + ': ' + p.source),
+    );
+
 for (const [id, cfg] of Object.entries(config)) {
   const L = JSON.parse(read('content/lezioni/' + id + '.json')),
     E = cfg.workbook ? JSON.parse(read('content/esercizi/' + id + '.json')) : null,
@@ -110,9 +141,9 @@ for (const [id, cfg] of Object.entries(config)) {
       /Solo paragrafi/,
     );
     assert.throws(() => explanations('## 16 · ' + L.slides[15].title + '\n\n- voce', L.slides), /Solo paragrafi/);
-    const text = read('content/lezioni/' + id + '.md');
-    for (const banned of ['—', 'non solo', 'Inoltre', 'In sintesi', 'fondamentale', 'cruciale', 'Conviene', 'Prova a'])
-      assert.ok(!text.includes(banned), 'espressione da evitare: ' + banned);
+    assert.deepEqual(styleIssues(read('content/lezioni/' + id + '.md')), [], 'espressioni da evitare');
+    assert.deepEqual(styleIssues('## 3 · Quando conviene\n\nTesto.'), [], 'i titoli delle slide restano esclusi');
+    assert.equal(styleIssues('Il richiamo riassume la regola.\nUna stima, e non una misura.').length, 2);
   });
 
   test(id + ': schede del quaderno con scenari validi e controlli numerici', { skip: !E }, () => {
