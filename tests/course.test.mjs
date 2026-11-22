@@ -11,9 +11,11 @@ await import('../src/core.js');
 const C = globalThis.GeoCore;
 test('Copertura integrale del corso e continuità delle pagine', () => {
   assert.equal(cat.length, 28);
+  // The seventeen modules with a lesson have no slides of their own; the macroprojects keep theirs.
+  const withSlides = cat.filter(m => m.category === 'progetti');
   assert.equal(
-    cat.reduce((n, m) => n + m.pages, 0),
-    861,
+    withSlides.reduce((n, m) => n + m.pages, 0),
+    208,
   );
   assert.deepEqual(
     cat.map(m => m.id),
@@ -23,7 +25,20 @@ test('Copertura integrale del corso e continuità delle pagine', () => {
       ...Array.from({ length: 11 }, (_, i) => 'P' + String(i + 1).padStart(2, '0')),
     ],
   );
-  for (const m of cat) {
+  for (const m of cat.filter(m => m.category !== 'progetti')) {
+    const d = read('moduli/' + m.id + '/modulo.json');
+    assert(!d.slides && !m.pages && !m.pdf, m.id);
+    assert(fs.existsSync(path.join(root, 'content/lezioni', m.id + '.json')), m.id);
+    for (const dir of [
+      'assets/slides/',
+      'assets/visuals/',
+      'materiali/figure/',
+      'materiali/tikz/',
+      'materiali/estratti/',
+    ])
+      assert(!fs.existsSync(path.join(root, dir + m.id)), dir + m.id);
+  }
+  for (const m of withSlides) {
     const d = read('moduli/' + m.id + '/modulo.json'),
       source = read('materiali/sorgenti/contenuti/' + m.id + '.json');
     assert.equal(d.slides.length, m.pages);
@@ -37,7 +52,7 @@ test('Copertura integrale del corso e continuità delle pagine', () => {
     });
   }
 });
-test('Materiali R6 conservati byte per byte', () => {
+test('Materiali conservati byte per byte', () => {
   const lines = fs.readFileSync(path.join(root, 'materiali/MANIFEST_SHA256.txt'), 'utf8').trim().split('\n');
   for (const line of lines) {
     const [sha, p] = line.split('  ');
@@ -66,9 +81,9 @@ test('Laboratori collegati alle versioni collaudate', () => {
   assert.equal(py, 20);
 });
 test('Rotte valide, limiti e input malformati', () => {
-  assert.deepEqual(C.parseRoute('#modulo-M05/slide/105', cat), { type: 'slide', id: 'M05', page: 105 });
+  assert.deepEqual(C.parseRoute('#modulo-P01/slide/21', cat), { type: 'slide', id: 'P01', page: 21 });
   assert.equal(C.parseRoute('#modulo-P11/codici', cat).type, 'code');
-  // With a lesson, the earlier slides of the module open the tappe; a macroproject keeps its slides.
+  // A module with a lesson has no slides: every old slide address opens the tappe; a macroproject keeps its slides.
   const lessons = { M05: { pages: 109 } };
   assert.deepEqual(C.parseRoute('#modulo-M05/slide/105', cat, lessons), {
     type: 'lesson',
@@ -77,11 +92,12 @@ test('Rotte valide, limiti e input malformati', () => {
     legacy: true,
   });
   assert.deepEqual(C.parseRoute('#modulo-M05/slide', cat, lessons).legacy, true);
-  assert.equal(C.parseRoute('#modulo-M05/slide/106', cat, lessons).type, 'notfound');
+  assert.equal(C.parseRoute('#modulo-M05/slide/106', cat, lessons).legacy, true);
   assert.deepEqual(C.parseRoute('#modulo-P11/slide/10', cat, lessons), { type: 'slide', id: 'P11', page: 10 });
   for (const h of [
     '#modulo-M99',
-    '#modulo-M05/slide/106',
+    '#modulo-M05/slide/3',
+    '#modulo-P01/slide/22',
     '#modulo-T00/slide/0',
     '#modulo-M05/codici/2',
     '#%bad',

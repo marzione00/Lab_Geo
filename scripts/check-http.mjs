@@ -89,10 +89,13 @@ try {
   } finally {
     fs.rmSync(probe, { force: true });
   }
-  const courseIndex = await raw('/materiali/Indice_corso.html');
-  assert.equal(courseIndex.status, 200);
-  assert(courseIndex.headers['content-security-policy'].includes("'sha256-"));
+  const textPage = await raw('/percorso/M02.html');
+  assert.equal(textPage.status, 200);
+  assert(textPage.headers['content-security-policy'].includes("script-src 'self'"));
   for (const file of [
+    '/materiali/Indice_corso.html',
+    '/materiali/Guida_corso_R6.pdf',
+    '/assets/slides/M02/003.svg',
     '/materiali/audit/Registro_slide_R6.html',
     '/materiali/audit/Rapporto_revisione_R6.pdf',
     '/materiali/Rapporto_revisione_R6.pdf',

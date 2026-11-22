@@ -40,12 +40,14 @@ test('Il download didattico esclude rapporti e richiami alla lavorazione editori
       `
 import runpy
 archives,_ = runpy.run_path('scripts/labs/package-downloads.py')['payloads']()
-members = archives['GeoStatLab_codice_dati_R6.zip']
+members = archives['GeoStatLab_codice_dati.zip']
 assert not any('/audit/' in p or 'Rapporto_revisione_R6' in p or 'revisione_R6' in p or 'CONSEGNA_R6' in p for p in members)
-for p in ['materiali/LEGGIMI.txt', 'materiali/Indice_corso.html', 'materiali/MANIFEST_SHA256.txt']:
+for p in ['materiali/LEGGIMI.txt', 'materiali/MANIFEST_SHA256.txt']:
     assert b'audit/' not in members[p] and b'Rapporto_revisione_R6' not in members[p]
-assert 'materiali/R/M01_figure.R' in members
-assert 'materiali/Guida_corso_R6.pdf' in members
+# The modules with a lesson keep their laboratories; their earlier slides are gone.
+assert 'materiali/laboratori/M01/M01_N01.R' in members and 'materiali/R/P01_figure.R' in members
+assert not any(p.startswith(('materiali/pdf/M', 'materiali/pdf/T00', 'materiali/sorgenti/M', 'materiali/tikz/M'))
+               or p in ('materiali/R/M01_figure.R', 'materiali/Guida_corso_R6.pdf', 'materiali/Indice_corso.html') for p in members)
 `,
     ],
     { stdio: 'pipe' },

@@ -19,36 +19,27 @@ Disegni campionari, derivazioni e ricampionamento strutturato.
 | **Bootstrap a blocchi di una serie dipendente** · `#laboratorio/m05-blocchi` | Confrontare ricampionamento individuale e ricampionamento di sequenze temporali. | [R](../../R/experiments/m05-blocchi.R) |
 | **Stabilità numerica di un quantile bootstrap** · `#laboratorio/m05-precisione` | Valutare l’incertezza dovuta al numero finito di ricampionamenti. | [R](../../R/experiments/m05-precisione.R) |
 
-Ogni attività esplicita formula, simboli, ipotesi e limiti del procedimento. Il materiale seguente conserva la numerazione delle slide e dei laboratori originali R6.
+Ogni attività esplicita formula, simboli, ipotesi e limiti del procedimento. Il materiale seguente descrive la lezione a tappe e i laboratori del modulo.
 <!-- END INTERACTIVE GUIDE -->
 
-**105 slide · 28 figure · 24 diagrammi TikZ · 20 laboratori.**
+**Lezione Pelago: 109 tappe · 20 laboratori.**
 
-[PDF del modulo](../../materiali/pdf/M05_R6.pdf) · [Codice R delle figure](../../materiali/R/M05_figure.R) · [Sorgente LaTeX](../../materiali/sorgenti/M05_R6.tex) · [Indice del repository](../../README.md)
+[Presentazione PDF](../../assets/lezioni/M05/Pelago_M05_campionamento_stima.pdf) · [Progetto R della lezione](../../assets/lezioni/M05/Pelago_M05_progetto_R.zip) · [Sorgenti della lezione](../../lezioni/M05_Pelago/) · [Indice del repository](../../README.md)
 
 ## Percorso
 
-- Pagina 3: Apertura.
-- Pagina 4: Estimandi e disegni.
-- Pagina 15: Selezione e distorsione.
-- Pagina 22: Distribuzioni campionarie.
-- Pagina 34: Errore standard.
-- Pagina 44: Intervalli.
-- Pagina 55: Bootstrap elementare.
-- Pagina 69: Disegno del ricampionamento.
-- Pagina 86: Precisione numerica.
-- Pagina 93: Esercizi.
-- Pagina 104: Riferimenti.
+Ogni slide della presentazione è una tappa del sito (`#lezione-M05`).
 
-## Esecuzione
-
-Aprire `materiali/Corso_Geologia.Rproj`, oppure avviare R nella cartella `materiali/`, quindi eseguire:
-
-```r
-source("R/M05_figure.R")
-```
-
-Le dipendenze comuni e i dati restano nella cartella `materiali/`; scaricare l’intero repository prima di eseguire gli script.
+- Tappe 3–15: Popolazioni e parametri.
+- Tappe 16–25: Selezione e distorsione.
+- Tappe 26–35: Distribuzioni campionarie.
+- Tappe 36–47: Errore standard.
+- Tappe 48–59: Intervalli di confidenza.
+- Tappe 60–71: Bootstrap elementare.
+- Tappe 72–87: Disegno del ricampionamento.
+- Tappe 88–95: Bootstrap a blocchi.
+- Tappe 96–102: Precisione numerica.
+- Tappe 103–109: Laboratorio e conclusioni.
 
 ## Laboratori
 
@@ -77,4 +68,4 @@ Le dipendenze comuni e i dati restano nella cartella `materiali/`; scaricare l�
 
 ## Tracciabilità
 
-La numerazione coincide con il fascicolo R6. Il registro completo della rilettura si trova in [audit](../../materiali/audit/Registro_slide_R6.html). `modulo.json` raccoglie il contenuto destinato alla navigazione web e viene rigenerato dai sorgenti del corso.
+`modulo.json` raccoglie titolo, collocazione nel percorso e laboratori del modulo. La lezione a tappe è in `content/lezioni/M05.json`, generata dai sorgenti in `lezioni/M05_Pelago/`; la spiegazione estesa delle tappe è in `content/lezioni/M05.md`.

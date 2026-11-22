@@ -19,35 +19,30 @@ Distribuzioni, confronti e relazioni nelle misure geologiche.
 | **Posizione e rappresentazione spaziale** · `#laboratorio/m03-mappa` | Riconoscere una struttura geografica nascosta in un riepilogo. | [R](../../R/experiments/m03-mappa.R) |
 | **Scale lineari e logaritmiche** · `#laboratorio/m03-scale` | Esaminare un processo moltiplicativo su due scale. | [R](../../R/experiments/m03-scale.R) |
 
-Ogni attività esplicita formula, simboli, ipotesi e limiti del procedimento. Il materiale seguente conserva la numerazione delle slide e dei laboratori originali R6.
+Ogni attività esplicita formula, simboli, ipotesi e limiti del procedimento. Il materiale seguente descrive la lezione a tappe e i laboratori del modulo.
 <!-- END INTERACTIVE GUIDE -->
 
-**33 slide · 11 figure · 8 diagrammi TikZ · 20 laboratori.**
+**Lezione Iride: 79 tappe · 20 laboratori.**
 
-[PDF del modulo](../../materiali/pdf/M03_R6.pdf) · [Codice R delle figure](../../materiali/R/M03_figure.R) · [Sorgente LaTeX](../../materiali/sorgenti/M03_R6.tex) · [Indice del repository](../../README.md)
+[Presentazione PDF](../../assets/lezioni/M03/Iride_M03_descrivere_visualizzare.pdf) · [Progetto R della lezione](../../assets/lezioni/M03/Iride_M03_progetto_R.zip) · [Sorgenti della lezione](../../lezioni/M03_Iride/) · [Indice del repository](../../README.md)
 
 ## Percorso
 
-- Pagina 3: Domanda, unità e rappresentazione.
-- Pagina 6: Frequenze, denominatori e pesi.
-- Pagina 9: Misure di posizione.
-- Pagina 12: Dispersione e quantili.
-- Pagina 15: Distribuzioni e scelte di smoothing.
-- Pagina 19: Confronti fra gruppi.
-- Pagina 22: Relazioni fra misure.
-- Pagina 25: Posizione e rappresentazione spaziale.
-- Pagina 27: Scale e trasformazioni.
-- Pagina 30: Laboratorio e verifica.
+Ogni slide della presentazione è una tappa del sito (`#lezione-M03`).
 
-## Esecuzione
-
-Aprire `materiali/Corso_Geologia.Rproj`, oppure avviare R nella cartella `materiali/`, quindi eseguire:
-
-```r
-source("R/M03_figure.R")
-```
-
-Le dipendenze comuni e i dati restano nella cartella `materiali/`; scaricare l’intero repository prima di eseguire gli script.
+- Tappe 3–8: Domanda e supporto.
+- Tappa 9: Laboratorio · supporto.
+- Tappe 10–14: Frequenze e denominatori.
+- Tappa 15: Laboratorio · denominatori.
+- Tappe 16–22: Misure di posizione.
+- Tappa 23: Laboratorio · posizione.
+- Tappe 24–31: Dispersione e quantili.
+- Tappe 32–41: Distribuzioni.
+- Tappe 42–50: Confronti fra gruppi.
+- Tappe 51–59: Relazioni fra misure.
+- Tappe 60–66: Posizione e spazio.
+- Tappe 67–73: Scale e trasformazioni.
+- Tappe 74–79: Figure e consegna.
 
 ## Laboratori
 
@@ -76,4 +71,4 @@ Le dipendenze comuni e i dati restano nella cartella `materiali/`; scaricare l�
 
 ## Tracciabilità
 
-La numerazione coincide con il fascicolo R6. Il registro completo della rilettura si trova in [audit](../../materiali/audit/Registro_slide_R6.html). `modulo.json` raccoglie il contenuto destinato alla navigazione web e viene rigenerato dai sorgenti del corso.
+`modulo.json` raccoglie titolo, collocazione nel percorso e laboratori del modulo. La lezione a tappe è in `content/lezioni/M03.json`, generata dai sorgenti in `lezioni/M03_Iride/`; la spiegazione estesa delle tappe è in `content/lezioni/M03.md`.

@@ -3,7 +3,7 @@
 **Laboratori interattivi di statistica e coding R per le scienze della Terra**
 **Autore: Marzio De Corato** · Modulo didattico di [Topological Manifolds](https://marzione00.github.io/Personal_web_page/) ([repository del sito principale](https://github.com/marzione00/Personal_web_page)).
 
-Versione applicativa **4.2.0** · materiali didattici **R6** · lingua italiana · materiali [CC BY-NC-SA 4.0](LICENSE.md), codice [PolyForm Noncommercial 1.0.0](LICENSE-CODE.md)
+Versione applicativa **4.2.0** · 17 lezioni a tappe · lingua italiana · materiali [CC BY-NC-SA 4.0](LICENSE.md), codice [PolyForm Noncommercial 1.0.0](LICENSE-CODE.md)
 
 GeoStat Lab accompagna lo studio dei metodi statistici attraverso 139 esperimenti nei quali, modificando parametri e ipotesi, si osservano le conseguenze sui dati simulati, sulle figure e sulle conclusioni. Ogni attività collega il problema scientifico al formalismo matematico e al programma R che ne produce i risultati. L’atlante di 17 pianeti rotanti organizza il percorso; le 11 spedizioni applicative riuniscono i metodi necessari ad affrontare un’indagine più articolata.
 
@@ -72,7 +72,7 @@ npm test
 |---|---|
 | Esperimenti interattivi | 139 attività distribuite nei 17 moduli |
 | Percorso applicativo | 11 spedizioni, ciascuna articolata in tre fasi |
-| Materiali del corso | 28 fascicoli, 861 slide vettoriali, 261 figure R e 232 diagrammi TikZ |
+| Materiali del corso | 17 lezioni a tappe con presentazione PDF e progetto R; 11 fascicoli dei macroprogetti con 208 slide |
 | Programmi originali | 340 laboratori R e 20 laboratori Python |
 | Esperimenti riproducibili | 139 programmi R autonomi, parametri e seme casuale espliciti |
 | Esplorazione | Parametri modificabili, confronto fra due scenari, tabella dei risultati |
@@ -180,7 +180,7 @@ Nel **percorso guidato** si formula una previsione e si confronta il risultato c
 
 Il seme controlla la generazione pseudocasuale. Il risultato comprende versione di R e ggplot2, valori dei parametri e programma utilizzato. L’esportazione JSON conserva il contesto dell’esperimento; la sua importazione accetta soltanto il formato e l’attività previsti. Un programma personalizzato importato richiede sempre la revisione e l’esecuzione esplicita dall’editor.
 
-Gli script autonomi in `R/experiments/` comprendono le funzioni comuni necessarie a riprodurre l’esperimento. Per i materiali originali R6 aprire invece `materiali/Corso_Geologia.Rproj` in RStudio: i relativi percorsi assumono `materiali/` come directory di lavoro. Le versioni effettivamente collaudate sono registrate nei manifesti; risultati ottenuti con versioni diverse possono presentare differenze numeriche o grafiche.
+Gli script autonomi in `R/experiments/` comprendono le funzioni comuni necessarie a riprodurre l’esperimento. Per i laboratori del corso aprire invece `materiali/Corso_Geologia.Rproj` in RStudio: i relativi percorsi assumono `materiali/` come directory di lavoro. Le versioni effettivamente collaudate sono registrate nei manifesti; risultati ottenuti con versioni diverse possono presentare differenze numeriche o grafiche.
 
 I CSV esportati neutralizzano le celle testuali che potrebbero essere interpretate come formule da un foglio elettronico, anteponendo un apostrofo. Le quantità numeriche negative restano numeriche. Per conservare esattamente un valore testuale che inizia con un segno di formula, utilizzare il JSON o il programma R.
 
@@ -196,9 +196,9 @@ I CSV esportati neutralizzano le celle testuali che potrebbero essere interpreta
 | `content/experiments.json` | Catalogo scientifico, codice e controlli dei 139 esperimenti |
 | `content/catalogue.json` | Indice delle unità e dei materiali |
 | `moduli/` | Scheda e contenuto strutturato di ciascuna unità |
-| `materiali/` | Consegna R6 originale: PDF, LaTeX, TikZ, R, Python, dati e verifiche |
+| `materiali/` | Laboratori R e Python, dati, funzioni comuni e fascicoli dei macroprogetti |
 | `R/` | Codice riproducibile dei nuovi esperimenti e tema grafico |
-| `assets/` | Slide SVG, figure iniziali, texture e archivi scaricabili |
+| `assets/` | Presentazioni e figure delle lezioni, slide dei macroprogetti, texture e archivi scaricabili |
 | `vendor/` | Distribuzioni locali di MathJax, webR e 23 pacchetti R, con licenze |
 | `config/` | Configurazione del sito e politica di sicurezza della pagina |
 | `security/` | Impronte delle dipendenze distribuite e requisiti Python con hash |
@@ -248,7 +248,6 @@ Non viene dichiarata un’immunità agli attacchi, né una certificazione OWASP.
 | `npm audit --audit-level=high` | Vulnerabilità note delle dipendenze npm; richiede rete |
 | `npm run test:browser` | Test Chromium, esecuzione R, navigazione e diagnostica; richiede l’ambiente Python previsto |
 | `npm run labs:check` | Controlli scientifici R e invarianti, in un ambiente R nativo predisposto |
-| `npm run check:course` | Verifica della consegna originale R6 |
 
 Installazione dei soli strumenti browser su Ubuntu 24.04 con Python 3.12:
 
@@ -266,25 +265,25 @@ Dependabot propone aggiornamenti settimanali. Ogni modifica a webR, ai pacchetti
 
 ## Moduli e spedizioni
 
-| Codice | Unità didattica | Slide | Materiali |
+| Codice | Unità didattica | Slide o tappe | Materiali |
 |---|---|---:|---|
-| T00 | [Dal codice al calcolo scientifico](moduli/T00/README.md) | 33 | [PDF](materiali/pdf/T00_R6.pdf) · [R](materiali/R/T00_figure.R) |
-| M01 | [Pensare con i dati](moduli/M01/README.md) | 58 | [PDF](materiali/pdf/M01_R6.pdf) · [R](materiali/R/M01_figure.R) |
-| M02 | [R e gestione dei dati](moduli/M02/README.md) | 43 | [PDF](materiali/pdf/M02_R6.pdf) · [R](materiali/R/M02_figure.R) |
-| M03 | [Descrivere e visualizzare i dati](moduli/M03/README.md) | 33 | [PDF](materiali/pdf/M03_R6.pdf) · [R](materiali/R/M03_figure.R) |
-| M04 | [Probabilità, variabilità e simulazione](moduli/M04/README.md) | 35 | [PDF](materiali/pdf/M04_R6.pdf) · [R](materiali/R/M04_figure.R) |
-| M05 | [Campionamento, stima e incertezza](moduli/M05/README.md) | 105 | [PDF](materiali/pdf/M05_R6.pdf) · [R](materiali/R/M05_figure.R) |
-| M06 | [Confrontare gruppi e valutare ipotesi](moduli/M06/README.md) | 35 | [PDF](materiali/pdf/M06_R6.pdf) · [R](materiali/R/M06_figure.R) |
-| M07 | [Relazioni tra variabili e regressione](moduli/M07/README.md) | 33 | [PDF](materiali/pdf/M07_R6.pdf) · [R](materiali/R/M07_figure.R) |
-| M08 | [Analisi multivariata dei campioni](moduli/M08/README.md) | 33 | [PDF](materiali/pdf/M08_R6.pdf) · [R](materiali/R/M08_figure.R) |
-| M09 | [Serie temporali ambientali](moduli/M09/README.md) | 33 | [PDF](materiali/pdf/M09_R6.pdf) · [R](materiali/R/M09_figure.R) |
-| M10 | [Previsione e progetto statistico](moduli/M10/README.md) | 33 | [PDF](materiali/pdf/M10_R6.pdf) · [R](materiali/R/M10_figure.R) |
-| M11 | [Statistica spaziale](moduli/M11/README.md) | 32 | [PDF](materiali/pdf/M11_R6.pdf) · [R](materiali/R/M11_figure.R) |
-| M12 | [Raster, telerilevamento e morfometria](moduli/M12/README.md) | 30 | [PDF](materiali/pdf/M12_R6.pdf) · [R](materiali/R/M12_figure.R) |
-| M13 | [Cronologie e archivi sedimentari](moduli/M13/README.md) | 30 | [PDF](materiali/pdf/M13_R6.pdf) · [R](materiali/R/M13_figure.R) |
-| M14 | [Estremi, pericolosità e rischio](moduli/M14/README.md) | 31 | [PDF](materiali/pdf/M14_R6.pdf) · [R](materiali/R/M14_figure.R) |
-| M15 | [Riproducibilità e progetto di analisi](moduli/M15/README.md) | 27 | [PDF](materiali/pdf/M15_R6.pdf) · [R](materiali/R/M15_figure.R) |
-| M16 | [Classificazione e validazione](moduli/M16/README.md) | 29 | [PDF](materiali/pdf/M16_R6.pdf) · [R](materiali/R/M16_figure.R) |
+| T00 | [Dal codice al calcolo scientifico](moduli/T00/README.md) | 66 tappe | [PDF](assets/lezioni/T00/T00_Basalto.pdf) · [Progetto R](assets/lezioni/T00/Basalto_T00_progetto_R.zip) |
+| M01 | [Pensare con i dati](moduli/M01/README.md) | 84 tappe | [PDF](assets/lezioni/M01/R_analisi_dati_completa.pdf) · [Progetto R](assets/lezioni/M01/Terra_M01_progetto_R.zip) |
+| M02 | [R e gestione dei dati](moduli/M02/README.md) | 82 tappe | [PDF](assets/lezioni/M02/Tellus_M02_gestione_dati.pdf) · [Progetto R](assets/lezioni/M02/Tellus_M02_progetto_R.zip) |
+| M03 | [Descrivere e visualizzare i dati](moduli/M03/README.md) | 79 tappe | [PDF](assets/lezioni/M03/Iride_M03_descrivere_visualizzare.pdf) · [Progetto R](assets/lezioni/M03/Iride_M03_progetto_R.zip) |
+| M04 | [Probabilità, variabilità e simulazione](moduli/M04/README.md) | 81 tappe | [PDF](assets/lezioni/M04/Aurea_M04_probabilita_simulazione.pdf) · [Progetto R](assets/lezioni/M04/Aurea_M04_progetto_R.zip) |
+| M05 | [Campionamento, stima e incertezza](moduli/M05/README.md) | 109 tappe | [PDF](assets/lezioni/M05/Pelago_M05_campionamento_stima.pdf) · [Progetto R](assets/lezioni/M05/Pelago_M05_progetto_R.zip) |
+| M06 | [Confrontare gruppi e valutare ipotesi](moduli/M06/README.md) | 93 tappe | [PDF](assets/lezioni/M06/Gemina_M06_confronti_ipotesi.pdf) · [Progetto R](assets/lezioni/M06/Gemina_M06_progetto_R.zip) |
+| M07 | [Relazioni tra variabili e regressione](moduli/M07/README.md) | 100 tappe | [PDF](assets/lezioni/M07/Annula_M07_regressione.pdf) · [Progetto R](assets/lezioni/M07/Annula_M07_progetto_R.zip) |
+| M08 | [Analisi multivariata dei campioni](moduli/M08/README.md) | 108 tappe | [PDF](assets/lezioni/M08/Polychroma_M08_multivariata.pdf) · [Progetto R](assets/lezioni/M08/Polychroma_M08_progetto_R.zip) |
+| M09 | [Serie temporali ambientali](moduli/M09/README.md) | 106 tappe | [PDF](assets/lezioni/M09/Borealis_M09_serie_temporali.pdf) · [Progetto R](assets/lezioni/M09/Borealis_M09_progetto_R.zip) |
+| M10 | [Previsione e progetto statistico](moduli/M10/README.md) | 110 tappe | [PDF](assets/lezioni/M10/Futura_M10_previsione_progetto.pdf) · [Progetto R](assets/lezioni/M10/Futura_M10_progetto_R.zip) |
+| M11 | [Statistica spaziale](moduli/M11/README.md) | 110 tappe | [PDF](assets/lezioni/M11/Locus_M11_statistica_spaziale.pdf) · [Progetto R](assets/lezioni/M11/Locus_M11_progetto_R.zip) |
+| M12 | [Raster, telerilevamento e morfometria](moduli/M12/README.md) | 110 tappe | [PDF](assets/lezioni/M12/Tessera_M12_raster_telerilevamento_morfometria.pdf) · [Progetto R](assets/lezioni/M12/Tessera_M12_progetto_R.zip) |
+| M13 | [Cronologie e archivi sedimentari](moduli/M13/README.md) | 63 tappe | [PDF](assets/lezioni/M13/M13_Strata.pdf) · [Progetto R](assets/lezioni/M13/Strata_M13_progetto_R.zip) |
+| M14 | [Estremi, pericolosità e rischio](moduli/M14/README.md) | 66 tappe | [PDF](assets/lezioni/M14/M14_Ignis.pdf) · [Progetto R](assets/lezioni/M14/Ignis_M14_progetto_R.zip) |
+| M15 | [Riproducibilità e progetto di analisi](moduli/M15/README.md) | 58 tappe | [PDF](assets/lezioni/M15/M15_Argenta.pdf) · [Progetto R](assets/lezioni/M15/Argenta_M15_progetto_R.zip) |
+| M16 | [Classificazione e validazione](moduli/M16/README.md) | 62 tappe | [PDF](assets/lezioni/M16/M16_Prisma.pdf) · [Progetto R](assets/lezioni/M16/Prisma_M16_progetto_R.zip) |
 | P01 | [Geometria dei pori e permeabilità](moduli/P01/README.md) | 21 | [PDF](materiali/pdf/P01_R6.pdf) · [R](materiali/R/P01_figure.R) |
 | P02 | [Foraminiferi, coppe e campagne](moduli/P02/README.md) | 22 | [PDF](materiali/pdf/P02_R6.pdf) · [R](materiali/R/P02_figure.R) |
 | P03 | [Il Nilo: livelli e dipendenza temporale](moduli/P03/README.md) | 21 | [PDF](materiali/pdf/P03_R6.pdf) · [R](materiali/R/P03_figure.R) |
@@ -314,7 +313,6 @@ Dependabot propone aggiornamenti settimanali. Ogni modifica a webR, ai pacchetti
 - [docs/LABORATORI_INTERATTIVI.md](docs/LABORATORI_INTERATTIVI.md): struttura didattica degli esperimenti.
 - [docs/ARCHITETTURA.md](docs/ARCHITETTURA.md): organizzazione e aggiornamento dei contenuti.
 - [docs/ATLANTE_PLANETARIO.md](docs/ATLANTE_PLANETARIO.md): grafica, navigazione e movimento.
-- [Guida al corso](materiali/Guida_corso_R6.pdf). Il [rapporto di lavorazione R6](materiali/audit/Rapporto_revisione_R6.pdf) è conservato nei sorgenti per la manutenzione ed escluso dal sito e dal download didattico.
 
 ## Licenze, provenienza e attribuzioni
 

@@ -18,33 +18,28 @@ Fondamenti operativi in R e confronto con Python.
 | **Ricostruire un risultato salvato** · `#laboratorio/t00-persistenza` | Separare oggetto in memoria e dato persistente. | [R](../../R/experiments/t00-persistenza.R) |
 | **Confrontare implementazioni** · `#laboratorio/t00-confronto` | Valutare una tolleranza numerica dichiarata. | [R](../../R/experiments/t00-confronto.R) |
 
-Ogni attività esplicita formula, simboli, ipotesi e limiti del procedimento. Il materiale seguente conserva la numerazione delle slide e dei laboratori originali R6.
+Ogni attività esplicita formula, simboli, ipotesi e limiti del procedimento. Il materiale seguente descrive la lezione a tappe e i laboratori del modulo.
 <!-- END INTERACTIVE GUIDE -->
 
-**33 slide · 5 figure · 12 diagrammi TikZ · 40 laboratori.**
+**Lezione Basalto: 66 tappe · 40 laboratori.**
 
-[PDF del modulo](../../materiali/pdf/T00_R6.pdf) · [Codice R delle figure](../../materiali/R/T00_figure.R) · [Sorgente LaTeX](../../materiali/sorgenti/T00_R6.tex) · [Indice del repository](../../README.md)
+[Presentazione PDF](../../assets/lezioni/T00/T00_Basalto.pdf) · [Progetto R della lezione](../../assets/lezioni/T00/Basalto_T00_progetto_R.zip) · [Sorgenti della lezione](../../lezioni/T00_Basalto/) · [Indice del repository](../../README.md)
 
 ## Percorso
 
-- Pagina 3: Dalla domanda al programma.
-- Pagina 7: Valori, tipi e operazioni.
-- Pagina 11: Lettura e trasformazione dei dati.
-- Pagina 18: Errori e controllo del procedimento.
-- Pagina 20: Preparazione ed esecuzione locale.
-- Pagina 24: Scelte di strumenti e prestazioni.
-- Pagina 28: Esecuzione remota e persistenza.
-- Pagina 31: Confronti e consegna del lavoro.
+Ogni slide della presentazione è una tappa del sito (`#lezione-T00`).
 
-## Esecuzione
-
-Aprire `materiali/Corso_Geologia.Rproj`, oppure avviare R nella cartella `materiali/`, quindi eseguire:
-
-```r
-source("R/T00_figure.R")
-```
-
-Le dipendenze comuni e i dati restano nella cartella `materiali/`; scaricare l’intero repository prima di eseguire gli script.
+- Tappa 3: Il caso guida.
+- Tappe 4–11: Dalla domanda al programma.
+- Tappe 12–19: Valori, tipi e operazioni.
+- Tappe 20–30: Lettura e trasformazione dei dati.
+- Tappe 31–36: Errori e controllo del procedimento.
+- Tappe 37–44: Preparazione ed esecuzione locale.
+- Tappe 45–52: Scelte di strumenti e prestazioni.
+- Tappe 53–58: Esecuzione remota e persistenza.
+- Tappe 59–64: Confronti e consegna del lavoro.
+- Tappa 65: Sintesi.
+- Tappa 66: Riferimenti.
 
 ## Laboratori
 
@@ -93,4 +88,4 @@ Le dipendenze comuni e i dati restano nella cartella `materiali/`; scaricare l�
 
 ## Tracciabilità
 
-La numerazione coincide con il fascicolo R6. Il registro completo della rilettura si trova in [audit](../../materiali/audit/Registro_slide_R6.html). `modulo.json` raccoglie il contenuto destinato alla navigazione web e viene rigenerato dai sorgenti del corso.
+`modulo.json` raccoglie titolo, collocazione nel percorso e laboratori del modulo. La lezione a tappe è in `content/lezioni/T00.json`, generata dai sorgenti in `lezioni/T00_Basalto/`; la spiegazione estesa delle tappe è in `content/lezioni/T00.md`.

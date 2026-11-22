@@ -19,34 +19,25 @@ Coordinate, associazione e previsione nel territorio.
 | **Interpolazione e verifica geografica** · `#laboratorio/m11-interpolazione` | Confrontare IDW e un riferimento mediante campioni separati nello spazio. | [R](../../R/experiments/m11-interpolazione.R) |
 | **Kriging ordinario e incertezza condizionata** · `#laboratorio/m11-kriging` | Esaminare pesi e previsione di un campo con media costante e covarianza dichiarata. | [R](../../R/experiments/m11-kriging.R) |
 
-Ogni attività esplicita formula, simboli, ipotesi e limiti del procedimento. Il materiale seguente conserva la numerazione delle slide e dei laboratori originali R6.
+Ogni attività esplicita formula, simboli, ipotesi e limiti del procedimento. Il materiale seguente descrive la lezione a tappe e i laboratori del modulo.
 <!-- END INTERACTIVE GUIDE -->
 
-**32 slide · 11 figure · 10 diagrammi TikZ · 20 laboratori.**
+**Lezione Locus: 110 tappe · 20 laboratori.**
 
-[PDF del modulo](../../materiali/pdf/M11_R6.pdf) · [Codice R delle figure](../../materiali/R/M11_figure.R) · [Sorgente LaTeX](../../materiali/sorgenti/M11_R6.tex) · [Indice del repository](../../README.md)
+[Presentazione PDF](../../assets/lezioni/M11/Locus_M11_statistica_spaziale.pdf) · [Progetto R della lezione](../../assets/lezioni/M11/Locus_M11_progetto_R.zip) · [Sorgenti della lezione](../../lezioni/M11_Locus/) · [Indice del repository](../../README.md)
 
 ## Percorso
 
-- Pagina 3: Dato, posizione e supporto.
-- Pagina 6: Coordinate e geometria.
-- Pagina 10: Carte, appartenenze e aggregazioni.
-- Pagina 13: Vicinati e matrici dei pesi.
-- Pagina 16: Associazione spaziale e riferimento inferenziale.
-- Pagina 21: Semivarianza e struttura a distanza.
-- Pagina 23: Copertura e unità della sintesi.
-- Pagina 25: Interpolazione e verifica geografica.
-- Pagina 31: Consegna e studio autonomo.
+Ogni slide della presentazione è una tappa del sito (`#lezione-M11`).
 
-## Esecuzione
-
-Aprire `materiali/Corso_Geologia.Rproj`, oppure avviare R nella cartella `materiali/`, quindi eseguire:
-
-```r
-source("R/M11_figure.R")
-```
-
-Le dipendenze comuni e i dati restano nella cartella `materiali/`; scaricare l’intero repository prima di eseguire gli script.
+- Tappe 17–31: II · Coordinate e distanze.
+- Tappe 32–43: III · Carte e appartenenze.
+- Tappe 44–55: IV · Vicinati e pesi.
+- Tappe 56–70: V · Associazione spaziale.
+- Tappe 71–81: VI · Semivarianza.
+- Tappe 82–91: VII · Copertura del campione.
+- Tappe 92–105: VIII · Previsione spaziale.
+- Tappe 106–110: IX · Consegna e studio.
 
 ## Laboratori
 
@@ -75,4 +66,4 @@ Le dipendenze comuni e i dati restano nella cartella `materiali/`; scaricare l�
 
 ## Tracciabilità
 
-La numerazione coincide con il fascicolo R6. Il registro completo della rilettura si trova in [audit](../../materiali/audit/Registro_slide_R6.html). `modulo.json` raccoglie il contenuto destinato alla navigazione web e viene rigenerato dai sorgenti del corso.
+`modulo.json` raccoglie titolo, collocazione nel percorso e laboratori del modulo. La lezione a tappe è in `content/lezioni/M11.json`, generata dai sorgenti in `lezioni/M11_Locus/`; la spiegazione estesa delle tappe è in `content/lezioni/M11.md`.

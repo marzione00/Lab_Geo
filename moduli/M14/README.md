@@ -17,32 +17,27 @@ Superamenti, tempi di ritorno e incertezza dei livelli rari.
 | **Superamenti e separazione degli episodi** · `#laboratorio/m14-episodi` | Distinguere giorni sopra soglia ed eventi temporali. | [R](../../R/experiments/m14-episodi.R) |
 | **Pericolosità e conseguenze** · `#laboratorio/m14-conseguenze` | Calcolare la perdita attesa per classi di evento mutuamente esclusive. | [R](../../R/experiments/m14-conseguenze.R) |
 
-Ogni attività esplicita formula, simboli, ipotesi e limiti del procedimento. Il materiale seguente conserva la numerazione delle slide e dei laboratori originali R6.
+Ogni attività esplicita formula, simboli, ipotesi e limiti del procedimento. Il materiale seguente descrive la lezione a tappe e i laboratori del modulo.
 <!-- END INTERACTIVE GUIDE -->
 
-**31 slide · 12 figure · 10 diagrammi TikZ · 20 laboratori.**
+**Lezione Ignis: 66 tappe · 20 laboratori.**
 
-[PDF del modulo](../../materiali/pdf/M14_R6.pdf) · [Codice R delle figure](../../materiali/R/M14_figure.R) · [Sorgente LaTeX](../../materiali/sorgenti/M14_R6.tex) · [Indice del repository](../../README.md)
+[Presentazione PDF](../../assets/lezioni/M14/M14_Ignis.pdf) · [Progetto R della lezione](../../assets/lezioni/M14/Ignis_M14_progetto_R.zip) · [Sorgenti della lezione](../../lezioni/M14_Ignis/) · [Indice del repository](../../README.md)
 
 ## Percorso
 
-- Pagina 3: Massimi annuali e probabilità empiriche.
-- Pagina 8: Ritorno, attesa e orizzonte temporale.
-- Pagina 13: Modello Gumbel e verifica dell’adattamento.
-- Pagina 18: Livelli rari e incertezza della stima.
-- Pagina 24: Forma della coda e sensibilità GEV.
-- Pagina 26: Superamenti giornalieri ed episodi.
-- Pagina 29: Pericolosità, conseguenze e comunicazione.
+Ogni slide della presentazione è una tappa del sito (`#lezione-M14`).
 
-## Esecuzione
-
-Aprire `materiali/Corso_Geologia.Rproj`, oppure avviare R nella cartella `materiali/`, quindi eseguire:
-
-```r
-source("R/M14_figure.R")
-```
-
-Le dipendenze comuni e i dati restano nella cartella `materiali/`; scaricare l’intero repository prima di eseguire gli script.
+- Tappa 3: Il caso guida.
+- Tappe 4–13: Massimi annuali e probabilità empiriche.
+- Tappe 14–23: Ritorno, attesa e orizzonte temporale.
+- Tappe 24–33: Modello Gumbel e verifica dell’adattamento.
+- Tappe 34–44: Livelli rari e incertezza della stima.
+- Tappe 45–50: Forma della coda e sensibilità GEV.
+- Tappe 51–57: Superamenti giornalieri ed episodi.
+- Tappe 58–64: Pericolosità, conseguenze e comunicazione.
+- Tappa 65: Sintesi.
+- Tappa 66: Riferimenti.
 
 ## Laboratori
 
@@ -71,4 +66,4 @@ Le dipendenze comuni e i dati restano nella cartella `materiali/`; scaricare l�
 
 ## Tracciabilità
 
-La numerazione coincide con il fascicolo R6. Il registro completo della rilettura si trova in [audit](../../materiali/audit/Registro_slide_R6.html). `modulo.json` raccoglie il contenuto destinato alla navigazione web e viene rigenerato dai sorgenti del corso.
+`modulo.json` raccoglie titolo, collocazione nel percorso e laboratori del modulo. La lezione a tappe è in `content/lezioni/M14.json`, generata dai sorgenti in `lezioni/M14_Ignis/`; la spiegazione estesa delle tappe è in `content/lezioni/M14.md`.

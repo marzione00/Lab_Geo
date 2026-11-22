@@ -19,33 +19,25 @@ Dalla geometria della griglia alle grandezze derivate.
 | **Sintesi zonali e dipendenza delle celle** · `#laboratorio/m12-zone` | Confrontare numero di pixel e unità informative. | [R](../../R/experiments/m12-zone.R) |
 | **Dimensioni del raster e memoria** · `#laboratorio/m12-memoria` | Quantificare la crescita del costo di una griglia. | [R](../../R/experiments/m12-memoria.R) |
 
-Ogni attività esplicita formula, simboli, ipotesi e limiti del procedimento. Il materiale seguente conserva la numerazione delle slide e dei laboratori originali R6.
+Ogni attività esplicita formula, simboli, ipotesi e limiti del procedimento. Il materiale seguente descrive la lezione a tappe e i laboratori del modulo.
 <!-- END INTERACTIVE GUIDE -->
 
-**30 slide · 11 figure · 10 diagrammi TikZ · 20 laboratori.**
+**Lezione Tessera: 110 tappe · 20 laboratori.**
 
-[PDF del modulo](../../materiali/pdf/M12_R6.pdf) · [Codice R delle figure](../../materiali/R/M12_figure.R) · [Sorgente LaTeX](../../materiali/sorgenti/M12_R6.tex) · [Indice del repository](../../README.md)
+[Presentazione PDF](../../assets/lezioni/M12/Tessera_M12_raster_telerilevamento_morfometria.pdf) · [Progetto R della lezione](../../assets/lezioni/M12/Tessera_M12_progetto_R.zip) · [Sorgenti della lezione](../../lezioni/M12_Tessera/) · [Indice del repository](../../README.md)
 
 ## Percorso
 
-- Pagina 3: Griglia, celle e georeferenziazione.
-- Pagina 7: Maschere, dominio e superficie.
-- Pagina 10: Aggregazione, ricampionamento e allineamento.
-- Pagina 14: Derivate, pendenza ed esposizione.
-- Pagina 20: Ombreggiatura e rappresentazione del rilievo.
-- Pagina 23: Bande e indici normalizzati.
-- Pagina 26: Sintesi zonali e dipendenza.
-- Pagina 29: Memoria, esportazione e verifica.
+Ogni slide della presentazione è una tappa del sito (`#lezione-M12`).
 
-## Esecuzione
-
-Aprire `materiali/Corso_Geologia.Rproj`, oppure avviare R nella cartella `materiali/`, quindi eseguire:
-
-```r
-source("R/M12_figure.R")
-```
-
-Le dipendenze comuni e i dati restano nella cartella `materiali/`; scaricare l’intero repository prima di eseguire gli script.
+- Tappe 6–19: II · Geometria raster.
+- Tappe 20–32: III · Maschere e dominio.
+- Tappe 33–48: IV · Risoluzione e allineamento.
+- Tappe 49–66: V · Morfometria.
+- Tappe 67–76: VI · Luce e rilievo.
+- Tappe 77–90: VII · Bande e indici.
+- Tappe 91–102: VIII · Sintesi territoriali.
+- Tappe 103–110: IX · Consegna e verifica.
 
 ## Laboratori
 
@@ -74,4 +66,4 @@ Le dipendenze comuni e i dati restano nella cartella `materiali/`; scaricare l�
 
 ## Tracciabilità
 
-La numerazione coincide con il fascicolo R6. Il registro completo della rilettura si trova in [audit](../../materiali/audit/Registro_slide_R6.html). `modulo.json` raccoglie il contenuto destinato alla navigazione web e viene rigenerato dai sorgenti del corso.
+`modulo.json` raccoglie titolo, collocazione nel percorso e laboratori del modulo. La lezione a tappe è in `content/lezioni/M12.json`, generata dai sorgenti in `lezioni/M12_Tessera/`; la spiegazione estesa delle tappe è in `content/lezioni/M12.md`.

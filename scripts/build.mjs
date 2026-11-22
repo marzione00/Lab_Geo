@@ -31,7 +31,7 @@ fs.rmSync(out, { recursive: true, force: true });
 fs.mkdirSync(path.join(out, 'assets/content'), { recursive: true });
 const sharedDiagramPanels = new Set();
 for (const m of catalogue.modules)
-  for (const s of read('moduli/' + m.id + '/modulo.json').slides)
+  for (const s of read('moduli/' + m.id + '/modulo.json').slides || [])
     if (s.diagram && !s.figure)
       sharedDiagramPanels.add('visuals/' + m.id + '/' + String(s.page).padStart(3, '0') + '.svg');
 for (const dir of ['assets', 'vendor', 'R'])
@@ -137,7 +137,7 @@ fs.writeFileSync(path.join(out, 'assets/catalogue.js'), 'window.GEO_CATALOG=' + 
 fs.writeFileSync(path.join(out, 'assets/site-config.js'), 'window.GEO_CONFIG=' + safe(config) + ';\n');
 for (const m of catalogue.modules) {
   const data = read('moduli/' + m.id + '/modulo.json');
-  for (const slide of data.slides) delete slide.review;
+  for (const slide of data.slides || []) delete slide.review;
   fs.writeFileSync(
     path.join(out, 'assets/content', m.id + '.js'),
     'window.GEO_MODULES=window.GEO_MODULES||{};window.GEO_MODULES.' + m.id + '=' + safe(data) + ';\n',
@@ -284,11 +284,16 @@ function staticPage(file, title, summary, body) {
   );
 }
 for (const m of catalogue.modules) {
-  const sections = [];
-  for (const s of read('moduli/' + m.id + '/modulo.json').slides) {
-    if (sections.at(-1)?.title !== s.section) sections.push({ title: s.section, slides: [] });
+  // A module with a lesson lists its tappe; a macroproject lists its slides.
+  const lesson = lessons[m.id] ? read('content/lezioni/' + m.id + '.json') : null,
+    pdf = lesson ? lesson.pdf : m.pdf,
+    sections = [];
+  for (const s of lesson ? lesson.slides : read('moduli/' + m.id + '/modulo.json').slides) {
+    const title = lesson ? lesson.sections.find(x => s.page >= x.first && s.page <= x.last).title : s.section;
+    if (sections.at(-1)?.title !== title) sections.push({ title, slides: [] });
     sections.at(-1).slides.push(s);
   }
+  const route = s => (lesson ? '#lezione-' + m.id + '/' + s.page : '#modulo-' + m.id + '/slide/' + s.page);
   const labs = experiments.activities.filter(a => a.module === m.id);
   staticPage(
     m.id + '.html',
@@ -303,7 +308,7 @@ for (const m of catalogue.modules) {
       '</p><p class="actions"><a href="../#modulo-' +
       text(m.id) +
       '">Apri nell’atlante interattivo</a>' +
-      (m.pdf ? '<a href="../' + text(m.pdf) + '">Fascicolo PDF</a>' : '') +
+      (pdf ? '<a href="../' + text(pdf) + '">' + (lesson ? 'Presentazione PDF' : 'Fascicolo PDF') + '</a>' : '') +
       '</p>' +
       (labs.length
         ? '<h2>Esperimenti</h2><ul>' +
@@ -315,25 +320,14 @@ for (const m of catalogue.modules) {
             .join('') +
           '</ul>'
         : '') +
-      '<h2>Slide</h2>' +
+      (lesson ? '<h2>Tappe della lezione</h2>' : '<h2>Slide</h2>') +
       sections
         .map(
           section =>
             '<h3>' +
             text(section.title) +
             '</h3><ul>' +
-            section.slides
-              .map(
-                s =>
-                  '<li><a href="../#modulo-' +
-                  text(m.id) +
-                  '/slide/' +
-                  text(s.page) +
-                  '">' +
-                  text(s.title) +
-                  '</a></li>',
-              )
-              .join('') +
+            section.slides.map(s => '<li><a href="../' + text(route(s)) + '">' + text(s.title) + '</a></li>').join('') +
             '</ul>',
         )
         .join(''),

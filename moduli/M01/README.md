@@ -20,36 +20,50 @@ Osservazione, misura e inferenza nelle scienze della Terra.
 | **Dal campione al riepilogo R** · `#laboratorio/m01-primo-r` | Leggere insieme tabella, grafico e statistiche descrittive. | [R](../../R/experiments/m01-primo-r.R) |
 | **Confrontare campagne ripetute** · `#laboratorio/m01-confronto-disegni` | Valutare bias e dispersione di due disegni campionari. | [R](../../R/experiments/m01-confronto-disegni.R) |
 
-Ogni attività esplicita formula, simboli, ipotesi e limiti del procedimento. Il materiale seguente conserva la numerazione delle slide e dei laboratori originali R6.
+Ogni attività esplicita formula, simboli, ipotesi e limiti del procedimento. Il materiale seguente descrive la lezione a tappe e i laboratori del modulo.
 <!-- END INTERACTIVE GUIDE -->
 
-**58 slide · 10 figure · 10 diagrammi TikZ · 20 laboratori.**
+**Lezione Terra: 84 tappe · 20 laboratori.**
 
-[PDF del modulo](../../materiali/pdf/M01_R6.pdf) · [Codice R delle figure](../../materiali/R/M01_figure.R) · [Sorgente LaTeX](../../materiali/sorgenti/M01_R6.tex) · [Indice del repository](../../README.md)
+[Presentazione PDF](../../assets/lezioni/M01/R_analisi_dati_completa.pdf) · [Progetto R della lezione](../../assets/lezioni/M01/Terra_M01_progetto_R.zip) · [Sorgenti della lezione](../../lezioni/M01_Terra/) · [Indice del repository](../../README.md)
 
 ## Percorso
 
-- Pagina 3: Domande e quantità di interesse.
-- Pagina 9: Popolazione e gerarchia del campione.
-- Pagina 14: Variabili e analisi dimensionale.
-- Pagina 20: Disegno della raccolta.
-- Pagina 26: Misura e componenti dell’errore.
-- Pagina 32: Dipendenza e confondimento.
-- Pagina 38: Dalla raccolta alla conclusione.
-- Pagina 43: Metadati, disponibilità e censura.
-- Pagina 49: Il primo laboratorio in R.
-- Pagina 54: Confronto dei disegni e verifica finale.
-- Pagina 58: Fonti e materiali.
+Ogni slide della presentazione è una tappa del sito (`#lezione-M01`).
 
-## Esecuzione
-
-Aprire `materiali/Corso_Geologia.Rproj`, oppure avviare R nella cartella `materiali/`, quindi eseguire:
-
-```r
-source("R/M01_figure.R")
-```
-
-Le dipendenze comuni e i dati restano nella cartella `materiali/`; scaricare l’intero repository prima di eseguire gli script.
+- Tappa 3: Primi passi in R.
+- Tappa 4: Dati nelle scienze della Terra.
+- Tappa 5: Strumenti di lavoro.
+- Tappa 6: Strutture dati.
+- Tappa 7: Dati e script.
+- Tappa 8: Unità e aggregazione.
+- Tappa 9: Documentare il contesto.
+- Tappa 10: Metodo di analisi.
+- Tappa 11: Domanda e disegno.
+- Tappa 12: Popolazione e campione.
+- Tappa 13: Leggere la tabella.
+- Tappa 14: Statistica di base.
+- Tappa 15: Indicatori di posizione.
+- Tappa 16: Formule e ordine dei dati.
+- Tappa 17: Terra 01 · teoria.
+- Tappa 18: Terra 01 · gerarchia.
+- Tappa 19: Terra 01 · formule.
+- Tappa 20: Terra 01 · calcolo.
+- Tappa 21: Terra 01 · effetto dei pesi.
+- Tappa 22: Terra 01 · generatore.
+- Tappa 23: Terra 01 · codice.
+- Tappa 24: Terra 01 · codice e output.
+- Tappa 25: Terra 01 · leggere il grafico.
+- Tappa 26: Laboratorio nel browser.
+- Tappa 27: Terra 01 · attività.
+- Tappa 28: Terra 01 · interpretazione.
+- Tappe 29–53: Campionamento e statistica.
+- Tappe 54–62: Statistica descrittiva.
+- Tappe 63–66: Gestione dei dati.
+- Tappa 67: Visualizzazione.
+- Tappe 68–70: Trasformazioni.
+- Tappe 71–83: Serie temporali.
+- Tappa 84: Conclusioni.
 
 ## Laboratori
 
@@ -78,4 +92,4 @@ Le dipendenze comuni e i dati restano nella cartella `materiali/`; scaricare l�
 
 ## Tracciabilità
 
-La numerazione coincide con il fascicolo R6. Il registro completo della rilettura si trova in [audit](../../materiali/audit/Registro_slide_R6.html). `modulo.json` raccoglie il contenuto destinato alla navigazione web e viene rigenerato dai sorgenti del corso.
+`modulo.json` raccoglie titolo, collocazione nel percorso e laboratori del modulo. La lezione a tappe è in `content/lezioni/M01.json`, generata dai sorgenti in `lezioni/M01_Terra/`; la spiegazione estesa delle tappe è in `content/lezioni/M01.md`.

@@ -16,32 +16,27 @@ Modelli età–profondità, proxy e propagazione dell’incertezza.
 | **Discontinuità e sensibilità della cronologia** · `#laboratorio/m13-hiatus` | Rappresentare un intervallo temporale privo di sedimentazione. | [R](../../R/experiments/m13-hiatus.R) |
 | **Durate entro uno stesso scenario** · `#laboratorio/m13-durate` | Propagare la covarianza nella durata fra due eventi. | [R](../../R/experiments/m13-durate.R) |
 
-Ogni attività esplicita formula, simboli, ipotesi e limiti del procedimento. Il materiale seguente conserva la numerazione delle slide e dei laboratori originali R6.
+Ogni attività esplicita formula, simboli, ipotesi e limiti del procedimento. Il materiale seguente descrive la lezione a tappe e i laboratori del modulo.
 <!-- END INTERACTIVE GUIDE -->
 
-**30 slide · 12 figure · 10 diagrammi TikZ · 20 laboratori.**
+**Lezione Strata: 63 tappe · 20 laboratori.**
 
-[PDF del modulo](../../materiali/pdf/M13_R6.pdf) · [Codice R delle figure](../../materiali/R/M13_figure.R) · [Sorgente LaTeX](../../materiali/sorgenti/M13_R6.tex) · [Indice del repository](../../README.md)
+[Presentazione PDF](../../assets/lezioni/M13/M13_Strata.pdf) · [Progetto R della lezione](../../assets/lezioni/M13/Strata_M13_progetto_R.zip) · [Sorgenti della lezione](../../lezioni/M13_Strata/) · [Indice del repository](../../README.md)
 
 ## Percorso
 
-- Pagina 3: Archivio, ancore e convenzioni temporali.
-- Pagina 7: Interpolazione e tassi di accumulo.
-- Pagina 11: Scenari cronologici e propagazione.
-- Pagina 16: Proxy e risoluzione temporale.
-- Pagina 21: Discontinuità e sensibilità del modello.
-- Pagina 25: Pendenze, durate ed eventi.
-- Pagina 30: Consegna e studio autonomo.
+Ogni slide della presentazione è una tappa del sito (`#lezione-M13`).
 
-## Esecuzione
-
-Aprire `materiali/Corso_Geologia.Rproj`, oppure avviare R nella cartella `materiali/`, quindi eseguire:
-
-```r
-source("R/M13_figure.R")
-```
-
-Le dipendenze comuni e i dati restano nella cartella `materiali/`; scaricare l’intero repository prima di eseguire gli script.
+- Tappa 3: Il caso guida.
+- Tappe 4–12: Archivio, ancore e convenzioni temporali.
+- Tappe 13–21: Interpolazione e tassi di accumulo.
+- Tappe 22–31: Scenari cronologici e propagazione.
+- Tappe 32–40: Proxy e risoluzione temporale.
+- Tappe 41–49: Discontinuità e sensibilità del modello.
+- Tappe 50–58: Pendenze, durate ed eventi.
+- Tappe 59–61: Consegna e studio autonomo.
+- Tappa 62: Sintesi.
+- Tappa 63: Riferimenti.
 
 ## Laboratori
 
@@ -70,4 +65,4 @@ Le dipendenze comuni e i dati restano nella cartella `materiali/`; scaricare l�
 
 ## Tracciabilità
 
-La numerazione coincide con il fascicolo R6. Il registro completo della rilettura si trova in [audit](../../materiali/audit/Registro_slide_R6.html). `modulo.json` raccoglie il contenuto destinato alla navigazione web e viene rigenerato dai sorgenti del corso.
+`modulo.json` raccoglie titolo, collocazione nel percorso e laboratori del modulo. La lezione a tappe è in `content/lezioni/M13.json`, generata dai sorgenti in `lezioni/M13_Strata/`; la spiegazione estesa delle tappe è in `content/lezioni/M13.md`.

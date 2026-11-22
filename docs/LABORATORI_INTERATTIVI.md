@@ -1,6 +1,6 @@
 # GeoStat Lab · Laboratori interattivi
 
-Il sito pone l’esperimento al centro del percorso. I 17 pianeti conservano la rotazione continua, le superfici e i caratteri Nimbus dell’atlante; ciascun modulo si apre sull’indice delle attività. PDF, slide, diagrammi TikZ e codici R6 rimangono consultabili attraverso una sezione di approfondimento.
+Il sito pone l’esperimento al centro del percorso. I 17 pianeti conservano la rotazione continua, le superfici e i caratteri Nimbus dell’atlante; ciascun modulo si apre sull’indice delle attività. Ogni modulo ha una lezione a tappe, una per slide della propria presentazione, con il codice R eseguibile e i laboratori collegati.
 
 ## Copertura didattica
 
@@ -68,7 +68,7 @@ Il sito conserva la navigazione da tastiera, etichette dei controlli e annunci d
 
 ## Dimensioni della distribuzione
 
-Le copie SVG delle slide e dei pannelli sono ottimizzate con SVGO 4.0.0, mantenendo otto cifre decimali e verificandone la resa. I PDF, i font e i sorgenti R6 restano identici agli originali. Dopo una nuova importazione con `--render`, l’ottimizzazione può essere ripetuta con `node scripts/optimize-svg.mjs` nell’ambiente che contiene SVGO; il pacchetto è necessario soltanto per questa operazione facoltativa. Gli SVG già ottimizzati sono inclusi nel repository e la build ordinaria continua a utilizzare soltanto Node.js.
+Le copie SVG delle slide delle spedizioni e dei relativi pannelli sono ottimizzate con SVGO 4.0.0, mantenendo otto cifre decimali e verificandone la resa; i PDF, i font e i sorgenti restano identici agli originali. L’ottimizzazione può essere ripetuta con `node scripts/optimize-svg.mjs` nell’ambiente che contiene SVGO; il pacchetto è necessario soltanto per questa operazione facoltativa. Gli SVG già ottimizzati sono inclusi nel repository e la build ordinaria continua a utilizzare soltanto Node.js.
 
 La distribuzione web esclude i file nascosti e i formati di chiave previsti dalla politica di build, i file temporanei di compilazione LaTeX e le copie PDF della cartella di collaudo `materiali/verifiche/`; i PDF consultabili sono in `materiali/pdf/`. Tutti i file originali restano conservati nel repository.
 

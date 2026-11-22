@@ -181,7 +181,7 @@ assert(materialLinks.includes('assets/lezioni/M02/Tellus_M02_gestione_dati.pdf')
 let formulas = 0;
 for (const m of catalog) {
   const data = JSON.parse(fs.readFileSync(path.join(root, 'moduli', m.id, 'modulo.json'), 'utf8'));
-  for (const s of data.slides) {
+  for (const s of data.slides || []) {
     const inputs = [s.formula, s.formulaAside].filter(Boolean).map(t => '\\begin{gathered}' + t + '\\end{gathered}');
     for (const field of ['body', 'aside', 'caption', 'recall']) {
       for (const match of (s[field] || '').matchAll(/\$([^$]+)\$/g)) inputs.push(match[1]);

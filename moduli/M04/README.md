@@ -19,35 +19,31 @@ Modelli del caso e propagazione dell’incertezza in R.
 | **Precisione della simulazione Monte Carlo** · `#laboratorio/m04-monte-carlo` | Separare incertezza numerica e variabilità del fenomeno. | [R](../../R/experiments/m04-monte-carlo.R) |
 | **Propagare incertezze correlate** · `#laboratorio/m04-propagazione` | Valutare l’incertezza di un rapporto fra misure positive. | [R](../../R/experiments/m04-propagazione.R) |
 
-Ogni attività esplicita formula, simboli, ipotesi e limiti del procedimento. Il materiale seguente conserva la numerazione delle slide e dei laboratori originali R6.
+Ogni attività esplicita formula, simboli, ipotesi e limiti del procedimento. Il materiale seguente descrive la lezione a tappe e i laboratori del modulo.
 <!-- END INTERACTIVE GUIDE -->
 
-**35 slide · 10 figure · 10 diagrammi TikZ · 20 laboratori.**
+**Lezione Aurea: 81 tappe · 20 laboratori.**
 
-[PDF del modulo](../../materiali/pdf/M04_R6.pdf) · [Codice R delle figure](../../materiali/R/M04_figure.R) · [Sorgente LaTeX](../../materiali/sorgenti/M04_R6.tex) · [Indice del repository](../../README.md)
+[Presentazione PDF](../../assets/lezioni/M04/Aurea_M04_probabilita_simulazione.pdf) · [Progetto R della lezione](../../assets/lezioni/M04/Aurea_M04_progetto_R.zip) · [Sorgenti della lezione](../../lezioni/M04_Aurea/) · [Indice del repository](../../README.md)
 
 ## Percorso
 
-- Pagina 3: Esiti, eventi e probabilità.
-- Pagina 6: Condizionamento e indipendenza.
-- Pagina 9: Variabili casuali e distribuzioni.
-- Pagina 12: Bernoulli e binomiale.
-- Pagina 15: Poisson ed esposizione.
-- Pagina 19: Normale, standardizzazione e quantili.
-- Pagina 23: Variabili positive e meccanismi moltiplicativi.
-- Pagina 26: Repliche e precisione Monte Carlo.
-- Pagina 29: Propagazione dell’incertezza.
-- Pagina 34: Laboratorio e riferimenti.
+Ogni slide della presentazione è una tappa del sito (`#lezione-M04`).
 
-## Esecuzione
-
-Aprire `materiali/Corso_Geologia.Rproj`, oppure avviare R nella cartella `materiali/`, quindi eseguire:
-
-```r
-source("R/M04_figure.R")
-```
-
-Le dipendenze comuni e i dati restano nella cartella `materiali/`; scaricare l’intero repository prima di eseguire gli script.
+- Tappe 3–8: Eventi e probabilità.
+- Tappa 9: Laboratorio · eventi.
+- Tappe 10–15: Condizionamento.
+- Tappa 16: Laboratorio · condizionamento.
+- Tappa 17: Condizionamento.
+- Tappe 18–24: Variabili e distribuzioni.
+- Tappa 25: Laboratorio · distribuzione.
+- Tappe 26–33: Bernoulli e binomiale.
+- Tappe 34–41: Poisson ed esposizione.
+- Tappe 42–49: Distribuzione normale.
+- Tappe 50–56: Variabilità moltiplicativa.
+- Tappe 57–65: Monte Carlo.
+- Tappe 66–76: Propagazione dell'incertezza.
+- Tappe 77–81: Applicazioni e consegna.
 
 ## Laboratori
 
@@ -76,4 +72,4 @@ Le dipendenze comuni e i dati restano nella cartella `materiali/`; scaricare l�
 
 ## Tracciabilità
 
-La numerazione coincide con il fascicolo R6. Il registro completo della rilettura si trova in [audit](../../materiali/audit/Registro_slide_R6.html). `modulo.json` raccoglie il contenuto destinato alla navigazione web e viene rigenerato dai sorgenti del corso.
+`modulo.json` raccoglie titolo, collocazione nel percorso e laboratori del modulo. La lezione a tappe è in `content/lezioni/M04.json`, generata dai sorgenti in `lezioni/M04_Aurea/`; la spiegazione estesa delle tappe è in `content/lezioni/M04.md`.

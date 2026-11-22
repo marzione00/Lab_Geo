@@ -18,34 +18,24 @@ Dalla geometria dei minimi quadrati alla valutazione predittiva.
 | **Dalla risposta binaria alla probabilità** · `#laboratorio/m07-logistica` | Collegare predittore lineare, probabilità e osservazioni binarie. | [R](../../R/experiments/m07-logistica.R) |
 | **Complessità e prestazione su nuovi dati** · `#laboratorio/m07-validazione` | Confrontare errore di adattamento e di previsione. | [R](../../R/experiments/m07-validazione.R) |
 
-Ogni attività esplicita formula, simboli, ipotesi e limiti del procedimento. Il materiale seguente conserva la numerazione delle slide e dei laboratori originali R6.
+Ogni attività esplicita formula, simboli, ipotesi e limiti del procedimento. Il materiale seguente descrive la lezione a tappe e i laboratori del modulo.
 <!-- END INTERACTIVE GUIDE -->
 
-**33 slide · 9 figure · 10 diagrammi TikZ · 20 laboratori.**
+**Lezione Annula: 100 tappe · 20 laboratori.**
 
-[PDF del modulo](../../materiali/pdf/M07_R6.pdf) · [Codice R delle figure](../../materiali/R/M07_figure.R) · [Sorgente LaTeX](../../materiali/sorgenti/M07_R6.tex) · [Indice del repository](../../README.md)
+[Presentazione PDF](../../assets/lezioni/M07/Annula_M07_regressione.pdf) · [Progetto R della lezione](../../assets/lezioni/M07/Annula_M07_progetto_R.zip) · [Sorgenti della lezione](../../lezioni/M07_Annula/) · [Indice del repository](../../README.md)
 
 ## Percorso
 
-- Pagina 3: Risposta, predittori e dominio.
-- Pagina 6: Correlazione e forma della relazione.
-- Pagina 9: Modello lineare e minimi quadrati.
-- Pagina 14: Incertezza e previsione.
-- Pagina 17: Diagnostica e osservazioni influenti.
-- Pagina 22: Predittori multipli e interazioni.
-- Pagina 26: Risposte binarie e probabilità.
-- Pagina 29: Valutazione su nuovi dati.
-- Pagina 32: Laboratorio e riferimenti.
+Ogni slide della presentazione è una tappa del sito (`#lezione-M07`).
 
-## Esecuzione
-
-Aprire `materiali/Corso_Geologia.Rproj`, oppure avviare R nella cartella `materiali/`, quindi eseguire:
-
-```r
-source("R/M07_figure.R")
-```
-
-Le dipendenze comuni e i dati restano nella cartella `materiali/`; scaricare l’intero repository prima di eseguire gli script.
+- Tappe 14–29: II · Modello lineare.
+- Tappe 30–41: III · Incertezza e previsione.
+- Tappe 42–55: IV · Diagnostica.
+- Tappe 56–70: V · Predittori e interazioni.
+- Tappe 71–81: VI · Risposte binarie.
+- Tappe 82–93: VII · Valutazione su nuovi dati.
+- Tappe 94–100: VIII · Un’analisi completa.
 
 ## Laboratori
 
@@ -74,4 +64,4 @@ Le dipendenze comuni e i dati restano nella cartella `materiali/`; scaricare l�
 
 ## Tracciabilità
 
-La numerazione coincide con il fascicolo R6. Il registro completo della rilettura si trova in [audit](../../materiali/audit/Registro_slide_R6.html). `modulo.json` raccoglie il contenuto destinato alla navigazione web e viene rigenerato dai sorgenti del corso.
+`modulo.json` raccoglie titolo, collocazione nel percorso e laboratori del modulo. La lezione a tappe è in `content/lezioni/M07.json`, generata dai sorgenti in `lezioni/M07_Annula/`; la spiegazione estesa delle tappe è in `content/lezioni/M07.md`.
