@@ -94,11 +94,22 @@ function prose(list, where) {
   return list;
 }
 
-export function explanations(source, slides) {
+// "## Capitolo · TITOLO" opens the introduction of a chapter: the title is the one of a section of the
+// lesson, and the text is shown on the region card and on the first tappa of that section.
+export function explanations(source, slides, sections = []) {
   const parts = source.split(/^## /m),
-    notes = {};
+    notes = {},
+    chapters = {};
   for (const part of parts.slice(1)) {
     const [head, ...body] = part.split('\n');
+    const c = /^Capitolo · (.+)$/.exec(head.trim());
+    if (c) {
+      const sec = sections.find(s => s.title === c[1]);
+      if (!sec) throw Error('Capitolo inesistente: ' + c[1]);
+      if (chapters[sec.first]) throw Error('Capitolo ripetuto: ' + c[1]);
+      chapters[sec.first] = prose(blocks(body.join('\n')), 'capitolo ' + c[1]);
+      continue;
+    }
     const m = /^(\d+) · (.+)$/.exec(head.trim());
     if (!m) throw Error('Intestazione di tappa non valida: ' + head);
     const page = Number(m[1]),
@@ -108,7 +119,7 @@ export function explanations(source, slides) {
     if (notes[page]) throw Error('Tappa ripetuta: ' + page);
     notes[page] = prose(blocks(body.join('\n')), 'tappa ' + page);
   }
-  return { intro: prose(blocks(parts[0]), 'introduzione'), notes };
+  return { intro: prose(blocks(parts[0]), 'introduzione'), notes, chapters };
 }
 
 const safe = v =>
@@ -234,13 +245,13 @@ export function buildLessons(root, out) {
     const exFile = 'content/esercizi/' + id + '.json';
     const exercises = fs.existsSync(path.join(root, exFile)) ? JSON.parse(read(exFile)) : null;
     const mdFile = 'content/lezioni/' + id + '.md';
-    const { intro, notes } = fs.existsSync(path.join(root, mdFile))
-      ? explanations(read(mdFile), lesson.slides)
-      : { intro: [], notes: {} };
+    const { intro, notes, chapters } = fs.existsSync(path.join(root, mdFile))
+      ? explanations(read(mdFile), lesson.slides, lesson.sections)
+      : { intro: [], notes: {}, chapters: {} };
     const files = projectFiles(path.join(root, cfg.source), lesson.project.files);
     checkLesson(root, id, lesson);
     const nb = notebooks(root, id, lesson, allNotebooks);
-    const data = { ...lesson, intro, notes, exercises, ...nb, project: { ...lesson.project, files } };
+    const data = { ...lesson, intro, notes, chapters, exercises, ...nb, project: { ...lesson.project, files } };
     fs.writeFileSync(
       path.join(out, 'assets/lessons', id + '.js'),
       'window.GEO_LESSONS=window.GEO_LESSONS||{};window.GEO_LESSONS.' + id + '=' + safe(data) + ';\n',

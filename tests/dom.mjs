@@ -224,19 +224,20 @@ assert.equal(d.querySelectorAll('.lesson-main > .lesson-panel').length, 4);
 w.location.hash = '#lezione-M05/110';
 await until(() => d.querySelector('.error h1')?.textContent === 'Pagina non trovata');
 w.location.hash = '#esplorazione/M05-c';
-await until(() => w.location.hash === '#esercizi-M05' && d.querySelectorAll('#verify-form input').length > 0);
+await until(() => w.location.hash === '#esercizi-M05' && d.querySelectorAll('#table-form input').length > 0);
+// The workbook pages hold a comparison table without checks, questions or completion marks.
 w.location.hash = '#esercizi-M05/2';
-await until(() => d.querySelectorAll('#verify-form input').length === 6);
-['-1', '0,258', '1.04', '-1', '0.129', '1'].forEach((v, i) => (d.querySelectorAll('#verify-form input')[i].value = v));
-d.querySelector('#verify-form').dispatchEvent(new w.Event('submit', { cancelable: true }));
-assert(d.getElementById('verify-status').textContent.startsWith('Tutti'));
-d.querySelectorAll('#verify-form input')[1].value = '0.26';
-d.querySelector('#verify-form').dispatchEvent(new w.Event('submit', { cancelable: true }));
-assert(d.getElementById('verify-status').textContent.startsWith('5 indicatori su 6'));
+await until(() => d.querySelector('.lesson-card h2')?.textContent === w.GEO_LESSONS.M05.exercises.cards[1].title);
+assert.equal(
+  d.querySelectorAll('#table-form input').length,
+  2 * new Set(w.GEO_LESSONS.M05.exercises.cards[1].fields.map(f => f.label)).size,
+);
+assert.equal(d.querySelectorAll('#verify-form, .lesson-card-nav b').length, 0);
+assert(![...d.querySelectorAll('.lesson-card h3')].some(h => h.textContent === 'Domande'));
+assert(!d.querySelector('.lesson-exercises').textContent.includes('previsione'));
 // A workbook without expected values (M06) shows the comparison table of the workbook.
 w.location.hash = '#esercizi-M06/1';
-await until(() => d.querySelectorAll('#table-form input').length > 0);
-assert.equal(d.querySelectorAll('#verify-form').length, 0);
+await until(() => d.querySelector('.lesson-card h2')?.textContent === w.GEO_LESSONS.M06?.exercises.cards[0].title);
 assert.equal(
   d.querySelectorAll('#table-form input').length,
   2 * (w.GEO_LESSONS.M06.exercises.cards[0].table.length - 1),

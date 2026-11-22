@@ -61,3 +61,5 @@ v("72 SD log R, SD R teorica con c = .7 e 0", c(sig(.7), sdR(.7), sig(0), sdR(0)
 v("73 tau^2", 2 * .1^2 * (1 - .7))
 u78 <- function(um, uV) 2.65 * sqrt((um / 106)^2 + (uV / 40)^2)
 v("78 riduzioni percentuali massa, volume", 100 * (1 - c(u78(.5, .6), u78(1, .3)) / u78(1, .6)))
+# 81 · situazioni e controlli
+v("81 P(nessun evento) con p = 0,001 e B = 500", (1 - 0.001)^500)

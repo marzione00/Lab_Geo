@@ -36,7 +36,7 @@ MARGIN = 42
 WIDTH = W - 2 * MARGIN
 LAB_URL = "https://marzione00.github.io/Lab_Geo/#laboratorio/"
 KEEP_EXERCISE = (
-    "id", "titolo", "obiettivo", "parametri_iniziali", "passi", "domande",
+    "id", "titolo", "obiettivo", "parametri_iniziali", "passi",
     "consegna", "verifica_locale", "limiti",
 )
 
@@ -154,7 +154,6 @@ def numbered(c: canvas.Canvas, title: str, lines: list[str], y: float,
 
 def verification_lines(e: dict) -> list[str]:
     return ['source("setup.R", encoding = "UTF-8")',
-            '# Eseguire dopo aver scritto la previsione.',
             'rA <- lab_'+e['id']+'()',
             'rB <- lab_'+e['id']+'('+e['variante']+')',
             'rbind(base = rA$metrics, variante = rB$metrics)']
@@ -243,12 +242,8 @@ def exercise_page(c,e,n,st):
     y-=25
     y=plain_block(c,'Obiettivo',e['obiettivo'],y,st)-9
     y=tint_block(c,'Impostazioni del confronto',e['parametri'],y,st)-10
-    y=plain_block(c,'Previsione',e['previsione'],y,st)
-    y=writing_lines(c,y,2)-8
     y=numbered(c,'Procedura',e['passi'],y,st)-7
     y=result_table(c,e,y)-12
-    y=plain_block(c,'Interpretazione',e['domanda'],y,st)
-    y=writing_lines(c,y,2)-8
     filename=f'Esercizi/{n:02d}_{e["id"]}.R'
     y=draw_code(c,verification_lines(e),filename,y)-10
     y=plain_block(c,'Condizioni e limiti',e['limite'],y,st,style='small')
@@ -263,9 +258,9 @@ def intro_page(c,d,st):
     y=draw_p(c,'Quaderno di esercitazione',MARGIN,y,WIDTH,st['subtitle'])-13
     y=draw_p(c,d['sottotitolo'],MARGIN,y,WIDTH,st['body'])-17
     y=numbered(c,'Come lavorare',[
-      'Scrivi una previsione, poi esegui lo scenario base e la variante. Cambia soltanto il parametro indicato.',
+      'Esegui lo scenario base e la variante, cambiando soltanto il parametro indicato.',
       'Annota i risultati senza ridurli alla dicitura significativo/non significativo. Specifica contrasto, unità e condizioni del confronto.',
-      'Completa la tabella e discuti la domanda. Il seme riproduce una simulazione nello stesso ambiente R.'
+      'Completa la tabella. Il seme riproduce una simulazione nello stesso ambiente R.'
     ],y,st)-12
     y=tint_block(c,'Nel progetto R',
        'Apri Gemina_M06.Rproj. Gli script in Esercizi/ caricano setup.R e le funzioni lab_*. '

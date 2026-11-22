@@ -3,7 +3,6 @@
 # Laboratorio: https://marzione00.github.io/Lab_Geo/#laboratorio/m04-propagazione
 # Aprire Aurea_M04.Rproj prima di eseguire questo file.
 # Eseguire a righe oppure con source(..., echo = TRUE).
-# Scrivere una previsione prima di leggere gli indicatori.
 
 source("setup.R", encoding = "UTF-8")
 # rho e cv si riferiscono ai logaritmi

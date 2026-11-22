@@ -36,7 +36,7 @@ MARGIN = 42
 WIDTH = W - 2 * MARGIN
 LAB_URL = "https://marzione00.github.io/Lab_Geo/#laboratorio/"
 KEEP_EXERCISE = (
-    "id", "titolo", "obiettivo", "parametri_iniziali", "passi", "domande",
+    "id", "titolo", "obiettivo", "parametri_iniziali", "passi",
     "consegna", "verifica_locale", "limiti",
 )
 
@@ -230,7 +230,6 @@ def measure_exercise(e: dict, st: dict) -> float:
     h += 16.5 + pheight(e["obiettivo"], WIDTH, st["body"]) + 9
     h += 12 + 16.5 + pheight(e["parametri_iniziali"], WIDTH - 24, st["body"]) + 10 + 11
     h += 16.5 + sum(pheight(x, WIDTH - 19, st["body"]) + 3.6 for x in e["passi"]) + 7
-    h += 16.5 + sum(pheight(x, WIDTH - 19, st["body"]) + 3.6 for x in e["domande"]) + 7
     h += 12 + 16.5 + pheight(e["consegna"], WIDTH - 24, st["body"]) + 10 + 10
     h += 21 + 22 + len(verification_lines(e)) * 13.0 + 10
     h += 16.5 + pheight(e["limiti"], WIDTH, st["small"])
@@ -259,7 +258,6 @@ def exercise_page(c: canvas.Canvas, e: dict, n: int, st: dict) -> dict:
     y = plain_block(c, "Obiettivo", e["obiettivo"], y, st) - 9
     y = tint_block(c, "Parametri iniziali", e["parametri_iniziali"], y, st) - 11
     y = numbered(c, "Procedura", e["passi"], y, st) - 7
-    y = numbered(c, "Domande", e["domande"], y, st, question=True) - 7
     y = tint_block(c, "Consegna", e["consegna"], y, st,
                    color=HexColor("#F1F3F3")) - 10
     name = f"{n:02d}_{e['id'].replace('m04-', '')}.R"
@@ -287,10 +285,9 @@ def intro_page(c: canvas.Canvas, d: dict, st: dict):
     y = draw_p(c, "Quaderno di esercitazione", MARGIN, y, WIDTH, st["subtitle"]) - 14
     y = draw_p(c, d["sottotitolo"], MARGIN, y, WIDTH, st["body"]) - 18
     y = plain_block(
-        c, "Prima della verifica",
-        "Per ogni esperimento, formulare una previsione, eseguire due scenari "
-        "e spiegare le differenze usando parametri, dati e regole del calcolo. "
-        "Annotare la previsione prima di leggere gli indicatori restituiti.",
+        c, "Come procedere",
+        "Per ogni esperimento si eseguono due scenari e si spiegano le differenze "
+        "usando parametri, dati e regole del calcolo.",
         y, st,
     ) - 13
     instructions = d["istruzioni_comuni"][:4]
@@ -356,7 +353,6 @@ def write_scripts(d: dict, out: Path):
             "# Laboratorio: " + LAB_URL + e["id"],
             "# Aprire Aurea_M04.Rproj prima di eseguire questo file.",
             "# Eseguire a righe oppure con source(..., echo = TRUE).",
-            "# Scrivere una previsione prima di leggere gli indicatori.",
             "",
         ]
         text = "\n".join(header + verification_lines(e)) + "\n"

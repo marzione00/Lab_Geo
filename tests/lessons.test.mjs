@@ -2,7 +2,6 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
 import { explanations, inline } from '../scripts/lessons/build-lessons.mjs';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -12,6 +11,37 @@ const cat = JSON.parse(read('content/catalogue.json')).modules;
 const NB = JSON.parse(read('content/notebook.json'));
 await import('../src/core.js');
 const C = globalThis.GeoCore;
+
+// Stile delle spiegazioni estese: prosa accademica senza formule di contrapposizione ricorrenti
+// e senza frasi che descrivono la slide al posto del concetto. Le righe di titolo sono escluse,
+// perché riportano alla lettera i titoli delle slide.
+const STYLE = [
+  /—/,
+  /\bnon solo\b/,
+  /\bnon soltanto\b/,
+  /\b[Ii]noltre\b/,
+  /\bIn sintesi\b/,
+  /\b[Ff]ondamental[ei]\b/,
+  /\b[Cc]rucial[ei]\b/,
+  /\b[Cc]onvien[ea]\b/,
+  /\bProva a\b/,
+  /\bsenza essere\b/,
+  /(?<!\p{L})anziché(?!\p{L})/u,
+  /\bma non\b/,
+  /, e non\b/,
+  /\binvece d(?:i|el|ella|ello|egli|elle|ei)\b/,
+  /\b[Ii]l richiamo (?:riassume|ricorda|indica|fissa|descrive|delimita|applica|distingue|elenca|chiude|sintetizza|dichiara|riprende)\b/,
+  /\bNel richiamo\b/,
+  /\b[Ll]a domanda (?:della slide )?chiede\b/,
+  /\btesto risponde\b/,
+  /\b[Ii]l testo della slide\b/,
+];
+const styleIssues = text =>
+  text
+    .split('\n')
+    .flatMap((line, i) =>
+      line.startsWith('## ') ? [] : STYLE.filter(p => p.test(line)).map(p => i + 1 + ': ' + p.source),
+    );
 
 for (const [id, cfg] of Object.entries(config)) {
   const L = JSON.parse(read('content/lezioni/' + id + '.json')),
@@ -98,9 +128,18 @@ for (const [id, cfg] of Object.entries(config)) {
   });
 
   test(id + ': spiegazioni estese con titoli identici alle slide e solo collegamenti ammessi', { skip: !md }, () => {
-    const { intro, notes } = explanations(read('content/lezioni/' + id + '.md'), L.slides);
+    const { intro, notes, chapters } = explanations(read('content/lezioni/' + id + '.md'), L.slides, L.sections);
     assert.ok(intro.length > 0);
     assert.ok(Object.keys(notes).length > 0);
+    // Ogni capitolo di almeno quattro tappe ha un'introduzione discorsiva, salvo le sezioni di cornice.
+    const frame =
+      /^(COPERTINA|PERCORSO|IL CASO GUIDA|SINTESI|RIFERIMENTI|DOMANDA CENTRALE|CONCLUSIONI|LABORATORI DELLA SPEDIZIONE)$/;
+    const due = L.sections.filter(sec => !frame.test(sec.title) && sec.last - sec.first >= 3).map(sec => sec.first);
+    assert.deepEqual(Object.keys(chapters).map(Number), due, 'introduzioni ai capitoli');
+    assert.throws(
+      () => explanations('## Capitolo · INESISTENTE\n\nTesto.', L.slides, L.sections),
+      /Capitolo inesistente/,
+    );
     assert.throws(() => inline('[x](javascript:alert(1))'), /Destinazione non ammessa/);
     assert.throws(() => explanations('## 16 · Titolo diverso\n\nTesto.', L.slides), /diverso dalla slide/);
     for (const blocks of [intro, ...Object.values(notes)])
@@ -110,17 +149,18 @@ for (const [id, cfg] of Object.entries(config)) {
       /Solo paragrafi/,
     );
     assert.throws(() => explanations('## 16 · ' + L.slides[15].title + '\n\n- voce', L.slides), /Solo paragrafi/);
-    const text = read('content/lezioni/' + id + '.md');
-    for (const banned of ['—', 'non solo', 'Inoltre', 'In sintesi', 'fondamentale', 'cruciale', 'Conviene', 'Prova a'])
-      assert.ok(!text.includes(banned), 'espressione da evitare: ' + banned);
+    assert.deepEqual(styleIssues(read('content/lezioni/' + id + '.md')), [], 'espressioni da evitare');
+    assert.deepEqual(styleIssues('## 3 · Quando conviene\n\nTesto.'), [], 'i titoli delle slide restano esclusi');
+    assert.equal(styleIssues('Il richiamo riassume la regola.\nUna stima, e non una misura.').length, 2);
   });
 
-  test(id + ': schede del quaderno con scenari validi e controlli numerici', { skip: !E }, () => {
+  test(id + ': schede del quaderno con scenari validi, senza domande né controlli', { skip: !E }, () => {
     assert.ok(E.cards.length >= 9);
     for (const c of E.cards) {
       assert.ok(labs.has(c.id));
       assert.deepEqual(Object.keys(c.scenarios).sort(), ['A', 'B']);
-      // Quaderni con valori attesi: indicatori da verificare; senza (M06): la tabella del confronto.
+      // Quaderni con valori attesi: gli indicatori danno le colonne della tabella; senza (M06): la tabella del quaderno.
+      assert.ok(!('questions' in c), c.id);
       assert.ok(cfg.expected ? c.fields.length >= 1 : c.fields.length === 0 && c.table.length >= 2, c.id);
       assert.ok(fs.existsSync(path.join(root, cfg.source, c.script.file)), c.script.file);
       for (const f of c.fields) {
@@ -172,22 +212,4 @@ test('Notebook svolti: venti per lezione M01-M12, pagine e tappe esistenti, arch
       if (['M10', 'M11', 'M12'].includes(id)) assert.ok(n.pages.length > 0, n.id);
     }
   }
-});
-
-test('Verifica numerica delle schede: virgola, tolleranza e testo non numerico', () => {
-  const ctx = vm.createContext({
-    GeoHTML: { html: () => '' },
-    GeoSecurity: { limits: { notes: 20000, code: 100000 } },
-  });
-  vm.runInContext(read('src/lessons.js'), ctx);
-  const { check, parse } = ctx.GeoLessons;
-  const se = { value: 0.258198889747161, tol: 0.0005 },
-    exact = { value: -1, tol: 0 };
-  assert.ok(check(se, '0,258'));
-  assert.ok(check(se, ' 0.2582 '));
-  assert.ok(!check(se, '0.26'));
-  assert.ok(check(exact, '-1'));
-  assert.ok(!check(exact, '-1.001'));
-  assert.ok(Number.isNaN(parse('1,2,3')));
-  assert.ok(Number.isNaN(parse('abc')));
 });

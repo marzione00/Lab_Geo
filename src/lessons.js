@@ -40,10 +40,9 @@
               {
                 values: Object.fromEntries(
                   Object.entries(c.values || {})
-                    .filter(([f, x]) => /^[AB]:[a-z_]{1,40}$/.test(f) && typeof x === 'string' && x.length < 40)
+                    .filter(([f, x]) => /^[AB]:[a-z_0-9]{1,40}$/.test(f) && typeof x === 'string' && x.length < 40)
                     .slice(0, 40),
                 ),
-                passed: c.passed === true,
                 notes: typeof c.notes === 'string' ? c.notes.slice(0, S.limits.notes) : '',
               },
             ]),
@@ -502,9 +501,17 @@
       .filter(sec => !L.slides.slice(sec.first - 1, sec.last).every(s => s.lines || s.question))
       .map(sec => {
         const tappe = L.slides.slice(sec.first - 1, sec.last);
-        return html`<article class="lesson-region-card"><p class="eyebrow">Tappe ${sec.first}–${sec.last}</p><h2>${regionName(sec.title)}</h2><p class="lesson-small">${tappe.length} tappe · ${tappe.filter(s => done.has(L.id + ':' + s.page)).length} studiate</p><ol start="${sec.first}">${tappe.map(s => html`<li><a href="#lezione-${L.id}/${s.page}">${s.title}</a></li>`)}</ol></article>`;
+        return html`<article class="lesson-region-card"><p class="eyebrow">Tappe ${sec.first}–${sec.last}</p><h2>${regionName(sec.title)}</h2><p class="lesson-small">${tappe.length} tappe · ${tappe.filter(s => done.has(L.id + ':' + s.page)).length} studiate</p>${L.chapters?.[sec.first] ? html`<div class="lesson-chapter-intro">${blocks(L.chapters[sec.first])}</div>` : ''}<ol start="${sec.first}">${tappe.map(s => html`<li><a href="#lezione-${L.id}/${s.page}">${s.title}</a></li>`)}</ol></article>`;
       })}</section></div>`;
     typeset(main.querySelector('.lesson-intro'));
+    typeset(main.querySelector('.lesson-regions'));
+  }
+  // Introduction of the chapter, on the first tappa of its section.
+  function chapterPanel(L, sec, page) {
+    const text = page === sec.first && L.chapters?.[page];
+    return text
+      ? html`<section class="lesson-panel lesson-notes lesson-chapter" aria-label="Introduzione al capitolo ${regionName(sec.title)}"><p class="eyebrow">Capitolo · ${regionName(sec.title)}</p>${blocks(text)}</section>`
+      : '';
   }
   function notebookPanel(L, page) {
     const list = (L.notebooks || []).filter(nb => nb.pages.includes(page));
@@ -531,7 +538,7 @@
       ],
       prev = L.slides[page - 2],
       next = L.slides[page];
-    main.innerHTML = html`<div class="viewer lesson-viewer">${crumbs(L, 'Tappa ' + page)}<div class="reader-layout">${sidebar(L, page)}<div class="reader-main lesson-main"><div class="reader-title"><h1>${s.title}</h1><span class="page-counter">${String(page).padStart(2, '0')} / ${L.pages}</span></div><div class="reader-tools"><p class="lesson-stop"><span class="lesson-stop-code">${L.planet} · ${page}</span> ${regionName(sec.title)}${sec.first < sec.last ? ' · tappe ' + sec.first + '–' + sec.last : ''}</p><div class="pager"><button data-step="-1" aria-label="Tappa precedente"${prev ? '' : ' disabled'}>←</button><button data-step="1" aria-label="Tappa successiva"${next ? '' : ' disabled'}>→</button></div></div>${slidePanel(L, s)}<div class="slide-caption lesson-caption"><span>Slide originale</span><a href="${L.pdf}#page=${page}" target="_blank" rel="noopener">Pagina ${page} del PDF ↗</a></div>${L.notes[page] ? html`<section class="lesson-panel lesson-notes" aria-label="Commento alla slide ${page}">${blocks(L.notes[page])}</section>` : ''}${codePanel(L, codes)}${notebookPanel(L, page)}${
+    main.innerHTML = html`<div class="viewer lesson-viewer">${crumbs(L, 'Tappa ' + page)}<div class="reader-layout">${sidebar(L, page)}<div class="reader-main lesson-main"><div class="reader-title"><h1>${s.title}</h1><span class="page-counter">${String(page).padStart(2, '0')} / ${L.pages}</span></div><div class="reader-tools"><p class="lesson-stop"><span class="lesson-stop-code">${L.planet} · ${page}</span> ${regionName(sec.title)}${sec.first < sec.last ? ' · tappe ' + sec.first + '–' + sec.last : ''}</p><div class="pager"><button data-step="-1" aria-label="Tappa precedente"${prev ? '' : ' disabled'}>←</button><button data-step="1" aria-label="Tappa successiva"${next ? '' : ' disabled'}>→</button></div></div>${slidePanel(L, s)}<div class="slide-caption lesson-caption"><span>Slide originale</span><a href="${L.pdf}#page=${page}" target="_blank" rel="noopener">Pagina ${page} del PDF ↗</a></div>${chapterPanel(L, sec, page)}${L.notes[page] ? html`<section class="lesson-panel lesson-notes" aria-label="Commento alla slide ${page}">${blocks(L.notes[page])}</section>` : ''}${codePanel(L, codes)}${notebookPanel(L, page)}${
       labs.length
         ? html`<section class="lesson-panel lesson-labs" aria-labelledby="lesson-labs-title"><h2 id="lesson-labs-title">Laboratorio</h2><ul>${labs.map(
             lab => {
@@ -589,42 +596,21 @@
   }
 
   // ---------------------------------------------------------------- exercises
-  const parse = text => {
-    const t = String(text).trim().replace(/\s/g, '').replace(',', '.');
-    return /^[-+]?(?:\d+\.?\d*|\.\d+)(?:e[-+]?\d+)?$/i.test(t) ? Number(t) : NaN;
-  };
-  const check = (field, text) => {
-    const x = parse(text);
-    return Number.isFinite(x) && Math.abs(x - field.value) <= field.tol + 1e-12;
-  };
-  const fieldKey = f => f.scenario + ':' + f.key;
-  // Verification of the indicators, or (workbooks without expected values) the table the workbook asks for.
-  function verifySection(card, saved) {
-    if (!card.fields.length) {
-      const [first, ...cols] = card.table || ['Scenario'];
-      return html`<section class="lesson-verify" aria-labelledby="verify-title"><h3 id="verify-title">Tabella del confronto</h3><p class="lesson-small">Esegui i due scenari nel laboratorio o con il codice qui sotto e riporta i valori come li chiede il quaderno. Il quaderno non indica valori attesi: la tabella serve al confronto fra gli scenari.</p><form id="table-form" novalidate><div class="lesson-table-wrap"><table class="lesson-table"><thead><tr><th>${first}</th>${cols.map(c => html`<th>${c}</th>`)}</tr></thead><tbody>${[
-        'A',
-        'B',
-      ].map(
-        name =>
-          html`<tr><td>Scenario ${name}</td>${cols.map(
-            (c, i) =>
-              html`<td><input type="text" autocomplete="off" name="${name}:${i}" aria-label="${c}, scenario ${name}" value="${saved.values[name + ':' + i] || ''}"></td>`,
-          )}</tr>`,
-      )}</tbody></table></div></form>`;
-    }
-    return html`<section class="lesson-verify" aria-labelledby="verify-title"><h3 id="verify-title">Verifica dei risultati</h3><p class="lesson-small">Esegui i due scenari nel laboratorio o con il codice qui sotto, poi riporta gli indicatori come li mostra il sito (tre cifre significative). Il controllo accetta la virgola o il punto decimale e non mostra i valori attesi.</p><form id="verify-form" novalidate>${[
+  // Table of the comparison: the columns of the workbook (M06) or the indicators shown by the laboratory.
+  // The values stay in this browser; the page does not check them.
+  function comparisonSection(card, saved) {
+    const [first, ...cols] = card.table || ['Scenario', ...new Set(card.fields.map(f => f.label))];
+    if (!cols.length) return html`<section class="lesson-verify">`;
+    return html`<section class="lesson-verify" aria-labelledby="verify-title"><h3 id="verify-title">Tabella del confronto</h3><p class="lesson-small">Esegui i due scenari nel laboratorio o con il codice qui sotto e riporta i valori come li mostra il sito.</p><form id="table-form" novalidate><div class="lesson-table-wrap"><table class="lesson-table"><thead><tr><th>${first}</th>${cols.map(c => html`<th>${c}</th>`)}</tr></thead><tbody>${[
       'A',
       'B',
     ].map(
       name =>
-        html`<fieldset><legend>Scenario ${name}</legend>${card.fields
-          .filter(f => f.scenario === name)
-          .map(
-            f =>
-              html`<label><span>${f.label}</span><input type="text" inputmode="decimal" autocomplete="off" name="${fieldKey(f)}" value="${saved.values[fieldKey(f)] || ''}" aria-describedby="fb-${f.scenario}-${f.key}"><small id="fb-${f.scenario}-${f.key}" class="lesson-feedback" aria-live="polite"></small></label>`,
-          )}</fieldset>`,
-    )}<button class="button" type="submit">Verifica</button><p id="verify-status" class="lesson-verify-status" role="status">${saved.passed ? 'Esercizio già verificato in questo browser.' : ''}</p></form>`;
+        html`<tr><td>Scenario ${name}</td>${cols.map(
+          (c, i) =>
+            html`<td><input type="text" autocomplete="off" name="${name}:${i}" aria-label="${c}, scenario ${name}" value="${saved.values[name + ':' + i] || ''}"></td>`,
+        )}</tr>`,
+    )}</tbody></table></div></form>`;
   }
   // Solved notebooks (M01-M12): pages of their own, opened in a new tab; sources in one archive per lesson.
   function notebooksSection(L) {
@@ -646,50 +632,22 @@
       card = E.cards[n - 1],
       cardKey = L.id + ':' + n,
       state = load(),
-      saved = state.cards[cardKey] || { values: {}, passed: false, notes: '' },
+      saved = state.cards[cardKey] || { values: {}, notes: '' },
       world = root.GeoAstro?.generate(L.id, 0)?.planets.find(p => p.id === L.exercisesWorld),
       worldName = world?.name || L.exercisesWorld;
     const scenario = name =>
       html`<a class="button secondary" href="${labUrl(card.id, card.scenarios[name].link.params)}">Scenario ${name} nel laboratorio${Object.keys(card.scenarios[name].link.params).length ? html` · ${paramText(card.scenarios[name].link.params)}` : ''} ↗</a>`;
-    main.innerHTML = html`<div class="wrap lesson-exercises"><div class="breadcrumb"><a href="#indice">Galassia</a><span>/</span><a href="#sistema-${L.id}">Sistema ${system(L.id)}</a><span>/</span><a href="#esercizi-${L.id}">${worldName} · Esercizi</a><span>/</span><span>Esercizio ${n}</span></div><header class="module-head lesson-head"><p class="eyebrow">${L.id} · ${worldName.toUpperCase()} · PIANETA DEGLI ESERCIZI</p><h1>Quaderno di ${L.planet}</h1><p class="lead">${E.subtitle}${/[.!?]$/.test(E.subtitle) ? '' : '.'} Gli esercizi usano i concetti delle tappe della lezione su ${L.planet}.</p><details class="lesson-common"><summary>Istruzioni comuni</summary><ol>${E.common.map(t => html`<li>${t}</li>`)}</ol></details><div class="lab-actions"><a class="button secondary" href="${L.workbook}" target="_blank" rel="noopener">Quaderno in PDF ↗</a><a class="button secondary" href="${L.download}" download>Progetto R: codice e dati</a><a class="button secondary" href="#lezione-${L.id}">◎ Torna alle tappe di ${L.planet}</a></div></header><nav class="lesson-card-nav" aria-label="Esercizi del quaderno">${E.cards.map(c => html`<a href="#esercizi-${L.id}/${c.n}"${c.n === n ? html` aria-current="page"` : ''}><span>${c.n}</span> ${c.title}${state.cards[L.id + ':' + c.n]?.passed ? html` <b aria-label="verificato">✓</b>` : ''}</a>`)}</nav><article class="lesson-card"><p class="eyebrow">Esercizio ${n} di ${E.cards.length} · laboratorio ${card.id}</p><h2>${card.title}</h2><p class="lead">${card.goal}</p><div class="lesson-card-grid"><section><h3>Parametri iniziali</h3><p>${card.start}</p><div class="lab-actions">${scenario('A')}${scenario('B')}</div><h3>Passi</h3><ol>${card.steps.map(t => html`<li>${t}</li>`)}</ol><h3>Domande</h3><ol>${card.questions.map(t => html`<li>${t}</li>`)}</ol>${card.deliver ? html`<h3>Consegna</h3><p>${card.deliver}</p>` : ''}<p class="lesson-small"><strong>Limiti del modello.</strong> ${card.limits}</p></section>${verifySection(card, saved)}<label class="lesson-notes-label" for="card-notes">Risposte alle domande e confronto fra gli scenari</label><textarea id="card-notes" class="lab-notes" rows="6" maxlength="${S.limits.notes}">${saved.notes}</textarea><p class="lesson-small">Valori e risposte restano soltanto in questo browser.</p></section></div><section class="lesson-panel lesson-code-section" aria-labelledby="card-code-title"><h3 id="card-code-title">Codice R dell’esercizio</h3><p class="lesson-small">Lo script del quaderno chiama le funzioni del progetto ${L.planet} con i parametri dei due scenari. Scrivi una previsione prima di eseguirlo.</p><p class="lab-engine-state" role="status" aria-live="polite" data-engine></p><article class="lesson-code" data-card><header><h3>${card.script.file}</h3></header><label class="sr-only" for="card-editor">Codice R modificabile dell’esercizio</label><textarea class="lab-editor lesson-editor" id="card-editor" spellcheck="false" maxlength="${S.limits.code}" rows="${Math.min(22, card.script.code.split('\n').length + 1)}">${card.script.code}</textarea><div class="lab-actions"><button type="button" class="button small" data-run>Esegui in R</button><button type="button" class="button small secondary" data-restore>Ripristina</button><button type="button" class="button small secondary" data-download>Scarica .R</button></div><p class="lesson-output-head" data-head>L’uscita comparirà dopo l’esecuzione.</p><pre class="lab-code-output lesson-output" tabindex="0" role="region" aria-label="Uscita di R dell’esercizio" data-output></pre></article></section><nav class="lesson-pager" aria-label="Esercizi vicini">${n > 1 ? html`<a href="#esercizi-${L.id}/${n - 1}">← Esercizio ${n - 1}</a>` : html`<span></span>`}${n < E.cards.length ? html`<a href="#esercizi-${L.id}/${n + 1}">Esercizio ${n + 1} →</a>` : html`<a href="#lezione-${L.id}">Tappe di ${L.planet} →</a>`}</nav></article>${notebooksSection(L)}</div>`;
-    const form = main.querySelector('#verify-form'),
-      table = main.querySelector('#table-form'),
+    main.innerHTML = html`<div class="wrap lesson-exercises"><div class="breadcrumb"><a href="#indice">Galassia</a><span>/</span><a href="#sistema-${L.id}">Sistema ${system(L.id)}</a><span>/</span><a href="#esercizi-${L.id}">${worldName} · Esercizi</a><span>/</span><span>Esercizio ${n}</span></div><header class="module-head lesson-head"><p class="eyebrow">${L.id} · ${worldName.toUpperCase()} · PIANETA DEGLI ESERCIZI</p><h1>Quaderno di ${L.planet}</h1><p class="lead">${E.subtitle}${/[.!?]$/.test(E.subtitle) ? '' : '.'} Gli esercizi usano i concetti delle tappe della lezione su ${L.planet}.</p><details class="lesson-common"><summary>Istruzioni comuni</summary><ol>${E.common.map(t => html`<li>${t}</li>`)}</ol></details><div class="lab-actions"><a class="button secondary" href="${L.workbook}" target="_blank" rel="noopener">Quaderno in PDF ↗</a><a class="button secondary" href="${L.download}" download>Progetto R: codice e dati</a><a class="button secondary" href="#lezione-${L.id}">◎ Torna alle tappe di ${L.planet}</a></div></header><nav class="lesson-card-nav" aria-label="Esercizi del quaderno">${E.cards.map(c => html`<a href="#esercizi-${L.id}/${c.n}"${c.n === n ? html` aria-current="page"` : ''}><span>${c.n}</span> ${c.title}</a>`)}</nav><article class="lesson-card"><p class="eyebrow">Esercizio ${n} di ${E.cards.length} · laboratorio ${card.id}</p><h2>${card.title}</h2><p class="lead">${card.goal}</p><div class="lesson-card-grid"><section><h3>Parametri iniziali</h3><p>${card.start}</p><div class="lab-actions">${scenario('A')}${scenario('B')}</div><h3>Passi</h3><ol>${card.steps.map(t => html`<li>${t}</li>`)}</ol>${card.deliver ? html`<h3>Consegna</h3><p>${card.deliver}</p>` : ''}<p class="lesson-small"><strong>Limiti del modello.</strong> ${card.limits}</p></section>${comparisonSection(card, saved)}<label class="lesson-notes-label" for="card-notes">Appunti sul confronto fra gli scenari</label><textarea id="card-notes" class="lab-notes" rows="6" maxlength="${S.limits.notes}">${saved.notes}</textarea><p class="lesson-small">Valori e appunti restano soltanto in questo browser.</p></section></div><section class="lesson-panel lesson-code-section" aria-labelledby="card-code-title"><h3 id="card-code-title">Codice R dell’esercizio</h3><p class="lesson-small">Lo script del quaderno chiama le funzioni del progetto ${L.planet} con i parametri dei due scenari.</p><p class="lab-engine-state" role="status" aria-live="polite" data-engine></p><article class="lesson-code" data-card><header><h3>${card.script.file}</h3></header><label class="sr-only" for="card-editor">Codice R modificabile dell’esercizio</label><textarea class="lab-editor lesson-editor" id="card-editor" spellcheck="false" maxlength="${S.limits.code}" rows="${Math.min(22, card.script.code.split('\n').length + 1)}">${card.script.code}</textarea><div class="lab-actions"><button type="button" class="button small" data-run>Esegui in R</button><button type="button" class="button small secondary" data-restore>Ripristina</button><button type="button" class="button small secondary" data-download>Scarica .R</button></div><p class="lesson-output-head" data-head>L’uscita comparirà dopo l’esecuzione.</p><pre class="lab-code-output lesson-output" tabindex="0" role="region" aria-label="Uscita di R dell’esercizio" data-output></pre></article></section><nav class="lesson-pager" aria-label="Esercizi vicini">${n > 1 ? html`<a href="#esercizi-${L.id}/${n - 1}">← Esercizio ${n - 1}</a>` : html`<span></span>`}${n < E.cards.length ? html`<a href="#esercizi-${L.id}/${n + 1}">Esercizio ${n + 1} →</a>` : html`<a href="#lezione-${L.id}">Tappe di ${L.planet} →</a>`}</nav></article>${notebooksSection(L)}</div>`;
+    const table = main.querySelector('#table-form'),
       notes = main.querySelector('#card-notes');
     const persist = patch => {
       const st = load();
-      st.cards[cardKey] = { ...(st.cards[cardKey] || { values: {}, passed: false, notes: '' }), ...patch };
+      st.cards[cardKey] = { ...(st.cards[cardKey] || { values: {}, notes: '' }), ...patch };
       save(st);
     };
     table?.addEventListener('input', () =>
       persist({ values: Object.fromEntries([...table.elements].map(i => [i.name, i.value.slice(0, 39)])) }),
     );
-    form?.addEventListener('submit', e => {
-      e.preventDefault();
-      const values = {};
-      let right = 0;
-      for (const f of card.fields) {
-        const input = form.elements[fieldKey(f)],
-          fb = main.querySelector('#fb-' + f.scenario + '-' + f.key),
-          ok = check(f, input.value);
-        values[fieldKey(f)] = input.value.slice(0, 39);
-        input.setAttribute('aria-invalid', String(!ok && input.value.trim() !== ''));
-        fb.textContent = !input.value.trim()
-          ? 'Da compilare'
-          : ok
-            ? '✓ Corrisponde'
-            : Number.isFinite(parse(input.value))
-              ? 'Non corrisponde: controlla scenario, parametri e arrotondamento'
-              : 'Scrivi un numero';
-        fb.dataset.ok = String(ok);
-        if (ok) right++;
-      }
-      const passed = right === card.fields.length;
-      persist({ values, passed: passed || (load().cards[cardKey]?.passed ?? false) });
-      main.querySelector('#verify-status').textContent = passed
-        ? 'Tutti gli indicatori corrispondono. Completa le risposte alle domande.'
-        : right + ' indicatori su ' + card.fields.length + ' corrispondono.';
-      announce(main.querySelector('#verify-status').textContent);
-    });
     notes.addEventListener('input', () => persist({ notes: notes.value.slice(0, S.limits.notes) }));
     const box = main.querySelector('[data-card]'),
       editor = box.querySelector('textarea');
@@ -722,5 +680,5 @@
     });
     engineState(main);
   }
-  root.GeoLessons = Object.freeze({ configure, cleanup, forWorld, lesson, exercises, check, parse, tone });
+  root.GeoLessons = Object.freeze({ configure, cleanup, forWorld, lesson, exercises, tone });
 })(globalThis);

@@ -3,7 +3,6 @@
 # Laboratorio: https://marzione00.github.io/Lab_Geo/#laboratorio/m02-selezioni
 # Aprire Tellus_M02.Rproj prima di eseguire questo file.
 # Eseguire a righe oppure con source(..., echo = TRUE).
-# Scrivere una previsione prima di leggere gli indicatori.
 
 source("Tellus_laboratori.R", encoding = "UTF-8")
 # Confronta gli estremi nei due ordini.
