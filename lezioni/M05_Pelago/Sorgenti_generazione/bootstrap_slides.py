@@ -929,7 +929,7 @@ X_t=\rho X_{t-1}+\sqrt{1-\rho^2}\,Z_t,
 ''',r'''
 \PCode{R · la serie di 120 valori}{088_serie_temporale.R}
 \PBody{I tratti consecutivi tendono a mantenere segni e livelli vicini. La relazione dipende dalla distanza temporale.}
-\PInfo{Il caso browser usa 120 osservazioni e blocchi circolari. Il precedente fascicolo R6 usa un altro esempio, con 160 valori e blocchi mobili.}
+\PInfo{Il caso browser usa 120 osservazioni e blocchi circolari.}
 ''',"Per una serie dipendente, l'ordine delle osservazioni contiene informazioni necessarie per valutare l'incertezza.")
 
 code(89,"varianza_ar1",'''

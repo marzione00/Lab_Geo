@@ -6,7 +6,7 @@ Marzio De Corato · GeoStat Lab · M11 · edizione 20 novembre 2026.
 
 Il punto di partenza è [M11 nel repository Lab_Geo](https://github.com/marzione00/Lab_Geo/tree/649f7cc577b96bd1044d81e78a2f530813e4f96b/moduli/M11), revisione 649f7cc577b96bd1044d81e78a2f530813e4f96b, consultata il 20 novembre 2026. I 36 file acquisiti comprendono README e JSON del modulo, sorgenti Python/XeLaTeX/R, due CSV, 20 laboratori R e nove esperimenti. Le copie originali sono conservate nel pacchetto, con confronto al Git blob SHA-1 e impronte SHA-256.
 
-La revisione sviluppa le 32 pagine R6 in 110 slide. Mantiene i 20 identificativi M11_N01–M11_N20 e i temi originali, aggiungendo formalizzazione, esempi, controlli, risultati eseguiti e discussione dei limiti. La tabella di raccordo permette di distinguere l’estensione editoriale dai materiali originali.
+La lezione sviluppa il modulo in 110 slide. Mantiene i 20 identificativi M11_N01–M11_N20 e i temi del corso, aggiungendo formalizzazione, esempi, controlli, risultati eseguiti e discussione dei limiti. La tabella di raccordo permette di distinguere l’estensione editoriale dai materiali originali.
 
 ## Fonti primarie e documentazione
 

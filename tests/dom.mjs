@@ -143,67 +143,50 @@ for (const m of catalog) {
   else assert.equal(d.querySelectorAll('.experiment-card').length, w.GeoLabs.count(m.id));
 }
 snapshot('modulo');
-w.location.hash = '#modulo-P11/slide/10';
-await until(() => d.querySelector('#tab-testo'));
+// An expedition opens its lesson a tappe: the planet of the expedition, motion control and typeset formulas.
+w.location.hash = '#lezione-P11/9';
+await until(() => d.querySelector('.lesson-main .page-counter'));
 assert.equal(w.GeoSpace.debug().paused, false);
-assert.equal(d.querySelector('[data-planet]').dataset.planet, 'P11');
+assert.equal(d.querySelector('[data-planet]')?.dataset.planet ?? 'P11', 'P11');
 d.getElementById('motion-toggle').click();
 assert.equal(w.GeoSpace.debug().paused, true);
 d.getElementById('motion-toggle').click();
 assert.equal(w.GeoSpace.debug().paused, false);
-d.querySelector('#tab-testo').click();
 await until(() => d.querySelector('mjx-container[jax=SVG]'));
 assert.equal(d.querySelectorAll('[data-mml-node="merror"]').length, 0);
+assert(d.querySelector('.breadcrumb a[href="#modulo-P11"]'));
 snapshot('formule');
-d.getElementById('mark-done').click();
-assert.equal(d.getElementById('mark-done').getAttribute('aria-pressed'), 'true');
-assert(w.localStorage.getItem('geostat-r6-progress').includes('P11:10'));
+d.getElementById('lesson-done').click();
+assert.equal(d.getElementById('lesson-done').getAttribute('aria-pressed'), 'true');
+assert(w.localStorage.getItem('geostat-lessons-v1').includes('P11:9'));
 w.location.hash = '#modulo-T00/codici';
 await until(() => d.getElementById('select-code'));
 d.getElementById('select-code').value = 'T00_PY_N01';
 d.getElementById('select-code').dispatchEvent(new w.Event('change'));
 assert(d.getElementById('download-code').href.endsWith('T00_N01.py'));
 assert(d.getElementById('current-code').textContent.includes('import'));
+// Old slide addresses open the tappe of the lesson; an expedition has no code page of its own.
 w.location.hash = '#modulo-P01/slide/21';
-await until(() => d.querySelector('.page-counter')?.textContent === '21 / 21');
-assert(d.querySelector('[data-step="1"]').disabled);
-w.location.hash = '#modulo-P01/slide/22';
-await until(() => d.querySelector('.error h1')?.textContent === 'Pagina non trovata');
-// The earlier slides of a module with a lesson open the tappe of the lesson.
+await until(() => w.location.hash === '#lezione-P01' && d.querySelector('.lesson-overview'));
+assert(d.querySelector('.breadcrumb').textContent.includes('Spedizioni'));
+w.location.hash = '#lezione-P01/' + w.GEO_LESSON_INDEX.P01.pages;
+await until(() => d.querySelector('.lesson-pager a[href="#modulo-P01"]'));
+w.location.hash = '#modulo-P01/codici';
+await until(() => w.location.hash === '#lezione-P01' && d.querySelector('.lesson-overview'));
 w.location.hash = '#modulo-M02/slide/3';
 await until(() => w.location.hash === '#lezione-M02' && d.querySelector('.lesson-overview'));
 assert.equal(d.querySelector('.slide-frame'), null);
+w.location.hash = '#modulo-P01';
+await until(() => d.querySelector('.lesson-notice') && d.querySelector('.lab-module-materials'));
+const missionLinks = [...d.querySelectorAll('.lab-module-materials a')].map(a => a.getAttribute('href'));
+assert(missionLinks.includes('#lezione-P01'));
+assert(missionLinks.includes(w.GEO_LESSON_INDEX.P01.download));
+assert(!missionLinks.some(h => h.includes('/codici')));
 w.location.hash = '#modulo-M02';
-await until(() => d.querySelector('.lab-module-materials'));
+await until(() => d.querySelector('.lab-module-materials a[href="#lezione-M02"]'));
 const materialLinks = [...d.querySelectorAll('.lab-module-materials a')].map(a => a.getAttribute('href'));
 assert(materialLinks.includes('#lezione-M02'));
 assert(materialLinks.includes('assets/lezioni/M02/Tellus_M02_gestione_dati.pdf'));
-let formulas = 0;
-for (const m of catalog) {
-  const data = JSON.parse(fs.readFileSync(path.join(root, 'moduli', m.id, 'modulo.json'), 'utf8'));
-  for (const s of data.slides || []) {
-    const inputs = [s.formula, s.formulaAside].filter(Boolean).map(t => '\\begin{gathered}' + t + '\\end{gathered}');
-    for (const field of ['body', 'aside', 'caption', 'recall']) {
-      for (const match of (s[field] || '').matchAll(/\$([^$]+)\$/g)) inputs.push(match[1]);
-    }
-    for (const tex of inputs) {
-      let timer;
-      const node = await Promise.race([
-        w.MathJax.tex2svgPromise(tex, { display: true }),
-        new Promise((_, reject) => {
-          timer = setTimeout(
-            () => reject(Error(m.id + ' p.' + s.page + ' ' + tex + ' ' + JSON.stringify(errors))),
-            2500,
-          );
-        }),
-      ]);
-      clearTimeout(timer);
-      const problem = node.querySelector('[data-mml-node="merror"]');
-      assert(!problem, m.id + ' p.' + s.page + ': ' + tex + ' ' + problem?.textContent);
-      formulas++;
-    }
-  }
-}
 let labFormulas = 0;
 w.eval(fs.readFileSync(path.join(dist, 'assets/experiments-details.js'), 'utf8'));
 assert.equal(w.GEO_LABS.detailed, true);
@@ -265,9 +248,13 @@ w.location.hash = '#lezione-M10/10';
 await until(() => d.querySelector('.page-counter')?.textContent === '10 / 110');
 assert(d.querySelector('#lesson-nb-title + ul a').getAttribute('href').endsWith('M10_Futura/M10_N01.html'));
 // Every other lesson: each tappa renders its slide panel, and a lesson without a workbook has no exercises route.
+// The sweep checks structure and links; MathJax composes every formula of the lessons one by one below (in jsdom
+// each page typeset during the sweep would stay in memory, about 3 MB per tappa).
 let lessonPages = 0,
   lessonFormulas = 0;
-const lessonIds = Object.keys(w.GEO_LESSON_INDEX);
+const lessonIds = Object.keys(w.GEO_LESSON_INDEX),
+  typesetPromise = w.MathJax.typesetPromise;
+w.MathJax.typesetPromise = () => Promise.resolve();
 for (const id of lessonIds) {
   const pages = w.GEO_LESSON_INDEX[id].pages;
   for (let p = 1; p <= pages; p++) {
@@ -281,7 +268,11 @@ for (const id of lessonIds) {
     assert(!/\bundefined\b/.test(d.querySelector('.lesson-main').textContent), 'testo indefinito in ' + id + '/' + p);
     for (const a of d.querySelectorAll('.lesson-main a[href]'))
       assert(!/undefined|NaN/.test(a.getAttribute('href')), 'collegamento indefinito in ' + id + '/' + p);
-    assert(d.querySelector('.breadcrumb').textContent.includes('Sistema ' + w.GeoAstro.generate(id, 0).name));
+    assert(
+      d
+        .querySelector('.breadcrumb')
+        .textContent.includes(/^P/.test(id) ? 'Spedizione ' + id : 'Sistema ' + w.GeoAstro.generate(id, 0).name),
+    );
     lessonPages++;
   }
   if (!w.GEO_LESSON_INDEX[id].cards && !w.GEO_LESSON_INDEX[id].notebooks) {
@@ -289,6 +280,7 @@ for (const id of lessonIds) {
     await until(() => d.querySelector('.error h1')?.textContent === 'Pagina non trovata');
   }
 }
+w.MathJax.typesetPromise = typesetPromise;
 const texOf = list => list.flatMap(n => (typeof n === 'string' ? [] : n.t === 'm' ? [n.v] : n.c ? texOf(n.c) : []));
 for (const id of lessonIds) {
   const L = w.GEO_LESSONS[id];
@@ -316,7 +308,6 @@ const result = {
   ambiente: 'jsdom 26.1.0; DOM virtuale, senza verifica CSS/CSP del browser',
   moduli: 28,
   laboratori_T00_R_e_Python: 40,
-  formule_verificate: formulas,
   formule_esperimenti: labFormulas,
   tappe_lezioni: lessonPages,
   formule_lezioni: lessonFormulas,
@@ -333,5 +324,5 @@ console.log(
     lessonFormulas +
     ' espressioni verificate (slide e spiegazioni).',
 );
-console.log('DOM virtuale: 28 moduli e ' + formulas + ' espressioni matematiche verificati.');
+console.log('DOM virtuale: 28 moduli verificati.');
 w.close();

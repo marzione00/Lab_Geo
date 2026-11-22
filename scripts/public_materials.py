@@ -13,8 +13,6 @@ def public_path(relative):
         return False
     if path.parts[0] == 'verifiche' and path.as_posix() != 'verifiche/versioni_R.csv':
         return False
-    if path.stem in {'Rapporto_revisione_R6', 'Registro_slide_R6', 'revisione_R6', 'CONSEGNA_R6'}:
-        return False
     return (not any(p.startswith('.') or p == '__pycache__' for p in path.parts)
             and path.suffix not in TRANSIENT
             and path.suffix.lower() not in {'.key', '.p12', '.pfx'})

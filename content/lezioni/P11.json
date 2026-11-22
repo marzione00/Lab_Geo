@@ -1,0 +1,1793 @@
+{
+ "id": "P11",
+ "title": "Classificare nuove stazioni sintetiche",
+ "planet": "Spedizione P11",
+ "world": null,
+ "exercisesWorld": null,
+ "pages": 27,
+ "pdf": "assets/lezioni/P11/P11_Stazioni.pdf",
+ "project": {
+  "dir": "stazioni",
+  "files": [
+   "Codice/previsione.R",
+   "Codice/separazione.R",
+   "dati/PROVENIENZA_V3.json",
+   "dati/ml_v3.csv",
+   "risultati/P11/centroidi_modello.rds"
+  ]
+ },
+ "reference": {
+  "R": "R version 4.3.3 (2024-02-29)",
+  "note": "Uscite registrate eseguendo il codice delle slide in ordine."
+ },
+ "sections": [
+  {
+   "title": "COPERTINA",
+   "first": 1,
+   "last": 1
+  },
+  {
+   "title": "PERCORSO",
+   "first": 2,
+   "last": 2
+  },
+  {
+   "title": "IL CASO GUIDA",
+   "first": 3,
+   "last": 3
+  },
+  {
+   "title": "BERSAGLIO E PROTOCOLLO DI VALUTAZIONE",
+   "first": 4,
+   "last": 7
+  },
+  {
+   "title": "GEOMETRIA STANDARDIZZATA E CENTROIDI",
+   "first": 8,
+   "last": 12
+  },
+  {
+   "title": "PRESTAZIONE E LIMITI DELL’INTERPRETAZIONE",
+   "first": 13,
+   "last": 16
+  },
+  {
+   "title": "SCHEDA DEL MODELLO E CONSEGNA",
+   "first": 17,
+   "last": 18
+  },
+  {
+   "title": "LABORATORI DELLA SPEDIZIONE",
+   "first": 19,
+   "last": 25
+  },
+  {
+   "title": "SINTESI",
+   "first": 26,
+   "last": 26
+  },
+  {
+   "title": "RIFERIMENTI",
+   "first": 27,
+   "last": 27
+  }
+ ],
+ "slides": [
+  {
+   "page": 1,
+   "items": [],
+   "title": "Classificare nuove stazioni sintetiche",
+   "section": "COPERTINA",
+   "lines": [
+    "SPEDIZIONE P11",
+    "MACROPROGETTO P11 · SCIENZE DELLA TERRA",
+    "Classificare nuove stazioni sintetiche",
+    "Diciotto stazioni, tre litologie",
+    "Separazione dei dati, standardizzazione e classificatore dei centroidi",
+    "GeoStat Lab · corso di Marzio De Corato",
+    "Impaginazione da Tessera · CC BY-NC-SA 4.0"
+   ],
+   "recall": []
+  },
+  {
+   "page": 2,
+   "title": "Indice della presentazione",
+   "section": "PERCORSO",
+   "recall": [
+    "I titoli dell’indice aprono i capitoli. Il nome del capitolo in alto riporta a questa pagina."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Capitoli"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      {
+       "t": "a",
+       "h": "#lezione-P11/4",
+       "c": [
+        "Bersaglio e protocollo di valutazione"
+       ]
+      }
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      {
+       "t": "a",
+       "h": "#lezione-P11/8",
+       "c": [
+        "Geometria standardizzata e centroidi"
+       ]
+      }
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      {
+       "t": "a",
+       "h": "#lezione-P11/13",
+       "c": [
+        "Prestazione e limiti dell’interpretazione"
+       ]
+      }
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      {
+       "t": "a",
+       "h": "#lezione-P11/17",
+       "c": [
+        "Scheda del modello e consegna"
+       ]
+      }
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      {
+       "t": "a",
+       "h": "#lezione-P11/19",
+       "c": [
+        "Laboratori della spedizione"
+       ]
+      }
+     ],
+     "col": "L"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Percorso di lettura"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il percorso fissa bersaglio e protocollo di valutazione, costruisce geometria standardizzata e centroidi, misura la prestazione sulle stazioni escluse e compila la scheda del modello. I laboratori finali riprendono le tre fasi della spedizione."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Le pagine Scenario A e Confronto riprendono gli esperimenti nel browser con dati sintetici. I valori di partenza del simulatore differiscono da quelli del caso."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      {
+       "t": "b",
+       "c": [
+        {
+         "t": "a",
+         "h": "#modulo-P11",
+         "c": [
+          "Apri la spedizione P11 su GeoStat Lab"
+         ]
+        }
+       ]
+      }
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 3,
+   "title": "Il classificatore dei centroidi riconosce la litologia di stazioni escluse dall’adattamento?",
+   "section": "IL CASO GUIDA",
+   "recall": [
+    "La copertina è una scena illustrativa: le sfere riproducono i provini in tre coordinate standardizzate, con i centroidi più grandi."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "003-1",
+     "w": 254,
+     "h": 147,
+     "src": "assets/lezioni/P11/figure/003-1.svg",
+     "ratio": 0.97
+    },
+    {
+     "t": "small",
+     "c": [
+      "Capitoli della spedizione; L indica i laboratori conclusivi."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Il caso"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Centottanta provini sintetici di diciotto stazioni, descritti da quattro ossidi e dalla densità, appartengono a tre litologie: Arenaria, Basalto e Calcare. La separazione segue le stazioni, per cui tre stazioni intere restano escluse dall’adattamento."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Seguiremo il classificatore dalla standardizzazione appresa sul train ai centroidi, alla matrice di confusione e ai margini delle decisioni."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 4,
+   "title": "La classe viene prevista da cinque caratteristiche",
+   "section": "BERSAGLIO E PROTOCOLLO DI VALUTAZIONE",
+   "recall": [
+    "Il protocollo di valutazione deve corrispondere al tipo di nuova unità sulla quale si intende applicare il modello."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "004-1",
+     "w": 218,
+     "h": 159,
+     "src": "assets/lezioni/P11/figure/004-1.svg",
+     "ratio": 0.9
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il progetto assegna ciascun campione a una delle tre litologie sintetiche, Arenaria, Basalto e Calcare, utilizzando quattro composizioni in ossidi e la densità. Il campione comprende centottanta provini raccolti in diciotto stazioni simulate. La domanda riguarda il trasferimento a stazioni escluse dall’adattamento, per cui la separazione avviene per stazioni intere e lascia insieme i provini di ciascuna. Il caso riutilizza dati già incontrati nel percorso didattico e applica una procedura prefissata; il risultato non costituisce una valutazione finale inedita di un modello scelto dopo ripetuti confronti."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 5,
+   "title": "La stazione resta interamente in un insieme",
+   "section": "BERSAGLIO E PROTOCOLLO DI VALUTAZIONE",
+   "recall": [
+    "La separazione per gruppi conserva il livello al quale si vuole valutare la generalizzazione."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "005-1",
+     "w": 239,
+     "h": 174,
+     "source": "Figure/F01.pdf",
+     "src": "assets/lezioni/P11/figure/005-1.svg",
+     "ratio": 0.897
+    },
+    {
+     "t": "small",
+     "c": [
+      {
+       "t": "m",
+       "v": "\\mathcal S"
+      },
+      ": insieme delle stazioni, distinto fra train e test. Are.: Arenaria; Bas.: Basalto; Cal.: Calcare."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Quindici stazioni, con centocinquanta campioni, appartengono all’adattamento; le tre restanti, con trenta campioni, costituiscono il test. Nessuna stazione compare in entrambi gli insiemi. La divisione conserva dieci provini per stazione e, nel test, una stazione per ciascuna classe. Il controllo dell’intersezione degli identificativi territoriali verifica quindi una condizione più forte della semplice assenza di righe duplicate, evitando che provini dello stesso gruppo forniscano informazione sia alla costruzione sia alla valutazione della regola."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "\\mathcal S_{train}\\cap\\mathcal S_{test}=\\varnothing",
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 6,
+   "title": "Il controllo conserva la struttura della divisione",
+   "section": "BERSAGLIO E PROTOCOLLO DI VALUTAZIONE",
+   "recall": [
+    "La divisione deve precedere ogni trasformazione che apprende parametri dai dati."
+   ],
+   "items": [
+    {
+     "t": "p",
+     "c": [
+      "Il frammento ricostruisce i due insiemi dalla variabile di appartenenza già presente nei dati e ne verifica numerosità e disgiunzione delle stazioni. La tabella per litologia rende esplicito anche il bilanciamento delle classi. Il controllo precede standardizzazione e calcolo dei centroidi, affinché nessuna statistica della risposta o dei predittori del test entri nella costruzione della regola. Le etichette del test verranno utilizzate soltanto dopo aver prodotto le classificazioni con il procedimento definito."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · calcolo riproducibile",
+     "file": "separazione.R",
+     "col": "R"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Risultato in R"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "out",
+     "v": "          \n           test train\n  Arenaria   10    50\n  Basalto    10    50\n  Calcare    10    50",
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 7,
+   "title": "Il riferimento risolve un pareggio dichiarato",
+   "section": "BERSAGLIO E PROTOCOLLO DI VALUTAZIONE",
+   "recall": [
+    "Anche la procedura di riferimento deve essere definita usando esclusivamente l’insieme di adattamento."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "007-1",
+     "w": 218,
+     "h": 159,
+     "src": "assets/lezioni/P11/figure/007-1.svg",
+     "ratio": 0.9
+    },
+    {
+     "t": "small",
+     "c": [
+      {
+       "t": "m",
+       "v": "n_{c,train}"
+      },
+      ": campioni train della classe c; ",
+      {
+       "t": "m",
+       "v": "\\widehat c_0"
+      },
+      ": classe assegnata. ",
+      {
+       "t": "m",
+       "v": "Acc_0"
+      },
+      ": quota corretta nel test. Il pareggio segue l’ordine alfabetico."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La procedura elementare assegna a tutti i nuovi campioni la classe più frequente nell’adattamento. Poiché le tre classi hanno cinquanta osservazioni ciascuna, il pareggio viene risolto secondo l’ordine alfabetico e la previsione costante diventa Arenaria. Nel test bilanciato questa regola classifica correttamente dieci campioni su trenta, con accuratezza pari a un terzo. Il riferimento quantifica così la prestazione ottenibile senza usare le caratteristiche e rende interpretabile il contributo del classificatore successivo."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "\\widehat c_0=\\arg\\max_c n_{c,train},\\qquad Acc_0=\\frac{10}{30}",
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 8,
+   "title": "La standardizzazione apprende soltanto dal train",
+   "section": "GEOMETRIA STANDARDIZZATA E CENTROIDI",
+   "recall": [
+    "I parametri della trasformazione fanno parte del modello appreso e devono essere conservati insieme al classificatore."
+   ],
+   "items": [
+    {
+     "t": "p",
+     "c": [
+      "Le composizioni e la densità hanno scale numeriche differenti, che influenzerebbero direttamente una distanza euclidea. Ogni variabile viene quindi centrata sulla propria media nell’adattamento e divisa per la deviazione standard dello stesso insieme, calcolata con denominatore n meno uno. Questi parametri vengono conservati e applicati senza ricalcolo ai trenta campioni di test. La trasformazione stabilisce la metrica del classificatore; includere il test nel calcolo delle scale introdurrebbe informazione del campione di verifica nella procedura da valutare."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "z_{ij}=\\frac{x_{ij}-\\overline x_{j,train}}{s_{j,train}}",
+     "col": "L"
+    },
+    {
+     "t": "info",
+     "c": [
+      "i: campione; j: una delle cinque variabili; ",
+      {
+       "t": "m",
+       "v": "x_{ij}"
+      },
+      ": valore originario; ",
+      {
+       "t": "m",
+       "v": "z_{ij}"
+      },
+      ": valore standardizzato. ",
+      {
+       "t": "m",
+       "v": "\\overline x_{j,train}"
+      },
+      " e ",
+      {
+       "t": "m",
+       "v": "s_{j,train}"
+      },
+      " sono media e deviazione standard nei 150 campioni train, con denominatore 149 per la varianza. Le medie standardizzate sono nulle e le deviazioni unitarie entro la tolleranza numerica; tali proprietà non sono richieste nel test."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 9,
+   "title": "Il centroide rappresenta la media di una classe",
+   "section": "GEOMETRIA STANDARDIZZATA E CENTROIDI",
+   "recall": [
+    "La geometria del centroide riassume la posizione media, senza modellare l’intera distribuzione della classe."
+   ],
+   "items": [
+    {
+     "t": "p",
+     "c": [
+      "Per ciascuna litologia si calcola il vettore medio delle cinque caratteristiche standardizzate nei soli campioni di adattamento. La carta cromatica mostra i tre centroidi, consentendo di riconoscere quali variabili caratterizzino la posizione media dei gruppi nel generatore sintetico. Il colore esprime deviazioni standard rispetto alla media complessiva del train. Un centroide riassume la posizione della classe e lascia esclusa la sua dispersione interna, che potrebbe diventare rilevante quando gruppi differenti mostrano forme o varianze molto diverse."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\mathbf c_k=\\frac1{n_{k,train}}\\sum_{i\\in train:Y_i=k}\\mathbf z_i",
+     "col": "L"
+    },
+    {
+     "t": "figure",
+     "col": "R",
+     "fig": "009-1",
+     "w": 206,
+     "h": 150,
+     "source": "Figure/F03.pdf",
+     "src": "assets/lezioni/P11/figure/009-1.svg",
+     "ratio": 0.891
+    },
+    {
+     "t": "small",
+     "c": [
+      {
+       "t": "m",
+       "v": "Y_i"
+      },
+      ": classe di i; ",
+      {
+       "t": "m",
+       "v": "n_{k,train}"
+      },
+      ": numerosità della classe k; ",
+      {
+       "t": "m",
+       "v": "\\mathbf z_i"
+      },
+      ": vettore standardizzato; ",
+      {
+       "t": "m",
+       "v": "\\mathbf c_k"
+      },
+      ": sua media. Si, Ca, Mg, Fe: ossidi; ",
+      {
+       "t": "m",
+       "v": "\\rho"
+      },
+      ": densità."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 10,
+   "title": "La regola minimizza una distanza quadratica",
+   "section": "GEOMETRIA STANDARDIZZATA E CENTROIDI",
+   "recall": [
+    "La regola di classificazione è definita nello spazio trasformato, la cui metrica dipende dalle scale apprese."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "010-1",
+     "w": 218,
+     "h": 159,
+     "src": "assets/lezioni/P11/figure/010-1.svg",
+     "ratio": 0.9
+    },
+    {
+     "t": "small",
+     "c": [
+      {
+       "t": "m",
+       "v": "z_j"
+      },
+      ": caratteristica standardizzata j; ",
+      {
+       "t": "m",
+       "v": "c_{kj}"
+      },
+      ": coordinata j del centroide k; ",
+      {
+       "t": "m",
+       "v": "\\widehat y"
+      },
+      ": classe assegnata. Si confrontano cinque coordinate e tre classi."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Un nuovo vettore standardizzato viene assegnato al centroide più vicino nella metrica euclidea a cinque dimensioni. Poiché la radice quadrata conserva l’ordine, il codice confronta direttamente le somme dei quadrati degli scarti. L’eventuale pareggio segue l’ordine alfabetico dichiarato delle classi. La decisione dipende quindi da scale, centroidi e convenzione di assegnazione, che devono essere tutti disponibili per riprodurre la previsione su un nuovo campione."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "\\widehat y(\\mathbf z)=\\arg\\min_k\\sum_{j=1}^{5}(z_j-c_{kj})^2",
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 11,
+   "title": "Il confine fra due centroidi è un iperpiano",
+   "section": "GEOMETRIA STANDARDIZZATA E CENTROIDI",
+   "recall": [
+    "La forma del confine deriva dalla regola matematica di distanza e non deve essere dedotta soltanto da una proiezione grafica."
+   ],
+   "items": [
+    {
+     "t": "p",
+     "c": [
+      "Le osservazioni equidistanti da due centroidi soddisfano l’uguaglianza fra le due distanze quadratiche. Espandendo i quadrati, il termine comune nella norma dell’osservazione si elimina e rimane un’equazione lineare nel vettore standardizzato. Il confine è quindi un iperpiano, che diventa una retta in una rappresentazione bidimensionale. Con tre classi, ciascuna regione è determinata dal confronto simultaneo con gli altri centroidi; la struttura risultante dipende dalla metrica scelta e dalle posizioni delle medie di classe."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "2\\mathbf z^T(\\mathbf c_b-\\mathbf c_a)=\\|\\mathbf c_b\\|^2-\\|\\mathbf c_a\\|^2",
+     "col": "L"
+    },
+    {
+     "t": "info",
+     "c": [
+      {
+       "t": "m",
+       "v": "\\mathbf z\\in\\mathbb R^5"
+      },
+      ": osservazione standardizzata; ",
+      {
+       "t": "m",
+       "v": "\\mathbf c_a,\\mathbf c_b"
+      },
+      ": centroidi di due classi. T indica la trasposta e ",
+      {
+       "t": "m",
+       "v": "\\|\\mathbf v\\|^2=\\sum_{j=1}^5v_j^2"
+      },
+      " la norma euclidea al quadrato. Se i centroidi sono distinti, l’equazione definisce un iperpiano. Trasformare le scale può modificare il confine nelle variabili originarie."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 12,
+   "title": "La proiezione conserva soltanto due coordinate",
+   "section": "GEOMETRIA STANDARDIZZATA E CENTROIDI",
+   "recall": [
+    "Una proiezione grafica illustra la geometria senza sostituire il calcolo nello spazio completo dei predittori."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "012-1",
+     "w": 239,
+     "h": 174,
+     "source": "Figure/F02.pdf",
+     "src": "assets/lezioni/P11/figure/012-1.svg",
+     "ratio": 0.897
+    },
+    {
+     "t": "small",
+     "c": [
+      "Proiezione SiO",
+      {
+       "t": "m",
+       "v": "_2"
+      },
+      "–CaO: train, test e centroidi; decisione in cinque dimensioni."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il diagramma rappresenta silice e ossido di calcio standardizzati, con punti per il train, triangoli per il test e croci per i centroidi. La separazione visibile aiuta a comprendere la struttura del campione sintetico, ma il classificatore utilizza anche magnesio, ferro e densità. La figura è dunque una proiezione del problema e non rappresenta tutte le distanze né i confini effettivi della decisione. Una sovrapposizione in questa vista potrebbe scomparire nello spazio completo, mentre una separazione apparente richiede comunque verifica numerica."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 13,
+   "title": "Il modello conservato ricostruisce le decisioni",
+   "section": "PRESTAZIONE E LIMITI DELL’INTERPRETAZIONE",
+   "recall": [
+    "Riprodurre una decisione richiede l’intera trasformazione e l’ordine delle caratteristiche, oltre ai soli centroidi."
+   ],
+   "items": [
+    {
+     "t": "p",
+     "c": [
+      "Il file del modello contiene nomi e ordine delle variabili, medie, scale, centroidi e classi. Il frammento rilegge questi oggetti e calcola le previsioni senza stimare nuovi parametri, rendendo esplicito il passaggio dall’adattamento all’applicazione. Le classi osservate entrano soltanto nella tabella finale di confronto. La rilettura viene verificata rispetto all’oggetto salvato, poiché una ricostruzione parziale che omettesse l’ordine delle colonne potrebbe produrre distanze errate anche usando gli stessi valori numerici."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · calcolo riproducibile",
+     "file": "previsione.R",
+     "col": "R"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Risultato in R"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "out",
+     "v": "corretta\nTRUE \n  30 ",
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 14,
+   "title": "La matrice di confusione conserva i conteggi",
+   "section": "PRESTAZIONE E LIMITI DELL’INTERPRETAZIONE",
+   "recall": [
+    "Un’accuratezza perfetta nel campione disponibile non dimostra assenza di errore nella popolazione di applicazione."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "014-1",
+     "w": 239,
+     "h": 174,
+     "source": "Figure/F04.pdf",
+     "src": "assets/lezioni/P11/figure/014-1.svg",
+     "ratio": 0.897
+    },
+    {
+     "t": "small",
+     "c": [
+      {
+       "t": "m",
+       "v": "y_i"
+      },
+      ": classe osservata; ",
+      {
+       "t": "m",
+       "v": "\\widehat y_i"
+      },
+      ": prevista; ",
+      {
+       "t": "m",
+       "v": "\\mathbf1"
+      },
+      ": vale 1 se coincidono, 0 altrimenti. Are.: Arenaria; Bas.: Basalto; Cal.: Calcare."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Tutti i trenta campioni di test vengono assegnati alla classe osservata, con dieci casi sulla diagonale per ciascuna litologia. L’accuratezza risulta quindi pari a uno in questo campione. La matrice conserva i denominatori e rende controllabile l’assenza di errori fra coppie di classi, senza trasformare l’esito in una garanzia universale. I trenta provini provengono soltanto da tre stazioni e dallo stesso generatore sintetico, condizioni che limitano l’interpretazione rispetto a un’applicazione su rocce reali."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "Acc=\\frac1{30}\\sum_{i\\in test}\\mathbf1\\{\\widehat y_i=y_i\\}=1",
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 15,
+   "title": "Il confronto quantifica il contributo delle variabili",
+   "section": "PRESTAZIONE E LIMITI DELL’INTERPRETAZIONE",
+   "recall": [
+    "La prestazione viene attribuita alla procedura e alla distribuzione effettivamente valutate."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "015-1",
+     "w": 239,
+     "h": 174,
+     "source": "Figure/F05.pdf",
+     "src": "assets/lezioni/P11/figure/015-1.svg",
+     "ratio": 0.897
+    },
+    {
+     "t": "small",
+     "c": [
+      "Accuratezze sullo stesso test: riferimento costante e centroidi."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "L’accuratezza passa da un terzo per la previsione costante a uno per il classificatore dei centroidi. Entrambe le procedure sono valutate sugli stessi trenta campioni, così che il confronto conservi il medesimo denominatore. Il guadagno è coerente con la separazione costruita nel generatore sintetico e dimostra il funzionamento del procedimento didattico. L’impiego su nuove stazioni reali richiederebbe dati indipendenti, verifiche delle unità e valutazione delle differenze fra distribuzione di adattamento e contesto operativo."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 16,
+   "title": "Il margine misura una separazione geometrica",
+   "section": "PRESTAZIONE E LIMITI DELL’INTERPRETAZIONE",
+   "recall": [
+    "La distanza dal concorrente misura una proprietà geometrica; la probabilità di errore richiede una valutazione ulteriore."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "016-1",
+     "w": 239,
+     "h": 174,
+     "source": "Figure/F06.pdf",
+     "src": "assets/lezioni/P11/figure/016-1.svg",
+     "ratio": 0.897
+    },
+    {
+     "t": "small",
+     "c": [
+      {
+       "t": "m",
+       "v": "d^2_{i,(1)},d^2_{i,(2)}"
+      },
+      ": prima e seconda distanza quadratica in ordine crescente. ",
+      {
+       "t": "m",
+       "v": "\\Delta_i"
+      },
+      ": margine per il campione i, adimensionale."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La differenza fra la seconda distanza quadratica più piccola e la prima misura quanto la decisione sia separata dalla classe concorrente più vicina. Nel campione tutti i margini sono positivi, coerentemente con assegnazioni senza pareggio. La distribuzione per classe descrive la geometria del classificatore e può aiutare a individuare decisioni più prossime al confine. Il margine non è una probabilità calibrata di correttezza e potrebbe essere ampio anche per un campione esterno al dominio rappresentato dalle tre classi note."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "\\Delta_i=d^2_{i,(2)}-d^2_{i,(1)}",
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 17,
+   "title": "La scheda conserva dominio e condizioni d’uso",
+   "section": "SCHEDA DEL MODELLO E CONSEGNA",
+   "recall": [
+    "Il modello conservato deve essere accompagnato dalle condizioni entro le quali la sua prestazione è stata osservata."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "017-1",
+     "w": 218,
+     "h": 159,
+     "src": "assets/lezioni/P11/figure/017-1.svg",
+     "ratio": 0.9
+    },
+    {
+     "t": "p",
+     "c": [
+      "La scheda del modello registra bersaglio, origine sintetica, variabili e unità, numerosità per insieme, regola di standardizzazione, metrica, accuratezza e limiti. Il file JSON accompagna l’oggetto RDS e permette di interpretarlo senza ricostruire tutte le operazioni del laboratorio. La scheda dichiara anche il riuso didattico del test, l’assenza di validazione su rocce reali e l’impossibilità di riconoscere automaticamente classi non incluse nell’adattamento. Un campione nuovo richiede quindi anche una verifica di pertinenza al dominio."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 18,
+   "title": "Consegna: collegare geometria e validazione",
+   "section": "SCHEDA DEL MODELLO E CONSEGNA",
+   "recall": [
+    "La generalizzazione viene sostenuta dal disegno della verifica e dalla pertinenza dei dati al contesto di applicazione."
+   ],
+   "items": [
+    {
+     "t": "p",
+     "c": [
+      "La relazione presenta separazione delle stazioni, riferimento costante, standardizzazione, centroidi, matrice di confusione e scheda del modello. L’esercizio richiede di derivare il confine fra due centroidi e di spiegare perché medie e scale debbano essere stimate soltanto sul train. La discussione finale chiarisce perché trenta classificazioni corrette, provenienti da tre stazioni sintetiche, non siano sufficienti a dimostrare affidabilità generale. La conclusione distingue il risultato del caso didattico dalle evidenze ancora necessarie per un’applicazione geologica reale."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "info",
+     "c": [
+      "R/P11_figure.R integra separazione, riferimento, classificatore e scheda. Il modello serializzato, i parametri di standardizzazione e le previsioni per identificativo sono conservati in risultati/P11. Il raccordo con M16 permette di approfondire validazione a gruppi, scelta dei modelli e calibrazione."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 19,
+   "title": "Tre fasi della spedizione nel laboratorio",
+   "section": "LABORATORI DELLA SPEDIZIONE",
+   "recall": [
+    "Gli esperimenti usano dati sintetici; la conclusione sul caso resta quella ottenuta dalle tre stazioni escluse."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "019-1",
+     "w": 270,
+     "h": 167,
+     "src": "assets/lezioni/P11/figure/019-1.svg",
+     "ratio": 0.97
+    },
+    {
+     "t": "small",
+     "c": [
+      "Fasi della spedizione. Il primo esperimento di ogni fase ha le pagine Scenario A e Confronto."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Gli esperimenti della lezione Prisma ripetono su dati sintetici tre passaggi della spedizione: definire il trasferimento, selezionare e addestrare il modello, verificare probabilità e decisioni. Ogni fase ha uno scenario di partenza e un confronto con un solo parametro modificato."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Altri esperimenti delle fasi"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "lab",
+     "url": "https://marzione00.github.io/Lab_Geo/#laboratorio/m16-geometria",
+     "c": [
+      "Standardizzazione e confine decisionale · m16-geometria"
+     ],
+     "col": "R",
+     "lab": "m16-geometria"
+    },
+    {
+     "t": "lab",
+     "url": "https://marzione00.github.io/Lab_Geo/#laboratorio/m16-alberi",
+     "c": [
+      "Alberi e aggregazione di classificatori · m16-alberi"
+     ],
+     "col": "R",
+     "lab": "m16-alberi"
+    },
+    {
+     "t": "lab",
+     "url": "https://marzione00.github.io/Lab_Geo/#laboratorio/m16-trasferimento",
+     "c": [
+      "Trasferibilità e cambiamento della relazione · m16-trasferimento"
+     ],
+     "col": "R",
+     "lab": "m16-trasferimento"
+    }
+   ]
+  },
+  {
+   "page": 20,
+   "title": "Bersaglio predittivo e nuove stazioni",
+   "section": "LABORATORI DELLA SPEDIZIONE",
+   "recall": [
+    "Confrontare predizione di misure e trasferimento a nuove unità."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "020-1",
+     "w": 262,
+     "h": 170,
+     "source": "Esperimenti/m16-bersaglio-A.pdf",
+     "src": "assets/lezioni/P11/figure/020-1.svg",
+     "ratio": 0.983
+    },
+    {
+     "t": "small",
+     "c": [
+      "Ampiezza dell’effetto di stazione: 2. Seme: 17."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Scenario A · simulazione"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La validazione di un classificatore deve rappresentare il tipo di osservazione che incontrerà nell’uso futuro. L’esperimento genera misure raggruppate per stazione, con un effetto condiviso che contribuisce sia al predittore sia alla probabilità della classe. Un classificatore a un vicino viene valutato mediante una separazione casuale delle misure e mediante stazioni interamente escluse dall’addestramento."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "\\widehat R=\\frac1{n_{test}}\\sum_i\\mathbf1(\\widehat y_i\\ne y_i)",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      {
+       "t": "m",
+       "v": "\\hat y_i"
+      },
+      " è la classe prevista, ",
+      {
+       "t": "m",
+       "v": "y_i"
+      },
+      " quella osservata e ",
+      {
+       "t": "m",
+       "v": "n_{\\mathrm{test}}"
+      },
+      " il numero di misure escluse dall’addestramento. ",
+      {
+       "t": "m",
+       "v": "\\hat R"
+      },
+      " è la frequenza degli errori; le metriche dell’interfaccia riportano l’accuratezza, pari a ",
+      {
+       "t": "m",
+       "v": "1-\\hat R"
+      },
+      "."
+     ],
+     "col": "R"
+    }
+   ],
+   "labs": [
+    {
+     "id": "m16-bersaglio",
+     "title": "Bersaglio predittivo e nuove stazioni",
+     "params": {
+      "station": 2,
+      "seed": 17
+     }
+    }
+   ]
+  },
+  {
+   "page": 21,
+   "title": "Confronto | Bersaglio predittivo e nuove stazioni",
+   "section": "LABORATORI DELLA SPEDIZIONE",
+   "recall": [
+    "Il protocollo di verifica deve corrispondere all’unità che sarà incontrata nell’uso futuro."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "021-1",
+     "w": 244,
+     "h": 159,
+     "source": "Esperimenti/m16-bersaglio-B.pdf",
+     "src": "assets/lezioni/P11/figure/021-1.svg",
+     "ratio": 0.916
+    },
+    {
+     "t": "small",
+     "c": [
+      "Ampiezza dell’effetto di stazione: 2 ",
+      {
+       "t": "m",
+       "v": "\\to"
+      },
+      " 4. Tutti gli altri parametri e il seme sono fissi."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Confronto fra gli scenari"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "table",
+     "head": [
+      [
+       {
+        "c": [
+         "Grandezza"
+        ]
+       },
+       {
+        "c": [
+         "A"
+        ]
+       },
+       {
+        "c": [
+         "B"
+        ]
+       }
+      ]
+     ],
+     "rows": [
+      [
+       {
+        "c": [
+         "Accuratezza separazione casuale"
+        ]
+       },
+       {
+        "c": [
+         "0,958"
+        ]
+       },
+       {
+        "c": [
+         "0,896"
+        ]
+       }
+      ],
+      [
+       {
+        "c": [
+         "Accuratezza nuove stazioni"
+        ]
+       },
+       {
+        "c": [
+         "0,75"
+        ]
+       },
+       {
+        "c": [
+         "0,729"
+        ]
+       }
+      ],
+      [
+       {
+        "c": [
+         "Stazioni complessive"
+        ]
+       },
+       {
+        "c": [
+         "12"
+        ]
+       },
+       {
+        "c": [
+         "12"
+        ]
+       }
+      ]
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "In entrambi gli scenari l’accuratezza scende quando si escludono stazioni intere. Le prestazioni dipendono dall’unità con cui si costruisce il test."
+     ],
+     "col": "R"
+    }
+   ],
+   "labs": [
+    {
+     "id": "m16-bersaglio",
+     "title": "Bersaglio predittivo e nuove stazioni",
+     "params": {
+      "station": 4,
+      "seed": 17
+     }
+    }
+   ]
+  },
+  {
+   "page": 22,
+   "title": "Selezione dei predittori e contaminazione",
+   "section": "LABORATORI DELLA SPEDIZIONE",
+   "recall": [
+    "Valutare la selezione di variabili su puro rumore."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "022-1",
+     "w": 262,
+     "h": 170,
+     "source": "Esperimenti/m16-selezione-A.pdf",
+     "src": "assets/lezioni/P11/figure/022-1.svg",
+     "ratio": 0.983
+    },
+    {
+     "t": "small",
+     "c": [
+      "Predittori candidati: 100. Seme: 17."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Scenario A · simulazione"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La ricerca fra molti predittori può individuare associazioni apparenti anche quando tutte le variabili sono indipendenti dal bersaglio. Nell’esperimento si sceglie il predittore con massima correlazione assoluta, confrontando una selezione eseguita soltanto sul campione di addestramento con una che utilizza anche le risposte del test. Entrambi i modelli vengono poi adattati sul medesimo training."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "j^*=\\arg\\max_j|\\operatorname{cor}(X_j,Y)|",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      {
+       "t": "m",
+       "v": "X_j"
+      },
+      " è il predittore candidato j, Y la risposta binaria e ",
+      {
+       "t": "m",
+       "v": "j^*"
+      },
+      " l’indice selezionato. Il criterio massimizza il valore assoluto della correlazione campionaria, che viene calcolata su insiemi diversi nei due protocolli."
+     ],
+     "col": "R"
+    }
+   ],
+   "labs": [
+    {
+     "id": "m16-selezione",
+     "title": "Selezione dei predittori e contaminazione",
+     "params": {
+      "features": 100,
+      "seed": 17
+     }
+    }
+   ]
+  },
+  {
+   "page": 23,
+   "title": "Confronto | Selezione dei predittori e contaminazione",
+   "section": "LABORATORI DELLA SPEDIZIONE",
+   "recall": [
+    "La selezione informata dal test compromette l’indipendenza della valutazione."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "023-1",
+     "w": 244,
+     "h": 159,
+     "source": "Esperimenti/m16-selezione-B.pdf",
+     "src": "assets/lezioni/P11/figure/023-1.svg",
+     "ratio": 0.916
+    },
+    {
+     "t": "small",
+     "c": [
+      "Predittori candidati: 100 ",
+      {
+       "t": "m",
+       "v": "\\to"
+      },
+      " 300. Tutti gli altri parametri e il seme sono fissi."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Confronto fra gli scenari"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "table",
+     "head": [
+      [
+       {
+        "c": [
+         "Grandezza"
+        ]
+       },
+       {
+        "c": [
+         "A"
+        ]
+       },
+       {
+        "c": [
+         "B"
+        ]
+       }
+      ]
+     ],
+     "rows": [
+      [
+       {
+        "c": [
+         "Accuratezza selezione sul training"
+        ]
+       },
+       {
+        "c": [
+         "0,45"
+        ]
+       },
+       {
+        "c": [
+         "0,375"
+        ]
+       }
+      ],
+      [
+       {
+        "c": [
+         "Accuratezza selezione contaminata"
+        ]
+       },
+       {
+        "c": [
+         "0,575"
+        ]
+       },
+       {
+        "c": [
+         "0,65"
+        ]
+       }
+      ],
+      [
+       {
+        "c": [
+         "Massima correlazione assoluta training"
+        ]
+       },
+       {
+        "c": [
+         "0,277"
+        ]
+       },
+       {
+        "c": [
+         "0,381"
+        ]
+       }
+      ]
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Con più candidati cresce l’opportunità di trovare associazioni casuali. La selezione contaminata dal test appare più favorevole in questo campione."
+     ],
+     "col": "R"
+    }
+   ],
+   "labs": [
+    {
+     "id": "m16-selezione",
+     "title": "Selezione dei predittori e contaminazione",
+     "params": {
+      "features": 300,
+      "seed": 17
+     }
+    }
+   ]
+  },
+  {
+   "page": 24,
+   "title": "Soglia, discriminazione e calibrazione",
+   "section": "LABORATORI DELLA SPEDIZIONE",
+   "recall": [
+    "Separare probabilità previste e decisione binaria."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "024-1",
+     "w": 262,
+     "h": 170,
+     "source": "Esperimenti/m16-metriche-A.pdf",
+     "src": "assets/lezioni/P11/figure/024-1.svg",
+     "ratio": 0.983
+    },
+    {
+     "t": "small",
+     "c": [
+      "Soglia decisionale: 0,5. Seme: 17."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Scenario A · simulazione"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Una previsione probabilistica e una decisione binaria rispondono a valutazioni differenti. L’esperimento genera risposte da probabilità logistiche note e modifica le probabilità dichiarate moltiplicandone il logit. Un controllo separato stabilisce la soglia con cui trasformare tali probabilità in classi, rendendo confrontabili calibrazione e conseguenze della decisione."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "\\operatorname{Brier}=n^{-1}\\sum_i(p_i-y_i)^2",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      {
+       "t": "m",
+       "v": "p_i"
+      },
+      " è la probabilità dichiarata per l’osservazione i, ",
+      {
+       "t": "m",
+       "v": "y_i"
+      },
+      " la risposta binaria e n la numerosità. Il Brier score è la media dei quadrati degli scarti fra probabilità e risposte; valori inferiori indicano previsioni probabilistiche migliori nel campione valutato."
+     ],
+     "col": "R"
+    }
+   ],
+   "labs": [
+    {
+     "id": "m16-metriche",
+     "title": "Soglia, discriminazione e calibrazione",
+     "params": {
+      "threshold": 0.5,
+      "calibration": 1,
+      "seed": 17
+     }
+    }
+   ]
+  },
+  {
+   "page": 25,
+   "title": "Confronto | Soglia, discriminazione e calibrazione",
+   "section": "LABORATORI DELLA SPEDIZIONE",
+   "recall": [
+    "Una soglia modifica le decisioni, mentre la calibrazione riguarda il significato delle probabilità."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "025-1",
+     "w": 244,
+     "h": 159,
+     "source": "Esperimenti/m16-metriche-B.pdf",
+     "src": "assets/lezioni/P11/figure/025-1.svg",
+     "ratio": 0.916
+    },
+    {
+     "t": "small",
+     "c": [
+      "Soglia decisionale: 0,5 ",
+      {
+       "t": "m",
+       "v": "\\to"
+      },
+      " 0,75. Tutti gli altri parametri e il seme sono fissi."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Confronto fra gli scenari"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "table",
+     "head": [
+      [
+       {
+        "c": [
+         "Grandezza"
+        ]
+       },
+       {
+        "c": [
+         "A"
+        ]
+       },
+       {
+        "c": [
+         "B"
+        ]
+       }
+      ]
+     ],
+     "rows": [
+      [
+       {
+        "c": [
+         "Veri positivi"
+        ]
+       },
+       {
+        "c": [
+         "115"
+        ]
+       },
+       {
+        "c": [
+         "61"
+        ]
+       }
+      ],
+      [
+       {
+        "c": [
+         "Falsi positivi"
+        ]
+       },
+       {
+        "c": [
+         "36"
+        ]
+       },
+       {
+        "c": [
+         "10"
+        ]
+       }
+      ],
+      [
+       {
+        "c": [
+         "Veri negativi"
+        ]
+       },
+       {
+        "c": [
+         "119"
+        ]
+       },
+       {
+        "c": [
+         "145"
+        ]
+       }
+      ],
+      [
+       {
+        "c": [
+         "Falsi negativi"
+        ]
+       },
+       {
+        "c": [
+         "30"
+        ]
+       },
+       {
+        "c": [
+         "84"
+        ]
+       }
+      ],
+      [
+       {
+        "c": [
+         "Sensibilità"
+        ]
+       },
+       {
+        "c": [
+         "0,793"
+        ]
+       },
+       {
+        "c": [
+         "0,421"
+        ]
+       }
+      ],
+      [
+       {
+        "c": [
+         "Specificità"
+        ]
+       },
+       {
+        "c": [
+         "0,768"
+        ]
+       },
+       {
+        "c": [
+         "0,935"
+        ]
+       }
+      ],
+      [
+       {
+        "c": [
+         "Brier score"
+        ]
+       },
+       {
+        "c": [
+         "0,168"
+        ]
+       },
+       {
+        "c": [
+         "0,168"
+        ]
+       }
+      ]
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Alzando la soglia da 0,50 a 0,75 diminuiscono sia i veri sia i falsi positivi. Il Brier score è invariato perché usa le probabilità prima della soglia."
+     ],
+     "col": "R"
+    }
+   ],
+   "labs": [
+    {
+     "id": "m16-metriche",
+     "title": "Soglia, discriminazione e calibrazione",
+     "params": {
+      "threshold": 0.75,
+      "calibration": 1,
+      "seed": 17
+     }
+    }
+   ]
+  },
+  {
+   "page": 26,
+   "title": "Dal risultato alla relazione",
+   "section": "SINTESI",
+   "recall": [
+    "Riporta accuratezza, denominatori, riferimento e dominio di validità del classificatore."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Domanda di partenza"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il classificatore dei centroidi riconosce la litologia di stazioni escluse dall’adattamento?"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Risultato da discutere"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Sui trenta provini delle tre stazioni escluse il classificatore dei centroidi assegna tutte le litologie osservate, contro il riferimento di 0,333 della classe più frequente. I margini fra la seconda e la prima distanza quadratica vanno da circa 5,19 a 17,80."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Limiti della conclusione"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Le classi sono sintetiche e ben separate, e il test era già noto nel percorso didattico. Una roccia di una litologia non inclusa riceverebbe comunque una delle tre etichette, per cui un campione nuovo richiede anche una verifica di pertinenza al dominio."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      {
+       "t": "b",
+       "c": [
+        {
+         "t": "a",
+         "h": "#progetti",
+         "c": [
+          "Torna all’elenco delle spedizioni"
+         ]
+        }
+       ]
+      }
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 27,
+   "title": "Fonti, dati e codice per riprodurre le figure",
+   "section": "RIFERIMENTI",
+   "recall": [
+    "I risultati numerici si riferiscono ai dati e alle ipotesi dichiarate nel caso."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Dati e attribuzioni"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Dati sintetici del corso (ml_v3.csv): centottanta provini di diciotto stazioni con SiO",
+      {
+       "t": "m",
+       "v": "_2"
+      },
+      ", CaO, MgO, FeO e densità, in raccordo con il modulo M16."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Nell’archivio dei sorgenti"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Codice contiene i frammenti delle pagine; R contiene lo script P11_figure.R, che ricostruisce figure e valori dai dati. Esperimenti comprende i programmi dei due scenari, Diagrammi i disegni TikZ modificabili, Scena il modello Blender della copertina."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      {
+       "t": "b",
+       "c": [
+        {
+         "t": "a",
+         "h": "#modulo-P11",
+         "c": [
+          "Apri la spedizione P11 su GeoStat Lab"
+         ]
+        }
+       ]
+      }
+     ],
+     "col": "R"
+    }
+   ]
+  }
+ ],
+ "code": {
+  "previsione.R": {
+   "code": "d <- read.csv('dati/ml_v3.csv')\nm <- readRDS('risultati/P11/centroidi_modello.rds')\nte <- d$split=='test'\nZ <- scale(d[te,m$variabili],\n center=m$centro,scale=m$scala)\nD <- sapply(m$classi,function(k)\n rowSums(sweep(Z,2,m$centroidi[k,],'-')^2))\np <- m$classi[max.col(-D,ties.method='first')]\ntable(corretta = p == d$litologia[te])",
+   "output": "> d <- read.csv('dati/ml_v3.csv')\n> m <- readRDS('risultati/P11/centroidi_modello.rds')\n> te <- d$split=='test'\n> Z <- scale(d[te,m$variabili],\n+  center=m$centro,scale=m$scala)\n> D <- sapply(m$classi,function(k)\n+  rowSums(sweep(Z,2,m$centroidi[k,],'-')^2))\n> p <- m$classi[max.col(-D,ties.method='first')]\n> table(corretta = p == d$litologia[te])\ncorretta\nTRUE \n  30 ",
+   "deps": [],
+   "page": 13
+  },
+  "separazione.R": {
+   "code": "d <- read.csv('dati/ml_v3.csv')\ntr <- d$split=='train'\nte <- d$split=='test'\nstopifnot(sum(tr)==150,sum(te)==30,\n length(intersect(d$stazione[tr],\n d$stazione[te]))==0)\ntable(d$litologia,d$split)",
+   "output": "> d <- read.csv('dati/ml_v3.csv')\n> tr <- d$split=='train'\n> te <- d$split=='test'\n> stopifnot(sum(tr)==150,sum(te)==30,\n+  length(intersect(d$stazione[tr],\n+  d$stazione[te]))==0)\n> table(d$litologia,d$split)\n          \n           test train\n  Arenaria   10    50\n  Basalto    10    50\n  Calcare    10    50",
+   "deps": [],
+   "page": 6
+  }
+ },
+ "download": "assets/lezioni/P11/Spedizione_P11_progetto_R.zip"
+}

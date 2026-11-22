@@ -3,7 +3,7 @@
 options(warn=2)
 suppressPackageStartupMessages(library(ggplot2))
 suppressPackageStartupMessages(library(jsonlite))
-for (p in c('figure/M05','risultati/M05','verifiche/M05')) dir.create(p,showWarnings=FALSE)
+for (p in c('risultati/M05','verifiche/M05')) dir.create(p,showWarnings=FALSE)
 RNGkind('Mersenne-Twister','Inversion','Rejection')
 d <- read.csv('dati/campioni_modulo1.csv',stringsAsFactors=FALSE)
 f <- read.csv('dati/fossili_simulati.csv',stringsAsFactors=FALSE)

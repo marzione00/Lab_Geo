@@ -34,8 +34,8 @@ Rscript m13-interpolazione-A.R
 inkscape m13-interpolazione-A.svg --export-text-to-path --export-filename=m13-interpolazione-A.pdf
 ```
 
-- `Figure` raccoglie i grafici dell'edizione R6 utilizzati nelle slide. Per rigenerare quelli di Strata, esegui `Rscript R/M13_figure.R` dalla cartella del modulo. Lo script originale scrive in `figure/M13`. Per aggiornare le slide, copia i PDF desiderati nella cartella `Figure` e ricompila. Per gli altri moduli cambia l'identificativo. Gli script del corso usano ggplot2 e jsonlite. Alcuni calcoli di Prisma impiegano inoltre class, rpart e randomForest.
-- Le cartelle `dati` contengono gli ingressi dei rispettivi moduli. Dove presenti, `Archivi` e `Tabelle` raccolgono i programmi dei laboratori R6 citati nelle slide e i CSV di riferimento. Per eseguire uno di questi programmi, avvia R dalla cartella del modulo, ad esempio con `Rscript Archivi/M13_N01.R`. Il programma scrive il risultato in `risultati/R/M13_N01`. I valori dei casi guida, dei laboratori R6 e dei confronti web vanno letti con i rispettivi dati e parametri.
+- `Figure` raccoglie i grafici utilizzati nelle slide. Per rigenerare quelli di Strata, esegui `Rscript R/M13_figure.R` dalla cartella del modulo. Lo script originale scrive in `figure/M13`. Per aggiornare le slide, copia i PDF desiderati nella cartella `Figure` e ricompila. Per gli altri moduli cambia l'identificativo. Gli script del corso usano ggplot2 e jsonlite. Alcuni calcoli di Prisma impiegano inoltre class, rpart e randomForest.
+- Le cartelle `dati` contengono gli ingressi dei rispettivi moduli. Dove presenti, `Archivi` e `Tabelle` raccolgono i programmi dei laboratori R citati nelle slide e i CSV di riferimento. Per eseguire uno di questi programmi, avvia R dalla cartella del modulo, ad esempio con `Rscript Archivi/M13_N01.R`. Il programma scrive il risultato in `risultati/R/M13_N01`. I valori dei casi guida, dei laboratori R e dei confronti web vanno letti con i rispettivi dati e parametri.
 
 ## Rigenerare una copertina
 
@@ -51,7 +51,7 @@ Il comando produce `copertina.blend` e `copertina.png`. Per usare il nuovo rende
 
 ## Attribuzioni
 
-Il corso GeoStat Lab e i materiali didattici originali sono di **Marzio De Corato**. L'impaginazione deriva dalla presentazione ristrutturata **M12 Tessera**, fornita insieme agli altri undici modelli della serie. L'adattamento comprende nuove scene 3D, l'indice dei capitoli, i casi guida, i disegni di apertura, i confronti fra scenari e la selezione dei risultati R6.
+Il corso GeoStat Lab e i materiali didattici originali sono di **Marzio De Corato**. L'impaginazione deriva dalla presentazione ristrutturata **M12 Tessera**, fornita insieme agli altri undici modelli della serie. L'adattamento comprende nuove scene 3D, l'indice dei capitoli, i casi guida, i disegni di apertura, i confronti fra scenari e la selezione dei risultati calcolati in R.
 
 Per gli adattamenti dei materiali didattici soggetti a CC BY-NC-SA 4.0 valgono gli stessi termini. I dati, i programmi e i caratteri conservano le rispettive condizioni. Le licenze e le note originali sono in `Provenienza` e `Font`.
 

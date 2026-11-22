@@ -73,9 +73,9 @@ test('Exploration routes reject malformed worlds and variant values', () => {
 test('Optional annotations require explicit saving, preserve course storage and escape hostile notes', () => {
   const { w, main } = setup(),
     course = '{"version":1,"entries":[]}',
-    progress = '{"done":["M05:3"]}';
+    progress = '{"version":1,"done":["M05:3"],"cards":{}}';
   w.localStorage.setItem('geostat-fieldbook-v1', course);
-  w.localStorage.setItem('geostat-r6-progress', progress);
+  w.localStorage.setItem('geostat-lessons-v1', progress);
   const s = w.GeoAstro.generate('M05'),
     p = s.planets.find(p => !p.isTarget);
   w.GeoExplorations.render(main, p.id, 4);
@@ -92,7 +92,7 @@ test('Optional annotations require explicit saving, preserve course storage and 
   main.querySelector('#exploration-save').click();
   assert.equal(w.GeoExplorations.records()[0].completed, true);
   assert.equal(w.localStorage.getItem('geostat-fieldbook-v1'), course);
-  assert.equal(w.localStorage.getItem('geostat-r6-progress'), progress);
+  assert.equal(w.localStorage.getItem('geostat-lessons-v1'), progress);
   w.GeoExplorations.journal(main);
   assert.equal(main.querySelectorAll('.journal-entry').length, 1);
   assert.equal(main.querySelectorAll('[onerror]').length, 0);

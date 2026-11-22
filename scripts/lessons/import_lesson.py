@@ -407,7 +407,7 @@ def items(chunk):
 
 
 def tcolorbox(opts, body):
-    """Riquadri tcolorbox delle presentazioni T00 e M13-M16: codice da file o uscita registrata di R."""
+    """Riquadri tcolorbox delle presentazioni T00, M13-M16 e P01-P11: codice da file o uscita registrata di R."""
     lst = re.search(r'\\lstinputlisting(?:\[([^\]]*)\])?\{Codice/([^}]*)\}', body)
     if lst:
         title = re.search(r'title=\{([^{}]*)\}', opts)
@@ -419,7 +419,7 @@ def tcolorbox(opts, body):
 
 
 BOXES = {'PilotLeftBox': 'L', 'PilotRightBox': 'R', 'FullWideBox': 'W', 'TitleBox': None, 'RecallBox': None}
-# Colonne \Colonna{larghezza}{...} delle presentazioni T00 e M13-M16.
+# Colonne \Colonna{larghezza}{...} delle presentazioni T00, M13-M16 e P01-P11.
 COLONNE = {'9.40': 'L', '8.16': 'R'}
 
 
@@ -483,7 +483,7 @@ def parse_tex(path):
 
 
 def footer_links(frame):
-    """Collegamenti nel piè di pagina (T00, M13-M16): laboratorio del sito o script R6 dei materiali."""
+    """Collegamenti nel piè di pagina (T00, M13-M16, P01-P11): laboratorio del sito o script dei materiali."""
     out, spans = [], []
     for m in re.finditer(r'\\Colonna\{[\d.]+cm\}\{', frame):
         _, j = group(frame, m.end() - 1)
@@ -509,7 +509,8 @@ def node_texts(frame):
         body = re.sub(r'\\includegraphics(\[[^\]]*\])?\{[^}]*\}', '', body)
         body = re.sub(r'\\hyperlink\{[^}]*\}', '', body)
         body = re.sub(r'\\\\\[[^\]]*\]', ' · ', body)
-        t = text_of(inline(body)).strip()
+        # Pedici brevi come caratteri Unicode, come nei titoli (CO₂).
+        t = title_text(inline(body)).strip()
         if t:
             out.append(t)
     return out
@@ -958,8 +959,8 @@ def project_files(src, cfg):
 
 
 def footer_items(slides, src, acts):
-    """Piè di pagina di T00 e M13-M16: il laboratorio entra nel pannello dei laboratori con i parametri dello
-    scenario della slide (A nella pagina dello scenario, B in quella del confronto); lo script R6 dei materiali
+    """Piè di pagina di T00, M13-M16 e P01-P11: il laboratorio entra nel pannello dei laboratori con i parametri
+    dello scenario della slide (A nella pagina dello scenario, B in quella del confronto); lo script dei materiali
     diventa un rimando in fondo alla colonna destra."""
     for s in slides:
         for link in s.pop('footer', []):

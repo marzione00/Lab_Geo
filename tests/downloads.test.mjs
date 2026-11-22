@@ -44,10 +44,13 @@ members = archives['GeoStatLab_codice_dati.zip']
 assert not any('/audit/' in p or 'Rapporto_revisione_R6' in p or 'revisione_R6' in p or 'CONSEGNA_R6' in p for p in members)
 for p in ['materiali/LEGGIMI.txt', 'materiali/MANIFEST_SHA256.txt']:
     assert b'audit/' not in members[p] and b'Rapporto_revisione_R6' not in members[p]
-# The modules with a lesson keep their laboratories; their earlier slides are gone.
-assert 'materiali/laboratori/M01/M01_N01.R' in members and 'materiali/R/P01_figure.R' in members
-assert not any(p.startswith(('materiali/pdf/M', 'materiali/pdf/T00', 'materiali/sorgenti/M', 'materiali/tikz/M'))
-               or p in ('materiali/R/M01_figure.R', 'materiali/Guida_corso_R6.pdf', 'materiali/Indice_corso.html') for p in members)
+# The modules keep their laboratories; slides, sources and figure programs of the earlier edition are gone.
+# The programs of the expeditions travel with the R project of each lesson.
+assert 'materiali/laboratori/M01/M01_N01.R' in members
+assert not any(p.startswith(('materiali/pdf/', 'materiali/sorgenti/', 'materiali/tikz/', 'materiali/estratti/',
+                             'materiali/figure/'))
+               or p.endswith('_figure.R') or p in ('materiali/Guida_corso_R6.pdf', 'materiali/Indice_corso.html')
+               for p in members)
 `,
     ],
     { stdio: 'pipe' },

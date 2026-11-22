@@ -96,6 +96,8 @@ try {
     '/materiali/Indice_corso.html',
     '/materiali/Guida_corso_R6.pdf',
     '/assets/slides/M02/003.svg',
+    '/assets/slides/P01/001.svg',
+    '/materiali/pdf/P01_R6.pdf',
     '/materiali/audit/Registro_slide_R6.html',
     '/materiali/audit/Rapporto_revisione_R6.pdf',
     '/materiali/Rapporto_revisione_R6.pdf',

@@ -11,12 +11,13 @@ N=lambda v=60: num('n','Numero di osservazioni',v,12,300,6)
 B=lambda: num('B','Repliche del procedimento',200,40,1000,20,'Aumentare le repliche riduce l’incertezza Monte Carlo; la numerosità del campione rimane invariata.')
 noise=lambda: num('noise','Deviazione standard dell’errore',1,.1,4,.1)
 seed=num('seed','Seme casuale',17,1,99999,1,'A parità di ambiente R, il seme permette di ricostruire la simulazione.')
+# Section titles, lesson tappe and prose of the published catalogue: the modules are lessons a tappe.
+PUBLISHED=json.loads((ROOT/'content/experiments.json').read_text())
+PREV={a['id']:a for a in PUBLISHED['activities']}
 def add(module,section,slug,title,goal,action,conclusion,formula,controls,code,limits='',presets=None):
- m=json.loads((ROOT/'moduli'/module/'modulo.json').read_text())
- s=m['sections'][section-1]; end=m['sections'][section]['page'] if section<len(m['sections']) else m['pages']+1
- slides=[x for x in m['slides'] if s['page']<=x['page']<end and x.get('body')]
- prose=[x['body'] for x in slides[:2]]
- a=dict(id=module.lower()+'-'+slug,module=module,section=section,sectionTitle=s['title'],page=s['page'],title=title,goal=goal,action=action,conclusion=conclusion,formula=formula,controls=controls+[seed],prose=prose,limits=limits,presets=presets or [],source='R/experiments/'+module.lower()+'-'+slug+'.R',code=textwrap.dedent(code).strip())
+ prev=PREV[module.lower()+'-'+slug]
+ prose=prev['prose']
+ a=dict(id=module.lower()+'-'+slug,module=module,section=section,sectionTitle=prev['sectionTitle'],page=prev['page'],title=title,goal=goal,action=action,conclusion=conclusion,formula=formula,controls=controls+[seed],prose=prose,limits=limits,presets=presets or [],source='R/experiments/'+module.lower()+'-'+slug+'.R',code=textwrap.dedent(code).strip())
  ACT.append(a)
 # Each experiment returns data, plots, metrics and an interpretation from the current parameters.
 add('T00',1,'programma','Dal dato alla trasformazione','Seguire gli oggetti prodotti da una sequenza di istruzioni.','Modifica il fattore di conversione; confronta il vettore iniziale, quello trasformato e la media.','Una trasformazione elementare permette di ricostruire il passaggio fra dato e risultato.',r'y_i=a x_i,\quad \bar y=a\bar x',[num('a','Fattore di conversione',1000,.1,2000,.1)],'''
@@ -545,15 +546,12 @@ def write_catalogue():
    for a in ACT:
     if a['id']==activity_id:a.update(fields)
  coverage=[]
- for f in sorted((ROOT/'moduli').glob('*/modulo.json')):
-  m=json.loads(f.read_text());
-  if m['id'].startswith('P'):continue
-  for i,s in enumerate(m['sections'],1):
-   ids=[a['id'] for a in ACT if a['module']==m['id'] and a['section']==i]
-   # Opening, final exercises and references retain explicit links to the module's activities.
-   role='esperimento' if ids else 'orientamento_esercizi_fonti'
-   if not ids:ids=[a['id'] for a in ACT if a['module']==m['id']]
-   coverage.append(dict(module=m['id'],section=i,title=s['title'],page=s['page'],role=role,activities=ids))
+ for c in PUBLISHED['coverage']:
+  ids=[a['id'] for a in ACT if a['module']==c['module'] and a['section']==c['section']]
+  # Opening, final exercises and references retain explicit links to the module's activities.
+  role='esperimento' if ids else 'orientamento_esercizi_fonti'
+  if not ids:ids=[a['id'] for a in ACT if a['module']==c['module']]
+  coverage.append(dict(module=c['module'],section=c['section'],title=c['title'],role=role,activities=ids))
  assert all(a['limits'].strip() for a in ACT), 'Specific activity limits are required'
  assert len({a['limits'] for a in ACT})==len(ACT), 'Repeated activity limits'
  out=dict(version=json.loads((ROOT/'package.json').read_text())['version'],engine='R / webR 0.6.0',activities=ACT,coverage=coverage)

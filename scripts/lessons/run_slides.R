@@ -10,7 +10,7 @@
 args <- commandArgs(trailingOnly = TRUE)
 stopifnot(length(args) %in% 2:3)
 prelude <- if (length(args) == 3L) args[[3]] else "setup.R"
-# Presentazioni con script autonomi (T00, M13-M16): ogni file di Codice si esegue da solo, senza preludio.
+# Presentazioni con script autonomi (T00, M13-M16, P01-P11): ogni file di Codice si esegue da solo, senza preludio.
 standalone <- Sys.getenv("GEOSTAT_STANDALONE") == "1"
 origin <- normalizePath(args[[1]], mustWork = TRUE)
 out_file <- args[[2]]

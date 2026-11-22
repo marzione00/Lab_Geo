@@ -162,7 +162,7 @@ S(110,'Da Pelago ai confronti fra gruppi',r'''
 \PLabel{Fonti del corso e materiali operativi}
 \PBody{\href{https://marzione00.github.io/Lab_Geo/}{Laboratorio di analisi dei dati per le Scienze della Terra}.}
 \vspace{3mm}
-\PBody{\href{https://github.com/marzione00/Lab_Geo/tree/main/moduli/M05}{Modulo M05 originale}: 105 slide e 20 laboratori R6. Questa presentazione riorganizza il percorso in 110 slide.}
+\PBody{\href{https://github.com/marzione00/Lab_Geo/tree/main/moduli/M05}{Modulo M05 nel repository}: indice dei 20 laboratori R. Questa presentazione organizza il percorso in 110 slide.}
 \vspace{3mm}
 \PBody{I nove esperimenti browser hanno funzioni R locali con gli stessi parametri e meccanismi di generazione. I dati dei fossili e dei provini sono sintetici.}
 \vspace{3mm}

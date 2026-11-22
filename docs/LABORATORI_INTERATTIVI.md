@@ -68,8 +68,6 @@ Il sito conserva la navigazione da tastiera, etichette dei controlli e annunci d
 
 ## Dimensioni della distribuzione
 
-Le copie SVG delle slide delle spedizioni e dei relativi pannelli sono ottimizzate con SVGO 4.0.0, mantenendo otto cifre decimali e verificandone la resa; i PDF, i font e i sorgenti restano identici agli originali. L’ottimizzazione può essere ripetuta con `node scripts/optimize-svg.mjs` nell’ambiente che contiene SVGO; il pacchetto è necessario soltanto per questa operazione facoltativa. Gli SVG già ottimizzati sono inclusi nel repository e la build ordinaria continua a utilizzare soltanto Node.js.
+Le figure SVG delle tappe sono compattate dalla build senza modificare coordinate, colori o precisione; i PDF, i font e i sorgenti delle presentazioni restano invariati.
 
-La distribuzione web esclude i file nascosti e i formati di chiave previsti dalla politica di build, i file temporanei di compilazione LaTeX e le copie PDF della cartella di collaudo `materiali/verifiche/`; i PDF consultabili sono in `materiali/pdf/`. Tutti i file originali restano conservati nel repository.
-
-I 232 pannelli TikZ nella lettura testuale riutilizzano lo stesso SVG della slide mediante una finestra vettoriale sulle coordinate originali del diagramma. Le copie dei pannelli rimangono nel repository; la distribuzione evita di trasferire due volte lo stesso contenuto.
+La distribuzione web esclude i file nascosti e i formati di chiave previsti dalla politica di build, i file temporanei di compilazione LaTeX e le copie PDF della cartella di collaudo `materiali/verifiche/`; i PDF consultabili delle presentazioni sono in `assets/lezioni/`. Tutti i file originali restano conservati nel repository.

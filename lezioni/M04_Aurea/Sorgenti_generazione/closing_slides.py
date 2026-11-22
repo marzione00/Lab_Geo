@@ -82,7 +82,7 @@ SLIDES[79]=dict(title='I nove esperimenti e i loro prerequisiti',section='APPLIC
 [r'\href{https://marzione00.github.io/Lab_Geo/\#laboratorio/m04-monte-carlo}{Monte Carlo}','Stima e precisione numerica','57–65'],
 [r'\href{https://marzione00.github.io/Lab_Geo/\#laboratorio/m04-propagazione}{Propagazione}','Dipendenza e rapporto positivo','66–76']
 ],[5.3,9.8,2.5])+r'''
-\PSmall{Il quaderno segue questi nove esperimenti. La mappa nel progetto collega separatamente i venti esercizi R6 originali.}
+\PSmall{Il quaderno segue questi nove esperimenti. La mappa nel progetto collega separatamente i venti laboratori R del modulo.}
 ''',recall='Ogni esperimento richiede una previsione, un confronto fra scenari e una spiegazione del risultato.')
 
 CODES['80_consegna.R']='''# Caso fisico: input indipendenti
@@ -138,7 +138,7 @@ S(82,'Fonti e materiali per il laboratorio',r'''
 \PLabel{Il percorso del corso}
 \PBody{\href{https://marzione00.github.io/Lab_Geo/}{Lab\_Geo, modulo M04}\\Probabilità, variabilità e simulazione.}
 \vspace{2mm}
-\PSmall{Materiali originali: 35 slide, nove esperimenti nel browser e venti esercizi R6. Collegamenti e corrispondenze sono nei sorgenti.}
+\PSmall{Materiali del modulo: nove esperimenti nel browser e venti laboratori R. Collegamenti e corrispondenze sono nei sorgenti.}
 \vspace{4mm}
 \PLabel{Documentazione R}
 \PBody{\href{https://stat.ethz.ch/R-manual/R-devel/library/stats/html/Distributions.html}{R Core Team, distribuzioni nel pacchetto stats}.}

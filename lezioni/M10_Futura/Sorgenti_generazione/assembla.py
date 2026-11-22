@@ -72,9 +72,9 @@ def main():
     (ROOT/'Metadati').mkdir(exist_ok=True)
     (ROOT/'Metadati/slide_contenuti.json').write_text(json.dumps(SLIDES,ensure_ascii=False,indent=2))
     with (ROOT/'Metadati/indice_slide.csv').open('w',newline='') as f:
-        w=csv.writer(f);w.writerow(['pagina','sezione','titolo','notebook','pagine_sito_R6'])
-        w.writerow([1,'Apertura','Futura — Previsione e progetto statistico','','1'])
-        for s in SLIDES:w.writerow([s['page'],s['section'],s['title'],f'M10_N{s["notebook"]:02}' if s['notebook'] else '',','.join(map(str,s['source']))])
+        w=csv.writer(f);w.writerow(['pagina','sezione','titolo','notebook'])
+        w.writerow([1,'Apertura','Futura — Previsione e progetto statistico',''])
+        for s in SLIDES:w.writerow([s['page'],s['section'],s['title'],f'M10_N{s["notebook"]:02}' if s['notebook'] else ''])
     # The script audit runs in a single teaching session after loading canonical state.
     r=['# Esecuzione sequenziale dei frammenti mostrati nelle slide.','source("R/stato_lezione.R",encoding="UTF-8")','verifica_codice <- list()']
     for s in SLIDES:

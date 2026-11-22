@@ -17,7 +17,7 @@ export function moduleGuides() {
       const mission = missions[m.id];
       body +=
         mission.intro +
-        '\n\nLe tre fasi collegano esperimenti preparatori con dati sintetici. Il caso applicativo e i suoi dati rimangono nei materiali R6 descritti sotto.\n\n';
+        '\n\nLe tre fasi collegano esperimenti preparatori con dati sintetici. Il caso applicativo, con dati e codice, è nella presentazione a tappe descritta sotto.\n\n';
       for (const [title, ...ids] of mission.steps) {
         body += '### ' + title + '\n\n';
         for (const id of ids) {
@@ -25,7 +25,7 @@ export function moduleGuides() {
           body +=
             '- **' +
             a.title +
-            '** — ' +
+            '**: ' +
             a.goal +
             ' [Programma R](../../' +
             a.source +
@@ -56,9 +56,9 @@ export function moduleGuides() {
     }
     body +=
       '\nOgni attività esplicita formula, simboli, ipotesi e limiti del procedimento. ' +
-      (fs.existsSync('content/lezioni/' + m.id + '.json')
-        ? 'Il materiale seguente descrive la lezione a tappe e i laboratori del modulo.\n'
-        : 'Il materiale seguente conserva la numerazione delle slide e dei laboratori originali R6.\n');
+      (m.category === 'progetti'
+        ? 'Il materiale seguente descrive la presentazione a tappe della spedizione.\n'
+        : 'Il materiale seguente descrive la lezione a tappe e i laboratori del modulo.\n');
     const file = 'moduli/' + m.id + '/README.md',
       original = fs.readFileSync(file, 'utf8');
     const clean = original.replace(new RegExp(begin + '[\\s\\S]*?' + end + '\\n*'), '');

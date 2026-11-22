@@ -252,6 +252,7 @@ export function buildLessons(root, out) {
       exercisesWorld: lesson.exercisesWorld,
       pages: lesson.pages,
       pdf: lesson.pdf,
+      download: lesson.download,
       explained: Object.keys(notes).map(Number),
       sections: lesson.sections,
       cards: exercises ? exercises.cards.length : 0,

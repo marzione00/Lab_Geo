@@ -27,7 +27,7 @@ Attribuzione suggerita per l’intero progetto: «GeoStat Lab, Marzio De Corato;
 Le componenti di terzi conservano le proprie licenze e non vengono ri-licenziate:
 
 - `vendor/`: webR, R e i 23 pacchetti R WebAssembly, MathJax 3.2.2 (Apache 2.0), ciascuno con la licenza inclusa nel rispettivo percorso;
-- i caratteri Nimbus Sans e Latin Modern, con le licenze in `materiali/sorgenti/font/`;
+- i caratteri Nimbus Sans e Latin Modern, con le licenze in `lezioni/Font/`;
 - le texture della Terra di Solar System Scope (CC BY 4.0);
 - i dataset USGS, NASA/JPL, NOAA/NSIDC, NOAA/NCEI e NASA Exoplanet Archive, alle condizioni dichiarate nei file `assets/research/*/provenance.json`;
 - le fonti, i dati e le immagini di terzi citati nei materiali del corso, documentati in `materiali/documentazione/` e nei file di provenienza delle lezioni;

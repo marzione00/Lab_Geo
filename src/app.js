@@ -6,25 +6,14 @@
   const main = document.getElementById('contenuto'),
     announcer = document.getElementById('annuncio');
   const { html } = window.GeoHTML;
-  const route = (id, p) => '#modulo-' + id + (p ? '/slide/' + p : '');
-  let storage;
-  try {
-    storage = window.localStorage;
-  } catch {
-    storage = null;
-  }
-  let progress = C.loadProgress(storage),
-    current = null,
-    view = 'slide',
+  const route = id => '#modulo-' + id;
+  let current = null,
     renderId = 0,
     selectedCode = 'figure';
   const moduleCache = (window.GEO_MODULES = window.GEO_MODULES || {}),
     pending = {};
   function announce(s) {
     announcer.textContent = s;
-  }
-  function persist() {
-    C.saveProgress(storage, progress);
   }
   const dataPending = {};
   // Lab details and worked solutions load only on the views that use them (same SRI map as module content).
@@ -236,120 +225,6 @@
     }
     window.GeoGalaxy.mount(main);
   }
-  function toc(m, page) {
-    let section = '';
-    return html`<aside class="reader-sidebar" aria-label="Indice delle slide"><h2>${m.id} · Indice</h2><input type="search" id="cerca-slide" aria-label="Cerca nell’indice del modulo" placeholder="Cerca una slide">${m.slides.map(
-      s => {
-        const title = s.section !== section ? html`<p class="toc-section">${s.section}</p>` : '';
-        section = s.section;
-        return html`${title}<a class="toc-link" href="${route(m.id, s.page)}" data-search="${C.clean(s.title + ' ' + s.section)}"${s.page === page ? html` aria-current="page"` : ''}><span>${String(s.page).padStart(2, '0')}</span><span>${s.title}</span></a>`;
-      },
-    )}</aside>`;
-  }
-  function formula(s) {
-    return s ? html`<div class="math">\\[\\begin{gathered}${s}\\end{gathered}\\]</div>` : '';
-  }
-  function reading(m, s) {
-    return html`<article class="reading"><p>${s.body}</p>${formula(s.formula)}${s.aside ? html`<div class="aside-text"><p>${s.aside}</p></div>` : ''}${formula(s.formulaAside)}${
-      s.figure || s.diagram
-        ? html`<figure>${
-            s.figure
-              ? html`<img src="assets/visuals/${m.id}/${String(s.page).padStart(3, '0')}.svg" alt="Rappresentazione della slide: ${s.title}">`
-              : html`<svg class="reading-diagram" xmlns="http://www.w3.org/2000/svg" viewBox="328.819 77.953 211.181 212.598" role="img" aria-label="Diagramma: ${s.title}"><image href="${s.image}" width="566.93" height="354.33"/></svg>`
-          }${
-            s.caption ? html`<figcaption${s.diagram ? html` class="sr-only"` : ''}>${s.caption}</figcaption>` : ''
-          }</figure>`
-        : s.caption
-          ? html`<p>${s.caption}</p>`
-          : ''
-    }${s.recall ? html`<div class="recall"><strong>Richiamo.</strong> ${s.recall}</div>` : ''}${
-      s.kind === 'indice'
-        ? html`<ol>${m.sections.map(x => html`<li>${link(route(m.id, x.page), html`${x.title}`)}</li>`)}</ol>`
-        : ''
-    }</article>`;
-  }
-  function snippet(m, s) {
-    const text = s.code || m.figureCode,
-      path = s.codePath || m.script;
-    return html`<section class="code-panel"><p class="code-note">${
-      s.code
-        ? 'Frammento riportato nella slide.'
-        : 'Questa slide non contiene un frammento di codice; è disponibile lo script completo delle figure del modulo.'
-    }</p><div class="code-top"><strong>${path}</strong><div class="code-actions"><button class="button small secondary" data-copy="current-code">Copia codice</button><a class="button small" href="${path}" download>Scarica .R</a></div></div><pre><code id="current-code">${text}</code></pre><p class="code-note">Esegui il codice in R dalla cartella <code>materiali/</code>, dopo aver installato le dipendenze indicate nella guida.</p></section>`;
-  }
-  function slidePanel(m, s) {
-    const panel = document.getElementById('slide-panel');
-    if (window.MathJax?.typesetClear) window.MathJax.typesetClear([panel]);
-    if (view === 'testo') {
-      panel.innerHTML = html`${reading(m, s)}`;
-      typeset(panel);
-    } else if (view === 'codice') {
-      panel.innerHTML = html`${snippet(m, s)}`;
-    } else {
-      panel.innerHTML = html`<div class="slide-frame"><img src="${s.image}" alt="${m.id + ' · pagina ' + s.page + ' · ' + s.title}. Testo accessibile nella scheda Testo e formule."></div><div class="slide-caption"><span>Template originale · immagine vettoriale</span><a href="${s.image}" target="_blank" rel="noopener">Ingrandisci ↗</a><a href="${m.pdf}#page=${s.page}" target="_blank" rel="noopener">Apri nel PDF ↗</a></div>`;
-    }
-    main.querySelectorAll('[data-view]').forEach(b => {
-      b.setAttribute('aria-selected', String(b.dataset.view === view));
-      b.tabIndex = b.dataset.view === view ? 0 : -1;
-    });
-    bindCopy();
-  }
-  function slidePage(m, page) {
-    const s = m.slides[page - 1],
-      key = m.id + ':' + page,
-      done = progress.done.includes(key);
-    progress.last = route(m.id, page);
-    persist();
-    main.innerHTML = html`${planetSlot(m.id, 'reading-planet', 0.15)}<div class="viewer">${breadcrumbs(m, 'Slide ' + page)}<div class="reader-layout">${toc(m, page)}<div class="reader-main"><div class="reader-title"><h1>${s.title}</h1><span class="page-counter">${String(page).padStart(2, '0')} / ${m.pages}</span></div><div class="reader-tools"><div class="tabs" role="tablist" aria-label="Modalità di lettura">${[
-      ['slide', 'Slide'],
-      ['testo', 'Testo e formule'],
-      ['codice', 'Codice R'],
-    ].map(
-      ([id, label]) =>
-        html`<button role="tab" data-view="${id}" id="tab-${id}" aria-controls="slide-panel" aria-selected="${view === id}">${label}</button>`,
-    )}</div><div class="pager"><button data-step="-1" aria-label="Slide precedente"${page === 1 ? ' disabled' : ''}>←</button><button data-step="1" aria-label="Slide successiva"${page === m.pages ? ' disabled' : ''}>→</button></div></div><div id="slide-panel" role="tabpanel" aria-labelledby="tab-${view}"></div><div class="study-actions"><button id="mark-done" class="button small secondary ${done ? 'done' : ''}" aria-pressed="${done}">${done ? '✓ Segnata come studiata' : 'Segna come studiata'}</button><p>Il progresso resta soltanto in questo browser.</p></div></div></div></div>`;
-    main.querySelectorAll('[data-view]').forEach(b =>
-      b.addEventListener('click', () => {
-        view = b.dataset.view;
-        document.getElementById('slide-panel').setAttribute('aria-labelledby', 'tab-' + view);
-        slidePanel(m, s);
-      }),
-    );
-    main.querySelector('[role="tablist"]').addEventListener('keydown', e => {
-      if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
-      e.preventDefault();
-      e.stopPropagation();
-      const tabs = [...main.querySelectorAll('[data-view]')],
-        at = tabs.indexOf(document.activeElement);
-      const next =
-        e.key === 'Home'
-          ? 0
-          : e.key === 'End'
-            ? tabs.length - 1
-            : (at + (e.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
-      tabs[next].click();
-      tabs[next].focus();
-    });
-    main
-      .querySelectorAll('[data-step]')
-      .forEach(b => b.addEventListener('click', () => (location.hash = route(m.id, page + Number(b.dataset.step)))));
-    document.getElementById('cerca-slide').addEventListener('input', e => {
-      const q = C.clean(e.target.value);
-      main.querySelectorAll('.toc-link').forEach(a => (a.hidden = !a.dataset.search.includes(q)));
-    });
-    document.getElementById('mark-done').addEventListener('click', e => {
-      const isDone = progress.done.includes(key);
-      progress.done = isDone ? progress.done.filter(x => x !== key) : [...progress.done, key];
-      persist();
-      e.currentTarget.classList.toggle('done', !isDone);
-      e.currentTarget.setAttribute('aria-pressed', String(!isDone));
-      e.currentTarget.textContent = isDone ? 'Segna come studiata' : '✓ Segnata come studiata';
-      announce(isDone ? 'Segnalazione rimossa' : 'Pagina segnata come studiata');
-    });
-    slidePanel(m, s);
-    const active = main.querySelector('.toc-link[aria-current="page"]');
-    if (active) active.scrollIntoView({ block: 'nearest' });
-  }
   function codePage(m) {
     const choices = [
       ...(m.figureCode
@@ -357,6 +232,8 @@
         : []),
       ...m.laboratories,
     ];
+    // Modules without scripts of their own (the expeditions) keep code and data in the project of the lesson.
+    if (!choices.length) return location.replace('#lezione-' + m.id);
     if (!choices.some(x => x.id === selectedCode)) selectedCode = choices[0].id;
     main.innerHTML = html`${planetSlot(m.id, 'reading-planet', 0.15)}<div class="wrap">${breadcrumbs(m, 'Codici e laboratori')}<section class="module-head"><p class="eyebrow">${m.id} · Laboratorio</p><h1>Codici e materiali di lavoro</h1><p class="lead">${m.title}</p></section><div class="code-panel"><h2 class="sr-only">Script del modulo</h2><div class="code-top"><label class="sr-only" for="select-code">Scegli lo script</label><select id="select-code">${choices.map(
       x =>
@@ -442,14 +319,17 @@
         document.head.append(script);
       });
     }
+    // A page left while MathJax was still composing it keeps no math items: they would retain the old page.
     mathPromise
       .then(() => {
         if (element.isConnected)
-          return window.MathJax.typesetPromise([element]).then(() => scrollableFormulas(element));
+          return window.MathJax.typesetPromise([element]).then(() =>
+            element.isConnected ? scrollableFormulas(element) : window.MathJax.typesetClear([element]),
+          );
       })
-      .catch(() => announce('Le formule complete sono consultabili nella scheda Slide e nel PDF.'));
+      .catch(() => announce('Le formule complete sono consultabili nel PDF della lezione.'));
   }
-  // Route types rendered from data already in memory; any other type is a module, slide or code page.
+  // Route types rendered from data already in memory; any other type is a module or code page.
   const views = {
     experiment: r => {
       const activity = window.GeoLabs.byId.get(r.activity);
@@ -491,7 +371,7 @@
     progetti: r => home(r.type),
     materiali: () => materials(),
     notfound: () => {
-      main.innerHTML = html`<section class="error"><h1>Pagina non trovata</h1><p>Il collegamento non corrisponde a un modulo o a una slide del corso.</p>${link('#indice', 'Torna all’indice', 'button')}</section>`;
+      main.innerHTML = html`<section class="error"><h1>Pagina non trovata</h1><p>Il collegamento non corrisponde a un modulo o a una tappa del corso.</p>${link('#indice', 'Torna all’indice', 'button')}</section>`;
     },
   };
   // Lab details and worked solutions arrive before the views that read them; false if the route changed meanwhile.
@@ -520,8 +400,7 @@
       if (m.category === 'progetti') window.GeoLabs.mission(main, m);
       else window.GeoLabs.module(main, m);
       lessonNotice(m);
-    } else if (r.type === 'slide') slidePage(m, r.page);
-    else codePage(m);
+    } else codePage(m);
     return true;
   }
   const companionText = l =>
@@ -598,7 +477,7 @@
   }
   document.addEventListener('keydown', e => {
     if (
-      !['slide', 'lesson'].includes(current?.type) ||
+      current?.type !== 'lesson' ||
       e.defaultPrevented ||
       e.altKey ||
       e.ctrlKey ||
@@ -607,14 +486,7 @@
       e.target.isContentEditable
     )
       return;
-    if (!['ArrowLeft', 'ArrowRight'].includes(e.key)) return;
-    if (current.type === 'lesson') return stepLesson(e);
-    const m = catalog.find(x => x.id === current.id),
-      n = current.page + (e.key === 'ArrowRight' ? 1 : -1);
-    if (n >= 1 && n <= m.pages) {
-      e.preventDefault();
-      location.hash = route(m.id, n);
-    }
+    if (['ArrowLeft', 'ArrowRight'].includes(e.key)) stepLesson(e);
   });
   document.querySelector('.skip').addEventListener('click', event => {
     event.preventDefault();
