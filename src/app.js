@@ -530,7 +530,7 @@
         : l.notebooks
           ? ' I ' + l.notebooks + ' notebook svolti sono sul pianeta compagno del sistema.'
           : '';
-  // Modules with a lesson point to its tappe; the earlier slides stay readable.
+  // Modules with a lesson point to its tappe, which replace the earlier slides.
   function lessonNotice(m) {
     const l = lessonIndex[m.id];
     if (!l) return;
@@ -557,6 +557,10 @@
   }
   function resolveRoute() {
     const r = window.GeoLabs?.parseHash(location.hash) || C.parseRoute(location.hash, catalog, lessonIndex);
+    if (r.legacy) {
+      history.replaceState(null, '', '#lezione-' + r.id);
+      return { type: 'lesson', id: r.id, page: null };
+    }
     // The companion world of a lesson hosts its exercises instead of the optional exploration.
     const companion = r.type === 'exploration' && window.GeoLessons?.forWorld(r.world);
     if (companion?.role !== 'exercises') return r;

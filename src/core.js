@@ -61,9 +61,11 @@
     if (!match[2]) return { type: 'module', id: mod.id };
     if (match[2] === 'codici') return match[3] ? { type: 'notfound' } : { type: 'code', id: mod.id };
     const page = Number(match[3] || 3);
-    return Number.isInteger(page) && page >= 1 && page <= mod.pages
-      ? { type: 'slide', id: mod.id, page }
-      : { type: 'notfound' };
+    if (!Number.isInteger(page) || page < 1 || page > mod.pages) return { type: 'notfound' };
+    // A module with a lesson replaces its earlier slides with the tappe of the lesson.
+    return Object.hasOwn(lessons, mod.id)
+      ? { type: 'lesson', id: mod.id, page: null, legacy: true }
+      : { type: 'slide', id: mod.id, page };
   }
   function filterModules(modules, query = '', category = 'tutti') {
     const terms = clean(query).split(/\s+/).filter(Boolean);
