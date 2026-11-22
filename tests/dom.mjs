@@ -237,7 +237,7 @@ assert(![...d.querySelectorAll('.lesson-card h3')].some(h => h.textContent === '
 assert(!d.querySelector('.lesson-exercises').textContent.includes('previsione'));
 // A workbook without expected values (M06) shows the comparison table of the workbook.
 w.location.hash = '#esercizi-M06/1';
-await until(() => d.querySelectorAll('#table-form input').length > 0);
+await until(() => d.querySelector('.lesson-card h2')?.textContent === w.GEO_LESSONS.M06?.exercises.cards[0].title);
 assert.equal(
   d.querySelectorAll('#table-form input').length,
   2 * (w.GEO_LESSONS.M06.exercises.cards[0].table.length - 1),
