@@ -114,8 +114,8 @@ S(80,'Consegna: una relazione riproducibile',r'''
 
 ''','Un risultato riproducibile richiede modello dichiarato, codice eseguibile, unità e una lettura corretta della variabilità.')
 
-S(81,'Domande per controllare la comprensione',r'''
-\PLabel{Quattro situazioni da spiegare}
+S(81,'Quattro situazioni e i loro controlli',r'''
+\PLabel{Situazioni e controlli corrispondenti}
 '''+table(['Situazione','Controllo necessario'],[
 ['Densità pari a 5','Area e unità della variabile'],
 ['Nessun evento simulato','Probabilità e repliche'],
@@ -123,7 +123,7 @@ S(81,'Domande per controllare la comprensione',r'''
 ['Rapporto meno variabile','Dipendenza degli ingressi']
 ],[4.7,4.8])+r'''
 \vspace{3mm}
-\PBody{Per ogni situazione scrivere una spiegazione e un controllo in R. Una risposta deve indicare quale quantità si sta calcolando.}
+\PBody{Ogni situazione si chiarisce dichiarando la quantità calcolata e controllandola in R con il calcolo indicato nella seconda colonna.}
 ''',r'''
 \PLabel{Tre risultati da tenere distinti}
 \begin{tikzpicture}[x=1cm,y=1cm]
