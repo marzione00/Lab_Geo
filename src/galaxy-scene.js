@@ -488,6 +488,7 @@
     }));
     let data = { stars: [], dust: [] };
     const buttons = [...chart.querySelectorAll('[data-destination]')],
+      markers = [...chart.querySelectorAll('[data-object]')],
       listeners = [];
     const leaders = new Map(
       [...chart.querySelectorAll('[data-leader]')].map(g => [
@@ -551,6 +552,22 @@
       canvas.height = Math.round(height * dpr);
       invalidate();
     }
+    // Notable objects: their anchors follow the rotation of the galaxy like the systems.
+    function placeMarkers() {
+      for (const m of markers) {
+        const o = root.GeoObjects?.byId[m.dataset.object];
+        if (!o) continue;
+        const q = M.project(
+          M.rotate([o.anchor[0] * 0.72, o.anchor[1], o.anchor[2] * 0.72], angle),
+          state.camera.vp,
+          width,
+          height,
+        );
+        m.style.left = q.x + 'px';
+        m.style.top = q.y + 'px';
+        m.classList.toggle('off-view', !q.visible || Boolean(flight) || q.x < 24 || q.x > width - 24);
+      }
+    }
     function layout(now) {
       const fitDistance = M.fitDistance(width, height, distance);
       if (flight) {
@@ -575,6 +592,7 @@
         p.screen = M.project(p.position, state.camera.vp, width, height);
         p.screen.radius = (p.radius * height * state.camera.f) / (2 * p.screen.depth);
       }
+      placeMarkers();
       const labelLayout = M.labels(worlds, width, height);
       chart.querySelector('.galaxy-leaders').setAttribute('viewBox', `0 0 ${width} ${height}`);
       for (const b of buttons) {

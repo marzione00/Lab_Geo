@@ -131,9 +131,27 @@ for (const sys of w.GeoAstro.systems) {
   d.querySelector('#locate-module').click();
   assert.equal(d.querySelector('#enter-module').getAttribute('href'), '#modulo-' + sys.id);
 }
+// Notable objects: markers and cards in the galaxy, one page each. Without a WebGL2 rasteriser the page keeps
+// the scientific card and shows the essential view of the scene.
+w.location.hash = '#indice';
+await until(() => d.querySelectorAll('.galaxy-node').length === 17);
+assert.equal(d.querySelectorAll('.galaxy-object').length, 5);
+assert.equal(d.querySelectorAll('.galaxy-object-cards a').length, 5);
+for (const o of w.GeoObjects.objects) {
+  w.location.hash = '#oggetto-' + o.id;
+  await until(() => d.querySelector('#object-title')?.textContent === o.name + '.');
+  await until(() => ['essential', 'webgl2'].includes(d.querySelector('.object-chart').dataset.renderer));
+  assert(d.querySelectorAll('.object-stats > div').length >= 6, o.id);
+  assert.equal(d.querySelectorAll('.object-switch a').length, 5);
+  assert.equal(d.querySelector('.object-switch a[aria-current="page"]').getAttribute('href'), '#oggetto-' + o.id);
+  assert(d.querySelectorAll('.object-sources li').length >= 3, o.id);
+  assert(d.querySelectorAll('[data-option]').length >= 3, o.id);
+  assert(d.querySelectorAll('.astro-equations article').length === 3, o.id);
+}
 w.location.hash = '#mappa';
 await until(() => d.querySelectorAll('.galaxy-node').length === 17);
 assert.equal(d.querySelectorAll('.star-grid').length, 0, 'Old navigation must be removed');
+assert.equal(w.GeoObjectPages.debug(), null, 'Object scene must be disposed after navigating away');
 await until(() => w.GeoSpace.debug().ready);
 assert.equal(w.GeoSpace.debug().paused, false);
 for (const m of catalog) {

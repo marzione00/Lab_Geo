@@ -21,6 +21,8 @@ const ON_DEMAND = {
   'solution-data.js': ['GEO_SOLUTIONS'],
   'briefing.js': ['GEO_BRIEFING', 'GeoBriefing'],
   'audio.js': ['GeoAudio'],
+  // Bundle of src/objects-engine.js and the five scenes, loaded by objects.js.
+  'objects-scenes.js': ['GeoObjectEngine', 'GeoObjectScenes'],
   // assets/lessons/<ID>.js add entries to window.GEO_LESSONS.
   'lessons/*.js': ['GEO_LESSONS'],
 };

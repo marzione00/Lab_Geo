@@ -164,7 +164,8 @@
       gl.bindBuffer(gl.ARRAY_BUFFER, quad);
       attribute(p, 'aPosition', 2, 0, 0);
     }
-    function draw(camera, width, height, strength = 1) {
+    // output: framebuffer that receives the sky (default: the canvas), as for the HDR pass of the object scenes.
+    function draw(camera, width, height, strength = 1, output = null) {
       const m = camera.view,
         basis = new Float32Array([m[0], m[4], m[8], m[1], m[5], m[9], m[2], m[6], m[10]]);
       const view = new Float32Array([m[0], m[1], m[2], m[4], m[5], m[6], m[8], m[9], m[10]]);
@@ -198,7 +199,7 @@
         gl.drawArrays(gl.TRIANGLES, 0, 6);
         lastKey = key;
       }
-      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, output);
       gl.viewport(0, 0, width, height);
       gl.useProgram(sky);
       gl.bindBuffer(gl.ARRAY_BUFFER, stars);

@@ -280,14 +280,40 @@ try:
    fresh.close()
    (OUT/'briefing-audio.json').write_text(json.dumps(dict(audio_longtask_ms=audio_budget),indent=2))
    checks.append('Briefing alla prima visita, Esc e focus, axe a 390 e 1440 px; audio solo dopo il consenso, scelta ricordata, task lunghi sotto 500 ms')
-   for r in ['#indice','#catalogo','#esperimenti','#progetti','#materiali','#taccuino','#sistema-M05','#modulo-M05','#lezione-P11/3','#laboratorio/m05-estimandi','#esplorazione/M05-b']:
+   # Notable objects: the scene runs in WebGL2 where the browser offers it (otherwise the essential view keeps the
+   # card), the toggles act on the scene and leaving the page releases the context.
+   fresh=browser.new_context(viewport={'width':1280,'height':860});probe=fresh.new_page()
+   probe.on('pageerror',lambda e:errors.append(str(e)))
+   probe.on('console',lambda m:errors.append(m.text) if m.type=='error' else None)
+   rendered={}
+   for o in ['buco-nero','pulsar','asteroidi','cometa','binaria']:
+    probe.goto(url+'#oggetto-'+o)
+    wait_true(probe,"['webgl2','essential'].includes(document.querySelector('.object-chart')?.dataset.renderer)",timeout=30000)
+    rendered[o]=probe.evaluate("document.querySelector('.object-chart').dataset.renderer")
+    assert probe.locator('.object-stats > div').count()>=6
+    if rendered[o]=='webgl2':
+     probe.wait_for_timeout(3000)
+     info=probe.evaluate('GeoObjectPages.debug()')
+     assert info['object']==o and info['particles']>0,json.dumps(info)
+     toggle=probe.locator('[data-option]').first
+     before=toggle.get_attribute('aria-pressed');toggle.click()
+     assert toggle.get_attribute('aria-pressed')!=before
+    else:
+     assert probe.locator('.object-essential').is_visible()
+    probe.screenshot(path=str(OUT/('oggetto-'+o+'.png')))
+   probe.goto(url+'#indice');wait_true(probe,"document.querySelectorAll('.galaxy-object').length===5")
+   assert probe.evaluate('GeoObjectPages.debug()') is None,'Object scene must be released'
+   fresh.close()
+   (OUT/'oggetti.json').write_text(json.dumps(rendered,indent=2))
+   checks.append('Cinque oggetti notevoli: scena o vista essenziale, controlli e rilascio del contesto')
+   for r in ['#indice','#catalogo','#esperimenti','#progetti','#materiali','#taccuino','#sistema-M05','#modulo-M05','#lezione-P11/3','#laboratorio/m05-estimandi','#esplorazione/M05-b','#oggetto-buco-nero','#oggetto-binaria']:
     fresh=browser.new_context(viewport={'width':1440,'height':900});probe=fresh.new_page();probe.goto(url+r);probe.wait_for_timeout(2500);probe.evaluate(axe)
     found=probe.evaluate("async()=>(await axe.run(document,{resultTypes:['violations'],rules:{'label-content-name-mismatch':{enabled:true}}})).violations.map(v=>({id:v.id,impact:v.impact,nodes:v.nodes.map(n=>n.target.join(' '))}))")
     if found:violations[r]=found
     fresh.close()
    (OUT/'axe.json').write_text(json.dumps(violations,ensure_ascii=False,indent=2))
    assert not violations,'Accessibility: '+json.dumps(violations,ensure_ascii=False)[:2000]
-   checks.append('axe-core 4.14: nessuna violazione su 11 rotte')
+   checks.append('axe-core 4.14: nessuna violazione su 13 rotte')
    page.goto(url+'experiments-harness.html')
    page.locator('#start').click()
    expect(page.locator('#status')).to_have_text('COMPLETATO · 139 superati · 0 errori',timeout=600000)
