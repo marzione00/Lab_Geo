@@ -11,7 +11,7 @@ function setup() {
   load(w, 'html', 'planets', 'astro-model', 'core', 'learning-paths', 'explorations');
   return { dom, w, main: w.document.querySelector('main') };
 }
-test('All 100 worlds have an independent path and level; every complementary world opens a scientific reading', () => {
+test('All 105 worlds have an independent path and level; every complementary world opens a scientific reading', () => {
   const { w, main } = setup();
   let courses = 0,
     explorations = 0;
@@ -36,8 +36,8 @@ test('All 100 worlds have an independent path and level; every complementary wor
         assert(main.querySelector('.path-badge').textContent.includes(meta.symbol));
       }
     }
-  assert.equal(courses, 20);
-  assert.equal(explorations, 80);
+  assert.equal(courses, 21);
+  assert.equal(explorations, 84);
   assert.equal(w.GeoPaths.moduleInfo('M08').level, 'Avanzato');
   assert(
     w.GeoAstro.systems.some(s =>

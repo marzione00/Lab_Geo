@@ -26,6 +26,7 @@
       ['M05', 'M07'],
       'Regressione lineare, propagazione delle incertezze e distribuzione chi quadrato.',
     ],
+    M20: ['Avanzato', ['M04', 'M07'], 'Distribuzioni discrete, regressione lineare e verosimiglianza.'],
   };
   const links = {
     radiation: {
