@@ -1,0 +1,2303 @@
+{
+ "id": "M21",
+ "title": "Inferenza bayesiana",
+ "planet": "Credentia",
+ "world": "M21-d",
+ "exercisesWorld": "M21-c",
+ "pages": 32,
+ "pdf": "assets/lezioni/M21/M21_Credentia.pdf",
+ "project": {
+  "dir": "credentia",
+  "files": [
+   "Codice/capitolo-01.R",
+   "Codice/capitolo-02.R",
+   "Codice/capitolo-03.R",
+   "Codice/capitolo-04.R",
+   "Codice/capitolo-05.R",
+   "Codice/capitolo-06.R",
+   "Codice/capitolo-07.R",
+   "Codice/capitolo-08.R",
+   "dati/analoghi_v1.csv",
+   "dati/eruzioni_v1.csv"
+  ]
+ },
+ "reference": {
+  "R": "R version 4.6.0 (2026-04-24), webR nel browser",
+  "native": "R version 4.3.3 (2024-02-29)",
+  "note": "Uscite registrate eseguendo il codice delle slide in ordine nel browser."
+ },
+ "sections": [
+  {
+   "title": "COPERTINA",
+   "first": 1,
+   "last": 1
+  },
+  {
+   "title": "PERCORSO",
+   "first": 2,
+   "last": 2
+  },
+  {
+   "title": "IL CASO GUIDA",
+   "first": 3,
+   "last": 3
+  },
+  {
+   "title": "IL TEOREMA DI BAYES",
+   "first": 4,
+   "last": 9
+  },
+  {
+   "title": "CONIUGATE E INTERVALLI DI CREDIBILITÀ",
+   "first": 10,
+   "last": 16
+  },
+  {
+   "title": "SENSIBILITÀ ALLA DISTRIBUZIONE A PRIORI",
+   "first": 17,
+   "last": 23
+  },
+  {
+   "title": "MONTE CARLO A CATENA DI MARKOV",
+   "first": 24,
+   "last": 30
+  },
+  {
+   "title": "SINTESI",
+   "first": 31,
+   "last": 31
+  },
+  {
+   "title": "RIFERIMENTI",
+   "first": 32,
+   "last": 32
+  }
+ ],
+ "slides": [
+  {
+   "page": 1,
+   "items": [],
+   "title": "Inferenza bayesiana",
+   "section": "COPERTINA",
+   "lines": [
+    "CREDENTIA",
+    "MODULO M21 · SCIENZE DELLA TERRA",
+    "Inferenza bayesiana",
+    "Stimare con la distribuzione a posteriori",
+    "Griglie, distribuzioni coniugate, scelta della distribuzione a priori e algoritmo di Metropolis",
+    "GeoStat Lab · corso di Marzio De Corato",
+    "Impaginazione da Tessera · CC BY-NC-SA 4.0"
+   ],
+   "recall": []
+  },
+  {
+   "page": 2,
+   "title": "Indice della presentazione",
+   "section": "PERCORSO",
+   "recall": [
+    "I titoli dell’indice aprono i capitoli. Il nome del capitolo in alto riporta a questa pagina."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Capitoli"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      {
+       "t": "a",
+       "h": "#lezione-M21/4",
+       "c": [
+        "Il teorema di Bayes"
+       ]
+      }
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      {
+       "t": "a",
+       "h": "#lezione-M21/10",
+       "c": [
+        "Coniugate e intervalli di credibilità"
+       ]
+      }
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      {
+       "t": "a",
+       "h": "#lezione-M21/17",
+       "c": [
+        "Sensibilità alla distribuzione a priori"
+       ]
+      }
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      {
+       "t": "a",
+       "h": "#lezione-M21/24",
+       "c": [
+        "Monte Carlo a catena di Markov"
+       ]
+      }
+     ],
+     "col": "L"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Percorso di lettura"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il registro storico di un vulcano conta nove eruzioni in 375 anni; quattordici vulcani analoghi forniscono un’informazione preliminare sul tasso eruttivo e sulla frazione di eruzioni esplosive. Il percorso va dal teorema di Bayes su una griglia alle distribuzioni coniugate, alla scelta della distribuzione a priori e all’algoritmo di Metropolis per i tempi di riposo."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Le pagine Scenario A e Confronto riprendono gli esperimenti nel browser. I valori di partenza del simulatore possono differire dal caso guida."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      {
+       "t": "b",
+       "c": [
+        {
+         "t": "a",
+         "h": "#modulo-M21",
+         "c": [
+          "Apri gli esperimenti di Credentia"
+         ]
+        }
+       ]
+      }
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 3,
+   "title": "Quanto è probabile un’eruzione nei prossimi cinquant’anni?",
+   "section": "IL CASO GUIDA",
+   "recall": [
+    "Una distribuzione a posteriori descrive l’incertezza sul parametro dopo aver visto i dati."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "003-1",
+     "w": 291,
+     "h": 100,
+     "src": "assets/lezioni/M21/figure/003-1.svg",
+     "ratio": 0.97
+    },
+    {
+     "t": "label",
+     "c": [
+      "Il caso"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Un vulcano sintetico ha eruttato nove volte fra il 1650 e il 2025, l’ultima nel 1988; quattro eruzioni sono state esplosive. Quattordici vulcani analoghi, osservati per 140–440 anni, hanno da tre a sedici eruzioni ciascuno. Con un registro così breve l’informazione dei vulcani analoghi pesa sulla stima."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "info",
+     "c": [
+      "Seguiremo i dati dalla griglia al teorema di Bayes in forma chiusa, alla probabilità di un’eruzione esplosiva e a un modello dei tempi di riposo stimato con una catena di Markov."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 4,
+   "title": "Che cosa dice il solo registro?",
+   "section": "IL TEOREMA DI BAYES",
+   "recall": [
+    "Sostituire il tasso stimato nella formula della probabilità ignora l’incertezza della stima."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Domanda"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Nove eruzioni in 3,75 secoli danno un tasso di 2,4 eruzioni per secolo. Quanto è incerto? Che probabilità di almeno un’eruzione in mezzo secolo si ottiene inserendo il tasso stimato nella formula di Poisson?"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Interpretazione"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "L’intervallo esatto di Garwood al 95% va da 1,10 a 4,56 eruzioni per secolo: un fattore quattro. La formula ",
+      {
+       "t": "m",
+       "v": "1-e^{-0{,}5\\lambda}"
+      },
+      " con ",
+      {
+       "t": "m",
+       "v": "\\lambda=2{,}4"
+      },
+      " dà 0,699, un numero che non porta traccia di questa incertezza."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · calcolo riproducibile",
+     "file": "capitolo-01.R",
+     "col": "R"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Risultato in R"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "out",
+     "v": "eruzioni   secoli    stima\n    9.00     3.75     2.40\n[1] 1.097433 4.555948\n[1] 0.6988058",
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 5,
+   "title": "Distribuzione a priori, verosimiglianza e distribuzione a posteriori",
+   "section": "IL TEOREMA DI BAYES",
+   "recall": [
+    "La distribuzione a posteriori è proporzionale al prodotto di distribuzione a priori e verosimiglianza."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "005-1",
+     "w": 259,
+     "h": 172,
+     "src": "assets/lezioni/M21/figure/005-1.svg",
+     "ratio": 0.94
+    },
+    {
+     "t": "small",
+     "c": [
+      "Il teorema di Bayes applicato al tasso eruttivo."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Thomas Bayes affrontò il problema di risalire da un numero di successi alla probabilità che li ha prodotti; il saggio fu pubblicato nel 1763, dopo la sua morte. In forma moderna il parametro ha una distribuzione di probabilità: quella a priori riassume l’informazione disponibile prima dei dati, e i dati la aggiornano attraverso la verosimiglianza."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "\\pi(\\lambda\\mid N)=\\frac{p(N\\mid\\lambda)\\,\\pi(\\lambda)}{p(N)}",
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 6,
+   "title": "La distribuzione a posteriori su una griglia",
+   "section": "IL TEOREMA DI BAYES",
+   "recall": [
+    "Su una griglia il teorema di Bayes è un prodotto seguito da una normalizzazione."
+   ],
+   "items": [
+    {
+     "t": "p",
+     "c": [
+      "Il codice valuta distribuzione a priori uniforme e verosimiglianza di Poisson in 4001 punti fra 0 e 10 eruzioni per secolo, divide il prodotto per la sua area e ricava media e quantili. La media a posteriori vale 2,67 e l’intervallo di credibilità al 95% va da 1,28 a 4,56: c’è una probabilità di 0,95 che il tasso stia in questo intervallo."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\pi(\\lambda_j\\mid N)\\approx\\frac{p(N\\mid\\lambda_j)\\,\\pi(\\lambda_j)}{\\sum_i p(N\\mid\\lambda_i)\\,\\pi(\\lambda_i)\\,\\Delta}",
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · calcolo riproducibile",
+     "file": "capitolo-02.R",
+     "col": "R"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Risultato in R"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "out",
+     "v": "   media      inf      sup\n2.666666 1.280000 4.555000",
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 7,
+   "title": "Prima e dopo il registro storico",
+   "section": "IL TEOREMA DI BAYES",
+   "recall": [
+    "La distribuzione a posteriori sta fra la distribuzione a priori e la verosimiglianza, ed è più stretta di entrambe."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "007-1",
+     "w": 244,
+     "h": 174,
+     "source": "Figure/F01.pdf",
+     "src": "assets/lezioni/M21/figure/007-1.svg",
+     "ratio": 0.916
+    },
+    {
+     "t": "small",
+     "c": [
+      "Densità a priori dai vulcani analoghi, verosimiglianza normalizzata e densità a posteriori del tasso eruttivo."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La distribuzione a priori dei vulcani analoghi ha media 2,85 eruzioni per secolo ed è larga, da 0,94 a 5,78. La verosimiglianza del registro è centrata su 2,4. La distribuzione a posteriori ha media 2,55 e intervallo da 1,40 a 4,03, più stretto di entrambe: combina due fonti di informazione."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "La verosimiglianza normalizzata coincide con la distribuzione a posteriori ottenuta da una distribuzione a priori uniforme."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 8,
+   "title": "Distribuzione a posteriori e lunghezza del registro",
+   "section": "IL TEOREMA DI BAYES",
+   "recall": [
+    "Valutare quanto la distribuzione a posteriori dipende dalla distribuzione a priori al variare della quantità di dati."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "008-1",
+     "w": 262,
+     "h": 170,
+     "source": "Esperimenti/m21-registro-A.pdf",
+     "src": "assets/lezioni/M21/figure/008-1.svg",
+     "ratio": 0.983
+    },
+    {
+     "t": "small",
+     "c": [
+      "Registro di un secolo; tasso vero 2,5 eruzioni per secolo. Seme: 17."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Scenario A · simulazione"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "L’esperimento genera il numero di eruzioni di un registro della durata scelta e aggiorna la distribuzione a priori dei vulcani analoghi. Con un secolo di registro si osserva un’eruzione: la media a posteriori vale 2,19 e l’intervallo al 95% è ampio 3,41 eruzioni per secolo."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "\\lambda\\mid N\\sim\\mathrm{Gamma}(a+N,\\;b+T)",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Il peso della distribuzione a priori nella media a posteriori vale ",
+      {
+       "t": "m",
+       "v": "b/(b+T)=0{,}644"
+      },
+      "."
+     ],
+     "col": "R"
+    }
+   ],
+   "labs": [
+    {
+     "id": "m21-registro",
+     "title": "Distribuzione a posteriori e lunghezza del registro",
+     "params": {
+      "T": 1,
+      "seed": 17
+     }
+    }
+   ]
+  },
+  {
+   "page": 9,
+   "title": "Confronto | Lunghezza del registro",
+   "section": "IL TEOREMA DI BAYES",
+   "recall": [
+    "Con più dati la distribuzione a priori conta meno e l’intervallo si restringe."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "009-1",
+     "w": 244,
+     "h": 159,
+     "source": "Esperimenti/m21-registro-B.pdf",
+     "src": "assets/lezioni/M21/figure/009-1.svg",
+     "ratio": 0.916
+    },
+    {
+     "t": "small",
+     "c": [
+      "Durata del registro: 1 ",
+      {
+       "t": "m",
+       "v": "\\to"
+      },
+      " 10 secoli. Il seme è fisso."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Confronto fra gli scenari"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "table",
+     "head": [
+      [
+       {
+        "c": [
+         "Grandezza"
+        ]
+       },
+       {
+        "c": [
+         "A"
+        ]
+       },
+       {
+        "c": [
+         "B"
+        ]
+       }
+      ]
+     ],
+     "rows": [
+      [
+       {
+        "c": [
+         "Eruzioni osservate"
+        ]
+       },
+       {
+        "c": [
+         "1"
+        ]
+       },
+       {
+        "c": [
+         "19"
+        ]
+       }
+      ],
+      [
+       {
+        "c": [
+         "Media a posteriori"
+        ]
+       },
+       {
+        "c": [
+         "2{,}19"
+        ]
+       },
+       {
+        "c": [
+         "2{,}04"
+        ]
+       }
+      ],
+      [
+       {
+        "c": [
+         "Ampiezza dell’intervallo"
+        ]
+       },
+       {
+        "c": [
+         "3{,}41"
+        ]
+       },
+       {
+        "c": [
+         "1{,}63"
+        ]
+       }
+      ],
+      [
+       {
+        "c": [
+         "Peso della distribuzione a priori"
+        ]
+       },
+       {
+        "c": [
+         "0{,}644"
+        ]
+       },
+       {
+        "c": [
+         "0{,}153"
+        ]
+       }
+      ]
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Con dieci secoli si osservano 19 eruzioni contro 25 attese, e la media a posteriori vale 2,04. Il peso della distribuzione a priori scende a 0,153 e l’intervallo si restringe a 1,63."
+     ],
+     "col": "R"
+    }
+   ],
+   "labs": [
+    {
+     "id": "m21-registro",
+     "title": "Distribuzione a posteriori e lunghezza del registro",
+     "params": {
+      "T": 10,
+      "seed": 17
+     }
+    }
+   ]
+  },
+  {
+   "page": 10,
+   "title": "Un aggiornamento in forma chiusa",
+   "section": "CONIUGATE E INTERVALLI DI CREDIBILITÀ",
+   "recall": [
+    "Con una distribuzione a priori coniugata la distribuzione a posteriori appartiene alla stessa famiglia."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "010-1",
+     "w": 256,
+     "h": 169,
+     "src": "assets/lezioni/M21/figure/010-1.svg",
+     "ratio": 0.94
+    },
+    {
+     "t": "small",
+     "c": [
+      "Aggiornamento della gamma con un registro di Poisson."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Se la distribuzione a priori del tasso è una gamma e le eruzioni seguono un processo di Poisson, anche la distribuzione a posteriori è una gamma: la forma aumenta del numero di eruzioni, il parametro di scala inverso della durata. I due parametri della distribuzione a priori si leggono come un registro immaginario di ",
+      {
+       "t": "m",
+       "v": "a"
+      },
+      " eruzioni in ",
+      {
+       "t": "m",
+       "v": "b"
+      },
+      " secoli."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "\\mathrm{Gamma}(a,b)\\to\\mathrm{Gamma}(a+N,b+T)",
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 11,
+   "title": "La distribuzione a priori dei vulcani analoghi",
+   "section": "CONIUGATE E INTERVALLI DI CREDIBILITÀ",
+   "recall": [
+    "Se i tassi seguono una gamma, i conteggi dei vulcani analoghi seguono una binomiale negativa."
+   ],
+   "items": [
+    {
+     "t": "p",
+     "c": [
+      "Il codice stima i parametri della gamma massimizzando la verosimiglianza binomiale negativa dei conteggi dei quattordici vulcani analoghi: ",
+      {
+       "t": "m",
+       "v": "a=5{,}15"
+      },
+      " e ",
+      {
+       "t": "m",
+       "v": "b=1{,}81"
+      },
+      " secoli. Aggiunge poi le nove eruzioni del caso: la distribuzione a posteriori è una gamma con parametri 14,15 e 5,56, media 2,55 e intervallo da 1,40 a 4,03."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "N_j\\sim\\mathrm{BN}\\Big(a,\\;\\mu_j=\\frac{a}{b}\\,T_j\\Big)",
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · calcolo riproducibile",
+     "file": "capitolo-03.R",
+     "col": "R"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Risultato in R"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "out",
+     "v": "     A      B     A1     B1  media\n 5.147  1.807 14.147  5.557  2.546\n[1] 1.397 4.033",
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 12,
+   "title": "Quattordici vulcani analoghi",
+   "section": "CONIUGATE E INTERVALLI DI CREDIBILITÀ",
+   "recall": [
+    "I vulcani analoghi differiscono fra loro più di quanto spieghino i loro registri."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "012-1",
+     "w": 214,
+     "h": 174,
+     "source": "Figure/F02.pdf",
+     "src": "assets/lezioni/M21/figure/012-1.svg",
+     "ratio": 0.803
+    },
+    {
+     "t": "small",
+     "c": [
+      "Tassi dei vulcani analoghi e del caso con intervalli esatti al 95%; fascia: intervallo della gamma a priori; tratteggio: sua media."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "I tassi dei vulcani analoghi vanno da 0,68 a 7,14 eruzioni per secolo. La gamma stimata descrive questa variabilità fra vulcani: è la distribuzione dei tassi da cui il vulcano del caso è pensato come estratto. Il registro del caso, 2,4 eruzioni per secolo, cade vicino alla media dei vulcani analoghi."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Questo uso dei dati per costruire la distribuzione a priori si chiama bayesiano empirico."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 13,
+   "title": "Qual è la probabilità di un’eruzione in mezzo secolo?",
+   "section": "CONIUGATE E INTERVALLI DI CREDIBILITÀ",
+   "recall": [
+    "La distribuzione predittiva media la probabilità su tutti i valori plausibili del parametro."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Domanda"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La distribuzione a posteriori del tasso è una gamma con parametri 14,15 e 5,56. Qual è la probabilità di almeno un’eruzione nei prossimi cinquant’anni, mediata sull’incertezza del tasso?"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Interpretazione"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La media di ",
+      {
+       "t": "m",
+       "v": "1-e^{-0{,}5\\lambda}"
+      },
+      " sulla distribuzione a posteriori ha una formula chiusa e vale 0,704; centomila estrazioni dalla gamma danno 0,705. Con il solo tasso stimato si otteneva 0,699."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · calcolo riproducibile",
+     "file": "capitolo-04.R",
+     "col": "R"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Risultato in R"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "out",
+     "v": "predittiva  con_stima\n 0.7044308  0.6988058\n[1] 0.7045884",
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 14,
+   "title": "Quante eruzioni nei prossimi cinquant’anni",
+   "section": "CONIUGATE E INTERVALLI DI CREDIBILITÀ",
+   "recall": [
+    "L’incertezza sul tasso allarga la distribuzione dei conteggi futuri."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "014-1",
+     "w": 235,
+     "h": 174,
+     "source": "Figure/F03.pdf",
+     "src": "assets/lezioni/M21/figure/014-1.svg",
+     "ratio": 0.882
+    },
+    {
+     "t": "small",
+     "c": [
+      "Distribuzione predittiva a posteriori e distribuzione di Poisson con il tasso stimato."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La distribuzione predittiva a posteriori è una binomiale negativa. Rispetto alla distribuzione di Poisson con il tasso stimato assegna una probabilità minore a una o due eruzioni e maggiore a tre o più: 0,143 contro 0,121. La probabilità di nessuna eruzione cambia poco, 0,296 contro 0,301."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "P(M=0)=\\Big(\\frac{b+T}{b+T+h}\\Big)^{a+N}",
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 15,
+   "title": "Intervalli per un tasso con pochi eventi",
+   "section": "CONIUGATE E INTERVALLI DI CREDIBILITÀ",
+   "recall": [
+    "Confrontare la copertura di intervalli frequentisti e di credibilità quando gli eventi sono pochi."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "015-1",
+     "w": 262,
+     "h": 170,
+     "source": "Esperimenti/m21-copertura-A.pdf",
+     "src": "assets/lezioni/M21/figure/015-1.svg",
+     "ratio": 0.983
+    },
+    {
+     "t": "small",
+     "c": [
+      "Trenta eventi attesi; quattromila registri. Seme: 17."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Scenario A · simulazione"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "L’esperimento genera quattromila conteggi di Poisson e costruisce tre intervalli al 95%: Wald, credibilità con la distribuzione a priori di Jeffreys, esatto. Con trenta eventi attesi le coperture valgono 0,933, 0,959 e 0,959."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "\\lambda\\mid N\\sim\\mathrm{Gamma}\\big(N+\\tfrac12,\\;1\\big)",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "La distribuzione a priori di Jeffreys per un tasso di Poisson è proporzionale a ",
+      {
+       "t": "m",
+       "v": "\\lambda^{-1/2}"
+      },
+      "."
+     ],
+     "col": "R"
+    }
+   ],
+   "labs": [
+    {
+     "id": "m21-copertura",
+     "title": "Intervalli per un tasso con pochi eventi",
+     "params": {
+      "mu": 30,
+      "seed": 17
+     }
+    }
+   ]
+  },
+  {
+   "page": 16,
+   "title": "Confronto | Intervalli con pochi eventi",
+   "section": "CONIUGATE E INTERVALLI DI CREDIBILITÀ",
+   "recall": [
+    "Con pochi eventi l’approssimazione normale fallisce; l’intervallo di Jeffreys tiene."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "016-1",
+     "w": 244,
+     "h": 159,
+     "source": "Esperimenti/m21-copertura-B.pdf",
+     "src": "assets/lezioni/M21/figure/016-1.svg",
+     "ratio": 0.916
+    },
+    {
+     "t": "small",
+     "c": [
+      "Eventi attesi: 30 ",
+      {
+       "t": "m",
+       "v": "\\to"
+      },
+      " 3. Il seme è fisso."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Confronto fra gli scenari"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "table",
+     "head": [
+      [
+       {
+        "c": [
+         "Grandezza"
+        ]
+       },
+       {
+        "c": [
+         "A"
+        ]
+       },
+       {
+        "c": [
+         "B"
+        ]
+       }
+      ]
+     ],
+     "rows": [
+      [
+       {
+        "c": [
+         "Copertura, Wald"
+        ]
+       },
+       {
+        "c": [
+         "0{,}933"
+        ]
+       },
+       {
+        "c": [
+         "0{,}796"
+        ]
+       }
+      ],
+      [
+       {
+        "c": [
+         "Copertura, Jeffreys"
+        ]
+       },
+       {
+        "c": [
+         "0{,}959"
+        ]
+       },
+       {
+        "c": [
+         "0{,}915"
+        ]
+       }
+      ],
+      [
+       {
+        "c": [
+         "Copertura, esatto"
+        ]
+       },
+       {
+        "c": [
+         "0{,}959"
+        ]
+       },
+       {
+        "c": [
+         "0{,}987"
+        ]
+       }
+      ],
+      [
+       {
+        "c": [
+         "Registri senza eventi"
+        ]
+       },
+       {
+        "c": [
+         "0"
+        ]
+       },
+       {
+        "c": [
+         "0{,}0508"
+        ]
+       }
+      ]
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Con tre eventi attesi l’intervallo di Wald contiene il valore vero nel 79,6% dei registri, quello di Jeffreys nel 91,5%, quello esatto nel 98,7%. Il 5,1% dei registri non ha eventi."
+     ],
+     "col": "R"
+    }
+   ],
+   "labs": [
+    {
+     "id": "m21-copertura",
+     "title": "Intervalli per un tasso con pochi eventi",
+     "params": {
+      "mu": 3,
+      "seed": 17
+     }
+    }
+   ]
+  },
+  {
+   "page": 17,
+   "title": "La frazione di eruzioni esplosive",
+   "section": "SENSIBILITÀ ALLA DISTRIBUZIONE A PRIORI",
+   "recall": [
+    "Per una proporzione la distribuzione beta è coniugata della binomiale."
+   ],
+   "items": [
+    {
+     "t": "p",
+     "c": [
+      "Quattro eruzioni su nove sono state esplosive. Il codice aggiorna tre distribuzioni beta a priori: uniforme, di Jeffreys e quella stimata dai vulcani analoghi, con media 0,334 e forza pari a 20 eruzioni. Le prime due danno medie a posteriori di 0,455 e 0,450 con intervalli larghi; la terza 0,368, da 0,206 a 0,548."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "p\\mid k\\sim\\mathrm{Beta}(\\alpha+k,\\;\\beta+n-k)",
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · calcolo riproducibile",
+     "file": "capitolo-05.R",
+     "col": "R"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Risultato in R"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "out",
+     "v": "         media   inf   sup\nuniforme 0.455 0.187 0.738\njeffreys 0.450 0.173 0.746\nanaloghi 0.368 0.206 0.548",
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 18,
+   "title": "Tre distribuzioni a posteriori per la frazione esplosiva",
+   "section": "SENSIBILITÀ ALLA DISTRIBUZIONE A PRIORI",
+   "recall": [
+    "Con pochi dati la scelta della distribuzione a priori cambia la distribuzione a posteriori."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "018-1",
+     "w": 244,
+     "h": 174,
+     "source": "Figure/F04.pdf",
+     "src": "assets/lezioni/M21/figure/018-1.svg",
+     "ratio": 0.916
+    },
+    {
+     "t": "small",
+     "c": [
+      "Densità a posteriori della frazione esplosiva con tre distribuzioni a priori; tratteggio: beta a priori dei vulcani analoghi."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Le distribuzioni a posteriori uniforme e di Jeffreys quasi coincidono: con nove eruzioni la differenza fra le due distribuzioni a priori conta poco. La distribuzione dei vulcani analoghi vale quanto venti eruzioni, più del doppio del registro, e sposta la media a posteriori verso 0,33."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "La forza di una beta a priori è ",
+      {
+       "t": "m",
+       "v": "\\alpha+\\beta"
+      },
+      ", il numero di eruzioni a cui equivale."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 19,
+   "title": "E un’eruzione esplosiva?",
+   "section": "SENSIBILITÀ ALLA DISTRIBUZIONE A PRIORI",
+   "recall": [
+    "La simulazione dalle distribuzioni a posteriori propaga l’incertezza di più parametri."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Domanda"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Le eruzioni esplosive formano un processo di Poisson con tasso ",
+      {
+       "t": "m",
+       "v": "\\lambda p"
+      },
+      ". Qual è la probabilità di almeno un’eruzione esplosiva nei prossimi cinquant’anni?"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Interpretazione"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Estraendo centomila coppie dalle due distribuzioni a posteriori, la probabilità media vale 0,365. Con le stime puntuali, 2,4 eruzioni per secolo e frazione 4/9, si otterrebbe 0,413."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · calcolo riproducibile",
+     "file": "capitolo-06.R",
+     "col": "R"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Risultato in R"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "out",
+     "v": "    bayes con_stime\n0.3653214 0.4133538",
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 20,
+   "title": "Quanto conta la distribuzione a priori",
+   "section": "SENSIBILITÀ ALLA DISTRIBUZIONE A PRIORI",
+   "recall": [
+    "Una distribuzione a priori informativa e sbagliata sposta la stima più di quanto i dati possano correggere."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "020-1",
+     "w": 266,
+     "h": 160,
+     "source": "Figure/F05.pdf",
+     "src": "assets/lezioni/M21/figure/020-1.svg",
+     "ratio": 0.998
+    },
+    {
+     "t": "small",
+     "c": [
+      "Media e intervallo al 95% del tasso eruttivo con quattro distribuzioni a priori e stima di massima verosimiglianza."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Uniforme, Jeffreys e vulcani analoghi danno medie fra 2,53 e 2,67. Una distribuzione a priori tratta da vulcani di altro tipo, gamma con media 10 eruzioni per secolo e forza pari a un secolo, porta la media a 4,00 con intervallo da 2,41 a 5,99. La verosimiglianza normalizzata assegna ai valori oltre 4 una probabilità di 0,07."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "\\frac{a+N}{b+T}=\\frac{10+9}{1+3{,}75}=4{,}00",
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 21,
+   "title": "Che cosa contiene una distribuzione a priori",
+   "section": "SENSIBILITÀ ALLA DISTRIBUZIONE A PRIORI",
+   "recall": [
+    "Una distribuzione a priori va dichiarata, giustificata e confrontata con i dati."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Dati immaginari"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Una gamma con parametri ",
+      {
+       "t": "m",
+       "v": "a"
+      },
+      " e ",
+      {
+       "t": "m",
+       "v": "b"
+      },
+      " pesa quanto un registro di ",
+      {
+       "t": "m",
+       "v": "b"
+      },
+      " secoli con ",
+      {
+       "t": "m",
+       "v": "a"
+      },
+      " eruzioni; una beta con parametri ",
+      {
+       "t": "m",
+       "v": "\\alpha"
+      },
+      " e ",
+      {
+       "t": "m",
+       "v": "\\beta"
+      },
+      " quanto ",
+      {
+       "t": "m",
+       "v": "\\alpha+\\beta"
+      },
+      " eruzioni. Tradurre la distribuzione a priori in dati equivalenti permette di giudicare se la sua forza è ragionevole: i vulcani analoghi valgono 1,8 secoli e venti eruzioni."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "w=\\frac{b}{b+T}=0{,}325",
+     "col": "L"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Controllo predittivo a priori"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Prima dell’aggiornamento si chiede quanto sia probabile il dato osservato secondo la distribuzione predittiva a priori. Con i vulcani analoghi un registro con al più nove eruzioni ha probabilità 0,48; con i vulcani di altro tipo 0,0024. Il secondo valore segnala un conflitto fra distribuzione a priori e dati."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Il controllo segnala un’incoerenza: decidere quale delle due parti sia sbagliata richiede conoscenza geologica."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 22,
+   "title": "Distribuzione a priori in conflitto con i dati",
+   "section": "SENSIBILITÀ ALLA DISTRIBUZIONE A PRIORI",
+   "recall": [
+    "Valutare l’effetto di una distribuzione a priori sbagliata e la capacità del controllo predittivo di rilevarla."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "022-1",
+     "w": 262,
+     "h": 170,
+     "source": "Esperimenti/m21-priori-A.pdf",
+     "src": "assets/lezioni/M21/figure/022-1.svg",
+     "ratio": 0.983
+    },
+    {
+     "t": "small",
+     "c": [
+      "Media a priori uguale al tasso vero; forza 1,8 secoli; mille registri. Seme: 17."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Scenario A · simulazione"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "L’esperimento genera mille registri di 3,75 secoli con tasso vero 2,5 e aggiorna una gamma con la media e la forza scelte. Con una distribuzione a priori centrata sul valore vero la media delle medie a posteriori vale 2,48, la copertura 0,974 e il controllo non segnala conflitti."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "p=2\\min\\{P(N^\\prime\\le N),\\,P(N^\\prime\\ge N)\\}",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      {
+       "t": "m",
+       "v": "N^\\prime"
+      },
+      " segue la distribuzione predittiva a priori, una binomiale negativa."
+     ],
+     "col": "R"
+    }
+   ],
+   "labs": [
+    {
+     "id": "m21-priori",
+     "title": "Distribuzione a priori in conflitto con i dati",
+     "params": {
+      "fattore": 1,
+      "forza": 1.8,
+      "seed": 17
+     }
+    }
+   ]
+  },
+  {
+   "page": 23,
+   "title": "Confronto | Distribuzione a priori in conflitto",
+   "section": "SENSIBILITÀ ALLA DISTRIBUZIONE A PRIORI",
+   "recall": [
+    "Una distribuzione a priori sbagliata riduce la copertura; il controllo predittivo la segnala spesso."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "023-1",
+     "w": 244,
+     "h": 159,
+     "source": "Esperimenti/m21-priori-B.pdf",
+     "src": "assets/lezioni/M21/figure/023-1.svg",
+     "ratio": 0.916
+    },
+    {
+     "t": "small",
+     "c": [
+      "Media a priori: 1 ",
+      {
+       "t": "m",
+       "v": "\\to"
+      },
+      " 3 volte il tasso vero. Forza e seme fissi."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Confronto fra gli scenari"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "table",
+     "head": [
+      [
+       {
+        "c": [
+         "Grandezza"
+        ]
+       },
+       {
+        "c": [
+         "A"
+        ]
+       },
+       {
+        "c": [
+         "B"
+        ]
+       }
+      ]
+     ],
+     "rows": [
+      [
+       {
+        "c": [
+         "Media a priori"
+        ]
+       },
+       {
+        "c": [
+         "2{,}5"
+        ]
+       },
+       {
+        "c": [
+         "7{,}5"
+        ]
+       }
+      ],
+      [
+       {
+        "c": [
+         "Media delle medie a posteriori"
+        ]
+       },
+       {
+        "c": [
+         "2{,}48"
+        ]
+       },
+       {
+        "c": [
+         "4{,}1"
+        ]
+       }
+      ],
+      [
+       {
+        "c": [
+         "Copertura al 95%"
+        ]
+       },
+       {
+        "c": [
+         "0{,}974"
+        ]
+       },
+       {
+        "c": [
+         "0{,}416"
+        ]
+       }
+      ],
+      [
+       {
+        "c": [
+         "Conflitti segnalati"
+        ]
+       },
+       {
+        "c": [
+         "0"
+        ]
+       },
+       {
+        "c": [
+         "0{,}773"
+        ]
+       }
+      ]
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Con una media a priori di 7,5 la media a posteriori sale a 4,1 e l’intervallo contiene il valore vero soltanto nel 41,6% dei registri. Il controllo predittivo segnala il conflitto nel 77,3% dei casi."
+     ],
+     "col": "R"
+    }
+   ],
+   "labs": [
+    {
+     "id": "m21-priori",
+     "title": "Distribuzione a priori in conflitto con i dati",
+     "params": {
+      "fattore": 3,
+      "forza": 1.8,
+      "seed": 17
+     }
+    }
+   ]
+  },
+  {
+   "page": 24,
+   "title": "Le eruzioni sono regolari?",
+   "section": "MONTE CARLO A CATENA DI MARKOV",
+   "recall": [
+    "Nel processo di Poisson i tempi di riposo sono esponenziali; la Weibull permette tempi più regolari."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Domanda"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Gli otto tempi di riposo vanno da 20 a 54 anni, e dall’ultima eruzione ne sono passati 37. Il coefficiente di variazione di un processo di Poisson vale 1: quanto vale qui? Che forma stima la Weibull?"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Interpretazione"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il coefficiente di variazione vale 0,34, e la stima di massima verosimiglianza della forma è 3,96, con scala 44,6 anni. Una forma maggiore di 1 indica un rischio che cresce con il tempo trascorso dall’ultima eruzione."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · calcolo riproducibile",
+     "file": "capitolo-07.R",
+     "col": "R"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Risultato in R"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "out",
+     "v": "    k scala\n 3.96 44.57\nmedia    cv\n39.25  0.34",
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 25,
+   "title": "L’algoritmo di Metropolis",
+   "section": "MONTE CARLO A CATENA DI MARKOV",
+   "recall": [
+    "Metropolis richiede la densità a posteriori soltanto a meno di una costante."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "025-1",
+     "w": 270,
+     "h": 162,
+     "src": "assets/lezioni/M21/figure/025-1.svg",
+     "ratio": 0.94
+    },
+    {
+     "t": "small",
+     "c": [
+      "Le quattro fasi di un passo della catena."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Con due parametri e una distribuzione a priori non coniugata la distribuzione a posteriori non ha una forma nota. Nicholas Metropolis e colleghi proposero nel 1953 una catena di Markov che ha come distribuzione stazionaria quella voluta; W. K. Hastings la generalizzò nel 1970 a proposte asimmetriche."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "\\alpha=\\min\\Big\\{1,\\frac{\\pi(\\theta^*\\mid y)}{\\pi(\\theta^{(t)}\\mid y)}\\Big\\}",
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 26,
+   "title": "Una catena per la Weibull",
+   "section": "MONTE CARLO A CATENA DI MARKOV",
+   "recall": [
+    "L’intervallo ancora aperto entra nella verosimiglianza come dato censurato."
+   ],
+   "items": [
+    {
+     "t": "p",
+     "c": [
+      "La log-densità a posteriori somma le densità degli otto riposi, la probabilità che il riposo in corso superi 37 anni e due distribuzioni a priori normali sui logaritmi dei parametri. La catena accetta il 41% delle proposte. Dopo cinquecento iterazioni iniziali la media di ",
+      {
+       "t": "m",
+       "v": "k"
+      },
+      " vale 3,15, e ",
+      {
+       "t": "m",
+       "v": "P(k>1)=0{,}994"
+      },
+      "."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "\\log\\pi=\\sum_i\\log f(r_i)+\\log S(37)+\\log\\pi_0",
+     "col": "L"
+    },
+    {
+     "t": "code",
+     "title": "R · calcolo riproducibile",
+     "file": "capitolo-08.R",
+     "col": "R"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Risultato in R"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "out",
+     "v": "  acc     k  p_k1\n0.411 3.155 0.994",
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 27,
+   "title": "La catena e la distribuzione a posteriori della forma",
+   "section": "MONTE CARLO A CATENA DI MARKOV",
+   "recall": [
+    "Una traccia stabile e ben mescolata è una condizione necessaria per usare i valori della catena."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "027-1",
+     "w": 266,
+     "h": 158,
+     "source": "Figure/F06.pdf",
+     "src": "assets/lezioni/M21/figure/027-1.svg",
+     "ratio": 0.998
+    },
+    {
+     "t": "small",
+     "c": [
+      "Sinistra: prime duemila iterazioni di ",
+      {
+       "t": "m",
+       "v": "k"
+      },
+      ". Destra: istogramma dei valori dopo le prime cinquecento; tratteggio: ",
+      {
+       "t": "m",
+       "v": "k=1"
+      },
+      "."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "La traccia oscilla attorno a 3 senza tendenze dopo le prime iterazioni. L’intervallo al 95% della forma va da 1,39 a 5,89: i dati escludono il processo di Poisson e lasciano incerta la regolarità. Un’integrazione numerica su griglia dà una media di 3,17."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Il generatore dei dati usa ",
+      {
+       "t": "m",
+       "v": "k=1{,}8"
+      },
+      ": otto riposi non bastano a fissare la forma."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 28,
+   "title": "Diagnostica e uso della catena",
+   "section": "MONTE CARLO A CATENA DI MARKOV",
+   "recall": [
+    "Valori autocorrelati contengono meno informazione di altrettante estrazioni indipendenti."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Controllare la catena"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "I valori iniziali dipendono dal punto di partenza e si scartano. I valori successivi sono autocorrelati: la dimensione campionaria efficace dei 4500 valori di ",
+      {
+       "t": "m",
+       "v": "k"
+      },
+      " è circa 170. A. Gelman e D. B. Rubin proposero nel 1992 di lanciare più catene da punti di partenza dispersi e di confrontare la variabilità fra catene ed entro catene."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "math",
+     "v": "n_{\\mathrm{eff}}=\\frac{n}{1+2\\sum_{l}\\rho_l}",
+     "col": "L"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Una probabilità condizionata"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Ogni valore della catena dà una probabilità di eruzione nei prossimi cinquant’anni, dati i 37 anni già trascorsi; la media vale 0,97. Il processo di Poisson, privo di memoria, dà 0,70. Con la forma del generatore, 1,8, la probabilità vera è 0,91."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      {
+       "t": "m",
+       "v": "P=1-\\exp\\{(37/\\eta)^k-(87/\\eta)^k\\}"
+      },
+      ", mediata sui valori della catena."
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 29,
+   "title": "Passo della proposta e mescolamento della catena",
+   "section": "MONTE CARLO A CATENA DI MARKOV",
+   "recall": [
+    "Valutare come il passo della proposta cambia accettazione, autocorrelazione e precisione."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "029-1",
+     "w": 262,
+     "h": 170,
+     "source": "Esperimenti/m21-metropolis-A.pdf",
+     "src": "assets/lezioni/M21/figure/029-1.svg",
+     "ratio": 0.983
+    },
+    {
+     "t": "small",
+     "c": [
+      "Passo 0,25 sulla scala logaritmica; quattromila iterazioni. Seme: 17."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Scenario A · simulazione"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "L’esperimento esegue l’algoritmo di Metropolis sui tempi di riposo del caso con il passo scelto. Con passo 0,25 la catena accetta il 43% delle proposte, la media di ",
+      {
+       "t": "m",
+       "v": "k"
+      },
+      " vale 3,10 e la dimensione campionaria efficace 212."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "math",
+     "v": "\\theta^*=\\theta^{(t)}+\\varepsilon,\\quad\\varepsilon\\sim N(0,s^2I)",
+     "col": "R"
+    },
+    {
+     "t": "small",
+     "c": [
+      "Il valore di riferimento, 3,17, viene dall’integrazione su griglia."
+     ],
+     "col": "R"
+    }
+   ],
+   "labs": [
+    {
+     "id": "m21-metropolis",
+     "title": "Passo della proposta e mescolamento della catena",
+     "params": {
+      "passo": 0.25,
+      "seed": 17
+     }
+    }
+   ]
+  },
+  {
+   "page": 30,
+   "title": "Confronto | Passo della proposta",
+   "section": "MONTE CARLO A CATENA DI MARKOV",
+   "recall": [
+    "Un passo troppo piccolo accetta quasi tutto ed esplora poco."
+   ],
+   "items": [
+    {
+     "t": "figure",
+     "col": "L",
+     "fig": "030-1",
+     "w": 244,
+     "h": 159,
+     "source": "Esperimenti/m21-metropolis-B.pdf",
+     "src": "assets/lezioni/M21/figure/030-1.svg",
+     "ratio": 0.916
+    },
+    {
+     "t": "small",
+     "c": [
+      "Passo della proposta: 0,25 ",
+      {
+       "t": "m",
+       "v": "\\to"
+      },
+      " 0,02. Il seme è fisso."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Confronto fra gli scenari"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "table",
+     "head": [
+      [
+       {
+        "c": [
+         "Grandezza"
+        ]
+       },
+       {
+        "c": [
+         "A"
+        ]
+       },
+       {
+        "c": [
+         "B"
+        ]
+       }
+      ]
+     ],
+     "rows": [
+      [
+       {
+        "c": [
+         "Tasso di accettazione"
+        ]
+       },
+       {
+        "c": [
+         "0{,}433"
+        ]
+       },
+       {
+        "c": [
+         "0{,}946"
+        ]
+       }
+      ],
+      [
+       {
+        "c": [
+         "Media a posteriori di k"
+        ]
+       },
+       {
+        "c": [
+         "3{,}1"
+        ]
+       },
+       {
+        "c": [
+         "2{,}78"
+        ]
+       }
+      ],
+      [
+       {
+        "c": [
+         "Dimensione campionaria efficace"
+        ]
+       },
+       {
+        "c": [
+         "212"
+        ]
+       },
+       {
+        "c": [
+         "11{,}9"
+        ]
+       }
+      ],
+      [
+       {
+        "c": [
+         "Riferimento su griglia"
+        ]
+       },
+       {
+        "c": [
+         "3{,}17"
+        ]
+       },
+       {
+        "c": [
+         "3{,}17"
+        ]
+       }
+      ]
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Con passo 0,02 la catena accetta il 94,6% delle proposte ma si sposta di poco a ogni passo: la dimensione campionaria efficace scende a 11,9 e la media di ",
+      {
+       "t": "m",
+       "v": "k"
+      },
+      ", 2,78, risente ancora del punto di partenza."
+     ],
+     "col": "R"
+    }
+   ],
+   "labs": [
+    {
+     "id": "m21-metropolis",
+     "title": "Passo della proposta e mescolamento della catena",
+     "params": {
+      "passo": 0.02,
+      "seed": 17
+     }
+    }
+   ]
+  },
+  {
+   "page": 31,
+   "title": "Dal risultato alla relazione",
+   "section": "SINTESI",
+   "recall": [
+    "Riporta distribuzione a priori e sua origine, distribuzione a posteriori, controlli e probabilità predittive."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Domanda di partenza"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Quanto è probabile un’eruzione nei prossimi cinquant’anni?"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Risultato da discutere"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Il tasso eruttivo ha media a posteriori di 2,55 eruzioni per secolo, con intervallo di credibilità al 95% da 1,4 a 4,0; la probabilità di almeno un’eruzione nei prossimi cinquant’anni è 0,70 con il processo di Poisson, e quella di un’eruzione esplosiva 0,37. I tempi di riposo sono più regolari di un processo di Poisson, e con 37 anni già trascorsi il modello di Weibull porta la probabilità a 0,97."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Limiti della conclusione"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "I dati sono sintetici e il registro storico è considerato completo. La forma della Weibull è incerta, da 1,4 a 5,9, e la probabilità condizionata dipende da essa; i vulcani analoghi sono scambiabili con il caso per ipotesi."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      {
+       "t": "b",
+       "c": [
+        {
+         "t": "a",
+         "h": "#modulo-M21",
+         "c": [
+          "Torna agli esperimenti di Credentia"
+         ]
+        }
+       ]
+      }
+     ],
+     "col": "R"
+    }
+   ]
+  },
+  {
+   "page": 32,
+   "title": "Fonti, dati e codice per riprodurre le figure",
+   "section": "RIFERIMENTI",
+   "recall": [
+    "I risultati numerici si riferiscono ai dati e alle ipotesi dichiarate nel caso."
+   ],
+   "items": [
+    {
+     "t": "label",
+     "c": [
+      "Fonti"
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "T. Bayes, Philosophical Transactions of the Royal Society 53, 370–418, 1763."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "F. Garwood, Biometrika 28(3–4), 437–442, 1936."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "H. Jeffreys, Proceedings of the Royal Society A 186, 453–461, 1946."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "N. Metropolis, A. W. Rosenbluth, M. N. Rosenbluth, A. H. Teller e E. Teller, Journal of Chemical Physics 21(6), 1087–1092, 1953."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "W. K. Hastings, Biometrika 57(1), 97–109, 1970."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "A. Gelman e D. B. Rubin, Statistical Science 7(4), 457–472, 1992."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "C. G. Newhall e R. P. Hoblitt, Bulletin of Volcanology 64, 3–20, 2002."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "W. Marzocchi, L. Sandri e J. Selva, Bulletin of Volcanology 70(5), 623–632, 2008."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "p",
+     "c": [
+      "M. S. Bebbington, Statistics in Volcanology 1, 1–24, 2013."
+     ],
+     "col": "L"
+    },
+    {
+     "t": "label",
+     "c": [
+      "Dati e codice"
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      "Dati sintetici del corso (eruzioni_v1.csv, analoghi_v1.csv), generati da R/genera_dati.R. Codice contiene i frammenti delle pagine; R/M21_figure.R ricostruisce figure e valori; Esperimenti contiene i programmi dei due scenari e Diagrammi i disegni TikZ."
+     ],
+     "col": "R"
+    },
+    {
+     "t": "p",
+     "c": [
+      {
+       "t": "b",
+       "c": [
+        {
+         "t": "a",
+         "h": "#lezione-M21",
+         "c": [
+          "Apri le tappe di Credentia su GeoStat Lab"
+         ]
+        }
+       ]
+      }
+     ],
+     "col": "R"
+    }
+   ]
+  }
+ ],
+ "code": {
+  "capitolo-01.R": {
+   "code": "e <- read.csv('dati/eruzioni_v1.csv')\nn <- nrow(e); T <- (2025 - 1650) / 100\nc(eruzioni = n, secoli = T, stima = n / T)\n# intervallo esatto al 95%\nc(qchisq(.025, 2 * n) / 2 / T,\n  qchisq(.975, 2 * n + 2) / 2 / T)\n# almeno un'eruzione in mezzo secolo\n1 - exp(-0.5 * n / T)",
+   "output": "> e <- read.csv('dati/eruzioni_v1.csv')\n> n <- nrow(e); T <- (2025 - 1650) / 100\n> c(eruzioni = n, secoli = T, stima = n / T)\neruzioni   secoli    stima \n    9.00     3.75     2.40 \n> # intervallo esatto al 95%\n> c(qchisq(.025, 2 * n) / 2 / T,\n+   qchisq(.975, 2 * n + 2) / 2 / T)\n[1] 1.097433 4.555948\n> # almeno un'eruzione in mezzo secolo\n> 1 - exp(-0.5 * n / T)\n[1] 0.6988058",
+   "deps": [],
+   "page": 4
+  },
+  "capitolo-02.R": {
+   "code": "e <- read.csv('dati/eruzioni_v1.csv')\nn <- nrow(e)\nT <- 3.75\ng <- seq(0, 10, length.out = 4001)\ndg <- g[2] - g[1]\npri <- rep(1, length(g))\nver <- dpois(n, g * T)\npost <- pri * ver / sum(pri * ver * dg)\ncdf <- cumsum(post * dg)\nc(media = sum(g * post * dg),\n  inf = g[which.max(cdf >= .025)],\n  sup = g[which.max(cdf >= .975)])",
+   "output": "> e <- read.csv('dati/eruzioni_v1.csv')\n> n <- nrow(e)\n> T <- 3.75\n> g <- seq(0, 10, length.out = 4001)\n> dg <- g[2] - g[1]\n> pri <- rep(1, length(g))\n> ver <- dpois(n, g * T)\n> post <- pri * ver / sum(pri * ver * dg)\n> cdf <- cumsum(post * dg)\n> c(media = sum(g * post * dg),\n+   inf = g[which.max(cdf >= .025)],\n+   sup = g[which.max(cdf >= .975)])\n   media      inf      sup \n2.666666 1.280000 4.555000 ",
+   "deps": [],
+   "page": 6
+  },
+  "capitolo-03.R": {
+   "code": "a <- read.csv('dati/analoghi_v1.csv')\nTa <- a$anni_osservati / 100\nnll <- function(q) -sum(dnbinom(\n  a$eruzioni, size = exp(q[1]),\n  mu = exp(q[1] - q[2]) * Ta, log = TRUE))\nq <- optim(c(1, 0), nll,\n  control = list(reltol = 1e-12))$par\nA <- exp(q[1]); B <- exp(q[2])\nA1 <- A + 9; B1 <- B + 3.75\nround(c(A = A, B = B, A1 = A1, B1 = B1,\n  media = A1 / B1), 3)\nround(qgamma(c(.025, .975), A1, B1), 3)",
+   "output": "> a <- read.csv('dati/analoghi_v1.csv')\n> Ta <- a$anni_osservati / 100\n> nll <- function(q) -sum(dnbinom(\n+   a$eruzioni, size = exp(q[1]),\n+   mu = exp(q[1] - q[2]) * Ta, log = TRUE))\n> q <- optim(c(1, 0), nll,\n+   control = list(reltol = 1e-12))$par\n> A <- exp(q[1]); B <- exp(q[2])\n> A1 <- A + 9; B1 <- B + 3.75\n> round(c(A = A, B = B, A1 = A1, B1 = B1,\n+   media = A1 / B1), 3)\n     A      B     A1     B1  media \n 5.147  1.807 14.147  5.557  2.546 \n> round(qgamma(c(.025, .975), A1, B1), 3)\n[1] 1.397 4.033",
+   "deps": [],
+   "page": 11
+  },
+  "capitolo-04.R": {
+   "code": "# parametri a posteriori del frammento 3\nA1 <- 14.147; B1 <- 5.557; h <- 0.5\nc(predittiva = 1 - (B1 / (B1 + h))^A1,\n  con_stima = 1 - exp(-h * 9 / 3.75))\nset.seed(1)\nl <- rgamma(1e5, A1, B1)\nmean(1 - exp(-h * l))",
+   "output": "> # parametri a posteriori del frammento 3\n> A1 <- 14.147; B1 <- 5.557; h <- 0.5\n> c(predittiva = 1 - (B1 / (B1 + h))^A1,\n+   con_stima = 1 - exp(-h * 9 / 3.75))\npredittiva  con_stima \n 0.7044308  0.6988058 \n> set.seed(1)\n> l <- rgamma(1e5, A1, B1)\n> mean(1 - exp(-h * l))\n[1] 0.7045884",
+   "deps": [],
+   "page": 13
+  },
+  "capitolo-05.R": {
+   "code": "e <- read.csv('dati/eruzioni_v1.csv')\nn <- nrow(e)\nk <- sum(e$tipo == 'esplosiva')\npri <- rbind(uniforme = c(1, 1),\n  jeffreys = c(.5, .5),\n  analoghi = c(6.685, 13.354))\na1 <- pri[, 1] + k; b1 <- pri[, 2] + n - k\nround(cbind(media = a1 / (a1 + b1),\n  inf = qbeta(.025, a1, b1),\n  sup = qbeta(.975, a1, b1)), 3)",
+   "output": "> e <- read.csv('dati/eruzioni_v1.csv')\n> n <- nrow(e)\n> k <- sum(e$tipo == 'esplosiva')\n> pri <- rbind(uniforme = c(1, 1),\n+   jeffreys = c(.5, .5),\n+   analoghi = c(6.685, 13.354))\n> a1 <- pri[, 1] + k; b1 <- pri[, 2] + n - k\n> round(cbind(media = a1 / (a1 + b1),\n+   inf = qbeta(.025, a1, b1),\n+   sup = qbeta(.975, a1, b1)), 3)\n         media   inf   sup\nuniforme 0.455 0.187 0.738\njeffreys 0.450 0.173 0.746\nanaloghi 0.368 0.206 0.548",
+   "deps": [],
+   "page": 17
+  },
+  "capitolo-06.R": {
+   "code": "set.seed(2)\nl <- rgamma(1e5, 14.147, 5.557)\np <- rbeta(1e5, 4 + 6.685, 5 + 13.354)\nc(bayes = mean(1 - exp(-0.5 * l * p)),\n  con_stime = 1 - exp(-0.5 * 2.4 * 4 / 9))",
+   "output": "> set.seed(2)\n> l <- rgamma(1e5, 14.147, 5.557)\n> p <- rbeta(1e5, 4 + 6.685, 5 + 13.354)\n> c(bayes = mean(1 - exp(-0.5 * l * p)),\n+   con_stime = 1 - exp(-0.5 * 2.4 * 4 / 9))\n    bayes con_stime \n0.3653214 0.4133538 ",
+   "deps": [],
+   "page": 19
+  },
+  "capitolo-07.R": {
+   "code": "e <- read.csv('dati/eruzioni_v1.csv')\nr <- diff(e$anno); s <- 2025 - max(e$anno)\nll <- function(t) sum(dweibull(r,\n  exp(t[1]), exp(t[2]), log = TRUE)) +\n  pweibull(s, exp(t[1]), exp(t[2]),\n    lower.tail = FALSE, log.p = TRUE)\no <- optim(c(0, log(40)),\n  function(t) -ll(t))\nround(c(k = exp(o$par[1]),\n  scala = exp(o$par[2])), 2)\nround(c(media = mean(r),\n  cv = sd(r) / mean(r)), 2)",
+   "output": "> e <- read.csv('dati/eruzioni_v1.csv')\n> r <- diff(e$anno); s <- 2025 - max(e$anno)\n> ll <- function(t) sum(dweibull(r,\n+   exp(t[1]), exp(t[2]), log = TRUE)) +\n+   pweibull(s, exp(t[1]), exp(t[2]),\n+     lower.tail = FALSE, log.p = TRUE)\n> o <- optim(c(0, log(40)),\n+   function(t) -ll(t))\n> round(c(k = exp(o$par[1]),\n+   scala = exp(o$par[2])), 2)\n    k scala \n 3.96 44.57 \n> round(c(media = mean(r),\n+   cv = sd(r) / mean(r)), 2)\nmedia    cv \n39.25  0.34 ",
+   "deps": [],
+   "page": 24
+  },
+  "capitolo-08.R": {
+   "code": "e <- read.csv('dati/eruzioni_v1.csv')\nr <- diff(e$anno); s <- 2025 - max(e$anno)\nlp <- function(t) sum(dweibull(r,\n  exp(t[1]), exp(t[2]), log = TRUE)) +\n  pweibull(s, exp(t[1]), exp(t[2]),\n    FALSE, TRUE) +\n  dnorm(t[1], 0, 1, TRUE) +\n  dnorm(t[2], log(40), 1, TRUE)\nset.seed(2026); t <- c(0, log(40))\nch <- numeric(5000); acc <- 0\nfor (i in 1:5000) {\n  p <- t + rnorm(2, 0, 0.25)\n  if (log(runif(1)) < lp(p) - lp(t)) {\n    t <- p; acc <- acc + 1 }\n  ch[i] <- exp(t[1]) }\nk <- ch[-(1:500)]\nround(c(acc = acc / 5000, k = mean(k),\n  p_k1 = mean(k > 1)), 3)",
+   "output": "> e <- read.csv('dati/eruzioni_v1.csv')\n> r <- diff(e$anno); s <- 2025 - max(e$anno)\n> lp <- function(t) sum(dweibull(r,\n+   exp(t[1]), exp(t[2]), log = TRUE)) +\n+   pweibull(s, exp(t[1]), exp(t[2]),\n+     FALSE, TRUE) +\n+   dnorm(t[1], 0, 1, TRUE) +\n+   dnorm(t[2], log(40), 1, TRUE)\n> set.seed(2026); t <- c(0, log(40))\n> ch <- numeric(5000); acc <- 0\n> for (i in 1:5000) {\n+   p <- t + rnorm(2, 0, 0.25)\n+   if (log(runif(1)) < lp(p) - lp(t)) {\n+     t <- p; acc <- acc + 1 }\n+   ch[i] <- exp(t[1]) }\n> k <- ch[-(1:500)]\n> round(c(acc = acc / 5000, k = mean(k),\n+   p_k1 = mean(k > 1)), 3)\n  acc     k  p_k1 \n0.411 3.155 0.994 ",
+   "deps": [],
+   "page": 26
+  }
+ },
+ "download": "assets/lezioni/M21/Credentia_M21_progetto_R.zip"
+}

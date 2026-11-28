@@ -76,7 +76,7 @@ const actual = fs
 if (actual.length !== listed.size || actual.some(name => !listed.has(name)))
   throw Error('Manifesto pubblico incompleto');
 const tappe = Object.values(lessonIndex).reduce((n, l) => n + l.pages, 0);
-if (c.modules.length !== 32 || Object.keys(lessonIndex).length !== 32 || labs !== 360)
+if (c.modules.length !== 33 || Object.keys(lessonIndex).length !== 33 || labs !== 360)
   throw Error('Copertura incompleta.');
 const source = fs.readFileSync(path.join(dist, 'index.html'), 'utf8');
 if (source.includes('{{')) throw Error('Segnaposto non risolto.');

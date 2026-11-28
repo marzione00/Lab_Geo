@@ -7817,5 +7817,187 @@
     "source": "R/experiments/m20-punti.R",
     "code": "dist <- rep(seq(2, 60, length.out = 12), each = 3)\n\nstaz <- rep(1:12, each = 3)\n\nsim <- t(replicate(300, {\n    u <- rnorm(12, 0, p$su)[staz]\n    k <- rbinom(36, p$np, plogis(-0.6 - 0.035 * dist + u))\n    m <- glm(cbind(k, p$np - k) ~ dist, family = binomial)\n    phi <- sum(residuals(m, type = \"pearson\")^2)/m$df.residual\n    c(b = coef(m)[[2]], s = sqrt(diag(vcov(m)))[[2]], phi = phi)\n}))\n\ndata <- data.frame(b = sim[, \"b\"])\n\nplots <- list(hist_plot(sim[, \"b\"], title = \"Pendenza logistica in 300 rilievi simulati\", xl = \"Pendenza stimata (per km)\", \n    bins = 40) + geom_vline(xintercept = -0.035, linetype = 2, colour = col_geo[2]))\n\nmetrics <- metric(`Deviazione standard delle pendenze` = f(sd(sim[, \"b\"])), `Errore standard binomiale medio` = f(mean(sim[, \n    \"s\"])), `Errore standard quasi-binomiale medio` = f(mean(sim[, \"s\"] * sqrt(sim[, \"phi\"]))), `Dispersione media` = f(mean(sim[, \n    \"phi\"])))",
     "symbols": "$p_{ij}$ è la frazione di feldspato nella sezione $i$ della stazione $j$, $d_j$ la distanza, $u_j$ l’effetto di stazione con deviazione standard $\\sigma_u$."
+  },
+  {
+    "id": "m21-registro",
+    "module": "M21",
+    "section": 1,
+    "sectionTitle": "Il teorema di Bayes",
+    "page": 8,
+    "title": "Distribuzione a posteriori e lunghezza del registro",
+    "goal": "Osservare come la distribuzione a posteriori del tasso eruttivo si restringe e si allontana dalla distribuzione a priori quando il registro storico si allunga.",
+    "action": "Allunga il registro da un secolo a dieci e confronta l’ampiezza dell’intervallo di credibilità e il peso della distribuzione a priori.",
+    "conclusion": "Con un registro breve la distribuzione a priori dei vulcani analoghi pesa più dei dati; allungando il registro la media a posteriori si avvicina alla stima dei dati e l’intervallo si restringe.",
+    "formula": "\\lambda\\mid N\\sim\\mathrm{Gamma}(a+N,\\;b+T)",
+    "controls": [
+      {
+        "key": "T",
+        "label": "Durata del registro (secoli)",
+        "type": "number",
+        "value": 1,
+        "min": 0.5,
+        "max": 20,
+        "step": 0.25,
+        "help": "Secoli di osservazione del vulcano; il numero di eruzioni segue una Poisson con tasso vero 2,5 per secolo."
+      },
+      {
+        "key": "seed",
+        "label": "Seme casuale",
+        "type": "number",
+        "value": 17,
+        "min": 1,
+        "max": 99999,
+        "step": 1,
+        "help": "A parità di ambiente R, il seme permette di ricostruire la simulazione."
+      }
+    ],
+    "prose": [
+      "Il tasso eruttivo di un vulcano si stima dal numero di eruzioni in un registro storico di durata limitata. La distribuzione a priori riassume i tassi di vulcani analoghi: una gamma con forma 5,15 e parametro 1,81 secoli, di media 2,85 eruzioni per secolo. L’esperimento genera il numero di eruzioni di un registro della durata scelta, con un tasso vero di 2,5 per secolo.",
+      "La distribuzione a posteriori è ancora una gamma, con forma aumentata del numero di eruzioni e parametro aumentato della durata. La media a posteriori è una media pesata fra la media a priori e la stima dei dati, con peso b/(b+T) per la distribuzione a priori: il registro più lungo riduce questo peso e restringe l’intervallo."
+    ],
+    "limits": "Eruzioni indipendenti con tasso costante; distribuzione a priori fissata con i valori stimati dai vulcani analoghi della lezione. Un solo registro per seme: la media a posteriori varia con il seme.",
+    "presets": [],
+    "source": "R/experiments/m21-registro.R",
+    "code": "lam <- 2.5\n\nA <- 5.15\n\nB <- 1.81\n\nN <- rpois(1, lam * p$T)\n\ng <- seq(0, 8, length.out = 400)\n\ndata <- rbind(data.frame(x = g, y = dgamma(g, A, B), curva = \"A priori dagli analoghi\"), data.frame(x = g, \n    y = dgamma(g, A + N, B + p$T), curva = \"A posteriori\"))\n\nq <- qgamma(c(0.025, 0.975), A + N, B + p$T)\n\nplots <- list(line_plot(data, \"x\", \"y\", title = \"Tasso eruttivo prima e dopo i dati\", xl = \"Eruzioni per secolo\", \n    yl = \"Densità\", group = \"curva\") + geom_vline(xintercept = lam, linetype = 2, colour = col_geo[6]))\n\nmetrics <- metric(`Eruzioni osservate` = N, `Media a posteriori` = f((A + N)/(B + p$T)), `Ampiezza dell’intervallo al 95%` = f(diff(q)), \n    `Peso della distribuzione a priori` = f(B/(B + p$T)), `Tasso vero` = f(lam))",
+    "symbols": "$\\lambda$ è il tasso in eruzioni per secolo, $N$ il numero di eruzioni in $T$ secoli, $a$ e $b$ i parametri della gamma a priori."
+  },
+  {
+    "id": "m21-copertura",
+    "module": "M21",
+    "section": 2,
+    "sectionTitle": "Coniugate e intervalli di credibilità",
+    "page": 15,
+    "title": "Intervalli per un tasso con pochi eventi",
+    "goal": "Confrontare la copertura dell’intervallo di Wald, dell’intervallo di credibilità con la distribuzione a priori di Jeffreys e dell’intervallo esatto quando il numero atteso di eventi è piccolo.",
+    "action": "Riduci il numero atteso di eventi da 30 a 3 e osserva quale intervallo mantiene la copertura vicina al 95%.",
+    "conclusion": "Con pochi eventi l’intervallo di Wald contiene il valore vero molto meno spesso del 95%; l’intervallo di credibilità di Jeffreys resta vicino al valore nominale e l’intervallo esatto lo supera.",
+    "formula": "\\lambda\\mid N\\sim\\mathrm{Gamma}\\big(N+\\tfrac12,\\;1\\big)",
+    "controls": [
+      {
+        "key": "mu",
+        "label": "Numero atteso di eventi",
+        "type": "number",
+        "value": 30,
+        "min": 0.5,
+        "max": 50,
+        "step": 0.5,
+        "help": "Media della Poisson da cui si generano i conteggi."
+      },
+      {
+        "key": "seed",
+        "label": "Seme casuale",
+        "type": "number",
+        "value": 17,
+        "min": 1,
+        "max": 99999,
+        "step": 1,
+        "help": "A parità di ambiente R, il seme permette di ricostruire la simulazione."
+      }
+    ],
+    "prose": [
+      "Con un registro breve il numero di eruzioni è piccolo, e gli intervalli costruiti con l’approssimazione normale funzionano male. L’esperimento genera quattromila conteggi di Poisson con la media scelta e costruisce per ciascuno tre intervalli al 95%: Wald, N ± 1,96√N; credibilità con la distribuzione a priori di Jeffreys, proporzionale a λ^(−1/2); intervallo esatto di Garwood, basato sulle code della Poisson.",
+      "Per ogni intervallo il programma conta la quota di conteggi per cui l’intervallo contiene la media vera. Una copertura del 95% significa che il metodo, ripetuto su molti registri, contiene il valore vero 95 volte su 100. Un intervallo di credibilità ha un significato diverso, una probabilità sul parametro dati i dati osservati, e la sua copertura ripetuta dipende dalla distribuzione a priori."
+    ],
+    "limits": "Conteggi di Poisson indipendenti con media fissata; la copertura dell’intervallo di credibilità dipende dalla distribuzione a priori scelta. Quattromila repliche danno un errore Monte Carlo di circa 0,003 sulla copertura.",
+    "presets": [],
+    "source": "R/experiments/m21-copertura.R",
+    "code": "N <- rpois(4000, p$mu)\n\nwald <- abs(N - p$mu) <= 1.96 * sqrt(N)\n\njef <- qgamma(0.025, N + 0.5) <= p$mu & p$mu <= qgamma(0.975, N + 0.5)\n\nesatto <- qgamma(0.025, N) <= p$mu & p$mu <= qgamma(0.975, N + 1)\n\ndata <- data.frame(gruppo = c(\"Wald\", \"Credibilità, Jeffreys\", \"Esatto\"), valore = c(mean(wald), mean(jef), \n    mean(esatto)))\n\nplots <- list(bar_plot(data, title = \"Copertura in 4000 registri simulati\", yl = \"Quota che contiene il valore vero\") + \n    geom_hline(yintercept = 0.95, linetype = 2, colour = col_geo[6]) + coord_cartesian(ylim = c(0, 1)))\n\nmetrics <- metric(`Copertura dell’intervallo di Wald` = f(mean(wald)), `Copertura dell’intervallo di Jeffreys` = f(mean(jef)), \n    `Copertura dell’intervallo esatto` = f(mean(esatto)), `Quota di registri senza eventi` = f(mean(N == \n        0)))",
+    "symbols": "$N$ è il conteggio osservato, $\\mu$ la media vera; l’intervallo di Jeffreys usa i quantili 0,025 e 0,975 della gamma con forma $N+1/2$."
+  },
+  {
+    "id": "m21-priori",
+    "module": "M21",
+    "section": 3,
+    "sectionTitle": "Sensibilità alla distribuzione a priori",
+    "page": 22,
+    "title": "Distribuzione a priori in conflitto con i dati",
+    "goal": "Valutare l’effetto di una distribuzione a priori centrata lontano dal tasso vero sulla media a posteriori e sulla copertura degli intervalli, e verificare se un controllo predittivo segnala il conflitto.",
+    "action": "Sposta la media a priori a tre volte il tasso vero e aumenta la sua forza; confronta la copertura e la quota di conflitti segnalati.",
+    "conclusion": "Una distribuzione a priori lontana dal valore vero sposta la media a posteriori e riduce la copertura, tanto più quanto è forte; il controllo predittivo a priori segnala il conflitto nella maggior parte dei registri.",
+    "formula": "p=2\\min\\{P(N'\\le N),\\,P(N'\\ge N)\\},\\quad N'\\sim\\mathrm{BN}",
+    "controls": [
+      {
+        "key": "fattore",
+        "label": "Media a priori / tasso vero",
+        "type": "number",
+        "value": 1,
+        "min": 0.25,
+        "max": 4,
+        "step": 0.05,
+        "help": "Rapporto fra la media della distribuzione a priori e il tasso vero di 2,5 eruzioni per secolo."
+      },
+      {
+        "key": "forza",
+        "label": "Forza della distribuzione a priori (secoli)",
+        "type": "number",
+        "value": 1.8,
+        "min": 0.1,
+        "max": 20,
+        "step": 0.1,
+        "help": "Parametro b della gamma: la distribuzione a priori vale quanto un registro di b secoli."
+      },
+      {
+        "key": "seed",
+        "label": "Seme casuale",
+        "type": "number",
+        "value": 17,
+        "min": 1,
+        "max": 99999,
+        "step": 1,
+        "help": "A parità di ambiente R, il seme permette di ricostruire la simulazione."
+      }
+    ],
+    "prose": [
+      "La distribuzione a priori gamma con parametri a e b equivale a un registro immaginario di b secoli con a eruzioni. L’esperimento genera mille registri di 3,75 secoli con un tasso vero di 2,5 eruzioni per secolo e aggiorna per ciascuno una distribuzione a priori con la media e la forza scelte.",
+      "Il programma misura la media delle medie a posteriori, la copertura dell’intervallo di credibilità al 95% e la quota di registri in cui il conteggio osservato cade nelle code della distribuzione predittiva a priori, una binomiale negativa, con probabilità bilaterale inferiore a 0,05. Il controllo usa soltanto la distribuzione a priori e il conteggio, e si può fare prima dell’aggiornamento."
+    ],
+    "limits": "Eruzioni indipendenti con tasso costante; durata del registro fissata a 3,75 secoli. Il controllo predittivo ha una potenza limitata con un solo conteggio, e un conflitto segnalato indica una incoerenza senza dire quale delle due parti sia sbagliata.",
+    "presets": [],
+    "source": "R/experiments/m21-priori.R",
+    "code": "lam <- 2.5\n\nT <- 3.75\n\na0 <- p$fattore * lam * p$forza\n\nN <- rpois(1000, lam * T)\n\nm <- (a0 + N)/(p$forza + T)\n\ndentro <- qgamma(0.025, a0 + N, p$forza + T) <= lam & lam <= qgamma(0.975, a0 + N, p$forza + T)\n\ncode <- pmin(pnbinom(N, size = a0, mu = a0/p$forza * T), 1 - pnbinom(N - 1, size = a0, mu = a0/p$forza * \n    T))\n\ndata <- data.frame(m = m)\n\nplots <- list(hist_plot(m, title = \"Media a posteriori in 1000 registri\", xl = \"Eruzioni per secolo\", \n    bins = 40) + geom_vline(xintercept = lam, linetype = 2, colour = col_geo[6]) + geom_vline(xintercept = p$fattore * \n    lam, colour = col_geo[2]))\n\nmetrics <- metric(`Media a priori` = f(p$fattore * lam), `Media delle medie a posteriori` = f(mean(m)), \n    `Copertura dell’intervallo al 95%` = f(mean(dentro)), `Quota di conflitti segnalati` = f(mean(2 * \n        code < 0.05)))",
+    "symbols": "$N'$ è un conteggio simulato dalla distribuzione predittiva a priori, una binomiale negativa con media $aT/b$; $N$ è il conteggio osservato."
+  },
+  {
+    "id": "m21-metropolis",
+    "module": "M21",
+    "section": 4,
+    "sectionTitle": "Monte Carlo a catena di Markov",
+    "page": 29,
+    "title": "Passo della proposta e mescolamento della catena",
+    "goal": "Osservare come la deviazione standard della proposta dell’algoritmo di Metropolis cambia il tasso di accettazione, l’autocorrelazione della catena e la precisione della media a posteriori.",
+    "action": "Riduci il passo da 0,25 a 0,02 e confronta la traccia, il tasso di accettazione e la dimensione campionaria efficace.",
+    "conclusion": "Un passo troppo piccolo accetta quasi tutte le proposte ma esplora lentamente; un passo troppo grande le rifiuta quasi tutte. In entrambi i casi la dimensione campionaria efficace crolla e la media della catena si allontana dal valore di riferimento.",
+    "formula": "\\alpha=\\min\\Big\\{1,\\frac{\\pi(\\theta^*\\mid y)}{\\pi(\\theta\\mid y)}\\Big\\}",
+    "controls": [
+      {
+        "key": "passo",
+        "label": "Deviazione standard della proposta",
+        "type": "number",
+        "value": 0.25,
+        "min": 0.01,
+        "max": 2,
+        "step": 0.01,
+        "help": "Passo della passeggiata casuale sulla scala logaritmica dei due parametri della Weibull."
+      },
+      {
+        "key": "seed",
+        "label": "Seme casuale",
+        "type": "number",
+        "value": 17,
+        "min": 1,
+        "max": 99999,
+        "step": 1,
+        "help": "A parità di ambiente R, il seme permette di ricostruire la simulazione."
+      }
+    ],
+    "prose": [
+      "I tempi di riposo fra le eruzioni del caso guida, otto intervalli completi e un intervallo ancora aperto di 37 anni, si descrivono con una distribuzione di Weibull. La distribuzione a posteriori dei due parametri non ha una forma nota, e l’algoritmo di Metropolis ne estrae una catena di valori: propone un passo casuale normale sulla scala logaritmica e lo accetta con probabilità pari al rapporto fra le densità a posteriori, se minore di 1.",
+      "Il programma esegue quattromila iterazioni, scarta le prime cinquecento e calcola il tasso di accettazione, la media a posteriori della forma k e la dimensione campionaria efficace, il numero di estrazioni indipendenti che darebbero la stessa precisione. Il valore di riferimento, 3,17, viene da un’integrazione numerica su una griglia."
+    ],
+    "limits": "Distribuzioni a priori normali sui logaritmi dei parametri, con medie 0 e log 40 e deviazione standard 1; punto di partenza fisso. La dimensione campionaria efficace è stimata dall’autocorrelazione troncata al primo ritardo con valore inferiore a 0,05.",
+    "presets": [],
+    "source": "R/experiments/m21-metropolis.R",
+    "code": "r <- c(43, 29, 23, 20, 48, 54, 52, 45)\n\ns <- 37\n\nlp <- function(t) {\n    v <- suppressWarnings(sum(dweibull(r, exp(t[1]), exp(t[2]), log = TRUE)) + pweibull(s, exp(t[1]), \n        exp(t[2]), FALSE, TRUE)) + dnorm(t[1], 0, 1, TRUE) + dnorm(t[2], log(40), 1, TRUE)\n    if (is.finite(v)) \n        v\n    else -Inf\n}\n\nt <- c(0, log(40))\n\nk <- numeric(4000)\n\nacc <- 0\n\nfor (i in 1:4000) {\n    prop <- t + rnorm(2, 0, p$passo)\n    if (log(runif(1)) < lp(prop) - lp(t)) {\n        t <- prop\n        acc <- acc + 1\n    }\n    k[i] <- exp(t[1])\n}\n\nkk <- k[-(1:500)]\n\nrho <- acf(kk, lag.max = 200, plot = FALSE)$acf[-1]\n\ness <- length(kk)/(1 + 2 * sum(rho[seq_len(which.max(c(rho, -1) < 0.05) - 1)]))\n\ndata <- data.frame(x = 1:4000, y = k)\n\nplots <- list(line_plot(data, \"x\", \"y\", title = \"Traccia della forma k\", xl = \"Iterazione\", yl = \"Forma della Weibull, k\") + \n    geom_vline(xintercept = 500, linetype = 2, colour = col_geo[6]))\n\nmetrics <- metric(`Tasso di accettazione` = f(acc/4000), `Media a posteriori di k` = f(mean(kk)), `Dimensione campionaria efficace` = f(ess), \n    `Riferimento su griglia` = f(3.17))",
+    "symbols": "$\\theta=(\\log k,\\log\\eta)$ sono i parametri della Weibull sulla scala logaritmica, $\\theta^*$ la proposta, $\\pi(\\cdot\\mid y)$ la densità a posteriori a meno di una costante."
   }
 ]
