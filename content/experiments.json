@@ -7022,6 +7022,188 @@
       "source": "R/experiments/m16-trasferimento.R",
       "code": "x <- rnorm(200)\n\ny <- rbinom(200, 1, plogis(x))\n\nfit <- glm(y ~ x, family = binomial())\n\nxt <- rnorm(300)\n\nyt <- rbinom(300, 1, plogis(p$slope * xt))\n\npr <- predict(fit, data.frame(x = xt), type = \"response\")\n\ndata <- data.frame(x = xt, y = pr, probabilita_nuova = plogis(p$slope * xt))\n\ndata <- data[order(data$x), ]\n\nplots <- list(line_plot(data, title = \"Modello trasferito e nuova relazione\", xl = \"Predittore\", \n    yl = \"Probabilità\") + geom_line(aes(y = probabilita_nuova), colour = col_geo[2], linetype = 2))\n\nmetrics <- metric(`Accuratezza nuova popolazione` = f(mean((pr >= 0.5) == yt)), `Brier nuova popolazione` = f(mean((pr - \n    yt)^2)), `Pendenza stimata nel training` = f(coef(fit)[2]))",
       "symbols": "P_train(Y|X) è la distribuzione della risposta condizionata ai predittori nel dominio di addestramento; P_nuovo(Y|X) è quella del dominio di destinazione. Il controllo modifica la seconda mantenendo fisso il classificatore già stimato."
+    },
+    {
+      "id": "m17-chiusura",
+      "module": "M17",
+      "section": 1,
+      "sectionTitle": "La chiusura e i suoi effetti",
+      "page": 9,
+      "title": "Chiusura e correlazione spuria",
+      "goal": "Osservare le correlazioni che la chiusura a cento introduce fra parti generate indipendenti.",
+      "action": "Cambia il numero delle parti e confronta la correlazione media prima e dopo la chiusura con il valore −1/(D−1).",
+      "conclusion": "La chiusura a somma costante produce correlazioni negative anche fra parti indipendenti; la loro entità dipende dal numero delle parti.",
+      "formula": "\\sum_{j\\ne i}\\operatorname{cov}(x_i,x_j)=-\\operatorname{var}(x_i),\\qquad \\bar r=-\\frac1{D-1}",
+      "controls": [
+        {
+          "key": "D",
+          "label": "Numero delle parti D",
+          "type": "number",
+          "value": 3,
+          "min": 2,
+          "max": 12,
+          "step": 1,
+          "help": "Con due parti la chiusura rende le parti perfettamente correlate in senso negativo."
+        },
+        {
+          "key": "seed",
+          "label": "Seme casuale",
+          "type": "number",
+          "value": 17,
+          "min": 1,
+          "max": 99999,
+          "step": 1,
+          "help": "A parità di ambiente R, il seme permette di ricostruire la simulazione."
+        }
+      ],
+      "prose": [
+        "Le percentuali di una composizione sommano a cento per costruzione, e la somma costante vincola le covarianze: la somma delle covarianze di una parte con tutte le altre è uguale all’opposto della sua varianza. L’esperimento genera duecento campioni con D parti lognormali indipendenti e con la stessa dispersione, poi li chiude a cento.",
+        "Confronta la correlazione media fra le coppie di parti prima e dopo la chiusura. Prima della chiusura la media è vicina a zero; dopo la chiusura si avvicina a −1/(D−1), il valore imposto dal vincolo quando le parti hanno la stessa varianza. Aumentando D il vincolo si distribuisce su più coppie e la correlazione media si avvicina a zero."
+      ],
+      "limits": "Parti lognormali indipendenti con deviazione standard logaritmica 0,5 e stessa mediana. Con dispersioni diverse fra le parti la correlazione dopo la chiusura cambia da coppia a coppia; il valore −1/(D−1) vale per parti scambiabili.",
+      "presets": [],
+      "source": "R/experiments/m17-chiusura.R",
+      "code": "D <- p$D\n\nW <- matrix(rlnorm(200 * D, 0, 0.5), ncol = D)\n\nX <- 100 * W/rowSums(W)\n\nalto <- upper.tri(diag(D))\n\nr_grezze <- cor(W)[alto]\n\nr_chiuse <- cor(X)[alto]\n\ndata <- data.frame(x = X[, 1], y = X[, 2])\n\nplots <- list(point_plot(data, title = \"Due parti dopo la chiusura a cento\", xl = \"Parte 1 (%)\", yl = \"Parte 2 (%)\"))\n\nmetrics <- metric(`Correlazione media prima della chiusura` = f(mean(r_grezze)), `Correlazione media dopo la chiusura` = f(mean(r_chiuse)), \n    `Valore −1/(D−1)` = f(-1/(D - 1)), `Coppie di parti` = length(r_chiuse))",
+      "symbols": "$x_i$ e $x_j$ sono due parti della composizione chiusa, $D$ è il numero delle parti e $\\bar r$ la correlazione media fra coppie quando le parti hanno la stessa varianza e le stesse covarianze."
+    },
+    {
+      "id": "m17-distanze",
+      "module": "M17",
+      "section": 2,
+      "sectionTitle": "Rapporti logaritmici",
+      "page": 16,
+      "title": "Distanza euclidea e distanza di Aitchison",
+      "goal": "Confrontare l’effetto dello stesso spostamento assoluto su una parte minore e su una parte maggiore.",
+      "action": "Cambia il livello della parte minore e osserva come varia la distanza di Aitchison a parità di distanza euclidea.",
+      "conclusion": "La distanza di Aitchison misura variazioni relative: lo stesso spostamento in punti percentuali pesa molto di più su una parte in traccia.",
+      "formula": "d_A(x,y)=\\Big[\\sum_{i=1}^D\\big(\\operatorname{clr}_i(x)-\\operatorname{clr}_i(y)\\big)^2\\Big]^{1/2}",
+      "controls": [
+        {
+          "key": "L",
+          "label": "Livello della parte minore (%)",
+          "type": "number",
+          "value": 0.2,
+          "min": 0.05,
+          "max": 20,
+          "step": 0.05,
+          "help": "La parte minore riceve 0,1 punti percentuali, sottratti alla parte maggiore."
+        },
+        {
+          "key": "seed",
+          "label": "Seme casuale",
+          "type": "number",
+          "value": 17,
+          "min": 1,
+          "max": 99999,
+          "step": 1,
+          "help": "A parità di ambiente R, il seme permette di ricostruire la simulazione."
+        }
+      ],
+      "prose": [
+        "Due composizioni a quattro parti differiscono soltanto per 0,1 punti percentuali spostati dalla parte maggiore alla parte minore. La distanza euclidea fra le due composizioni resta sempre la stessa, circa 0,141, qualunque sia il livello della parte minore.",
+        "La distanza di Aitchison confronta le coordinate clr, cioè i logaritmi dei rapporti con la media geometrica, e cresce quando la parte minore è vicina a zero: passare da 0,1 a 0,2 raddoppia la parte, passare da 10 a 10,1 la cambia dell’uno per cento. La curva mostra la distanza per tutti i livelli fra 0,05 e 20, il punto il livello scelto. Il calcolo è deterministico: il seme lascia il risultato invariato."
+      ],
+      "limits": "Composizione a quattro parti (L, 25, 25, 50 − L) e spostamento fisso di 0,1 punti percentuali. Il confronto riguarda la sola geometria delle due distanze, senza variabilità campionaria.",
+      "presets": [],
+      "source": "R/experiments/m17-distanze.R",
+      "code": "clr <- function(x) log(x) - mean(log(x))\n\nait <- function(L) {\n    a <- c(L, 25, 25, 50 - L)\n    b <- a + c(0.1, 0, 0, -0.1)\n    sqrt(sum((clr(a) - clr(b))^2))\n}\n\ngriglia <- seq(0.05, 20, length.out = 200)\n\ndata <- data.frame(x = griglia, y = sapply(griglia, ait))\n\nplots <- list(line_plot(data, title = \"Lo stesso spostamento di 0,1 punti percentuali\", xl = \"Livello della parte minore (%, scala logaritmica)\", \n    yl = \"Distanza di Aitchison\") + scale_x_log10() + geom_point(data = data.frame(x = p$L, y = ait(p$L)), \n    colour = col_geo[2], size = 3.5))\n\nmetrics <- metric(`Distanza euclidea` = f(sqrt(0.02)), `Distanza di Aitchison` = f(ait(p$L)), `Rapporto Aitchison/euclidea` = f(ait(p$L)/sqrt(0.02)))",
+      "symbols": "$x$ e $y$ sono due composizioni a $D$ parti; $\\operatorname{clr}_i$ è il logaritmo del rapporto fra la parte $i$ e la media geometrica delle parti; $d_A$ è la distanza di Aitchison."
+    },
+    {
+      "id": "m17-centro",
+      "module": "M17",
+      "section": 3,
+      "sectionTitle": "Descrivere un insieme di composizioni",
+      "page": 22,
+      "title": "Media aritmetica e centro composizionale",
+      "goal": "Confrontare media aritmetica e media geometrica chiusa quando una parte è piccola e dispersa.",
+      "action": "Aumenta la dispersione logaritmica e confronta i due centri della parte minore con il centro del generatore.",
+      "conclusion": "La media geometrica chiusa stima il centro di composizioni con errori relativi; la media aritmetica di una parte asimmetrica si allontana dal centro al crescere della dispersione.",
+      "formula": "\\operatorname{cen}(X)=\\mathcal C\\Big[\\exp\\Big(\\tfrac1n\\sum_{k=1}^n\\log x_{k1}\\Big),\\ldots,\\exp\\Big(\\tfrac1n\\sum_{k=1}^n\\log x_{kD}\\Big)\\Big]",
+      "controls": [
+        {
+          "key": "s",
+          "label": "Deviazione standard dei logaritmi",
+          "type": "number",
+          "value": 0.3,
+          "min": 0.1,
+          "max": 1.5,
+          "step": 0.1,
+          "help": "La stessa dispersione logaritmica si applica a tutte le parti prima della chiusura."
+        },
+        {
+          "key": "seed",
+          "label": "Seme casuale",
+          "type": "number",
+          "value": 17,
+          "min": 1,
+          "max": 99999,
+          "step": 1,
+          "help": "A parità di ambiente R, il seme permette di ricostruire la simulazione."
+        }
+      ],
+      "prose": [
+        "Il generatore produce centocinquanta composizioni a tre parti attorno al centro (80, 15, 5): i logaritmi delle parti ricevono errori gaussiani con la stessa deviazione standard, poi ogni campione viene chiuso a cento. In questo modello il centro composizionale coincide con la composizione (80, 15, 5).",
+        "L’istogramma riporta la parte minore, con la media aritmetica e il centro geometrico chiuso. Con dispersione piccola i due valori quasi coincidono; con dispersione grande la distribuzione della parte minore diventa asimmetrica e la media aritmetica si allontana dal 5% del generatore, mentre la media geometrica chiusa resta vicina."
+      ],
+      "limits": "Composizioni logistico-normali a tre parti con errori indipendenti e di uguale varianza sui logaritmi. Il centro del generatore è noto per costruzione; con dati reali il confronto riguarda soltanto i due stimatori.",
+      "presets": [],
+      "source": "R/experiments/m17-centro.R",
+      "code": "m <- log(c(80, 15, 5))\n\nZ <- sweep(matrix(rnorm(450, 0, p$s), ncol = 3), 2, m, \"+\")\n\nX <- 100 * exp(Z)/rowSums(exp(Z))\n\ng <- exp(colMeans(log(X)))\n\ng <- 100 * g/sum(g)\n\na <- colMeans(X)\n\ndata <- data.frame(parte3 = X[, 3])\n\nplots <- list(hist_plot(X[, 3], title = \"Parte minore nelle composizioni simulate\", xl = \"Parte 3 (%)\") + \n    geom_vline(xintercept = a[3], colour = col_geo[2], linewidth = 1.1) + geom_vline(xintercept = g[3], \n    colour = col_geo[3], linewidth = 1.1, linetype = 2))\n\nmetrics <- metric(`Centro del generatore, parte 3` = 5, `Media aritmetica, parte 3` = f(a[3]), `Centro geometrico chiuso, parte 3` = f(g[3]), \n    `Media aritmetica, parte 1` = f(a[1]), `Centro geometrico chiuso, parte 1` = f(g[1]))",
+      "symbols": "$X$ è l’insieme di $n$ composizioni, $x_{kj}$ la parte $j$ del campione $k$, $\\mathcal C$ la chiusura a cento e $\\operatorname{cen}(X)$ il centro composizionale, cioè la media geometrica di ogni parte riportata a somma cento."
+    },
+    {
+      "id": "m17-zeri",
+      "module": "M17",
+      "section": 4,
+      "sectionTitle": "Zeri, limiti di rivelabilità e modelli",
+      "page": 29,
+      "title": "Valori sotto il limite e sostituzione moltiplicativa",
+      "goal": "Valutare come la sostituzione dei valori sotto il limite di rivelabilità sposta la media di un log-rapporto.",
+      "action": "Cambia il limite di rivelabilità e la frazione del limite usata come valore sostitutivo; confronta le medie con il valore calcolato sulle parti simulate.",
+      "conclusion": "La sostituzione rende calcolabili i log-rapporti; la media che ne risulta dipende dal valore scelto e dalla quota di campioni sotto il limite, e va accompagnata da un’analisi di sensibilità.",
+      "formula": "y_j=\\begin{cases}\\delta & x_j=0\\\\ x_j\\Big(1-\\dfrac{\\sum_{k:x_k=0}\\delta}{\\kappa}\\Big) & x_j>0\\end{cases}",
+      "controls": [
+        {
+          "key": "dl",
+          "label": "Limite di rivelabilità (%)",
+          "type": "number",
+          "value": 0.1,
+          "min": 0.02,
+          "max": 0.5,
+          "step": 0.01,
+          "help": "Le misure della parte in traccia inferiori al limite vengono registrate come zero."
+        },
+        {
+          "key": "frac",
+          "label": "Valore sostitutivo / limite",
+          "type": "number",
+          "value": 0.65,
+          "min": 0.05,
+          "max": 1,
+          "step": 0.05,
+          "help": "Il valore sostitutivo δ è questa frazione del limite di rivelabilità."
+        },
+        {
+          "key": "seed",
+          "label": "Seme casuale",
+          "type": "number",
+          "value": 17,
+          "min": 1,
+          "max": 99999,
+          "step": 1,
+          "help": "A parità di ambiente R, il seme permette di ricostruire la simulazione."
+        }
+      ],
+      "prose": [
+        "Il generatore produce duecento composizioni a quattro parti con una parte in traccia di mediana 0,2%. Le misure della parte in traccia sotto il limite di rivelabilità vengono registrate come zero, e uno zero impedisce di calcolare qualunque log-rapporto che la contenga.",
+        "La sostituzione moltiplicativa assegna agli zeri il valore δ e riduce le altre parti dello stesso fattore, conservando i loro rapporti e la somma a cento. Confronta la media del log-rapporto fra la traccia e la parte maggiore calcolata sulle parti simulate, quella ottenuta dopo la sostituzione e quella che si ottiene escludendo i campioni con zeri."
+      ],
+      "limits": "Composizioni logistico-normali a quattro parti con una sola parte soggetta al limite di rivelabilità. Il valore simulato prima del limite è noto soltanto nella simulazione; con dati reali la sensibilità al valore sostitutivo resta l’unico controllo disponibile.",
+      "presets": [],
+      "source": "R/experiments/m17-zeri.R",
+      "code": "m <- log(c(70, 20, 9.8, 0.2))\n\nZ <- sweep(matrix(rnorm(800, 0, 0.6), ncol = 4), 2, m, \"+\")\n\nX <- 100 * exp(Z)/rowSums(exp(Z))\n\nz <- X[, 4] < p$dl\n\ndelta <- p$frac * p$dl\n\nY <- X\n\nY[z, 4] <- delta\n\nY[z, 1:3] <- Y[z, 1:3] * (100 - delta)/rowSums(Y[z, 1:3, drop = FALSE])\n\nlr_vero <- mean(log(X[, 4]/X[, 1]))\n\nlr_sost <- mean(log(Y[, 4]/Y[, 1]))\n\nlr_esclusi <- mean(log(X[!z, 4]/X[!z, 1]))\n\ndata <- data.frame(x = log(X[, 4]/X[, 1]), y = log(Y[, 4]/Y[, 1]))\n\nplots <- list(point_plot(data, title = \"Log-rapporto prima e dopo la sostituzione\", xl = \"log(traccia / parte 1) simulato\", \n    yl = \"Dopo la sostituzione\"))\n\nmetrics <- metric(`Quota sotto il limite` = f(mean(z)), `Media simulata del log-rapporto` = f(lr_vero), \n    `Media con sostituzione` = f(lr_sost), `Media escludendo i campioni` = f(lr_esclusi))",
+      "symbols": "$x_j$ è la parte $j$ registrata, $\\delta$ il valore sostitutivo, $\\kappa=100$ la somma della composizione e $y_j$ la parte dopo la sostituzione moltiplicativa."
     }
   ],
   "coverage": [
@@ -8448,6 +8630,42 @@
       "role": "esperimento",
       "activities": [
         "t00-confronto"
+      ]
+    },
+    {
+      "module": "M17",
+      "section": 1,
+      "title": "La chiusura e i suoi effetti",
+      "role": "esperimento",
+      "activities": [
+        "m17-chiusura"
+      ]
+    },
+    {
+      "module": "M17",
+      "section": 2,
+      "title": "Rapporti logaritmici",
+      "role": "esperimento",
+      "activities": [
+        "m17-distanze"
+      ]
+    },
+    {
+      "module": "M17",
+      "section": 3,
+      "title": "Descrivere un insieme di composizioni",
+      "role": "esperimento",
+      "activities": [
+        "m17-centro"
+      ]
+    },
+    {
+      "module": "M17",
+      "section": 4,
+      "title": "Zeri, limiti di rivelabilità e modelli",
+      "role": "esperimento",
+      "activities": [
+        "m17-zeri"
       ]
     }
   ]

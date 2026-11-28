@@ -16,9 +16,9 @@ test('Physical solar benchmarks and Kepler ratios are recovered', () => {
   assert(Math.abs(A.equilibrium(1, 1, 0.3) - 254.6) < 0.1);
   near(A.equilibrium(1, 4, 0.3) / A.equilibrium(1, 1, 0.3), 0.5);
 });
-test('17 deterministic systems have 85 distinct worlds and exactly one correct module each', () => {
-  assert.equal(A.systems.length, 17);
-  assert.equal(new Set(A.systems.flatMap(s => s.planets.map(p => p.id))).size, 85);
+test('18 deterministic systems have 90 distinct worlds and exactly one correct module each', () => {
+  assert.equal(A.systems.length, 18);
+  assert.equal(new Set(A.systems.flatMap(s => s.planets.map(p => p.id))).size, 90);
   assert.equal(new Set(A.systems.map(s => s.star.type)).size, 4);
   for (const s of A.systems) {
     assert.equal(JSON.stringify(s), JSON.stringify(A.generate(s.id)));

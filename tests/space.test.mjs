@@ -9,7 +9,7 @@ test('Ogni modulo ha un pianeta distinto e ogni spedizione ha collegamenti valid
     worlds.planets.map(p => p.id),
     catalog.filter(m => m.category === 'moduli').map(m => m.id),
   );
-  assert.equal(new Set(worlds.planets.map(p => p.name)).size, 17);
+  assert.equal(new Set(worlds.planets.map(p => p.name)).size, 18);
   assert.equal(new Set(worlds.planets.map(p => p.kind)).size, 17);
   assert.equal(Object.keys(worlds.expeditionOrigins).length, 11);
   for (const [id, origin] of Object.entries(worlds.expeditionOrigins)) {

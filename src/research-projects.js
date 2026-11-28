@@ -7,7 +7,7 @@
   let dispose = null;
   function forWorld(id) {
     if (byWorld[id]) return byWorld[id];
-    const m = /^(T00|M(?:0[1-9]|1[0-6]))-([b-f])$/.exec(id || '');
+    const m = /^(T00|M(?:0[1-9]|1[0-7]))-([b-f])$/.exec(id || '');
     if (!m) return null;
     const f = root.GeoFamilies.forWorld(m[1] === 'T00' ? 0 : Number(m[1].slice(1)), m[2].charCodeAt(0) - 98, id);
     return projects.find(p => p.level === f.level) || null;

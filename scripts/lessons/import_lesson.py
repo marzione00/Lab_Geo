@@ -541,7 +541,7 @@ def pdf_text(pdf, page):
 
 
 def norm(t):
-    t = t.replace('’', "'").replace('ﬁ', 'fi').replace('ﬂ', 'fl')
+    t = t.replace('’', "'").replace('ﬁ', 'fi').replace('ﬂ', 'fl').replace('ﬀ', 'ff').replace('ﬃ', 'ffi').replace('ﬄ', 'ffl')
     return re.sub(r'[^a-z0-9àèéìòù]+', '', t.lower())
 
 

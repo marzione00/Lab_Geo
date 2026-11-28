@@ -19,6 +19,7 @@
     M14: ['Avanzato', ['M04', 'M05'], 'Distribuzioni di probabilità e incertezza della stima.'],
     M15: ['Intermedio', ['M02', 'M05'], 'Script R, gestione dei dati e inferenza statistica.'],
     M16: ['Avanzato', ['M07', 'M08', 'M10'], 'Regressione, analisi multivariata e validazione delle previsioni.'],
+    M17: ['Avanzato', ['M03', 'M08'], 'Statistiche descrittive, logaritmi e componenti principali.'],
   };
   const links = {
     radiation: {

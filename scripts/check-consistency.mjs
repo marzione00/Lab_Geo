@@ -191,7 +191,9 @@ fs.writeFileSync('qa/consistency.json', JSON.stringify(report, null, 2) + '\n');
 console.log(
   'Consistency: ' +
     activities.length +
-    ' activities, 28 guides, ' +
+    ' activities, ' +
+    read('content/catalogue.json').modules.length +
+    ' guides, ' +
     members +
     ' archived source files and ' +
     docs.length +

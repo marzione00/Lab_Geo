@@ -64,7 +64,7 @@ async function until(fn) {
   }
   throw Error('Timeout nel DOM virtuale.');
 }
-await until(() => d.querySelectorAll('.module-card').length === 28);
+await until(() => w.GEO_CATALOG && d.querySelectorAll('.module-card').length === w.GEO_CATALOG.modules.length);
 const snapshots = process.env.SNAPSHOTS_DIR;
 function snapshot(name) {
   if (snapshots) {
@@ -87,7 +87,7 @@ d.querySelector('[data-filter="moduli"]').click();
 assert.equal(d.querySelectorAll('.module-card').length, 0);
 const catalog = w.GEO_CATALOG.modules;
 w.location.hash = '#indice';
-await until(() => d.querySelectorAll('.galaxy-node').length === 17);
+await until(() => d.querySelectorAll('.galaxy-node').length === w.GeoAstro.systems.length);
 const originalCoordinates = JSON.stringify(w.GeoGalaxyModel.anchors);
 w.GeoPlanets.planets.reverse();
 w.GeoGalaxy.mount(d.querySelector('main'));
@@ -134,7 +134,7 @@ for (const sys of w.GeoAstro.systems) {
 // Notable objects: markers and cards in the galaxy, one page each. Without a WebGL2 rasteriser the page keeps
 // the scientific card and shows the essential view of the scene.
 w.location.hash = '#indice';
-await until(() => d.querySelectorAll('.galaxy-node').length === 17);
+await until(() => d.querySelectorAll('.galaxy-node').length === w.GeoAstro.systems.length);
 assert.equal(d.querySelectorAll('.galaxy-object').length, 5);
 assert.equal(d.querySelectorAll('.galaxy-object-cards a').length, 5);
 for (const o of w.GeoObjects.objects) {
@@ -149,7 +149,7 @@ for (const o of w.GeoObjects.objects) {
   assert(d.querySelectorAll('.astro-equations article').length === 3, o.id);
 }
 w.location.hash = '#mappa';
-await until(() => d.querySelectorAll('.galaxy-node').length === 17);
+await until(() => d.querySelectorAll('.galaxy-node').length === w.GeoAstro.systems.length);
 assert.equal(d.querySelectorAll('.star-grid').length, 0, 'Old navigation must be removed');
 assert.equal(w.GeoObjectPages.debug(), null, 'Object scene must be disposed after navigating away');
 await until(() => w.GeoSpace.debug().ready);
@@ -344,7 +344,7 @@ assert.deepEqual(errors, []);
 const result = {
   esito: 'superato',
   ambiente: 'jsdom 26.1.0; DOM virtuale, senza verifica CSS/CSP del browser',
-  moduli: 28,
+  moduli: w.GEO_CATALOG.modules.length,
   laboratori_T00_R_e_Python: 40,
   formule_esperimenti: labFormulas,
   tappe_lezioni: lessonPages,
@@ -365,5 +365,5 @@ console.log(
     deepeningPages +
     ' approfondimenti visualizzati.',
 );
-console.log('DOM virtuale: 28 moduli verificati.');
+console.log('DOM virtuale: ' + w.GEO_CATALOG.modules.length + ' moduli verificati.');
 w.close();
