@@ -76,7 +76,7 @@ const actual = fs
 if (actual.length !== listed.size || actual.some(name => !listed.has(name)))
   throw Error('Manifesto pubblico incompleto');
 const tappe = Object.values(lessonIndex).reduce((n, l) => n + l.pages, 0);
-if (c.modules.length !== 28 || Object.keys(lessonIndex).length !== 28 || labs !== 360)
+if (c.modules.length !== 29 || Object.keys(lessonIndex).length !== 29 || labs !== 360)
   throw Error('Copertura incompleta.');
 const source = fs.readFileSync(path.join(dist, 'index.html'), 'utf8');
 if (source.includes('{{')) throw Error('Segnaposto non risolto.');
@@ -95,7 +95,11 @@ for (const f of textPages) {
 }
 for (const f of ['assets/social-card.jpg', 'assets/static.css']) exists(f);
 console.log(
-  'Distribuzione verificata: 28 lezioni a tappe (17 moduli e 11 spedizioni, ' +
+  'Distribuzione verificata: ' +
+    c.modules.length +
+    ' lezioni a tappe (' +
+    c.modules.filter(m => m.category === 'moduli').length +
+    ' moduli e 11 spedizioni, ' +
     tappe +
     ' tappe), 360 laboratori R/Python, ' +
     textPages.length +

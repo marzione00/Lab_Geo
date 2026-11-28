@@ -4,7 +4,7 @@ Il sito pone l’esperimento al centro del percorso. I 17 pianeti conservano la 
 
 ## Copertura didattica
 
-Sono disponibili **139 esperimenti**, distribuiti nei 17 moduli T00–M16. L’inventario comprende 147 sezioni: 134 hanno dimostrazioni dedicate; 13 sezioni introduttive o di riepilogo rimandano al percorso del rispettivo modulo. La mappa completa è in `content/experiments.json`, campo `coverage`, e nel CSV scaricabile.
+Sono disponibili **143 esperimenti**, distribuiti nei 18 moduli T00–M17. L’inventario comprende 151 sezioni: 138 hanno dimostrazioni dedicate; 13 sezioni introduttive o di riepilogo rimandano al percorso del rispettivo modulo. La mappa completa è in `content/experiments.json`, campo `coverage`, e nel CSV scaricabile.
 
 Le 11 spedizioni P01–P11 riuniscono attività preparatorie in tre fasi. Gli esperimenti usano dati sintetici e generatori espliciti; i dati e le consegne dei casi applicativi restano nei materiali originali. Le spedizioni costituiscono un percorso ragionato di esercitazione, non un’analisi automatica dei dataset originali.
 

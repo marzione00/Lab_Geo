@@ -5,7 +5,7 @@
     { html } = root.GeoHTML,
     n = (v, d = 2) => v.toLocaleString('it-IT', { maximumFractionDigits: d });
   function resolve(id, variant = 0) {
-    const match = /^(T00|M(?:0[1-9]|1[0-6]))-([b-f])$/.exec(id || '');
+    const match = /^(T00|M(?:0[1-9]|1[0-7]))-([b-f])$/.exec(id || '');
     if (!match) return null;
     const s = root.GeoAstro.generate(match[1], variant),
       p = s?.planets.find(p => p.id === id);

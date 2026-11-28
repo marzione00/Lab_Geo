@@ -1,12 +1,12 @@
 # Architettura e manutenzione
 
-GeoStat Lab è un’applicazione statica nella quale il browser esegue programmi R mediante webR. L’unità principale di navigazione è l’esperimento: i 17 moduli ne organizzano 139, mentre le 11 spedizioni collegano attività preparatorie a casi applicativi. Ogni modulo e ogni spedizione hanno una lezione a tappe, una per slide della propria presentazione.
+GeoStat Lab è un’applicazione statica nella quale il browser esegue programmi R mediante webR. L’unità principale di navigazione è l’esperimento: i 18 moduli ne organizzano 143, mentre le 11 spedizioni collegano attività preparatorie a casi applicativi. Ogni modulo e ogni spedizione hanno una lezione a tappe, una per slide della propria presentazione.
 
 ## Sorgenti e prodotti generati
 
 | Sorgente canonica | Prodotti e utilizzo |
 |---|---|
-| `lezioni/`, `scripts/lessons/import_lesson.py` | Sorgenti LaTeX, R e figure delle ventotto presentazioni, caratteri in `lezioni/Font`, copiati in `assets/fonts/` per il sito; l’importatore genera `content/lezioni/*.json` e `assets/lezioni/` |
+| `lezioni/`, `scripts/lessons/import_lesson.py` | Sorgenti LaTeX, R e figure delle ventinove presentazioni, caratteri in `lezioni/Font`, copiati in `assets/fonts/` per il sito; l’importatore genera `content/lezioni/*.json` e `assets/lezioni/` |
 | `materiali/` | Laboratori R e Python, dati e funzioni comuni, compresi i dati delle spedizioni |
 | `scripts/labs/build_catalogue.py` | Definisce algoritmi R, parametri, formalismo e raccordo con le sezioni; genera il catalogo degli esperimenti e gli script autonomi |
 | `content/prose-*.json` | Spiegazioni, simboli e limiti specifici: ogni attività appartiene a un solo file editoriale |
@@ -44,7 +44,7 @@ La grafica planetaria dispone di rendering WebGL e di un’alternativa Canvas 2D
 | `#sistema-M01?v=18` | Sistema sintetico nella configurazione indicata |
 | `#esplorazione/M01-b?v=18` | Missione complementare e confronto dei mondi della stessa configurazione |
 | `#taccuino`, `#taccuino-esplorazioni` | Annotazioni del corso e delle esplorazioni, separate |
-| `#esperimenti` | Ricerca dei 139 esperimenti |
+| `#esperimenti` | Ricerca dei 143 esperimenti |
 | `#laboratorio/m05-intervalli` | Esperimento, controlli e risultati R |
 | `#modulo-M05` | Percorso sperimentale del modulo |
 | `#progetti`, `#modulo-P01` | Indice delle spedizioni e relative fasi |

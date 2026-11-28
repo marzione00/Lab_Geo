@@ -68,6 +68,7 @@ export function moduleGuides() {
   return result;
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  for (const [file, text] of moduleGuides()) fs.writeFileSync(file, text);
-  console.log('28 module guides updated from the current catalogue and missions.');
+  const guides = moduleGuides();
+  for (const [file, text] of guides) fs.writeFileSync(file, text);
+  console.log(guides.size + ' module guides updated from the current catalogue and missions.');
 }

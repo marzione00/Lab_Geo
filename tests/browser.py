@@ -102,7 +102,7 @@ try:
     page.goto(url+'#modulo-'+m['id']+'/slide/3')
     page.wait_for_url('**#lezione-'+m['id'])
     page.locator('.lesson-overview').wait_for()
-   checks.append('28 moduli e spedizioni: i vecchi indirizzi delle slide aprono le tappe')
+   checks.append(str(len(modules)) + ' moduli e spedizioni: i vecchi indirizzi delle slide aprono le tappe')
    page.goto(url+'#esperimenti')
    expect(page.locator('.experiment-card')).to_have_count(len(activities))
    page.locator('#search-experiments').fill('bootstrap')
@@ -198,7 +198,7 @@ try:
     expect(page.locator('.page-counter')).to_have_text('09 / 27')
     page.locator('mjx-container[jax="SVG"]').first.wait_for()
     assert_layout('lettura con formule')
-   checks.append('Home, 28 moduli e formule senza overflow a 320/390/430/768/1440 px')
+   checks.append('Home, ' + str(len(modules)) + ' moduli e formule senza overflow a 320/390/430/768/1440 px')
    page.goto('about:blank')  # isolate the timing probes from the animated page and the trace recorder
    shifts=[]
    for vw,vh in [(390,844),(1440,900)]:
