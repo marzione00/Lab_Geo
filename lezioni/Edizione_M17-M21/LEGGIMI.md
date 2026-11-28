@@ -8,6 +8,7 @@ Le lezioni dei moduli M17-M21 seguono l'impaginazione delle presentazioni planet
 | M18 | `M18_Azimut` | Dati direzionali | 32 |
 | M19 | `M19_Isocrona` | Datazione radiometrica | 32 |
 | M20 | `M20_Numerus` | Modelli lineari generalizzati | 32 |
+| M21 | `M21_Credentia` | Inferenza bayesiana | 32 |
 
 ## Strumenti di questa cartella
 

@@ -1,0 +1,77 @@
+{
+ "R": "R version 4.6.0 (2026-04-24)",
+ "fragments": {
+  "capitolo-01.R": {
+   "status": "ok",
+   "output": "> e <- read.csv('dati/eruzioni_v1.csv')\n> n <- nrow(e); T <- (2025 - 1650) / 100\n> c(eruzioni = n, secoli = T, stima = n / T)\neruzioni   secoli    stima \n    9.00     3.75     2.40 \n> # intervallo esatto al 95%\n> c(qchisq(.025, 2 * n) / 2 / T,\n+   qchisq(.975, 2 * n + 2) / 2 / T)\n[1] 1.097433 4.555948\n> # almeno un'eruzione in mezzo secolo\n> 1 - exp(-0.5 * n / T)\n[1] 0.6988058",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "b30df361d236a8adeaf3",
+   "seconds": 23.8
+  },
+  "capitolo-02.R": {
+   "status": "ok",
+   "output": "> e <- read.csv('dati/eruzioni_v1.csv')\n> n <- nrow(e)\n> T <- 3.75\n> g <- seq(0, 10, length.out = 4001)\n> dg <- g[2] - g[1]\n> pri <- rep(1, length(g))\n> ver <- dpois(n, g * T)\n> post <- pri * ver / sum(pri * ver * dg)\n> cdf <- cumsum(post * dg)\n> c(media = sum(g * post * dg),\n+   inf = g[which.max(cdf >= .025)],\n+   sup = g[which.max(cdf >= .975)])\n   media      inf      sup \n2.666666 1.280000 4.555000 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "a6fa394f67af0e66a7e7",
+   "seconds": 0.0
+  },
+  "capitolo-03.R": {
+   "status": "ok",
+   "output": "> a <- read.csv('dati/analoghi_v1.csv')\n> Ta <- a$anni_osservati / 100\n> nll <- function(q) -sum(dnbinom(\n+   a$eruzioni, size = exp(q[1]),\n+   mu = exp(q[1] - q[2]) * Ta, log = TRUE))\n> q <- optim(c(1, 0), nll,\n+   control = list(reltol = 1e-12))$par\n> A <- exp(q[1]); B <- exp(q[2])\n> A1 <- A + 9; B1 <- B + 3.75\n> round(c(A = A, B = B, A1 = A1, B1 = B1,\n+   media = A1 / B1), 3)\n     A      B     A1     B1  media \n 5.147  1.807 14.147  5.557  2.546 \n> round(qgamma(c(.025, .975), A1, B1), 3)\n[1] 1.397 4.033",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "ae44513c5a4ceea67e11",
+   "seconds": 0.0
+  },
+  "capitolo-04.R": {
+   "status": "ok",
+   "output": "> # parametri a posteriori del frammento 3\n> A1 <- 14.147; B1 <- 5.557; h <- 0.5\n> c(predittiva = 1 - (B1 / (B1 + h))^A1,\n+   con_stima = 1 - exp(-h * 9 / 3.75))\npredittiva  con_stima \n 0.7044308  0.6988058 \n> set.seed(1)\n> l <- rgamma(1e5, A1, B1)\n> mean(1 - exp(-h * l))\n[1] 0.7045884",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "cfeb61ad474e32013cf3",
+   "seconds": 0.1
+  },
+  "capitolo-05.R": {
+   "status": "ok",
+   "output": "> e <- read.csv('dati/eruzioni_v1.csv')\n> n <- nrow(e)\n> k <- sum(e$tipo == 'esplosiva')\n> pri <- rbind(uniforme = c(1, 1),\n+   jeffreys = c(.5, .5),\n+   analoghi = c(6.685, 13.354))\n> a1 <- pri[, 1] + k; b1 <- pri[, 2] + n - k\n> round(cbind(media = a1 / (a1 + b1),\n+   inf = qbeta(.025, a1, b1),\n+   sup = qbeta(.975, a1, b1)), 3)\n         media   inf   sup\nuniforme 0.455 0.187 0.738\njeffreys 0.450 0.173 0.746\nanaloghi 0.368 0.206 0.548",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "140b7255a732ed6f2c41",
+   "seconds": 0.0
+  },
+  "capitolo-06.R": {
+   "status": "ok",
+   "output": "> set.seed(2)\n> l <- rgamma(1e5, 14.147, 5.557)\n> p <- rbeta(1e5, 4 + 6.685, 5 + 13.354)\n> c(bayes = mean(1 - exp(-0.5 * l * p)),\n+   con_stime = 1 - exp(-0.5 * 2.4 * 4 / 9))\n    bayes con_stime \n0.3653214 0.4133538 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "7ce873e4d11070c38b4c",
+   "seconds": 0.1
+  },
+  "capitolo-07.R": {
+   "status": "ok",
+   "output": "> e <- read.csv('dati/eruzioni_v1.csv')\n> r <- diff(e$anno); s <- 2025 - max(e$anno)\n> ll <- function(t) sum(dweibull(r,\n+   exp(t[1]), exp(t[2]), log = TRUE)) +\n+   pweibull(s, exp(t[1]), exp(t[2]),\n+     lower.tail = FALSE, log.p = TRUE)\n> o <- optim(c(0, log(40)),\n+   function(t) -ll(t))\n> round(c(k = exp(o$par[1]),\n+   scala = exp(o$par[2])), 2)\n    k scala \n 3.96 44.57 \n> round(c(media = mean(r),\n+   cv = sd(r) / mean(r)), 2)\nmedia    cv \n39.25  0.34 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "218ec4a0a7c45d9b2320",
+   "seconds": 0.1
+  },
+  "capitolo-08.R": {
+   "status": "ok",
+   "output": "> e <- read.csv('dati/eruzioni_v1.csv')\n> r <- diff(e$anno); s <- 2025 - max(e$anno)\n> lp <- function(t) sum(dweibull(r,\n+   exp(t[1]), exp(t[2]), log = TRUE)) +\n+   pweibull(s, exp(t[1]), exp(t[2]),\n+     FALSE, TRUE) +\n+   dnorm(t[1], 0, 1, TRUE) +\n+   dnorm(t[2], log(40), 1, TRUE)\n> set.seed(2026); t <- c(0, log(40))\n> ch <- numeric(5000); acc <- 0\n> for (i in 1:5000) {\n+   p <- t + rnorm(2, 0, 0.25)\n+   if (log(runif(1)) < lp(p) - lp(t)) {\n+     t <- p; acc <- acc + 1 }\n+   ch[i] <- exp(t[1]) }\n> k <- ch[-(1:500)]\n> round(c(acc = acc / 5000, k = mean(k),\n+   p_k1 = mean(k > 1)), 3)\n  acc     k  p_k1 \n0.411 3.155 0.994 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "0d1a44a04ecdad45cf59",
+   "seconds": 0.3
+  }
+ }
+}

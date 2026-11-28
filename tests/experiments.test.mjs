@@ -14,12 +14,12 @@ const sandbox = {
 load(sandbox.window, 'html', 'security');
 load(sandbox, 'experiments');
 const labs = sandbox.window.GeoLabs;
-test('Copertura di tutti i 21 moduli e delle 163 sezioni senza collegamenti vuoti', () => {
-  assert.equal(data.activities.length, 155);
-  assert.equal(data.coverage.length, 163);
+test('Copertura di tutti i 22 moduli e delle 167 sezioni senza collegamenti vuoti', () => {
+  assert.equal(data.activities.length, 159);
+  assert.equal(data.coverage.length, 167);
   const ids = new Set(data.activities.map(a => a.id));
-  assert.equal(ids.size, 155);
-  assert.equal(new Set(data.activities.map(a => a.module)).size, 21);
+  assert.equal(ids.size, 159);
+  assert.equal(new Set(data.activities.map(a => a.module)).size, 22);
   for (const c of data.coverage) {
     assert(c.activities.length);
     assert(c.activities.every(id => ids.has(id)));
