@@ -10,12 +10,12 @@ const cat = read('content/catalogue.json').modules;
 await import('../src/core.js');
 const C = globalThis.GeoCore;
 test('Copertura integrale del corso e continuità delle pagine', () => {
-  assert.equal(cat.length, 30);
+  assert.equal(cat.length, 31);
   assert.deepEqual(
     cat.map(m => m.id),
     [
       'T00',
-      ...Array.from({ length: 18 }, (_, i) => 'M' + String(i + 1).padStart(2, '0')),
+      ...Array.from({ length: 19 }, (_, i) => 'M' + String(i + 1).padStart(2, '0')),
       ...Array.from({ length: 11 }, (_, i) => 'P' + String(i + 1).padStart(2, '0')),
     ],
   );

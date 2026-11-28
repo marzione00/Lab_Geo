@@ -1,6 +1,6 @@
 # Atlante scientifico di GeoStat Lab
 
-L’atlante organizza la navigazione su tre livelli: una galassia con 19 sistemi stellari, cinque pianeti in ciascun sistema e un mondo associato al modulo didattico. I contenuti del corso restano 147 esperimenti e 11 spedizioni applicative.
+L’atlante organizza la navigazione su tre livelli: una galassia con 20 sistemi stellari, cinque pianeti in ciascun sistema e un mondo associato al modulo didattico. I contenuti del corso restano 151 esperimenti e 11 spedizioni applicative.
 
 ## Navigazione
 

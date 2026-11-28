@@ -32,8 +32,8 @@ test('Every optional world has a reproducible family and a real-data mission of 
       assert.equal(scope.GeoAstro.generate(s.id, 9999).planets.find(q => q.id === p.id).familyId, p.familyId);
       for (const detail of [false, true]) assert(fs.existsSync(scope.GeoFamilies.texture(p, detail)));
     }
-  assert.equal(course, 19);
-  assert.equal(optional, 76);
+  assert.equal(course, 20);
+  assert.equal(optional, 80);
   assert.equal(families.size, 13);
   assert.equal(levels.size, 5);
   assert.equal(new Set(projects.map(p => p.level)).size, 5);
@@ -137,7 +137,7 @@ test('Frozen dataset loading rejects a changed snapshot before R execution', asy
   await assert.rejects(context.GeoResearch.readDataset({ ...meta, dataSHA256: '0'.repeat(64) }), /non corrisponde/);
 });
 
-test('All 76 complementary destinations render a complete mission without missing disciplines or readings', () => {
+test('All 80 complementary destinations render a complete mission without missing disciplines or readings', () => {
   const { w, main } = setup();
   for (const s of w.GeoAstro.systems)
     for (const p of s.planets.filter(p => !p.isTarget)) {

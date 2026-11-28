@@ -6,6 +6,7 @@ Le lezioni dei moduli M17-M21 seguono l'impaginazione delle presentazioni planet
 |---|---|---|---:|
 | M17 | `M17_Simplex` | Dati composizionali | 32 |
 | M18 | `M18_Azimut` | Dati direzionali | 32 |
+| M19 | `M19_Isocrona` | Datazione radiometrica | 32 |
 
 ## Strumenti di questa cartella
 
@@ -24,7 +25,7 @@ cd lezioni/M17_Simplex && xelatex -halt-on-error M17_Simplex.tex && xelatex -hal
 
 ## Contenuto di una cartella di lezione
 
-- `dati/` contiene gli ingressi; per Simplex il file sintetico `composizioni_v1.csv`, per Azimut i quattro file `correnti_v1.csv`, `fratture_v1.csv`, `paleomag_v1.csv` e `strati_v1.csv`, ricostruiti da `R/genera_dati.R` con un seme fissato.
+- `dati/` contiene gli ingressi; per Simplex il file sintetico `composizioni_v1.csv`, per Azimut i quattro file `correnti_v1.csv`, `fratture_v1.csv`, `paleomag_v1.csv` e `strati_v1.csv`, per Isocrona `isocrone_v1.csv` e `date_v1.csv`, ricostruiti da `R/genera_dati.R` con un seme fissato.
 - `R/<id>_figure.R` ricostruisce figure e valori e interrompe l'esecuzione se un controllo numerico fallisce; scrive in `figure/<id>` e `risultati/<id>`. Per aggiornare le slide si copiano i PDF in `Figure/` e si ricompila. Lo script va eseguito con una localizzazione UTF-8 (`LC_ALL=C.UTF-8`), necessaria per le lettere accentate nelle etichette.
 - `R/copertina.R` disegna la copertina procedurale `Scena/copertina.jpg` (2400 × 1500 pixel): fondale stellare, pianeta con illuminazione calcolata per pixel e un elemento ricavato dai dati del caso.
 - `Codice/` contiene i frammenti delle pagine, autonomi; `Diagrammi/` i disegni TikZ; `Esperimenti/` gli scenari dei laboratori.
