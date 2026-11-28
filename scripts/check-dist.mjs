@@ -90,7 +90,8 @@ for (const f of textPages) {
   const html = fs.readFileSync(path.join(dist, 'percorso', f), 'utf8');
   if (!html.includes('http-equiv="Content-Security-Policy"') || /<script\b/i.test(html))
     throw Error('Pagina testuale non conforme: ' + f);
-  for (const [, href] of html.matchAll(/href="([^"#]+)"/g)) exists(path.posix.join('percorso', href));
+  for (const [, href] of html.matchAll(/href="([^"#]+)"/g))
+    if (!/^[a-z]+:/.test(href)) exists(path.posix.join('percorso', href));
 }
 for (const f of ['assets/social-card.jpg', 'assets/static.css']) exists(f);
 console.log(
