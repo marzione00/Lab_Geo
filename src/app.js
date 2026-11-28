@@ -363,6 +363,12 @@
       document.title = config.title + ' · ' + L.planet + (r.page ? ' · Tappa ' + r.page : ' · Lezione ' + r.id);
       announce(r.page ? 'Tappa ' + r.page + ' · ' + L.slides[r.page - 1].title : 'Lezione ' + r.id + ' · ' + L.title);
     },
+    deepening: r => {
+      const L = window.GEO_LESSONS[r.id];
+      window.GeoLessons.deepening(main, L);
+      document.title = config.title + ' · ' + L.planet + ' · Approfondimento';
+      announce('Approfondimento · ' + L.title);
+    },
     exercises: r => {
       window.GeoLessons.exercises(main, window.GEO_LESSONS[r.id], r.card, announce);
       const L = window.GEO_LESSONS[r.id];
@@ -382,7 +388,7 @@
   };
   // Lab details and worked solutions arrive before the views that read them; false if the route changed meanwhile.
   async function routeData(r, token) {
-    if (r.type === 'lesson' || r.type === 'exercises') {
+    if (r.type === 'lesson' || r.type === 'exercises' || r.type === 'deepening') {
       if (!window.GEO_LESSONS?.[r.id]) main.innerHTML = html`<p class="loading">Apertura della lezione ${r.id}…</p>`;
       // The R engine reads the pinned packages and common functions from the laboratory details.
       await Promise.all([lessonData(r.id), labDetails()]);
@@ -423,7 +429,7 @@
     if (!l) return;
     const box = document.createElement('section');
     box.className = 'lesson-notice';
-    box.innerHTML = html`<p class="eyebrow">LEZIONE A TAPPE</p><h2>${l.planet}: ${l.title}</h2><p>Ognuna delle ${l.pages} slide della lezione ha una tappa sul sito, con il testo, il codice R eseguibile e i laboratori con gli stessi parametri.${companionText(l)}</p><div class="lab-actions"><a class="button" href="#lezione-${m.id}">Tappe della lezione →</a>${l.cards || l.notebooks ? html`<a class="button secondary" href="#esercizi-${m.id}">${l.cards ? 'Quaderno degli esercizi' : 'Notebook svolti'} →</a>` : ''}</div>`;
+    box.innerHTML = html`<p class="eyebrow">LEZIONE A TAPPE</p><h2>${l.planet}: ${l.title}</h2><p>Ognuna delle ${l.pages} slide della lezione ha una tappa sul sito, con il testo, il codice R eseguibile e i laboratori con gli stessi parametri.${companionText(l)}</p><div class="lab-actions"><a class="button" href="#lezione-${m.id}">Tappe della lezione →</a>${l.deepening ? html`<a class="button secondary" href="#approfondimento-${m.id}">Approfondimento →</a>` : ''}${l.cards || l.notebooks ? html`<a class="button secondary" href="#esercizi-${m.id}">${l.cards ? 'Quaderno degli esercizi' : 'Notebook svolti'} →</a>` : ''}</div>`;
     (main.querySelector('.module-head') || main.firstElementChild)?.after(box);
   }
   function markNavigation(r) {

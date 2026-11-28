@@ -21,9 +21,16 @@
       ? { type: 'exercises', id: m[2], card: n || 1 }
       : { type: 'notfound' };
   }
+  // Deepening of a lesson: phenomenon, data and history of the method.
+  function deepeningRoute(key, modules, lessons) {
+    const m = /^approfondimento-(T00|M\d{2}|P\d{2})$/.exec(key);
+    if (!m) return null;
+    const l = Object.hasOwn(lessons, m[1]) ? lessons[m[1]] : null;
+    return l?.deepening && modules.some(x => x.id === m[1]) ? { type: 'deepening', id: m[1] } : { type: 'notfound' };
+  }
   function parseRoute(hash, modules, lessons = {}) {
     const key = String(hash || '#indice').replace(/^#/, '');
-    const lesson = lessonRoute(key, modules, lessons);
+    const lesson = lessonRoute(key, modules, lessons) || deepeningRoute(key, modules, lessons);
     if (lesson) return lesson;
     if (
       [

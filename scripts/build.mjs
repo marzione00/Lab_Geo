@@ -4,7 +4,7 @@ import { execFileSync } from 'node:child_process';
 import vm from 'node:vm';
 import { hardenBuild } from './harden-build.mjs';
 import { compactCourseSVG } from './compact-course-svg.mjs';
-import { buildLessons } from './lessons/build-lessons.mjs';
+import { buildLessons, deepening, blocksHtml, inlineHtml } from './lessons/build-lessons.mjs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'),
@@ -304,6 +304,20 @@ function staticPage(file, title, summary, body) {
       ' · <a href="../index.html">Atlante interattivo</a> · <a href="index.html">Indice testuale</a> · <a href="../LICENSE.md" rel="license">Licenze: materiali CC BY-NC-SA 4.0, codice PolyForm Noncommercial 1.0.0</a></p></footer></body></html>\n',
   );
 }
+// Deepening of the lesson in the text page: phenomenon, data and history of the method, with the sources.
+function deepeningHtml(id) {
+  const file = 'content/approfondimenti/' + id + '.md';
+  if (!fs.existsSync(path.join(root, file))) return '';
+  const d = deepening(fs.readFileSync(path.join(root, file), 'utf8'), file);
+  return (
+    '<h2>Approfondimento</h2>' +
+    blocksHtml(d.intro) +
+    d.sections.map(s => '<h3>' + text(s.title) + '</h3>' + blocksHtml(s.blocks)).join('') +
+    '<h3>Fonti</h3><ul>' +
+    d.sources.map(i => '<li>' + inlineHtml(i) + '</li>').join('') +
+    '</ul>'
+  );
+}
 for (const m of catalogue.modules) {
   // Every module and expedition lists the tappe of its lesson.
   if (!lessons[m.id]) throw Error('Lezione assente per ' + m.id);
@@ -354,7 +368,8 @@ for (const m of catalogue.modules) {
             section.slides.map(s => '<li><a href="../' + text(route(s)) + '">' + text(s.title) + '</a></li>').join('') +
             '</ul>',
         )
-        .join(''),
+        .join('') +
+      deepeningHtml(m.id),
   );
 }
 staticPage(

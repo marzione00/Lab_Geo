@@ -4,7 +4,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const LINK = /^(?:#(?:lezione-|esercizi-|laboratorio\/|modulo-|sistema-)[\w/?=&%.,{}":-]*|https:\/\/[^\s<>"]+)$/;
+const LINK =
+  /^(?:#(?:lezione-|esercizi-|approfondimento-|laboratorio\/|modulo-|sistema-)[\w/?=&%.,{}":-]*|https:\/\/[^\s<>"]+)$/;
 
 // Inline markdown → nodes: text, {t:'m'} math, {t:'c'} code, {t:'b'}, {t:'i'}, {t:'a'}.
 export function inline(text) {
@@ -122,6 +123,29 @@ export function explanations(source, slides, sections = []) {
   return { intro: prose(blocks(parts[0]), 'introduzione'), notes, chapters };
 }
 
+// Deepening of a lesson: the phenomenon behind the data, their origin and the history of the method.
+// An introduction, then "## Title" sections with paragraphs, ### headings, lists and formulas; the last
+// section, "## Fonti", lists the sources with their https links.
+export function deepening(source, where = 'approfondimento') {
+  const [first, ...rest] = source.split(/^## /m),
+    sections = rest.map(part => {
+      const [head, ...body] = part.split('\n');
+      return { title: head.trim(), blocks: blocks(body.join('\n')) };
+    });
+  const intro = prose(blocks(first), where + ', introduzione');
+  if (!intro.length) throw Error('Introduzione assente (' + where + ')');
+  const sources = sections.pop();
+  if (sources?.title !== 'Fonti') throw Error('L’ultima sezione deve essere «Fonti» (' + where + ')');
+  const list = sources.blocks.find(b => b.t === 'ul');
+  if (sources.blocks.length !== 1 || !list) throw Error('Le fonti sono un elenco (' + where + ')');
+  const linked = list.items.filter(item => item.some(n => n.t === 'a' && /^https:/.test(n.h)));
+  if (linked.length !== list.items.length || linked.length < 3)
+    throw Error('Almeno tre fonti, ognuna con un collegamento https (' + where + ')');
+  if (sections.length < 2 || sections.some(s => !s.title || !s.blocks.length))
+    throw Error('Almeno due sezioni con testo (' + where + ')');
+  return { intro, sections, sources: list.items };
+}
+
 const safe = v =>
   JSON.stringify(v)
     .replace(/</g, '\\u003c')
@@ -188,6 +212,42 @@ function checkLesson(root, id, lesson) {
     if (!exists(f)) throw Error('File della lezione assente: ' + f);
 }
 
+// Inline nodes of a deepening, for the check of its links.
+const blockNodes = list => list.flatMap(b => (b.t === 'ul' ? b.items.flat() : b.c || []));
+const deepNodes = d => [...blockNodes(d.intro), ...d.sections.flatMap(s => blockNodes(s.blocks)), ...d.sources.flat()];
+
+// Static HTML of blocks for the text pages (percorso/): formulas stay in TeX between \( \) and \[ \].
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+export function inlineHtml(list) {
+  return list
+    .map(n => {
+      if (typeof n === 'string') return esc(n);
+      if (n.t === 'm') return esc('\\(' + n.v + '\\)');
+      if (n.t === 'c') return '<code>' + esc(n.v) + '</code>';
+      if (n.t === 'b') return '<strong>' + inlineHtml(n.c) + '</strong>';
+      if (n.t === 'i') return '<em>' + inlineHtml(n.c) + '</em>';
+      if (n.t === 'a') {
+        const href = /^https:/.test(n.h) ? n.h : '../' + n.h;
+        return '<a href="' + esc(href) + '">' + inlineHtml(n.c) + '</a>';
+      }
+      return '';
+    })
+    .join('');
+}
+export function blocksHtml(list) {
+  return list
+    .map(b =>
+      b.t === 'h'
+        ? '<h3>' + inlineHtml(b.c) + '</h3>'
+        : b.t === 'ul'
+          ? '<ul>' + b.items.map(i => '<li>' + inlineHtml(i) + '</li>').join('') + '</ul>'
+          : b.t === 'math'
+            ? '<p class="math">' + esc('\\[' + b.v + '\\]') + '</p>'
+            : '<p>' + inlineHtml(b.c) + '</p>',
+    )
+    .join('');
+}
+
 // Solved notebooks of a lesson: self-contained HTML pages listed on the companion world.
 function notebooks(root, id, lesson, all) {
   const nb = all[id];
@@ -248,10 +308,22 @@ export function buildLessons(root, out) {
     const { intro, notes, chapters } = fs.existsSync(path.join(root, mdFile))
       ? explanations(read(mdFile), lesson.slides, lesson.sections)
       : { intro: [], notes: {}, chapters: {} };
+    const deepFile = 'content/approfondimenti/' + id + '.md';
+    const deep = fs.existsSync(path.join(root, deepFile)) ? deepening(read(deepFile), deepFile) : null;
     const files = projectFiles(path.join(root, cfg.source), lesson.project.files);
     checkLesson(root, id, lesson);
+    if (deep) checkLinks(root, id, lesson, deepNodes(deep));
     const nb = notebooks(root, id, lesson, allNotebooks);
-    const data = { ...lesson, intro, notes, chapters, exercises, ...nb, project: { ...lesson.project, files } };
+    const data = {
+      ...lesson,
+      intro,
+      notes,
+      chapters,
+      deepening: deep,
+      exercises,
+      ...nb,
+      project: { ...lesson.project, files },
+    };
     fs.writeFileSync(
       path.join(out, 'assets/lessons', id + '.js'),
       'window.GEO_LESSONS=window.GEO_LESSONS||{};window.GEO_LESSONS.' + id + '=' + safe(data) + ';\n',
@@ -265,6 +337,7 @@ export function buildLessons(root, out) {
       pdf: lesson.pdf,
       download: lesson.download,
       explained: Object.keys(notes).map(Number),
+      deepening: deep ? deep.sections.length : 0,
       sections: lesson.sections,
       cards: exercises ? exercises.cards.length : 0,
       notebooks: nb.notebooks ? nb.notebooks.length : 0,

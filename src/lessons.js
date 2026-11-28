@@ -483,7 +483,7 @@
             s =>
               html`<a class="toc-link" href="#lezione-${L.id}/${s.page}" data-search="${(s.title + ' ' + sec.title).toLowerCase()}"${s.page === page ? html` aria-current="page"` : ''}><span>${String(s.page).padStart(2, '0')}</span><span>${s.title}</span></a>`,
           )}`,
-    )}</aside>`;
+    )}${L.deepening ? html`<p class="toc-section">Oltre le tappe</p><a class="toc-link" href="#approfondimento-${L.id}"><span>✦</span><span>Approfondimento: fenomeno, dati e storia</span></a>` : ''}</aside>`;
   }
   // Systems take the name of their star, as in the galaxy view.
   const system = id => root.GeoAstro?.generate(id, 0)?.name || id;
@@ -497,7 +497,7 @@
   }
   function overview(main, L) {
     const done = new Set(load().done);
-    main.innerHTML = html`<div class="wrap lesson-overview">${crumbs(L)}<header class="module-head lesson-head"><p class="eyebrow">${expedition(L.id) ? L.planet.toUpperCase() + ' · PRESENTAZIONE A TAPPE' : L.id + ' · PIANETA ' + L.planet.toUpperCase() + ' · LEZIONE'}</p><h1>${L.title}</h1><div class="lesson-intro">${blocks(L.intro)}</div><div class="lab-actions"><a class="button" href="#lezione-${L.id}/2">Inizia dalla tappa 2 →</a><a class="button secondary" href="${L.pdf}" target="_blank" rel="noopener">PDF della lezione con i codici di tappa ↗</a><a class="button secondary" href="${L.download}" download>Progetto R: codice e dati</a>${L.exercises ? html`<a class="button secondary" href="#esercizi-${L.id}">Quaderno degli esercizi →</a>` : ''}</div></header><section class="lesson-regions" aria-label="Regioni del pianeta">${L.sections
+    main.innerHTML = html`<div class="wrap lesson-overview">${crumbs(L)}<header class="module-head lesson-head"><p class="eyebrow">${expedition(L.id) ? L.planet.toUpperCase() + ' · PRESENTAZIONE A TAPPE' : L.id + ' · PIANETA ' + L.planet.toUpperCase() + ' · LEZIONE'}</p><h1>${L.title}</h1><div class="lesson-intro">${blocks(L.intro)}</div><div class="lab-actions"><a class="button" href="#lezione-${L.id}/2">Inizia dalla tappa 2 →</a><a class="button secondary" href="${L.pdf}" target="_blank" rel="noopener">PDF della lezione con i codici di tappa ↗</a><a class="button secondary" href="${L.download}" download>Progetto R: codice e dati</a>${L.deepening ? html`<a class="button secondary" href="#approfondimento-${L.id}">Approfondimento: fenomeno, dati e storia →</a>` : ''}${L.exercises ? html`<a class="button secondary" href="#esercizi-${L.id}">Quaderno degli esercizi →</a>` : ''}</div></header><section class="lesson-regions" aria-label="Regioni del pianeta">${L.sections
       .filter(sec => !L.slides.slice(sec.first - 1, sec.last).every(s => s.lines || s.question))
       .map(sec => {
         const tappe = L.slides.slice(sec.first - 1, sec.last);
@@ -588,6 +588,28 @@
     engineState(main);
     typeset(main.querySelector('.lesson-main'));
     main.querySelector('.toc-link[aria-current="page"]')?.scrollIntoView({ block: 'nearest' });
+  }
+  // Deepening: the phenomenon behind the data, their origin and the history of the method, with sources.
+  function deepening(main, L) {
+    cleanup();
+    const D = L.deepening,
+      slug = t =>
+        'appr-' +
+        t
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-|-$/g, '');
+    main.innerHTML = html`<div class="wrap lesson-deepening">${crumbs(L, 'Approfondimento')}<header class="module-head lesson-head"><p class="eyebrow">${expedition(L.id) ? L.planet.toUpperCase() : L.id + ' · PIANETA ' + L.planet.toUpperCase()} · APPROFONDIMENTO</p><h1>${L.title}</h1><div class="lesson-intro">${blocks(D.intro)}</div><nav class="deepening-toc" aria-label="Sezioni dell’approfondimento"><ol>${D.sections.map(s => html`<li><a href="#${slug(s.title)}" data-anchor>${s.title}</a></li>`)}<li><a href="#appr-fonti" data-anchor>Fonti</a></li></ol></nav><div class="lab-actions"><a class="button secondary" href="#lezione-${L.id}">◎ Torna alle tappe di ${L.planet}</a></div></header>${D.sections.map(s => html`<section class="lesson-panel deepening-section" id="${slug(s.title)}"><h2>${s.title}</h2>${blocks(s.blocks)}</section>`)}<section class="lesson-panel deepening-section deepening-sources" id="appr-fonti"><h2>Fonti</h2><ol>${D.sources.map(i => html`<li>${inline(i)}</li>`)}</ol></section></div>`;
+    // Anchors inside the page scroll to the section and leave the route unchanged.
+    main.querySelectorAll('[data-anchor]').forEach(a =>
+      a.addEventListener('click', e => {
+        e.preventDefault();
+        main.querySelector(a.getAttribute('href'))?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }),
+    );
+    typeset(main);
   }
   function lesson(main, L, page, announce = () => {}) {
     cleanup();
@@ -680,5 +702,5 @@
     });
     engineState(main);
   }
-  root.GeoLessons = Object.freeze({ configure, cleanup, forWorld, lesson, exercises, tone });
+  root.GeoLessons = Object.freeze({ configure, cleanup, forWorld, lesson, deepening, exercises, tone });
 })(globalThis);
