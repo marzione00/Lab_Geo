@@ -1,0 +1,77 @@
+{
+ "R": "R version 4.6.0 (2026-04-24)",
+ "fragments": {
+  "capitolo-01.R": {
+   "status": "ok",
+   "output": "> d <- read.csv('dati/frane_v1.csv')\n> round(c(media = mean(d$frane),\n+   varianza = var(d$frane),\n+   zeri = sum(d$frane == 0)), 2)\n   media varianza     zeri \n    3.34    15.07    21.00 \n> m <- lm(frane ~ pendenza, data = d)\n> predict(m, data.frame(pendenza = 4))\n         1 \n-0.6010453 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "4ef76a38b4402c5439eb",
+   "seconds": 23.3
+  },
+  "capitolo-02.R": {
+   "status": "ok",
+   "output": "> d <- read.csv('dati/frane_v1.csv')\n> m <- glm(frane ~ pendenza + litologia +\n+   offset(log(area_km2)),\n+   family = poisson, data = d)\n> cbind(stima = round(coef(m), 4))\n                   stima\n(Intercept)      -0.6807\npendenza          0.0895\nlitologiaCalcari -1.3673\nlitologiaFlysch  -0.6228\n> round(exp(10 * coef(m)[['pendenza']]), 3)\n[1] 2.449",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "b9ac21d065efc4d6c996",
+   "seconds": 0.1
+  },
+  "capitolo-03.R": {
+   "status": "ok",
+   "output": "> d <- read.csv('dati/frane_v1.csv')\n> lv <- c('Argille', 'Flysch', 'Calcari')\n> d$litologia <- factor(d$litologia, lv)\n> m <- glm(frane ~ pendenza + litologia +\n+   offset(log(area_km2)), poisson, d)\n> b <- coef(m); s <- sqrt(diag(vcov(m)))\n> round(exp(cbind(stima = b,\n+   inf = b - 1.96 * s,\n+   sup = b + 1.96 * s))[-1, ], 3)\n                 stima   inf   sup\npendenza         1.094 1.071 1.117\nlitologiaFlysch  0.536 0.390 0.739\nlitologiaCalcari 0.255 0.168 0.387",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "3f7a2e7ad719ce555eed",
+   "seconds": 0.1
+  },
+  "capitolo-04.R": {
+   "status": "ok",
+   "output": "> d <- read.csv('dati/frane_v1.csv')\n> m1 <- glm(frane ~ pendenza + litologia +\n+   offset(log(area_km2)), poisson, d)\n> m0 <- update(m1, . ~ . - litologia)\n> D <- deviance(m0) - deviance(m1)\n> p <- pchisq(D, 2, lower.tail = FALSE)\n> round(c(dev_m0 = deviance(m0),\n+   dev_m1 = deviance(m1), D = D), 2)\ndev_m0 dev_m1      D \n195.13 153.21  41.92 \n> signif(p, 3)\n[1] 7.88e-10",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "62c4c093c7c838775cec",
+   "seconds": 0.1
+  },
+  "capitolo-05.R": {
+   "status": "ok",
+   "output": "> d <- read.csv('dati/frane_v1.csv')\n> m <- glm(frane ~ pendenza + litologia +\n+   offset(log(area_km2)), poisson, d)\n> r <- residuals(m, type = 'pearson')\n> phi <- sum(r^2) / m$df.residual\n> q <- update(m, family = quasipoisson)\n> se <- function(f) sqrt(diag(vcov(f)))[[2]]\n> round(c(phi = phi, se_poisson = se(m),\n+   se_quasi = se(q)), 4)\n       phi se_poisson   se_quasi \n    1.6249     0.0108     0.0138 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "8936dfe30727340999a9",
+   "seconds": 0.1
+  },
+  "capitolo-06.R": {
+   "status": "ok",
+   "output": "> d <- read.csv('dati/frane_v1.csv')\n> lv <- c('Argille', 'Flysch', 'Calcari')\n> d$litologia <- factor(d$litologia, lv)\n> X <- model.matrix(~ pendenza + litologia,\n+   data = d)\n> o <- log(d$area_km2)\n> nll <- function(p) -sum(dnbinom(d$frane,\n+   size = exp(p[5]),\n+   mu = exp(drop(X %*% p[1:4]) + o),\n+   log = TRUE))\n> f <- optim(rep(0, 5), nll,\n+   method = 'BFGS', hessian = TRUE)\n> se <- sqrt(diag(solve(f$hessian)))\n> round(c(b_pend = f$par[2], se = se[2],\n+   theta = exp(f$par[5])), 4)\nb_pend     se  theta \n0.0918 0.0141 6.1933 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "5f624609ec2b78735497",
+   "seconds": 0.1
+  },
+  "capitolo-07.R": {
+   "status": "ok",
+   "output": "> s <- read.csv('dati/conteggi_v1.csv')\n> s$p <- s$feldspato / s$punti\n> m <- lm(p ~ distanza_km, data = s)\n> x <- c(0, 60, 90)\n> nd <- data.frame(distanza_km = x)\n> round(predict(m, nd), 3)\n     1      2      3 \n 0.309  0.040 -0.095 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "28ecdfba9608be417d26",
+   "seconds": 0.0
+  },
+  "capitolo-08.R": {
+   "status": "ok",
+   "output": "> s <- read.csv('dati/conteggi_v1.csv')\n> b <- glm(cbind(feldspato,\n+   punti - feldspato) ~ distanza_km,\n+   family = binomial, data = s)\n> r <- residuals(b, type = 'pearson')\n> phi <- sum(r^2) / b$df.residual\n> se <- sqrt(diag(vcov(b)))[[2]]\n> round(c(b = coef(b)[[2]], se = se,\n+   phi = phi, se_quasi = se * sqrt(phi),\n+   OR_10km = exp(10 * coef(b)[[2]])), 4)\n       b       se      phi se_quasi  OR_10km \n -0.0346   0.0016   3.5628   0.0029   0.7074 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "e44fe7bef765c6f89682",
+   "seconds": 0.0
+  }
+ }
+}

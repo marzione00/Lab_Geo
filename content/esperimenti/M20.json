@@ -1,0 +1,146 @@
+[
+ {
+  "id": "m20-lineare",
+  "module": "M20",
+  "section": 1,
+  "sectionTitle": "Conteggi e regressione lineare",
+  "page": 8,
+  "title": "Retta e modello di Poisson per i conteggi",
+  "goal": "Confrontare la retta dei minimi quadrati e il modello di Poisson con legame logaritmico su conteggi che crescono in modo esponenziale con un predittore.",
+  "action": "Aumenta la pendenza del generatore e osserva le previsioni negative della retta e la crescita della varianza dei residui con la media.",
+  "conclusion": "Per conteggi con media variabile la retta può prevedere valori negativi e ignora che la varianza cresce con la media; il modello di Poisson rispetta entrambi i vincoli.",
+  "formula": "\\log\\mu_i=\\beta_0+\\beta_1x_i,\\qquad \\operatorname{var}(Y_i)=\\mu_i",
+  "controls": [
+   {
+    "key": "b",
+    "label": "Pendenza del logaritmo della media",
+    "type": "number",
+    "value": 0.03,
+    "min": 0,
+    "max": 0.15,
+    "step": 0.005,
+    "help": "La media vale 3 per x = 20 e viene moltiplicata per exp(10b) ogni 10 unità."
+   }
+  ],
+  "prose": [
+   "Un conteggio, come il numero di frane in una cella o di granuli in un campo del microscopio, è un intero non negativo, e la sua varianza dipende dalla media. L’esperimento genera ottanta conteggi di Poisson con media 3·exp(b(x − 20)) per x fra 0 e 40, poi adatta una retta con i minimi quadrati ordinari e un modello di Poisson con legame logaritmico.",
+   "Il grafico mostra i dati, la retta tratteggiata e la curva di Poisson. Le metriche riportano la quota dell’intervallo in cui la retta prevede conteggi negativi, la varianza dei residui della retta nelle due metà dell’intervallo e il rapporto di tasso per 10 unità stimato dal modello di Poisson, da confrontare con il valore del generatore."
+  ],
+  "limits": "Ottanta conteggi indipendenti di Poisson con un solo predittore; la stima del rapporto di tasso ha una variabilità campionaria che il seme mette in evidenza. Con conteggi grandi e poco variabili la retta può essere un’approssimazione accettabile.",
+  "symbols": "$\\mu_i$ è la media del conteggio $Y_i$, $x_i$ il predittore, $\\beta_1$ la pendenza sulla scala del logaritmo; $e^{10\\beta_1}$ è il rapporto di tasso per 10 unità.",
+  "code": "x <- seq(0, 40, length.out = 80)\nmu <- 3 * exp(p$b * (x - 20))\ny <- rpois(80, mu)\nmo <- lm(y ~ x)\nmp <- glm(y ~ x, family = poisson)\ngriglia <- data.frame(x = seq(0, 40, length.out = 200))\ngriglia$ols <- predict(mo, griglia)\ngriglia$poisson <- predict(mp, griglia, type = \"response\")\nr <- residuals(mo)\ndata <- data.frame(x = x, y = y)\nplots <- list(ggplot(data, aes(x, y)) + geom_point(colour = col_geo[1], size = 2.2, alpha = 0.8) + geom_line(data = griglia, aes(x, ols), colour = col_geo[2], linewidth = 1, linetype = 2) + geom_line(data = griglia, aes(x, poisson), colour = col_geo[3], linewidth = 1.1) + labs(title = \"Conteggi simulati con due modelli\", subtitle = \"Tratteggio: minimi quadrati ordinari; linea continua: Poisson\", x = \"Predittore x\", y = \"Conteggio\"))\nmetrics <- metric(`Quota dell’intervallo con previsioni negative` = f(mean(griglia$ols < 0)), `Varianza dei residui, x < 20` = f(var(r[x < 20])), `Varianza dei residui, x ≥ 20` = f(var(r[x >= 20])), `Rapporto di tasso per 10 unità, Poisson` = f(exp(10 * coef(mp)[[2]])), `Rapporto di tasso vero` = f(exp(10 * p$b)))"
+ },
+ {
+  "id": "m20-offset",
+  "module": "M20",
+  "section": 2,
+  "sectionTitle": "Il modello di Poisson",
+  "page": 15,
+  "title": "Offset e superfici diverse",
+  "goal": "Valutare la stima del rapporto di tasso quando le unità hanno superfici diverse e la superficie dipende dal predittore.",
+  "action": "Aumenta la dipendenza della superficie dal predittore e confronta le stime con e senza offset con il valore vero.",
+  "conclusion": "Senza offset il modello attribuisce al predittore l’effetto della superficie; con l’offset log(area) la stima riguarda il tasso per unità di superficie.",
+  "formula": "\\log\\mu_i=\\log A_i+\\beta_0+\\beta_1x_i",
+  "controls": [
+   {
+    "key": "c",
+    "label": "Dipendenza di log(area) dal predittore",
+    "type": "number",
+    "value": 0,
+    "min": 0,
+    "max": 1,
+    "step": 0.05,
+    "help": "Variazione di log(area) per 10 unità del predittore."
+   }
+  ],
+  "prose": [
+   "Celle di dimensioni diverse contengono più o meno eventi anche a parità di tasso. Il modello di Poisson tiene conto della superficie con un offset, il logaritmo dell’area aggiunto al predittore lineare con coefficiente fissato a 1. L’esperimento genera centoventi celle con un tasso che cresce con x, rapporto vero 1,65 per 10 unità, e superfici che dipendono da x secondo il controllo.",
+   "Il programma stima il rapporto di tasso con l’offset e senza. Se la superficie non dipende da x, le due stime differiscono soltanto per la variabilità campionaria. Se le celle con x grande sono anche più estese, il modello senza offset attribuisce a x anche l’aumento dovuto alla superficie."
+  ],
+  "limits": "Superfici lognormali con dispersione 0,3 attorno a una tendenza lineare in x; conteggi di Poisson senza sovradispersione. L’offset presuppone che il numero atteso di eventi sia proporzionale alla superficie.",
+  "symbols": "$A_i$ è la superficie della cella $i$, $\\log A_i$ l’offset; $e^{10\\beta_1}$ è il rapporto fra i tassi per unità di superficie.",
+  "code": "n <- 120\nx <- runif(n, 0, 40)\narea <- exp(p$c * (x - 20) / 10 + rnorm(n, 0, 0.3))\ny <- rpois(n, area * exp(-0.5 + 0.05 * x))\ncon <- glm(y ~ x + offset(log(area)), family = poisson)\nsenza <- glm(y ~ x, family = poisson)\ndata <- data.frame(x = x, densita = y / area)\nplots <- list(point_plot(data, \"x\", \"densita\", title = \"Densità dei conteggi per unità di area\", xl = \"Predittore x\", yl = \"Conteggi per unità di area\") + geom_smooth(method = \"glm\", formula = y ~ x, method.args = list(family = quasipoisson), se = FALSE, colour = col_geo[2]))\nmetrics <- metric(`Rapporto di tasso vero per 10 unità` = f(exp(0.5)), `Stima con offset` = f(exp(10 * coef(con)[[2]])), `Stima senza offset` = f(exp(10 * coef(senza)[[2]])), `Correlazione fra x e log(area)` = f(cor(x, log(area))))"
+ },
+ {
+  "id": "m20-dispersione",
+  "module": "M20",
+  "section": 3,
+  "sectionTitle": "Sovradispersione",
+  "page": 22,
+  "title": "Sovradispersione e copertura degli intervalli",
+  "goal": "Misurare quanto spesso l’intervallo di confidenza del modello di Poisson contiene il valore vero quando i conteggi sono sovradispersi.",
+  "action": "Riduci il parametro di forma della binomiale negativa e confronta la copertura degli intervalli di Poisson e quasi-Poisson.",
+  "conclusion": "Con conteggi sovradispersi gli errori standard di Poisson sono troppo piccoli; moltiplicarli per la radice della dispersione stimata riporta la copertura vicino al valore nominale.",
+  "formula": "\\operatorname{var}(Y)=\\mu+\\frac{\\mu^2}{\\theta},\\qquad \\hat\\phi=\\frac{1}{n-p}\\sum_i\\frac{(y_i-\\hat\\mu_i)^2}{\\hat\\mu_i}",
+  "controls": [
+   {
+    "key": "theta",
+    "label": "Parametro di forma θ",
+    "type": "number",
+    "value": 100,
+    "min": 0.5,
+    "max": 100,
+    "step": 0.5,
+    "help": "Con θ grande i conteggi sono quasi di Poisson."
+   },
+   {
+    "key": "n",
+    "label": "Numero di celle n",
+    "type": "number",
+    "value": 96,
+    "min": 20,
+    "max": 300,
+    "step": 1,
+    "help": "Le celle hanno predittore equispaziato fra 0 e 40."
+   }
+  ],
+  "prose": [
+   "La sovradispersione indica una varianza maggiore della media, e nasce quando il tasso varia fra unità per fattori non misurati. L’esperimento genera trecento campioni di conteggi da una binomiale negativa con media 3·exp(0,05(x − 20)) e parametro di forma θ, adatta il modello di Poisson e calcola la dispersione di Pearson.",
+   "L’intervallo di Poisson usa gli errori standard del modello; l’intervallo quasi-Poisson li moltiplica per la radice della dispersione stimata, quando questa supera 1. Le metriche riportano la quota di campioni in cui ciascun intervallo contiene la pendenza vera di 0,05."
+  ],
+  "limits": "Trecento campioni per scenario: una copertura di 0,95 ha un errore standard di circa 0,013. La correzione quasi-Poisson presuppone una varianza proporzionale alla media; con la binomiale negativa la varianza cresce con il quadrato della media.",
+  "symbols": "$\\theta$ è il parametro di forma della binomiale negativa, $\\hat\\phi$ la dispersione stimata con i residui di Pearson e $p$ il numero di coefficienti.",
+  "code": "x <- seq(0, 40, length.out = p$n)\nmu <- 3 * exp(0.05 * (x - 20))\nsim <- t(replicate(300, {\n  y <- rnbinom(p$n, size = p$theta, mu = mu)\n  m <- glm(y ~ x, family = poisson)\n  s <- sqrt(diag(vcov(m)))[[2]]\n  phi <- sum(residuals(m, type = \"pearson\")^2) / m$df.residual\n  c(b = coef(m)[[2]], s = s, phi = phi)\n}))\ndentro <- function(s) mean(abs(sim[, \"b\"] - 0.05) < 1.96 * s)\ndata <- data.frame(phi = sim[, \"phi\"])\nplots <- list(hist_plot(sim[, \"phi\"], title = \"Dispersione stimata in 300 campioni\", xl = \"Statistica di Pearson / gradi di libertà\", bins = 40) + geom_vline(xintercept = 1, linetype = 2, colour = col_geo[2]))\nmetrics <- metric(`Dispersione media` = f(mean(sim[, \"phi\"])), `Varianza attesa a media 3` = f(3 + 9 / p$theta), `Copertura dell’intervallo di Poisson` = f(dentro(sim[, \"s\"])), `Copertura dell’intervallo quasi-Poisson` = f(dentro(sim[, \"s\"] * sqrt(pmax(1, sim[, \"phi\"])))))"
+ },
+ {
+  "id": "m20-punti",
+  "module": "M20",
+  "section": 4,
+  "sectionTitle": "Proporzioni e regressione logistica",
+  "page": 29,
+  "title": "Punti contati e variabilità fra stazioni",
+  "goal": "Valutare quanto il numero di punti contati per sezione migliora la stima della pendenza logistica quando le stazioni differiscono fra loro.",
+  "action": "Aumenta i punti per sezione e confronta la deviazione standard delle pendenze simulate con gli errori standard binomiale e quasi-binomiale.",
+  "conclusion": "Con una variabilità fra stazioni, contare più punti per sezione riduce poco l’incertezza reale; l’errore standard binomiale diventa troppo ottimista e anche quello quasi-binomiale la sottostima, perché le sezioni di una stazione non sono indipendenti.",
+  "formula": "\\operatorname{logit}p_{ij}=\\beta_0+\\beta_1d_j+u_j,\\qquad u_j\\sim N(0,\\sigma_u^2)",
+  "controls": [
+   {
+    "key": "np",
+    "label": "Punti contati per sezione",
+    "type": "number",
+    "value": 100,
+    "min": 20,
+    "max": 2000,
+    "step": 10,
+    "help": "Il conteggio per punti è binomiale dato la frazione vera della sezione."
+   },
+   {
+    "key": "su",
+    "label": "Variabilità fra stazioni σu",
+    "type": "number",
+    "value": 0.25,
+    "min": 0,
+    "max": 1,
+    "step": 0.05,
+    "help": "Deviazione standard dell’effetto di stazione sulla scala logit."
+   }
+  ],
+  "prose": [
+   "Il conteggio per punti stima la frazione di un minerale in una sezione sottile: con punti abbastanza distanziati il numero di punti che cadono sul minerale è approssimativamente binomiale. L’esperimento simula trecento rilievi di dodici stazioni lungo un percorso di trasporto, con tre sezioni per stazione, una frazione di feldspato che decresce con la distanza e un effetto casuale di stazione.",
+   "Per ogni rilievo il programma adatta un modello logistico binomiale e calcola la dispersione. La deviazione standard delle trecento pendenze è l’incertezza reale; la si confronta con gli errori standard medi del modello binomiale e del modello quasi-binomiale."
+  ],
+  "limits": "Tre sezioni per stazione con lo stesso effetto di stazione; nessuna variabilità fra sezioni oltre a quella binomiale. Un modello a effetti casuali di stazione, o l’analisi delle medie di stazione, descriverebbe correttamente la struttura dei dati.",
+  "symbols": "$p_{ij}$ è la frazione di feldspato nella sezione $i$ della stazione $j$, $d_j$ la distanza, $u_j$ l’effetto di stazione con deviazione standard $\\sigma_u$.",
+  "code": "dist <- rep(seq(2, 60, length.out = 12), each = 3)\nstaz <- rep(1:12, each = 3)\nsim <- t(replicate(300, {\n  u <- rnorm(12, 0, p$su)[staz]\n  k <- rbinom(36, p$np, plogis(-0.6 - 0.035 * dist + u))\n  m <- glm(cbind(k, p$np - k) ~ dist, family = binomial)\n  phi <- sum(residuals(m, type = \"pearson\")^2) / m$df.residual\n  c(b = coef(m)[[2]], s = sqrt(diag(vcov(m)))[[2]], phi = phi)\n}))\ndata <- data.frame(b = sim[, \"b\"])\nplots <- list(hist_plot(sim[, \"b\"], title = \"Pendenza logistica in 300 rilievi simulati\", xl = \"Pendenza stimata (per km)\", bins = 40) + geom_vline(xintercept = -0.035, linetype = 2, colour = col_geo[2]))\nmetrics <- metric(`Deviazione standard delle pendenze` = f(sd(sim[, \"b\"])), `Errore standard binomiale medio` = f(mean(sim[, \"s\"])), `Errore standard quasi-binomiale medio` = f(mean(sim[, \"s\"] * sqrt(sim[, \"phi\"]))), `Dispersione media` = f(mean(sim[, \"phi\"])))"
+ }
+]
