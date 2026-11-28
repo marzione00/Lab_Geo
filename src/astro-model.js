@@ -33,6 +33,7 @@
     'Lumen',
     'Talos',
     'Proteo',
+    'Zefiro',
   ];
   const subjects = [
     'Calcolo scientifico',
@@ -53,6 +54,7 @@
     'Riproducibilità',
     'Classificazione',
     'Dati composizionali',
+    'Dati direzionali',
   ];
   const lessons = {
     rock: {
@@ -119,10 +121,10 @@
     return 'rock';
   }
   function generate(id, variant = 0) {
-    if (!/^(T00|M(?:0[1-9]|1[0-7]))$/.test(id)) return null;
+    if (!/^(T00|M(?:0[1-9]|1[0-8]))$/.test(id)) return null;
     const index = id === 'T00' ? 0 : Number(id.slice(1));
     const target = root.GeoPlanets.byId[id];
-    if (!target || index < 0 || index > 17 || !Number.isInteger(variant) || variant < 0 || variant > 9999) return null;
+    if (!target || index < 0 || index > 18 || !Number.isInteger(variant) || variant < 0 || variant > 9999) return null;
     const rng = random(20261113 + index * 7919 + variant * 104729),
       base = classes[Math.floor(rng() * classes.length)];
     const star = {

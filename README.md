@@ -3,9 +3,9 @@
 **Laboratori interattivi di statistica e coding R per le scienze della Terra**
 **Autore: Marzio De Corato** · Modulo didattico di [Topological Manifolds](https://marzione00.github.io/Personal_web_page/) ([repository del sito principale](https://github.com/marzione00/Personal_web_page)).
 
-Versione applicativa **4.2.0** · 29 lezioni a tappe · lingua italiana · materiali [CC BY-NC-SA 4.0](LICENSE.md), codice [PolyForm Noncommercial 1.0.0](LICENSE-CODE.md)
+Versione applicativa **4.2.0** · 30 lezioni a tappe · lingua italiana · materiali [CC BY-NC-SA 4.0](LICENSE.md), codice [PolyForm Noncommercial 1.0.0](LICENSE-CODE.md)
 
-GeoStat Lab accompagna lo studio dei metodi statistici attraverso 143 esperimenti nei quali, modificando parametri e ipotesi, si osservano le conseguenze sui dati simulati, sulle figure e sulle conclusioni. Ogni attività collega il problema scientifico al formalismo matematico e al programma R che ne produce i risultati. L’atlante di 18 pianeti rotanti organizza il percorso; le 11 spedizioni applicative riuniscono i metodi necessari ad affrontare un’indagine più articolata.
+GeoStat Lab accompagna lo studio dei metodi statistici attraverso 147 esperimenti nei quali, modificando parametri e ipotesi, si osservano le conseguenze sui dati simulati, sulle figure e sulle conclusioni. Ogni attività collega il problema scientifico al formalismo matematico e al programma R che ne produce i risultati. L’atlante di 19 pianeti rotanti organizza il percorso; le 11 spedizioni applicative riuniscono i metodi necessari ad affrontare un’indagine più articolata.
 
 Il progetto è un sito statico: l’interprete R opera nel browser mediante webR, mentre ggplot2 genera le rappresentazioni. La distribuzione comprende il motore di calcolo, i pacchetti R e MathJax, affinché l’esecuzione ordinaria non dipenda da CDN esterne. Le presentazioni conservano il template e i caratteri del corso.
 
@@ -13,9 +13,9 @@ Il progetto è un sito statico: l’interprete R opera nel browser mediante webR
 
 ## Lezioni a tappe: pianeta principale e pianeta degli esercizi
 
-Le ventinove presentazioni del corso sono lezioni a tappe: diciotto moduli (T00 e M01-M17) e undici spedizioni (P01-P11). Ogni sistema planetario ha un pianeta principale che ospita la lezione, mentre la presentazione di una spedizione si apre dalla pagina della missione: ogni slide è una tappa del sito (`#lezione-<modulo>/N`), e il piè di pagina del PDF distribuito riporta il codice «Sul sito: <pianeta> · N» con il collegamento alla tappa. La tappa ricompone la slide in un pannello del sito, con i riquadri nelle colonne originali, le formule composte da MathJax, le figure ricavate dal sorgente TikZ o dai grafici vettoriali della presentazione e il «Da ricordare»; la copertina è ricomposta come testo e le figure usano lo sfondo, la palette e i grigi del pannello; seguono, in pannelli dello stesso tipo, il codice modificabile ed eseguibile in R nel browser con l’uscita attesa e i laboratori aperti con i parametri del codice o dello scenario della slide. La pagina corrispondente del PDF resta a un clic. Le sezioni della lezione sono le regioni del pianeta, e nell’indice di ogni presentazione i titoli dei capitoli portano alle tappe.
+Le trenta presentazioni del corso sono lezioni a tappe: diciannove moduli (T00 e M01-M18) e undici spedizioni (P01-P11). Ogni sistema planetario ha un pianeta principale che ospita la lezione, mentre la presentazione di una spedizione si apre dalla pagina della missione: ogni slide è una tappa del sito (`#lezione-<modulo>/N`), e il piè di pagina del PDF distribuito riporta il codice «Sul sito: <pianeta> · N» con il collegamento alla tappa. La tappa ricompone la slide in un pannello del sito, con i riquadri nelle colonne originali, le formule composte da MathJax, le figure ricavate dal sorgente TikZ o dai grafici vettoriali della presentazione e il «Da ricordare»; la copertina è ricomposta come testo e le figure usano lo sfondo, la palette e i grigi del pannello; seguono, in pannelli dello stesso tipo, il codice modificabile ed eseguibile in R nel browser con l’uscita attesa e i laboratori aperti con i parametri del codice o dello scenario della slide. La pagina corrispondente del PDF resta a un clic. Le sezioni della lezione sono le regioni del pianeta, e nell’indice di ogni presentazione i titoli dei capitoli portano alle tappe.
 
-Le tappe sono 1837, con 1400 figure e 894 file di codice. Le uscite attese di 841 frammenti R sono registrate eseguendo il codice in webR, nello stesso ambiente del sito (`scripts/lessons/verify_webr.py`); 25 frammenti richiedono pacchetti che il browser non carica (terra, sf, tseries) e riportano l’uscita di R sul computer; i sei esempi Python di Basalto (T00) si eseguono con Python 3 dall’archivio della lezione; i 22 frammenti delle spedizioni riportano per ora l’uscita di R 4.3.3 sul computer. In tutte le diciotto lezioni, da Basalto (T00) a Simplex (M17), le tappe dalla seconda all'ultima hanno anche la spiegazione estesa, in prosa continua nello stesso riquadro del testo della slide.
+Le tappe sono 1869, con 1418 figure e 902 file di codice. Le uscite attese di 849 frammenti R sono registrate eseguendo il codice in webR, nello stesso ambiente del sito (`scripts/lessons/verify_webr.py`); 25 frammenti richiedono pacchetti che il browser non carica (terra, sf, tseries) e riportano l’uscita di R sul computer; i sei esempi Python di Basalto (T00) si eseguono con Python 3 dall’archivio della lezione; i 22 frammenti delle spedizioni riportano per ora l’uscita di R 4.3.3 sul computer. In tutte le diciannove lezioni, da Basalto (T00) ad Azimut (M18), le tappe dalla seconda all'ultima hanno anche la spiegazione estesa, in prosa continua nello stesso riquadro del testo della slide.
 
 Ogni lezione ha anche un approfondimento (`#approfondimento-<modulo>`), aperto dalla pagina della lezione, dall’indice delle tappe e dalla pagina testuale del modulo: descrive il fenomeno da cui nascono i dati, la loro origine e la storia dei metodi, con collegamenti alle tappe, calcoli di controllo in R e un elenco di fonti. I testi sono in `content/approfondimenti/<modulo>.md`: paragrafi introduttivi, sezioni `##`, elenchi, formule e collegamenti, con la sezione «Fonti» in chiusura. La compilazione verifica la struttura e i collegamenti alle tappe; `tests/dom.mjs` visualizza ogni approfondimento e compone le sue formule.
 
@@ -27,7 +27,7 @@ Le figure delle tappe sono SVG portati sul pannello scuro da `scripts/lessons/fi
 
 ## Narrazione e taccuino scientifico
 
-La cornice dell’atlante segue una spedizione che ricostruisce conoscenza a partire da osservazioni parziali. La pagina iniziale e i 18 sistemi presentano domande scientifiche specifiche. Su Pelago (M05), nove attività costituiscono una sequenza completa: scelta del bersaglio e selezione, incertezza, ricampionamento. Le altre 134 attività mantengono la prosa didattica precedente.
+La cornice dell’atlante segue una spedizione che ricostruisce conoscenza a partire da osservazioni parziali. La pagina iniziale e i 19 sistemi presentano domande scientifiche specifiche. Su Pelago (M05), nove attività costituiscono una sequenza completa: scelta del bersaglio e selezione, incertezza, ricampionamento. Le altre 138 attività mantengono la prosa didattica precedente.
 
 Ogni laboratorio di Pelago apre con una situazione simulata, una domanda e una previsione; il primo calcolo richiede un’azione esplicita. Dopo l’esecuzione, il commento utilizza le metriche restituite da R. Il taccuino, accessibile dalla navigazione, conserva manualmente la configurazione corrente e gli eventuali due scenari di confronto per ciascuna attività, insieme agli appunti. Il salvataggio aggiorna la registrazione della stessa attività; l’esportazione JSON permette di custodire una copia. La sola visita non viene conteggiata come apprendimento.
 
@@ -37,7 +37,7 @@ I testi sono mantenuti in `content/narrative.json` e `content/narrative-m05.json
 
 Il paesaggio laterale combina nebulose volumetriche, polveri scure, stelle distribuite nello spazio e tre galassie lontane a particelle. La scena è illustrativa: distanze, dimensioni e velocità non costituiscono una simulazione astrofisica. Le nebulose vengono renderizzate in WebGL integrando densità, emissione e assorbimento lungo i raggi della camera; a camera ferma si riutilizza il risultato. Il movimento della camera segue i pianeti e il comando **Pausa movimento**. Sui renderer software il pass volumetrico usa meno campioni e una risoluzione inferiore; senza WebGL rimane lo sfondo essenziale.
 
-Tutti i 143 esperimenti espongono il proprio sorgente nel terminale R, con numeri di riga, commenti per istruzione, parametri sincronizzati e lettura per passi. Negli schermi ampi codice e risultati sono affiancati; nelle altre larghezze seguono l’ordine di lettura. **Modifica** apre l’editor esistente. Le spiegazioni del modello originale vengono sospese quando il programma è personalizzato. I passi guidano la lettura e non rappresentano l’esecuzione riga per riga di R.
+Tutti i 147 esperimenti espongono il proprio sorgente nel terminale R, con numeri di riga, commenti per istruzione, parametri sincronizzati e lettura per passi. Negli schermi ampi codice e risultati sono affiancati; nelle altre larghezze seguono l’ordine di lettura. **Modifica** apre l’editor esistente. Le spiegazioni del modello originale vengono sospese quando il programma è personalizzato. I passi guidano la lettura e non rappresentano l’esecuzione riga per riga di R.
 
 **Scarica R completo** include parametri commentati, funzioni comuni, corpo del programma e comandi di esportazione. I commenti vengono aggiunti senza cambiare le istruzioni eseguite. Il terminale usa gli stessi caratteri Nimbus e LMMono del corso, senza dipendenze esterne. La vista è mantenuta in `src/code-terminal.js` e `src/code-terminal.css`; `src/cosmos.js` e `src/universe.js` gestiscono il paesaggio condiviso, mentre `src/cosmos-worker.js` genera il catalogo stellare.
 
@@ -55,7 +55,7 @@ Le cinque missioni su dati reali comprendono **23 passaggi eseguibili in R nel b
 
 Le undici spedizioni P01–P11 comprendono **44 passaggi spiegati**, con sorgenti completi formattati, commentati e scaricabili. Si eseguono in **R/RStudio locale**, estraendo il progetto R della spedizione e salvando lo script nella sua cartella principale: producono file e P10 usa anche Git. Le istruzioni R dei derivati vengono confrontate con quelle degli originali; template, dati e presentazioni non cambiano.
 
-I 72 mondi complementari condividono ancora le cinque missioni del rispettivo livello. La presenza del terminale in ogni destinazione non equivale a 72 progetti differenti.
+I 76 mondi complementari condividono ancora le cinque missioni del rispettivo livello. La presenza del terminale in ogni destinazione non equivale a 76 progetti differenti.
 
 Le guide sono mantenute in `content/solution-guides-research.json` e `content/course-solutions.json`; `scripts/prepare-course-solutions.R` genera il derivato formattato. La build ordinaria legge il derivato già incluso, senza richiedere R. Per rigenerare e verificare le soluzioni con R locale:
 
@@ -72,11 +72,11 @@ npm test
 
 | Ambito | Disponibilità |
 |---|---|
-| Esperimenti interattivi | 143 attività distribuite nei 18 moduli |
+| Esperimenti interattivi | 147 attività distribuite nei 19 moduli |
 | Percorso applicativo | 11 spedizioni, ciascuna articolata in tre fasi |
-| Materiali del corso | 29 lezioni a tappe con presentazione PDF e progetto R: 18 moduli e 11 spedizioni |
+| Materiali del corso | 30 lezioni a tappe con presentazione PDF e progetto R: 19 moduli e 11 spedizioni |
 | Programmi originali | 340 laboratori R e 20 laboratori Python |
-| Esperimenti riproducibili | 143 programmi R autonomi, parametri e seme casuale espliciti |
+| Esperimenti riproducibili | 147 programmi R autonomi, parametri e seme casuale espliciti |
 | Esplorazione | Parametri modificabili, confronto fra due scenari, tabella dei risultati |
 | Esportazione | Script R, figure SVG, dati CSV e configurazione JSON |
 | Lettura | Percorso guidato, esplorazione libera, formalismo e codice |
@@ -88,13 +88,13 @@ Le simulazioni dichiarano le proprie ipotesi e impiegano dati sintetici. I risul
 
 Il fondale 3D comprende nebulose volumetriche procedurali, una fascia galattica e galassie lontane a particelle. I dettagli e i limiti del collaudo sono in [docs/REVISIONE_4_2_0.md](docs/REVISIONE_4_2_0.md).
 
-La navigazione parte da una galassia tridimensionale con quattro bracci e 1.200.000 stelle WebGL. I segmenti collegano le etichette a 18 punti stellari, ciascuno associato a un sistema. Un clic avvicina la camera e apre una stella con cinque pianeti esplorabili: in totale 90 mondi, di cui 18 destinazioni dei moduli. Nella stessa galassia cinque oggetti notevoli (buco nero, pulsar, fascia di asteroidi, cometa e binaria cataclismica) hanno scene WebGL2 con milioni di particelle e superfici ad alta risoluzione; sono descritti in [docs/OGGETTI_NOTEVOLI.md](docs/OGGETTI_NOTEVOLI.md).
+La navigazione parte da una galassia tridimensionale con quattro bracci e 1.200.000 stelle WebGL. I segmenti collegano le etichette a 19 punti stellari, ciascuno associato a un sistema. Un clic avvicina la camera e apre una stella con cinque pianeti esplorabili: in totale 95 mondi, di cui 19 destinazioni dei moduli. Nella stessa galassia cinque oggetti notevoli (buco nero, pulsar, fascia di asteroidi, cometa e binaria cataclismica) hanno scene WebGL2 con milioni di particelle e superfici ad alta risoluzione; sono descritti in [docs/OGGETTI_NOTEVOLI.md](docs/OGGETTI_NOTEVOLI.md).
 
 Ogni sistema estrae una stella fra quattro esempi coerenti di sequenza principale F, G, K e M. Il seme iniziale è stabile; **Nuova configurazione** produce un’altra estrazione e conserva il suo identificatore nel collegamento, ad esempio `#sistema-M01?v=18`. Le schede riportano massa, raggio, temperatura e luminosità stellare; per i pianeti, semiasse maggiore, periodo orbitale, raggio, albedo, flusso e temperatura di equilibrio. Le relazioni fisiche e le ipotesi sono spiegate nella pagina, insieme alle fonti NASA.
 
 Il clic su un pianeta apre un primo piano della superficie rotante e una scheda astronomica. **Localizza** identifica il mondo che ospita il modulo, mentre **Entra nel modulo** conduce agli esperimenti esistenti. La voce **Mappa stellare** usa lo stesso navigatore della home; l’indice testuale resta disponibile in `#catalogo`. I sistemi hanno collegamenti diretti `#sistema-M01` e analoghi.
 
-I 18 pianeti del corso hanno richiami ciano e un doppio anello; i 72 pianeti complementari hanno richiami ambra e un simbolo della disciplina. Le schede distinguono l’appartenenza al percorso dal livello didattico e indicano la preparazione consigliata. Tutti i mondi restano accessibili, senza blocchi.
+I 19 pianeti del corso hanno richiami ciano e un doppio anello; i 76 pianeti complementari hanno richiami ambra e un simbolo della disciplina. Le schede distinguono l’appartenenza al percorso dal livello didattico e indicano la preparazione consigliata. Tutti i mondi restano accessibili, senza blocchi.
 
 **Avvia il mini-progetto**, oppure **Accedi all’osservatorio** nei giganti gassosi, apre una delle cinque missioni su dati osservati descritte di seguito. La sezione «Il sistema immaginario» conserva sei temi astronomici di contesto, il confronto dei cinque mondi esportabile in CSV, formule, ipotesi e fonti NASA/USGS. Il taccuino delle esplorazioni conserva risposte e autovalutazioni separatamente dal taccuino del corso; una visita non registra un completamento. Le annotazioni sono locali ed esportabili in JSON.
 
@@ -104,7 +104,7 @@ WebGL usa sfere, particelle e texture locali, senza dipendenze grafiche esterne.
 
 ## Missioni su dati osservati
 
-L’atlante associa i 72 mondi complementari a 13 famiglie originali e cinque gradi di difficoltà. Le **cinque missioni** sono condivise dai mondi di pari livello: non si tratta di 72 dataset o progetti distinti. I 18 pianeti del corso conservano la propria identità.
+L’atlante associa i 76 mondi complementari a 13 famiglie originali e cinque gradi di difficoltà. Le **cinque missioni** sono condivise dai mondi di pari livello: non si tratta di 76 dataset o progetti distinti. I 19 pianeti del corso conservano la propria identità.
 
 | Livello | Ambienti narrativi | Missione e archivio |
 |---|---|---|
@@ -195,7 +195,7 @@ I CSV esportati neutralizzano le celle testuali che potrebbero essere interpreta
 | `src/html.js` | Escaping unico dell’HTML, template con escaping automatico e politica Trusted Types |
 | `src/briefing.js`, `content/briefing.json` | Briefing della prima visita e suggerimenti, caricati su richiesta |
 | `src/audio.js` | Audio sintetizzato con la Web Audio API, caricato soltanto dopo il consenso |
-| `content/experiments.json` | Catalogo scientifico, codice e controlli dei 143 esperimenti |
+| `content/experiments.json` | Catalogo scientifico, codice e controlli dei 147 esperimenti |
 | `content/catalogue.json` | Indice delle unità e dei materiali |
 | `moduli/` | Scheda e contenuto strutturato di ciascuna unità |
 | `materiali/` | Laboratori R e Python, dati e funzioni comuni |
@@ -287,6 +287,7 @@ Dependabot propone aggiornamenti settimanali. Ogni modifica a webR, ai pacchetti
 | M15 | [Riproducibilità e progetto di analisi](moduli/M15/README.md) | 58 tappe | [PDF](assets/lezioni/M15/M15_Argenta.pdf) · [Progetto R](assets/lezioni/M15/Argenta_M15_progetto_R.zip) |
 | M16 | [Classificazione e validazione](moduli/M16/README.md) | 62 tappe | [PDF](assets/lezioni/M16/M16_Prisma.pdf) · [Progetto R](assets/lezioni/M16/Prisma_M16_progetto_R.zip) |
 | M17 | [Dati composizionali](moduli/M17/README.md) | 32 tappe | [PDF](assets/lezioni/M17/M17_Simplex.pdf) · [Progetto R](assets/lezioni/M17/Simplex_M17_progetto_R.zip) |
+| M18 | [Dati direzionali](moduli/M18/README.md) | 32 tappe | [PDF](assets/lezioni/M18/M18_Azimut.pdf) · [Progetto R](assets/lezioni/M18/Azimut_M18_progetto_R.zip) |
 | P01 | [Geometria dei pori e permeabilità](moduli/P01/README.md) | 31 tappe | [PDF](assets/lezioni/P01/P01_Pori.pdf) · [Progetto R](assets/lezioni/P01/Spedizione_P01_progetto_R.zip) |
 | P02 | [Foraminiferi, coppe e campagne](moduli/P02/README.md) | 32 tappe | [PDF](assets/lezioni/P02/P02_Foraminiferi.pdf) · [Progetto R](assets/lezioni/P02/Spedizione_P02_progetto_R.zip) |
 | P03 | [Il Nilo: livelli e dipendenza temporale](moduli/P03/README.md) | 31 tappe | [PDF](assets/lezioni/P03/P03_Nilo.pdf) · [Progetto R](assets/lezioni/P03/Spedizione_P03_progetto_R.zip) |
