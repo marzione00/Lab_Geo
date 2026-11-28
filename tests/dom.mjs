@@ -270,7 +270,8 @@ assert(d.querySelector('#lesson-nb-title + ul a').getAttribute('href').endsWith(
 // The sweep checks structure and links; MathJax composes every formula of the lessons one by one below (in jsdom
 // each page typeset during the sweep would stay in memory, about 3 MB per tappa).
 let lessonPages = 0,
-  lessonFormulas = 0;
+  lessonFormulas = 0,
+  deepeningPages = 0;
 const lessonIds = Object.keys(w.GEO_LESSON_INDEX),
   typesetPromise = w.MathJax.typesetPromise;
 w.MathJax.typesetPromise = () => Promise.resolve();
@@ -298,9 +299,27 @@ for (const id of lessonIds) {
     w.location.hash = '#esercizi-' + id;
     await until(() => d.querySelector('.error h1')?.textContent === 'Pagina non trovata');
   }
+  // Every lesson has an approfondimento: its sections plus the sources, with defined links.
+  const sections = w.GEO_LESSON_INDEX[id].deepening;
+  assert(sections >= 2, 'approfondimento assente o incompleto: ' + id);
+  w.location.hash = '#approfondimento-' + id;
+  await until(() => d.querySelector('.lesson-deepening a[href="#lezione-' + id + '"]'));
+  assert.equal(
+    d.querySelectorAll('.lesson-deepening .deepening-section').length,
+    sections + 1,
+    'approfondimento ' + id,
+  );
+  assert(
+    !/\bundefined\b/.test(d.querySelector('.lesson-deepening').textContent),
+    'testo indefinito: approfondimento ' + id,
+  );
+  for (const a of d.querySelectorAll('.lesson-deepening a[href]'))
+    assert(!/undefined|NaN/.test(a.getAttribute('href')), 'collegamento indefinito: approfondimento ' + id);
+  deepeningPages++;
 }
 w.MathJax.typesetPromise = typesetPromise;
-const texOf = list => list.flatMap(n => (typeof n === 'string' ? [] : n.t === 'm' ? [n.v] : n.c ? texOf(n.c) : []));
+const texOf = list => list.flatMap(n => (typeof n === 'string' ? [] : n.t === 'm' ? [n.v] : n.c ? texOf(n.c) : [])),
+  blockTex = bs => bs.flatMap(b => (b.t === 'math' ? [b.v] : b.t === 'ul' ? b.items.flatMap(texOf) : texOf(b.c || [])));
 for (const id of lessonIds) {
   const L = w.GEO_LESSONS[id];
   const lessonTex = [
@@ -310,9 +329,9 @@ for (const id of lessonIds) {
         it.t === 'math' ? [it.v] : it.t === 'table' ? texOf([...it.head, ...it.rows].flat()) : it.c ? texOf(it.c) : [],
       ),
     ]),
-    ...Object.values(L.notes || {}).flatMap(bs =>
-      bs.flatMap(b => (b.t === 'math' ? [b.v] : b.t === 'ul' ? b.items.flatMap(texOf) : texOf(b.c))),
-    ),
+    ...Object.values(L.notes || {}).flatMap(blockTex),
+    ...[L.deepening.intro, ...L.deepening.sections.map(s => s.blocks)].flatMap(blockTex),
+    ...L.deepening.sources.flatMap(texOf),
   ];
   for (const tex of lessonTex) {
     const node = await w.MathJax.tex2svgPromise(tex, { display: true });
@@ -330,6 +349,7 @@ const result = {
   formule_esperimenti: labFormulas,
   tappe_lezioni: lessonPages,
   formule_lezioni: lessonFormulas,
+  approfondimenti: deepeningPages,
   errori: errors,
 };
 fs.mkdirSync(path.join(root, 'qa'), { recursive: true });
@@ -341,7 +361,9 @@ console.log(
     lessonPages +
     ' tappe visualizzate e ' +
     lessonFormulas +
-    ' espressioni verificate (slide e spiegazioni).',
+    ' espressioni verificate (slide, spiegazioni e approfondimenti); ' +
+    deepeningPages +
+    ' approfondimenti visualizzati.',
 );
 console.log('DOM virtuale: 28 moduli verificati.');
 w.close();
