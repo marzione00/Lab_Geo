@@ -40,7 +40,7 @@ export default [
       ],
     },
   },
-  { files: ['src/cosmos-worker.js'], languageOptions: { globals: { ...globals.worker } } },
+  { files: ['src/cosmos-worker.js', 'src/objects-worker.js'], languageOptions: { globals: { ...globals.worker } } },
   {
     files: ['scripts/**/*.mjs', 'tests/**/*.mjs'],
     languageOptions: { ecmaVersion: 2024, sourceType: 'module', globals: { ...globals.node } },

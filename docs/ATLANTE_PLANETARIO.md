@@ -29,6 +29,10 @@ Le rotte `#esplorazione/M05-e?v=0` e analoghe conservano l’identificatore del 
 
 Il taccuino `#taccuino-esplorazioni` utilizza la chiave `geostat-explorations-v1`. Una registrazione richiede un’annotazione e un salvataggio esplicito; il taccuino non registra completamenti né autovalutazioni. Il semplice accesso non scrive dati. I valori importati dallo storage sono validati e il testo viene escapato prima della visualizzazione. L’esportazione JSON permette di conservare il lavoro; non è previsto un caricamento di annotazioni da file. Il taccuino del corso mantiene la copertura M05 già disponibile, senza estenderla implicitamente a tutti i moduli.
 
+## Oggetti notevoli
+
+Cinque oggetti estremi completano la galassia: il buco nero Erebo al centro, la pulsar Faro, la fascia di asteroidi di Lapis, la cometa Clio e la binaria cataclismica Diade. Un marcatore nella mappa e una scheda sotto la mappa aprono le rotte `#oggetto-buco-nero`, `#oggetto-pulsar`, `#oggetto-asteroidi`, `#oggetto-cometa` e `#oggetto-binaria`. Modelli fisici, rendering, file e verifiche sono descritti in [OGGETTI_NOTEVOLI.md](OGGETTI_NOTEVOLI.md).
+
 ## Modello fisico e limiti
 
 I sistemi sono immaginari. La scelta uniforme delle classi F, G, K e M serve alla varietà didattica e non rappresenta la distribuzione galattica delle popolazioni stellari. I parametri seguenti sono esempi plausibili, non valori universali di classe.

@@ -24,6 +24,16 @@
   function starFacts(s) {
     return html`<dl class="astro-stats">${stat('Temperatura effettiva', n(s.star.temperature, 0), 'K')}${stat('Massa stellare', n(s.star.mass), 'M☉')}${stat('Raggio stellare', n(s.star.radius), 'R☉')}${stat('Luminosità', n(s.star.luminosity, 3), 'L☉')}</dl>`;
   }
+  // Notable objects: a marker in the galaxy and a card below the chart; each opens its own page.
+  const objectList = () => window.GeoObjects?.objects || [];
+  function objectMarkers() {
+    return html`${objectList().map(o => html`<a class="galaxy-object" href="#oggetto-${o.id}" data-object="${o.id}" style="--object-tone:${o.tone}" aria-label="${o.kind} ${o.name}: apri la scena"><i aria-hidden="true">${o.symbol}</i><span>${o.name}</span></a>`)}`;
+  }
+  function objectCards() {
+    const list = objectList();
+    if (!list.length) return '';
+    return html`<section class="galaxy-objects" aria-labelledby="galaxy-objects-title"><div><p class="eyebrow">OGGETTI NOTEVOLI</p><h2 id="galaxy-objects-title">Cinque oggetti estremi della galassia.</h2><p>Scene tridimensionali con milioni di particelle e superfici ad alta risoluzione, costruite sulle leggi fisiche che descrivono ciascun oggetto.</p></div><div class="galaxy-object-cards">${list.map(o => html`<a href="#oggetto-${o.id}" style="--object-tone:${o.tone}"><i aria-hidden="true">${o.symbol}</i><small>${o.kind}</small><strong>${o.name}</strong><span>${window.GeoObjectTexts?.summary?.(o.id) || ''}</span><b>Apri la scena ↗</b></a>`)}</div></section>`;
+  }
   function mount(main) {
     cleanup();
     let selected = 'M05';
@@ -36,9 +46,10 @@
     <div class="galaxy-chart-heading"><span class="galaxy-beacon"></span><span>ATLANTE GALATTICO<small>${window.GeoAstro.systems.length} SISTEMI / SEQUENZA PRINCIPALE</small></span></div>
     <div class="galaxy-camera" aria-label="Controlli della camera"><button type="button" data-camera="in" aria-label="Avvicina la camera">+</button><button type="button" data-camera="out" aria-label="Allontana la camera">−</button><button type="button" data-camera="reset" aria-label="Ripristina la vista della galassia">↺</button></div>
     ${systems.map(s => html`<button class="galaxy-node" type="button" data-destination="${s.id}" aria-pressed="false" aria-controls="destination-detail" aria-label="${s.id} ${s.name}, ${s.star.type} · ${s.subject}: esplora il sistema del modulo ${getModule(s.id).title}"><span class="galaxy-node-label"><span class="galaxy-node-name"><small>${s.id}</small> <strong>${s.name}</strong> <i aria-hidden="true">↗</i></span> <span class="galaxy-node-subject">${s.star.type} · ${s.subject}</span></span></button>`)}
+    ${objectMarkers()}
     <div class="galaxy-map-caption"><span>TRASCINA PER RUOTARE · CLICCA UN SISTEMA</span><span>MAPPA ILLUSTRATIVA</span></div><div class="galaxy-flight"><span>AVVICINAMENTO A <strong class="galaxy-flight-name"></strong></span><button class="galaxy-skip" type="button">Entra nel sistema →</button></div>
    </div><aside id="destination-detail" class="destination-detail system-preview hud-panel" data-tone="action" aria-labelledby="destination-name"></aside><a class="destination-dock" href="#sistema-${selected}"><span class="hud-label">Sistema selezionato</span><strong></strong><span class="destination-dock-go">Esplora ↗</span></a></div>
-   <section class="galaxy-dossier" aria-labelledby="dossier-title"><h2 id="dossier-title" class="hud-label">Dossier della spedizione</h2>${N.home()}${window.GeoResearch.index()}</section>${P.legend()}${note}${footer()}</section>`;
+   ${objectCards()}<section class="galaxy-dossier" aria-labelledby="dossier-title"><h2 id="dossier-title" class="hud-label">Dossier della spedizione</h2>${N.home()}${window.GeoResearch.index()}</section>${P.legend()}${note}${footer()}</section>`;
     function select(id) {
       clearTimeout(hoverTimer);
       const s = A.generate(id, variants.get(id) || 0);

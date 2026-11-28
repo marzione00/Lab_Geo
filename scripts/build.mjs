@@ -177,8 +177,35 @@ for (const name of [
   'research-projects.css',
   'lessons.js',
   'lessons.css',
+  'objects-model.js',
+  'objects-geometry.js',
+  'objects-texts.js',
+  'objects.js',
+  'objects.css',
 ])
   fs.copyFileSync(path.join(root, 'src', name), path.join(out, 'assets', name));
+// The geometry worker carries its two libraries: importScripts would need a Trusted Types policy in the worker.
+fs.writeFileSync(
+  path.join(out, 'assets/objects-worker.js'),
+  ['objects-model', 'objects-geometry', 'objects-worker']
+    .map(f => fs.readFileSync(path.join(root, 'src', f + '.js'), 'utf8'))
+    .join('\n'),
+);
+// Engine and scenes of the notable objects: one file, loaded on the first visit to an object page.
+fs.writeFileSync(
+  path.join(out, 'assets/objects-scenes.js'),
+  [
+    'objects-engine',
+    'objects-common',
+    'objects-blackhole',
+    'objects-pulsar',
+    'objects-belt',
+    'objects-comet',
+    'objects-binary',
+  ]
+    .map(f => fs.readFileSync(path.join(root, 'src', f + '.js'), 'utf8'))
+    .join('\n'),
+);
 fs.writeFileSync(
   path.join(out, 'assets/space-shaders.js'),
   'window.GEO_SHADERS=' + safe({ planet: fs.readFileSync(path.join(root, 'src/planet.frag'), 'utf8') }) + ';\n',

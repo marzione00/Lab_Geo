@@ -39,6 +39,9 @@
       ].includes(key)
     )
       return { type: key || 'indice' };
+    // Notable objects of the galaxy: black hole, pulsar, asteroid belt, comet and cataclysmic binary.
+    const object = /^oggetto-(buco-nero|pulsar|asteroidi|cometa|binaria)$/.exec(key);
+    if (object) return { type: 'object', object: object[1] };
     const exploration = /^esplorazione\/(T00|M(?:0[1-9]|1[0-6]))-([b-f])(?:\?v=(0|[1-9]\d{0,3}))?$/.exec(key);
     if (exploration)
       return modules.some(m => m.id === exploration[1])

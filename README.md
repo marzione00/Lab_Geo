@@ -86,7 +86,7 @@ Le simulazioni dichiarano le proprie ipotesi e impiegano dati sintetici. I risul
 
 Il fondale 3D comprende nebulose volumetriche procedurali, una fascia galattica e galassie lontane a particelle. I dettagli e i limiti del collaudo sono in [docs/REVISIONE_4_2_0.md](docs/REVISIONE_4_2_0.md).
 
-La navigazione parte da una galassia tridimensionale con quattro bracci e 1.200.000 stelle WebGL. I segmenti collegano le etichette a 17 punti stellari, ciascuno associato a un sistema. Un clic avvicina la camera e apre una stella con cinque pianeti esplorabili: in totale 85 mondi, di cui 17 destinazioni dei moduli.
+La navigazione parte da una galassia tridimensionale con quattro bracci e 1.200.000 stelle WebGL. I segmenti collegano le etichette a 17 punti stellari, ciascuno associato a un sistema. Un clic avvicina la camera e apre una stella con cinque pianeti esplorabili: in totale 85 mondi, di cui 17 destinazioni dei moduli. Nella stessa galassia cinque oggetti notevoli (buco nero, pulsar, fascia di asteroidi, cometa e binaria cataclismica) hanno scene WebGL2 con milioni di particelle e superfici ad alta risoluzione; sono descritti in [docs/OGGETTI_NOTEVOLI.md](docs/OGGETTI_NOTEVOLI.md).
 
 Ogni sistema estrae una stella fra quattro esempi coerenti di sequenza principale F, G, K e M. Il seme iniziale è stabile; **Nuova configurazione** produce un’altra estrazione e conserva il suo identificatore nel collegamento, ad esempio `#sistema-M01?v=18`. Le schede riportano massa, raggio, temperatura e luminosità stellare; per i pianeti, semiasse maggiore, periodo orbitale, raggio, albedo, flusso e temperatura di equilibrio. Le relazioni fisiche e le ipotesi sono spiegate nella pagina, insieme alle fonti NASA.
 

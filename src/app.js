@@ -339,6 +339,12 @@
     esperimenti: () => window.GeoLabs.index(main),
     mappa: () => window.GeoGalaxy.mount(main),
     system: r => window.GeoGalaxy.system(main, r.id, r.variant),
+    object: r => {
+      window.GeoObjectPages.render(main, r.object);
+      const o = window.GeoObjects.byId[r.object];
+      document.title = config.title + ' · ' + o.name + ' · ' + o.kind;
+      announce(o.kind + ' ' + o.name);
+    },
     exploration: r => {
       window.GeoExplorations.render(main, r.world, r.variant);
       typeset(main);
@@ -433,7 +439,14 @@
     main.innerHTML = html`<section class="error"><h1>Il modulo non è disponibile</h1><p>${err.message}</p><p>Verifica che l’intera cartella del sito sia stata copiata.</p>${link('#indice', 'Torna all’indice', 'button')}</section>`;
   }
   function cleanupViews() {
-    for (const view of [window.GeoResearch, window.GeoLabs, window.GeoGalaxy, window.GeoBriefing, window.GeoLessons])
+    for (const view of [
+      window.GeoResearch,
+      window.GeoLabs,
+      window.GeoGalaxy,
+      window.GeoBriefing,
+      window.GeoLessons,
+      window.GeoObjectPages,
+    ])
       view?.cleanup();
   }
   function resolveRoute() {
