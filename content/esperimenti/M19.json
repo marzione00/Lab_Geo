@@ -1,0 +1,166 @@
+[
+ {
+  "id": "m19-modello",
+  "module": "M19",
+  "section": 1,
+  "sectionTitle": "Il decadimento come orologio",
+  "page": 8,
+  "title": "Età modello e rapporto iniziale",
+  "goal": "Valutare come un errore sul rapporto iniziale 87Sr/86Sr sposta l’età calcolata da un solo campione, al variare del rapporto 87Rb/86Sr.",
+  "action": "Riduci l’errore sul rapporto iniziale e confronta le età modello per campioni poveri e ricchi di rubidio.",
+  "conclusion": "L’errore sull’età modello è tanto più grande quanto minore è il rapporto 87Rb/86Sr: i campioni poveri di rubidio richiedono un rapporto iniziale noto con grande precisione.",
+  "formula": "t_{\\mathrm{mod}}=\\frac1\\lambda\\log\\Big(1+\\frac{{}^{87}\\mathrm{Sr}/{}^{86}\\mathrm{Sr}-r_0}{{}^{87}\\mathrm{Rb}/{}^{86}\\mathrm{Sr}}\\Big)",
+  "controls": [
+   {
+    "key": "dr",
+    "label": "Errore sul rapporto iniziale",
+    "type": "number",
+    "value": 0.0045,
+    "min": 0,
+    "max": 0.01,
+    "step": 0.0005,
+    "help": "Differenza fra il rapporto iniziale vero, 0,7085, e quello assunto nel calcolo."
+   },
+   {
+    "key": "t",
+    "label": "Età vera (Ma)",
+    "type": "number",
+    "value": 300,
+    "min": 10,
+    "max": 3000,
+    "step": 10,
+    "help": "Età del sistema chiuso che genera i rapporti."
+   }
+  ],
+  "prose": [
+   "Un minerale che contiene rubidio accumula 87Sr radiogenico, e il rapporto 87Sr/86Sr misurato oggi somma il valore iniziale e la parte prodotta dal decadimento. L’età si calcola da un solo campione se si assume il rapporto iniziale: è l’età modello. L’esperimento calcola le età modello di campioni con 87Rb/86Sr fra 0,05 e 50, generati con un’età vera e un rapporto iniziale di 0,7085, usando un rapporto iniziale assunto più basso della quantità impostata.",
+   "La curva mostra l’età modello in funzione del rapporto 87Rb/86Sr. Per i campioni ricchi di rubidio la parte radiogenica domina e l’errore sul rapporto iniziale pesa poco; per i campioni poveri lo stesso errore è confrontabile con l’intera parte radiogenica e l’età modello si allontana di centinaia di milioni di anni dal valore vero."
+  ],
+  "limits": "Rapporti calcolati senza errori di misura, per isolare l’effetto del rapporto iniziale; costante di decadimento di 87Rb pari a 1,3972·10⁻¹¹ per anno. Con errori analitici le età dei campioni poveri di rubidio sono anche molto più imprecise.",
+  "symbols": "$\\lambda$ è la costante di decadimento di ${}^{87}$Rb, $r_0$ il rapporto iniziale ${}^{87}$Sr/${}^{86}$Sr assunto e $t_{\\mathrm{mod}}$ l’età modello.",
+  "code": "lam <- 1.3972e-11\nb <- exp(lam * p$t * 1e6) - 1\neta_modello <- function(x) log(1 + (0.7085 + b * x - (0.7085 - p$dr)) / x) / lam / 1e6\nx <- exp(seq(log(0.05), log(50), length.out = 200))\ndata <- data.frame(x = x, eta = eta_modello(x))\nplots <- list(line_plot(data, 'x', 'eta', title = 'Età modello con un rapporto iniziale errato', xl = '87Rb/86Sr (scala logaritmica)', yl = 'Età modello (Ma)') + scale_x_log10() + geom_hline(yintercept = p$t, linetype = 2, colour = col_geo[2]))\nmetrics <- metric(`Età vera (Ma)` = p$t, `Età modello, 87Rb/86Sr = 0,5` = f(eta_modello(0.5)), `Età modello, 87Rb/86Sr = 5` = f(eta_modello(5)), `Età modello, 87Rb/86Sr = 50` = f(eta_modello(50)))"
+ },
+ {
+  "id": "m19-york",
+  "module": "M19",
+  "section": 2,
+  "sectionTitle": "L’isocrona",
+  "page": 15,
+  "title": "Minimi quadrati ordinari e regressione di York",
+  "goal": "Confrontare le età ottenute con i minimi quadrati ordinari e con la regressione di York quando anche il rapporto 87Rb/86Sr ha errori di misura.",
+  "action": "Aumenta l’errore relativo su 87Rb/86Sr e osserva l’età media e la dispersione delle età con i due metodi.",
+  "conclusion": "Con errori grandi sull’asse orizzontale i minimi quadrati ordinari sottostimano la pendenza e quindi l’età; la regressione di York, che pesa gli errori su entrambi gli assi, resta centrata sull’età vera.",
+  "formula": "W_i=\\frac{\\omega(X_i)\\,\\omega(Y_i)}{\\omega(X_i)+b^2\\,\\omega(Y_i)},\\qquad \\omega=\\frac1{\\sigma^2}",
+  "controls": [
+   {
+    "key": "ex",
+    "label": "Errore relativo su 87Rb/86Sr (%)",
+    "type": "number",
+    "value": 1,
+    "min": 0.5,
+    "max": 20,
+    "step": 0.5,
+    "help": "Deviazione standard dell’errore di misura in percentuale del valore vero."
+   },
+   {
+    "key": "n",
+    "label": "Numero di campioni n",
+    "type": "number",
+    "value": 10,
+    "min": 4,
+    "max": 40,
+    "step": 1,
+    "help": "I campioni hanno rapporti 87Rb/86Sr equispaziati fra 0,2 e 12."
+   }
+  ],
+  "prose": [
+   "Un’isocrona è una retta nel diagramma 87Sr/86Sr contro 87Rb/86Sr, e la sua pendenza fornisce l’età. Entrambi i rapporti hanno errori di misura. L’esperimento simula trecento isocrone di un sistema di 300 milioni di anni con n campioni, errori relativi su 87Rb/86Sr impostati dal controllo ed errori di 1,1·10⁻⁵ su 87Sr/86Sr, e calcola l’età con i minimi quadrati ordinari e con la regressione di York.",
+   "L’istogramma confronta le due distribuzioni di età. I minimi quadrati ordinari attribuiscono tutto l’errore all’asse verticale: con errori grandi su 87Rb/86Sr la pendenza stimata si riduce, e l’età media scende sotto il valore vero. La regressione di York pesa ogni campione con gli errori su entrambi gli assi e corregge questa distorsione; è anche più precisa, perché dà meno peso ai campioni meno affidabili."
+  ],
+  "limits": "Errori gaussiani indipendenti sui due rapporti, con deviazioni standard note; trecento isocrone per scenario. La regressione è calcolata con 60 iterazioni dell’algoritmo di York e colleghi (2004), sufficienti alla convergenza per questi dati.",
+  "symbols": "$\\omega(X_i)$ e $\\omega(Y_i)$ sono i pesi dei due rapporti del campione $i$, inversi delle varianze; $b$ è la pendenza e $W_i$ il peso combinato.",
+  "code": "york <- function(x, sx, y, sy) {\n  wx <- 1 / sx^2\n  wy <- 1 / sy^2\n  b <- coef(lm(y ~ x))[[2]]\n  for (k in 1:60) {\n    W <- wx * wy / (wx + b^2 * wy)\n    X <- sum(W * x) / sum(W)\n    Y <- sum(W * y) / sum(W)\n    be <- W * ((x - X) / wy + b * (y - Y) / wx)\n    b <- sum(W * be * (y - Y)) / sum(W * be * (x - X))\n  }\n  u <- be - sum(W * be) / sum(W)\n  a <- Y - b * X\n  c(b = b, sb = sqrt(1 / sum(W * u^2)), mswd = sum(W * (y - a - b * x)^2) / (length(x) - 2))\n}\nlam <- 1.3972e-11\nbt <- exp(lam * 3e+08) - 1\nxt <- seq(0.2, 12, length.out = p$n)\nsx <- p$ex / 100 * xt\nsy <- rep(1.1e-05, p$n)\nsim <- t(replicate(300, {\n  x <- xt + rnorm(p$n, 0, sx)\n  y <- 0.7085 + bt * xt + rnorm(p$n, 0, sy)\n  c(coef(lm(y ~ x))[[2]], york(x, sx, y, sy)[[\"b\"]])\n}))\neta <- log(1 + sim) / lam / 1e+06\ndata <- data.frame(eta = c(eta[, 1], eta[, 2]), metodo = rep(c('Minimi quadrati ordinari', 'York'), each = 300))\nplots <- list(ggplot(data, aes(eta, fill = metodo)) + geom_histogram(bins = 40, position = 'identity', alpha = 0.6, colour = NA) + geom_vline(xintercept = 300, linetype = 2) + scale_fill_manual(values = col_geo[c(2, 1)]) + labs(title = 'Età da 300 isocrone simulate', subtitle = 'Tratteggio: età vera di 300 Ma', x = 'Età (Ma)', y = 'Frequenza'))\nmetrics <- metric(`Età media, minimi quadrati` = f(mean(eta[, 1])), `Età media, York` = f(mean(eta[, 2])), `Deviazione standard, minimi quadrati` = f(sd(eta[, 1])), `Deviazione standard, York` = f(sd(eta[, 2])))"
+ },
+ {
+  "id": "m19-mswd",
+  "module": "M19",
+  "section": 3,
+  "sectionTitle": "MSWD e dispersione in eccesso",
+  "page": 22,
+  "title": "MSWD con errori sottostimati",
+  "goal": "Osservare la distribuzione della MSWD quando gli errori dichiarati sono corretti e quando sottostimano la dispersione reale.",
+  "action": "Aumenta il fattore fra errori reali ed errori dichiarati e confronta la MSWD media, la quota oltre la soglia e la copertura dell’intervallo dell’età.",
+  "conclusion": "Errori dichiarati troppo piccoli producono MSWD maggiori di 1 e intervalli di confidenza che contengono l’età vera meno spesso del valore nominale.",
+  "formula": "\\mathrm{MSWD}=\\frac{1}{n-2}\\sum_{i=1}^n W_i\\,(Y_i-a-bX_i)^2",
+  "controls": [
+   {
+    "key": "k",
+    "label": "Errori reali / errori dichiarati",
+    "type": "number",
+    "value": 1,
+    "min": 0.5,
+    "max": 3,
+    "step": 0.1,
+    "help": "Con 1 gli errori dichiarati descrivono correttamente la dispersione dei dati."
+   },
+   {
+    "key": "n",
+    "label": "Numero di campioni n",
+    "type": "number",
+    "value": 10,
+    "min": 4,
+    "max": 40,
+    "step": 1,
+    "help": "I gradi di libertà della MSWD sono n − 2."
+   }
+  ],
+  "prose": [
+   "La MSWD, media dei quadrati degli scarti pesati, confronta la dispersione dei punti attorno all’isocrona con quella attesa dagli errori dichiarati. Se gli errori sono corretti e i campioni hanno la stessa età e lo stesso rapporto iniziale, il suo valore atteso è 1. L’esperimento simula quattrocento isocrone con errori reali pari agli errori dichiarati moltiplicati per il fattore impostato.",
+   "L’istogramma riporta le MSWD simulate e la soglia 1 + 2√(2/f) proposta da Wendt e Carl (1991) per f gradi di libertà. Con errori corretti circa il 4% delle isocrone supera la soglia; con errori reali più grandi la MSWD media cresce con il quadrato del fattore, e l’intervallo di due errori standard attorno all’età contiene l’età vera sempre meno spesso."
+  ],
+  "limits": "Quattrocento isocrone per scenario: la quota oltre la soglia ha un errore standard di circa 0,01 quando vale 0,04. La dispersione aggiuntiva è proporzionale agli errori dichiarati; una dispersione geologica del rapporto iniziale avrebbe una struttura diversa.",
+  "symbols": "$W_i$ è il peso combinato del campione $i$, $a$ e $b$ intercetta e pendenza della retta di York, $n-2$ i gradi di libertà.",
+  "code": "york <- function(x, sx, y, sy) {\n  wx <- 1 / sx^2\n  wy <- 1 / sy^2\n  b <- coef(lm(y ~ x))[[2]]\n  for (k in 1:60) {\n    W <- wx * wy / (wx + b^2 * wy)\n    X <- sum(W * x) / sum(W)\n    Y <- sum(W * y) / sum(W)\n    be <- W * ((x - X) / wy + b * (y - Y) / wx)\n    b <- sum(W * be * (y - Y)) / sum(W * be * (x - X))\n  }\n  u <- be - sum(W * be) / sum(W)\n  a <- Y - b * X\n  c(b = b, sb = sqrt(1 / sum(W * u^2)), mswd = sum(W * (y - a - b * x)^2) / (length(x) - 2))\n}\nlam <- 1.3972e-11\nbt <- exp(lam * 3e+08) - 1\nxt <- seq(0.2, 12, length.out = p$n)\nsx <- 0.01 * xt\nsy <- rep(1.1e-05, p$n)\nsim <- t(replicate(400, {\n  x <- xt + rnorm(p$n, 0, p$k * sx)\n  y <- 0.7085 + bt * xt + rnorm(p$n, 0, p$k * sy)\n  york(x, sx, y, sy)\n}))\neta <- log(1 + sim[, \"b\"]) / lam / 1e+06\ns_eta <- sim[, \"sb\"] / (lam * (1 + sim[, \"b\"])) / 1e+06\nsoglia <- 1 + 2 * sqrt(2 / (p$n - 2))\ndata <- data.frame(mswd = sim[, \"mswd\"])\nplots <- list(hist_plot(sim[, \"mswd\"], title = 'MSWD di 400 isocrone simulate', xl = 'MSWD', bins = 40) + geom_vline(xintercept = soglia, linetype = 2, colour = col_geo[2]))\nmetrics <- metric(`MSWD medio` = f(mean(sim[, \"mswd\"])), `Soglia 1+2√(2/f)` = f(soglia), `Quota oltre la soglia` = f(mean(sim[, \"mswd\"] > soglia)), `Copertura dell’intervallo a 2σ` = f(mean(abs(eta - 300) < 2 * s_eta)))"
+ },
+ {
+  "id": "m19-media",
+  "module": "M19",
+  "section": 4,
+  "sectionTitle": "Incertezza e confronto delle età",
+  "page": 29,
+  "title": "Media pesata e dispersione geologica",
+  "goal": "Valutare la media pesata di date di singoli cristalli quando le date hanno una dispersione reale oltre a quella analitica.",
+  "action": "Introduci una dispersione geologica e confronta la copertura dell’intervallo con l’errore nominale e con l’errore scalato per la radice della MSWD.",
+  "conclusion": "Con una dispersione geologica l’errore standard nominale della media pesata è troppo piccolo; scalarlo per la radice della MSWD migliora la copertura, e resta inferiore al valore nominale.",
+  "formula": "\\bar t=\\frac{\\sum_i t_i/\\sigma_i^2}{\\sum_i 1/\\sigma_i^2},\\qquad \\sigma_{\\bar t}=\\Big(\\sum_i\\frac1{\\sigma_i^2}\\Big)^{-1/2}",
+  "controls": [
+   {
+    "key": "sg",
+    "label": "Dispersione geologica (Ma)",
+    "type": "number",
+    "value": 0,
+    "min": 0,
+    "max": 5,
+    "step": 0.25,
+    "help": "Deviazione standard delle età vere dei cristalli attorno a 300 Ma."
+   },
+   {
+    "key": "n",
+    "label": "Numero di cristalli n",
+    "type": "number",
+    "value": 15,
+    "min": 4,
+    "max": 60,
+    "step": 1,
+    "help": "Le incertezze analitiche sono estratte fra 0,8 e 2 Ma."
+   }
+  ],
+  "prose": [
+   "La media pesata combina date di singoli cristalli con incertezze diverse, dando più peso alle date più precise. Il suo errore standard nominale presuppone che tutte le date misurino la stessa età e differiscano soltanto per l’errore analitico. L’esperimento simula cinquecento gruppi di n date attorno a 300 Ma, con incertezze analitiche fra 0,8 e 2 Ma e una dispersione geologica impostata dal controllo.",
+   "Il programma calcola la media pesata, la MSWD e la quota di gruppi in cui l’intervallo di due errori standard contiene 300 Ma, con l’errore nominale e con l’errore moltiplicato per la radice della MSWD quando questa supera 1. L’istogramma confronta le MSWD con la soglia di Wendt e Carl."
+  ],
+  "limits": "Età vere distribuite in modo normale attorno a 300 Ma, senza cristalli ereditati né perdita di piombo; cinquecento gruppi per scenario. La moltiplicazione per la radice della MSWD presuppone che la dispersione in eccesso sia proporzionale agli errori analitici.",
+  "symbols": "$t_i$ e $\\sigma_i$ sono la data e l’incertezza analitica del cristallo $i$, $\\bar t$ la media pesata e $\\sigma_{\\bar t}$ il suo errore standard nominale.",
+  "code": "sim <- t(replicate(500, {\n  s <- runif(p$n, 0.8, 2)\n  t <- 300 + rnorm(p$n, 0, p$sg) + rnorm(p$n, 0, s)\n  w <- 1 / s^2\n  m <- sum(w * t) / sum(w)\n  c(m = m, se = sqrt(1 / sum(w)), mswd = sum(w * (t - m)^2) / (p$n - 1))\n}))\nsoglia <- 1 + 2 * sqrt(2 / (p$n - 1))\ndata <- data.frame(mswd = sim[, \"mswd\"])\nplots <- list(hist_plot(sim[, \"mswd\"], title = 'MSWD delle medie pesate simulate', xl = 'MSWD', bins = 40) + geom_vline(xintercept = soglia, linetype = 2, colour = col_geo[2]))\nmetrics <- metric(`MSWD medio` = f(mean(sim[, \"mswd\"])), `Quota oltre la soglia` = f(mean(sim[, \"mswd\"] > soglia)), `Copertura con l’errore nominale` = f(mean(abs(sim[, \"m\"] - 300) < 2 * sim[, \"se\"])), `Copertura con l’errore scalato` = f(mean(abs(sim[, \"m\"] - 300) < 2 * sim[, \"se\"] * sqrt(pmax(1, sim[, \"mswd\"])))))"
+ }
+]

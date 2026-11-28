@@ -10,7 +10,7 @@ const near = (a, b) => assert(Math.abs(a - b) < 0.0001, `${a} != ${b}`);
 test('Galaxy catalogue maps each course module to a distinct 3D position', () => {
   const modules = JSON.parse(fs.readFileSync('content/catalogue.json')).modules.filter(m => m.category !== 'progetti');
   assert.deepEqual(Object.keys(M.anchors).sort(), modules.map(m => m.id).sort());
-  assert.equal(new Set(Object.values(M.anchors).map(p => JSON.stringify(p))).size, 19);
+  assert.equal(new Set(Object.values(M.anchors).map(p => JSON.stringify(p))).size, 20);
   for (const p of Object.values(M.anchors)) {
     assert(p.every(Number.isFinite));
     const q = M.rotate(p, 0.83);
@@ -88,7 +88,7 @@ test('Callouts remain separated and inside the chart after camera rotations', ()
         screen: M.project(M.destination(id, angle), camera.vp, width, height),
       }));
       const labels = M.labels(worlds, width, height);
-      assert.equal(labels.length, 19);
+      assert.equal(labels.length, 20);
       for (const l of labels) {
         assert(l.x >= 0 && l.x + l.width <= width);
         assert(l.y >= 70 && l.y + l.height <= height - 50);

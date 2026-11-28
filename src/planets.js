@@ -20,6 +20,7 @@
     ['M16', 'Prisma', 'Mosaico geologico', 16, '#5c8685', '#39394d', '#b4a27a', '#91c5b9', 0.027, 186, 'Sintesi'],
     ['M17', 'Simplex', 'Mondo delle proporzioni', 8, '#8c7aa8', '#2b2846', '#d9cfa8', '#b7a6e8', 0.024, 197, 'Modelli'],
     ['M18', 'Azimut', 'Mondo dei venti', 10, '#5f8f9a', '#1f3340', '#d8c79a', '#9fd3d8', 0.021, 208, 'Territorio'],
+    ['M19', 'Isocrona', 'Mondo degli isotopi', 3, '#8a6a5c', '#2a2330', '#d9b98c', '#e3a98a', 0.023, 219, 'Inferenza'],
   ];
   const planets = rows.map((r, i) => ({
     id: r[0],
@@ -35,7 +36,7 @@
     sector: r[10],
     tilt: [
       -0.24, 0.28, -0.34, 0.19, 0.41, -0.18, 0.3, 0.47, -0.2, 0.35, 0.2, -0.25, 0.17, -0.38, 0.3, -0.2, 0.24, -0.31,
-      0.26,
+      0.26, -0.22,
     ][i],
     phase: i === 1 ? 2.2 : i * 0.71 + 0.4,
     rings: i === 7 || i === 15,
