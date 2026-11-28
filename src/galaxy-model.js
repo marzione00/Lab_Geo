@@ -22,6 +22,7 @@
     M15: [4.8, 1.1, -3.5],
     M16: [-2.3, 1.7, 1.7],
     M17: [-7.0, 1.5, 0.9],
+    M18: [8.8, 1.5, 1.2],
   };
   const clamp = (n, a, b) => Math.min(b, Math.max(a, n));
   function random(seed) {

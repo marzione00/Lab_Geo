@@ -20,6 +20,7 @@
     M15: ['Intermedio', ['M02', 'M05'], 'Script R, gestione dei dati e inferenza statistica.'],
     M16: ['Avanzato', ['M07', 'M08', 'M10'], 'Regressione, analisi multivariata e validazione delle previsioni.'],
     M17: ['Avanzato', ['M03', 'M08'], 'Statistiche descrittive, logaritmi e componenti principali.'],
+    M18: ['Avanzato', ['M04', 'M06'], 'Trigonometria, distribuzioni di probabilità e test di ipotesi.'],
   };
   const links = {
     radiation: {

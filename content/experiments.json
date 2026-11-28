@@ -7204,6 +7204,218 @@
       "source": "R/experiments/m17-zeri.R",
       "code": "m <- log(c(70, 20, 9.8, 0.2))\n\nZ <- sweep(matrix(rnorm(800, 0, 0.6), ncol = 4), 2, m, \"+\")\n\nX <- 100 * exp(Z)/rowSums(exp(Z))\n\nz <- X[, 4] < p$dl\n\ndelta <- p$frac * p$dl\n\nY <- X\n\nY[z, 4] <- delta\n\nY[z, 1:3] <- Y[z, 1:3] * (100 - delta)/rowSums(Y[z, 1:3, drop = FALSE])\n\nlr_vero <- mean(log(X[, 4]/X[, 1]))\n\nlr_sost <- mean(log(Y[, 4]/Y[, 1]))\n\nlr_esclusi <- mean(log(X[!z, 4]/X[!z, 1]))\n\ndata <- data.frame(x = log(X[, 4]/X[, 1]), y = log(Y[, 4]/Y[, 1]))\n\nplots <- list(point_plot(data, title = \"Log-rapporto prima e dopo la sostituzione\", xl = \"log(traccia / parte 1) simulato\", \n    yl = \"Dopo la sostituzione\"))\n\nmetrics <- metric(`Quota sotto il limite` = f(mean(z)), `Media simulata del log-rapporto` = f(lr_vero), \n    `Media con sostituzione` = f(lr_sost), `Media escludendo i campioni` = f(lr_esclusi))",
       "symbols": "$x_j$ è la parte $j$ registrata, $\\delta$ il valore sostitutivo, $\\kappa=100$ la somma della composizione e $y_j$ la parte dopo la sostituzione moltiplicativa."
+    },
+    {
+      "id": "m18-media",
+      "module": "M18",
+      "section": 1,
+      "sectionTitle": "Angoli e direzioni medie",
+      "page": 8,
+      "title": "Media aritmetica e direzione media",
+      "goal": "Confrontare la media aritmetica degli azimut con la direzione media circolare al variare della direzione del generatore.",
+      "action": "Sposta la direzione del generatore verso nord e osserva lo scarto della media aritmetica; la direzione media circolare resta vicina al valore impostato.",
+      "conclusion": "La media aritmetica degli angoli dipende dalla posizione dello zero della scala; la direzione media, ricavata dal vettore risultante, dipende soltanto dalla disposizione delle direzioni sul cerchio.",
+      "formula": "\\bar\\theta=\\operatorname{atan2}\\Big(\\frac1n\\sum_i\\sin\\theta_i,\\ \\frac1n\\sum_i\\cos\\theta_i\\Big),\\qquad \\bar R=\\sqrt{\\bar C^2+\\bar S^2}",
+      "controls": [
+        {
+          "key": "mu",
+          "label": "Direzione del generatore μ (gradi)",
+          "type": "number",
+          "value": 90,
+          "min": 0,
+          "max": 359,
+          "step": 1,
+          "help": "Con valori vicini a 0 o a 360 le misure si distribuiscono ai due estremi della scala."
+        },
+        {
+          "key": "kappa",
+          "label": "Concentrazione κ",
+          "type": "number",
+          "value": 2,
+          "min": 0.2,
+          "max": 20,
+          "step": 0.1,
+          "help": "Valori grandi raccolgono le direzioni attorno a μ."
+        },
+        {
+          "key": "seed",
+          "label": "Seme casuale",
+          "type": "number",
+          "value": 17,
+          "min": 1,
+          "max": 99999,
+          "step": 1,
+          "help": "A parità di ambiente R, il seme permette di ricostruire la simulazione."
+        }
+      ],
+      "prose": [
+        "Un azimut è un angolo misurato in senso orario da nord, e la scala da 0 a 360 gradi si chiude su sé stessa: 359 e 1 grado distano due gradi. L’esperimento genera sessanta azimut da una distribuzione di von Mises con direzione μ e concentrazione κ, poi calcola la media aritmetica dei valori numerici e la direzione media circolare.",
+        "La direzione media circolare si ottiene sommando i vettori unitari che corrispondono alle misure e prendendo la direzione della risultante; la lunghezza media risultante R̄ misura quanto le direzioni sono raccolte. Con μ vicino a 90 gradi le due medie quasi coincidono. Con μ vicino a 0 le misure si dividono fra valori piccoli e valori vicini a 360, e la media aritmetica cade lontano da entrambi i gruppi."
+      ],
+      "limits": "Campioni di sessanta azimut da una von Mises con il generatore di Best e Fisher (1979). Lo scarto della media aritmetica dipende dalla quota di misure che superano lo zero della scala, e quindi da κ e dal seme.",
+      "presets": [],
+      "source": "R/experiments/m18-media.R",
+      "code": "rvm <- function(n, mu, k) {\n    a <- 1 + sqrt(1 + 4 * k^2)\n    b <- (a - sqrt(2 * a))/(2 * k)\n    r <- (1 + b^2)/(2 * b)\n    out <- numeric(0)\n    while (length(out) < n) {\n        u1 <- runif(n)\n        u2 <- runif(n)\n        u3 <- runif(n)\n        z <- cos(pi * u1)\n        fz <- (1 + r * z)/(r + z)\n        g <- k * (r - fz)\n        ok <- g * (2 - g) - u2 > 0 | log(g/u2) + 1 - g >= 0\n        out <- c(out, sign(u3[ok] - 0.5) * acos(fz[ok]))\n    }\n    (mu + out[1:n])%%(2 * pi)\n}\n\nth <- rvm(60, p$mu * pi/180, p$kappa)\n\ndeg <- th * 180/pi\n\nC <- mean(cos(th))\n\nS <- mean(sin(th))\n\nmc <- (atan2(S, C) * 180/pi)%%360\n\nma <- mean(deg)\n\nscarto <- function(x, y) abs(((x - y + 180)%%360) - 180)\n\ndata <- data.frame(azimut = deg)\n\nplots <- list(ggplot(data, aes(azimut)) + geom_histogram(breaks = seq(0, 360, 10), fill = col_geo[1], \n    colour = \"#F5F6F3\") + geom_vline(xintercept = ma, colour = col_geo[2], linewidth = 1.2) + geom_vline(xintercept = mc, \n    colour = col_geo[3], linewidth = 1.2, linetype = 2) + scale_x_continuous(breaks = seq(0, 360, 90)) + \n    labs(title = \"Azimut simulati con le due medie\", subtitle = \"Linea continua: media aritmetica; tratteggio: direzione media circolare\", \n        x = \"Azimut (gradi)\", y = \"Frequenza\"))\n\nmetrics <- metric(`Direzione del generatore` = p$mu, `Media aritmetica degli azimut` = f(ma), `Direzione media circolare` = f(mc), \n    `Scarto della media aritmetica` = f(scarto(ma, p$mu)), `Scarto della direzione media` = f(scarto(mc, \n        p$mu)), `Lunghezza media risultante` = f(sqrt(C^2 + S^2)))",
+      "symbols": "$\\theta_i$ è l’azimut della misura $i$ in radianti, $\\bar C$ e $\\bar S$ le medie dei coseni e dei seni, $\\bar\\theta$ la direzione media e $\\bar R$ la lunghezza media risultante, compresa fra 0 e 1."
+    },
+    {
+      "id": "m18-rayleigh",
+      "module": "M18",
+      "section": 2,
+      "sectionTitle": "La distribuzione di von Mises",
+      "page": 15,
+      "title": "Potenza del test di Rayleigh",
+      "goal": "Stimare con una simulazione la probabilità che il test di Rayleigh riconosca una direzione preferenziale, al variare della concentrazione e del numero di misure.",
+      "action": "Aumenta κ o il numero di misure e confronta la potenza stimata con la quota di rifiuti ottenuta da dati uniformi.",
+      "conclusion": "Con concentrazioni basse e venti misure il test respinge raramente l’uniformità: un risultato non significativo segnala una dispersione compatibile con l’assenza di direzione preferenziale, e la sua informatività dipende dalla potenza.",
+      "formula": "Z=n\\bar R^2,\\qquad p\\approx e^{-Z}\\Big[1+\\frac{2Z-Z^2}{4n}-\\frac{24Z-132Z^2+76Z^3-9Z^4}{288n^2}\\Big]",
+      "controls": [
+        {
+          "key": "kappa",
+          "label": "Concentrazione κ",
+          "type": "number",
+          "value": 0.3,
+          "min": 0.05,
+          "max": 3,
+          "step": 0.05,
+          "help": "Con κ piccolo la von Mises si avvicina alla distribuzione uniforme."
+        },
+        {
+          "key": "n",
+          "label": "Numero di misure n",
+          "type": "number",
+          "value": 20,
+          "min": 5,
+          "max": 100,
+          "step": 1,
+          "help": "Venti misure corrispondono a una stazione del caso guida."
+        },
+        {
+          "key": "seed",
+          "label": "Seme casuale",
+          "type": "number",
+          "value": 17,
+          "min": 1,
+          "max": 99999,
+          "step": 1,
+          "help": "A parità di ambiente R, il seme permette di ricostruire la simulazione."
+        }
+      ],
+      "prose": [
+        "Il test di Rayleigh verifica l’ipotesi che le direzioni siano distribuite in modo uniforme sul cerchio, contro un’alternativa con una sola direzione preferenziale. La statistica è Z = nR̄², e la probabilità di coda si calcola con un’approssimazione per piccoli campioni. L’esperimento simula quattrocento campioni da una von Mises e quattrocento da una distribuzione uniforme, con lo stesso numero di misure.",
+        "La potenza stimata è la quota di campioni von Mises con p minore di 0,05; la quota di rifiuti con dati uniformi controlla che il livello del test resti vicino al 5%. L’istogramma confronta le lunghezze medie risultanti dei due insiemi con il valore critico. Con κ = 0,3 e venti misure le due distribuzioni si sovrappongono quasi del tutto."
+      ],
+      "limits": "Quattrocento campioni per ipotesi: la potenza stimata ha un errore standard di circa 0,025 quando vale 0,5. Il test di Rayleigh è costruito per alternative unimodali; con due direzioni opposte la risultante si annulla anche se le direzioni sono concentrate.",
+      "presets": [],
+      "source": "R/experiments/m18-rayleigh.R",
+      "code": "rvm <- function(n, mu, k) {\n    a <- 1 + sqrt(1 + 4 * k^2)\n    b <- (a - sqrt(2 * a))/(2 * k)\n    r <- (1 + b^2)/(2 * b)\n    out <- numeric(0)\n    while (length(out) < n) {\n        u1 <- runif(n)\n        u2 <- runif(n)\n        u3 <- runif(n)\n        z <- cos(pi * u1)\n        fz <- (1 + r * z)/(r + z)\n        g <- k * (r - fz)\n        ok <- g * (2 - g) - u2 > 0 | log(g/u2) + 1 - g >= 0\n        out <- c(out, sign(u3[ok] - 0.5) * acos(fz[ok]))\n    }\n    (mu + out[1:n])%%(2 * pi)\n}\n\npval <- function(Z, n) pmin(1, exp(-Z) * (1 + (2 * Z - Z^2)/(4 * n) - (24 * Z - 132 * Z^2 + 76 * Z^3 - \n    9 * Z^4)/(288 * n^2)))\n\nRbar <- function(x) sqrt(mean(cos(x))^2 + mean(sin(x))^2)\n\nR1 <- replicate(400, Rbar(rvm(p$n, 0, p$kappa)))\n\nR0 <- replicate(400, Rbar(runif(p$n, 0, 2 * pi)))\n\npv <- pval(p$n * R1^2, p$n)\n\nrc <- sqrt(uniroot(function(z) pval(z, p$n) - 0.05, c(0.5, 10))$root/p$n)\n\ndata <- data.frame(R = c(R0, R1), ipotesi = rep(c(\"Uniforme\", \"von Mises\"), each = 400))\n\nplots <- list(ggplot(data, aes(R, fill = ipotesi)) + geom_histogram(bins = 30, position = \"identity\", \n    alpha = 0.6, colour = NA) + geom_vline(xintercept = rc, linetype = 2, linewidth = 1) + scale_fill_manual(values = col_geo[c(6, \n    1)]) + labs(title = \"Lunghezza media risultante in 400 campioni\", subtitle = \"Tratteggio: valore critico del test di Rayleigh al 5%\", \n    x = \"Lunghezza media risultante\", y = \"Frequenza\"))\n\nmetrics <- metric(`Potenza stimata` = f(mean(pv < 0.05)), `Quota di rifiuti con dati uniformi` = f(mean(pval(p$n * \n    R0^2, p$n) < 0.05)), `Valore critico di R` = f(rc), `R medio sotto von Mises` = f(mean(R1)), `Campioni simulati` = 400)",
+      "symbols": "$n$ è il numero di misure, $\\bar R$ la lunghezza media risultante, $Z$ la statistica di Rayleigh e $p$ la probabilità di coda sotto l’ipotesi di uniformità."
+    },
+    {
+      "id": "m18-assiali",
+      "module": "M18",
+      "section": 3,
+      "sectionTitle": "Dati assiali",
+      "page": 21,
+      "title": "Angoli raddoppiati e famiglie di fratture",
+      "goal": "Osservare come il raddoppio degli angoli riassume dati assiali registrati con l’una o l’altra estremità, e che cosa accade con due famiglie.",
+      "action": "Con una sola famiglia confronta R̄ degli angoli registrati e degli angoli raddoppiati; poi aumenta l’angolo fra due famiglie fino a 90 gradi.",
+      "conclusion": "Il raddoppio rende equivalenti le due estremità di una linea; due famiglie ortogonali diventano opposte negli angoli raddoppiati e la loro risultante si annulla.",
+      "formula": "\\bar\\theta_{\\mathrm{asse}}=\\tfrac12\\operatorname{atan2}\\Big(\\sum_i\\sin2\\theta_i,\\ \\sum_i\\cos2\\theta_i\\Big)\\bmod 180^\\circ",
+      "controls": [
+        {
+          "key": "sep",
+          "label": "Angolo fra le famiglie (gradi)",
+          "type": "number",
+          "value": 0,
+          "min": 0,
+          "max": 90,
+          "step": 5,
+          "help": "Con 0 tutte le misure appartengono a una famiglia a 40 gradi; con valori positivi metà delle misure forma una seconda famiglia."
+        },
+        {
+          "key": "k2",
+          "label": "Concentrazione degli angoli raddoppiati",
+          "type": "number",
+          "value": 6,
+          "min": 1,
+          "max": 20,
+          "step": 0.5,
+          "help": "Concentrazione della von Mises sugli angoli raddoppiati di ciascuna famiglia."
+        },
+        {
+          "key": "seed",
+          "label": "Seme casuale",
+          "type": "number",
+          "value": 17,
+          "min": 1,
+          "max": 99999,
+          "step": 1,
+          "help": "A parità di ambiente R, il seme permette di ricostruire la simulazione."
+        }
+      ],
+      "prose": [
+        "La traccia di una frattura è una linea senza verso: le direzioni 40 e 220 gradi descrivono la stessa linea, e in un quaderno di campagna compare l’una o l’altra. L’esperimento genera cento direzioni attorno a una famiglia a 40 gradi e registra ogni misura con un’estremità scelta a caso.",
+        "Gli angoli registrati hanno una lunghezza media risultante vicina a zero, perché le estremità opposte si compensano. Raddoppiando gli angoli le due estremità coincidono, e metà della direzione media degli angoli raddoppiati fornisce l’asse medio. Con una seconda famiglia a 90 gradi dalla prima, gli angoli raddoppiati delle due famiglie risultano opposti e la loro risultante torna vicina a zero."
+      ],
+      "limits": "Due famiglie con lo stesso numero di misure e la stessa concentrazione; le estremità sono scelte con probabilità 1/2. Con famiglie di dimensioni diverse la risultante degli angoli raddoppiati è dominata dalla famiglia più numerosa.",
+      "presets": [],
+      "source": "R/experiments/m18-assiali.R",
+      "code": "rvm <- function(n, mu, k) {\n    a <- 1 + sqrt(1 + 4 * k^2)\n    b <- (a - sqrt(2 * a))/(2 * k)\n    r <- (1 + b^2)/(2 * b)\n    out <- numeric(0)\n    while (length(out) < n) {\n        u1 <- runif(n)\n        u2 <- runif(n)\n        u3 <- runif(n)\n        z <- cos(pi * u1)\n        fz <- (1 + r * z)/(r + z)\n        g <- k * (r - fz)\n        ok <- g * (2 - g) - u2 > 0 | log(g/u2) + 1 - g >= 0\n        out <- c(out, sign(u3[ok] - 0.5) * acos(fz[ok]))\n    }\n    (mu + out[1:n])%%(2 * pi)\n}\n\nn1 <- if (p$sep == 0) 100 else 50\n\nax <- c(rep(40, n1), rep(40 + p$sep, 100 - n1))\n\nt2 <- rvm(100, 0, p$k2)/2\n\nreg <- (ax + t2 * 180/pi + 180 * rbinom(100, 1, 0.5))%%360\n\nRbar <- function(x) sqrt(mean(cos(x))^2 + mean(sin(x))^2)\n\na <- reg * pi/180\n\nasse <- (atan2(mean(sin(2 * a)), mean(cos(2 * a))) * 90/pi)%%180\n\nclassi <- cut(c(reg%%180, reg%%180 + 180), seq(0, 360, 10), right = FALSE)\n\ndata <- data.frame(centro = seq(5, 355, 10), n = as.vector(table(classi)))\n\nplots <- list(ggplot(data, aes(centro, sqrt(n))) + geom_col(width = 10, fill = col_geo[1], colour = \"#F5F6F3\") + \n    scale_x_continuous(limits = c(0, 360), breaks = seq(0, 315, 45)) + coord_polar(start = 0, direction = 1) + \n    labs(title = \"Rosa assiale a settori di uguale area\", subtitle = \"Ogni misura compare alle due estremità della linea\", \n        x = NULL, y = \"Radice della frequenza\"))\n\nmetrics <- metric(`R degli angoli registrati` = f(Rbar(a)), `R degli angoli raddoppiati` = f(Rbar(2 * \n    a)), `Asse medio (gradi)` = f(asse), `Angolo fra le famiglie (gradi)` = p$sep)",
+      "symbols": "$\\theta_i$ è la direzione registrata in radianti; gli angoli $2\\theta_i$ non distinguono $\\theta_i$ da $\\theta_i+180^\\circ$; l’asse medio è espresso fra 0 e 180 gradi."
+    },
+    {
+      "id": "m18-fisher",
+      "module": "M18",
+      "section": 4,
+      "sectionTitle": "Direzioni nello spazio",
+      "page": 29,
+      "title": "Cono di confidenza di Fisher",
+      "goal": "Osservare come il cono di confidenza al 95% della direzione media si restringe al crescere del numero di direzioni.",
+      "action": "Aumenta il numero di direzioni N con la stessa concentrazione k e confronta alfa95 esatto, approssimazione e distanza della media dalla direzione vera.",
+      "conclusion": "Il raggio del cono decresce circa come l’inverso della radice di kN; con poche direzioni la formula approssimata lo sottostima.",
+      "formula": "\\cos\\alpha_{95}=1-\\frac{N-R}{R}\\Big[\\Big(\\frac{1}{0{,}05}\\Big)^{1/(N-1)}-1\\Big],\\qquad k=\\frac{N-1}{N-R}",
+      "controls": [
+        {
+          "key": "N",
+          "label": "Numero di direzioni N",
+          "type": "number",
+          "value": 8,
+          "min": 3,
+          "max": 60,
+          "step": 1,
+          "help": "Nel paleomagnetismo N è spesso il numero di colate o di siti."
+        },
+        {
+          "key": "k",
+          "label": "Concentrazione k della distribuzione di Fisher",
+          "type": "number",
+          "value": 30,
+          "min": 5,
+          "max": 200,
+          "step": 1,
+          "help": "Valori grandi raccolgono le direzioni attorno alla direzione vera."
+        },
+        {
+          "key": "seed",
+          "label": "Seme casuale",
+          "type": "number",
+          "value": 17,
+          "min": 1,
+          "max": 99999,
+          "step": 1,
+          "help": "A parità di ambiente R, il seme permette di ricostruire la simulazione."
+        }
+      ],
+      "prose": [
+        "La distribuzione di Fisher descrive direzioni nello spazio disperse attorno a una direzione media con concentrazione k. L’esperimento genera N direzioni attorno a una direzione vera con declinazione 0 e inclinazione 60 gradi, calcola la direzione media dalla somma dei vettori unitari e il raggio alfa95 del cono di confidenza al 95% con la formula di Fisher (1953).",
+        "Il grafico è una proiezione equivalente dell’emisfero inferiore: il centro rappresenta la verticale verso il basso, il cerchio esterno l’orizzontale. Il cerchio colorato è il cono attorno alla media stimata, l’asterisco la direzione vera. Il valore 140/√(kN) è l’approssimazione del raggio in gradi, adeguata quando N e k non sono piccoli."
+      ],
+      "limits": "Direzioni simulate da una distribuzione di Fisher per inversione della funzione di ripartizione dell’angolo dal centro. La formula di alfa95 presuppone direzioni indipendenti con simmetria attorno alla media; dispersioni allungate richiedono altri modelli.",
+      "presets": [],
+      "source": "R/experiments/m18-fisher.R",
+      "code": "vett <- function(az, inc) cbind(cos(inc * pi/180) * cos(az * pi/180), cos(inc * pi/180) * sin(az * pi/180), \n    sin(inc * pi/180))\n\nm0 <- vett(0, 60)[1, ]\n\ne1 <- c(0, 0, 1) - m0[3] * m0\n\ne1 <- e1/sqrt(sum(e1^2))\n\ne2 <- c(m0[2] * e1[3] - m0[3] * e1[2], m0[3] * e1[1] - m0[1] * e1[3], m0[1] * e1[2] - m0[2] * e1[1])\n\nct <- 1 + log(1 - runif(p$N) * (1 - exp(-2 * p$k)))/p$k\n\nph <- runif(p$N, 0, 2 * pi)\n\nX <- outer(ct, m0) + outer(sqrt(1 - ct^2) * cos(ph), e1) + outer(sqrt(1 - ct^2) * sin(ph), e2)\n\ns <- colSums(X)\n\nR <- sqrt(sum(s^2))\n\nN <- p$N\n\nk <- (N - 1)/(N - R)\n\na95 <- acos(1 - (N - R)/R * (20^(1/(N - 1)) - 1))\n\nm <- s/R\n\nb1 <- c(0, 0, 1) - m[3] * m\n\nb1 <- b1/sqrt(sum(b1^2))\n\nb2 <- c(m[2] * b1[3] - m[3] * b1[2], m[3] * b1[1] - m[1] * b1[3], m[1] * b1[2] - m[2] * b1[1])\n\ntt <- seq(0, 2 * pi, length.out = 120)\n\ncono <- outer(rep(cos(a95), 120), m) + sin(a95) * (outer(cos(tt), b1) + outer(sin(tt), b2))\n\nproietta <- function(V) {\n    V <- V * sign(V[, 3])\n    r <- sqrt(2) * sin((pi/2 - asin(pmin(1, V[, 3])))/2)\n    data.frame(x = r * sin(atan2(V[, 2], V[, 1])), y = r * cos(atan2(V[, 2], V[, 1])))\n}\n\ndata <- proietta(X)\n\nplots <- list(ggplot(data, aes(x, y)) + geom_path(data = data.frame(x = sin(seq(0, 2 * pi, length.out = 200)), \n    y = cos(seq(0, 2 * pi, length.out = 200))), colour = \"#273E4A\") + geom_point(colour = col_geo[1], \n    size = 2.4) + geom_path(data = proietta(cono), colour = col_geo[2], linewidth = 1) + geom_point(data = proietta(rbind(m0)), \n    colour = col_geo[3], shape = 8, size = 4, stroke = 1.2) + annotate(\"text\", x = 0, y = 1.08, label = \"N\") + \n    coord_equal() + labs(title = \"Direzioni simulate e cono alfa95\", subtitle = \"Emisfero inferiore; asterisco: direzione vera\", \n    x = NULL, y = NULL) + theme(axis.text = element_blank(), panel.grid.major = element_blank()))\n\nmetrics <- metric(`alfa95 (gradi)` = f(a95 * 180/pi), `Approssimazione 140/radice(kN) (gradi)` = f(140/sqrt(k * \n    N)), `k stimato` = f(k), `Distanza dalla direzione vera (gradi)` = f(acos(min(1, sum(m * m0))) * \n    180/pi))",
+      "symbols": "$N$ è il numero di direzioni, $R$ la lunghezza della loro risultante, $k$ la stima della concentrazione e $\\alpha_{95}$ il semiangolo del cono di confidenza della direzione media."
     }
   ],
   "coverage": [
@@ -8666,6 +8878,42 @@
       "role": "esperimento",
       "activities": [
         "m17-zeri"
+      ]
+    },
+    {
+      "module": "M18",
+      "section": 1,
+      "title": "Angoli e direzioni medie",
+      "role": "esperimento",
+      "activities": [
+        "m18-media"
+      ]
+    },
+    {
+      "module": "M18",
+      "section": 2,
+      "title": "La distribuzione di von Mises",
+      "role": "esperimento",
+      "activities": [
+        "m18-rayleigh"
+      ]
+    },
+    {
+      "module": "M18",
+      "section": 3,
+      "title": "Dati assiali",
+      "role": "esperimento",
+      "activities": [
+        "m18-assiali"
+      ]
+    },
+    {
+      "module": "M18",
+      "section": 4,
+      "title": "Direzioni nello spazio",
+      "role": "esperimento",
+      "activities": [
+        "m18-fisher"
       ]
     }
   ]

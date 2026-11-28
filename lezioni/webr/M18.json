@@ -1,0 +1,77 @@
+{
+ "R": "R version 4.6.0 (2026-04-24)",
+ "fragments": {
+  "capitolo-01.R": {
+   "status": "ok",
+   "output": "> d <- read.csv('dati/correnti_v1.csv')\n> a <- d$azimut * pi / 180\n> m <- atan2(mean(sin(a)), mean(cos(a)))\n> round(c(aritmetica = mean(d$azimut),\n+   circolare = (m * 180 / pi) %% 360), 1)\naritmetica  circolare \n     202.5      352.4 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "6e3178d5271a511148ff",
+   "seconds": 23.9
+  },
+  "capitolo-02.R": {
+   "status": "ok",
+   "output": "> d <- read.csv('dati/correnti_v1.csv')\n> a <- d$azimut * pi / 180\n> f <- function(x) {\n+   C <- mean(cos(x)); S <- mean(sin(x))\n+   R <- sqrt(C^2 + S^2)\n+   c(dir = (atan2(S, C) * 180/pi) %% 360,\n+     R = R,\n+     sd = sqrt(-2 * log(R)) * 180/pi)\n+ }\n> round(sapply(split(a, d$stazione), f), 2)\n        S1     S2     S3    S4     S5     S6\ndir 349.46 352.16 349.64 13.81 350.02 309.25\nR     0.86   0.95   0.83  0.91   0.82   0.31\nsd   31.43  17.84  35.00 24.49  35.80  88.24",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "1c2390157499285c4723",
+   "seconds": 0.0
+  },
+  "capitolo-03.R": {
+   "status": "ok",
+   "output": "> d <- read.csv('dati/correnti_v1.csv')\n> a <- d$azimut * pi / 180\n> A <- function(k) besselI(k, 1, TRUE) /\n+   besselI(k, 0, TRUE)\n> kap <- function(x) {\n+   R <- sqrt(mean(cos(x))^2 +\n+     mean(sin(x))^2)\n+   uniroot(function(k) A(k) - R,\n+     c(1e-6, 500))$root\n+ }\n> k <- sapply(split(a, d$stazione), kap)\n> round(k, 2)\n   S1    S2    S3    S4    S5    S6 \n 3.92 10.84  3.30  6.02  3.18  0.64 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "95caa144130dacb807b6",
+   "seconds": 0.0
+  },
+  "capitolo-04.R": {
+   "status": "ok",
+   "output": "> d <- read.csv('dati/correnti_v1.csv')\n> ray <- function(g) {\n+   a <- d$azimut[d$stazione == g] * pi/180\n+   n <- length(a)\n+   Z <- n * (mean(cos(a))^2 +\n+     mean(sin(a))^2)\n+   p <- exp(-Z) * (1 + (2*Z - Z^2)/(4*n) -\n+     (24*Z - 132*Z^2 + 76*Z^3 - 9*Z^4) /\n+     (288 * n^2))\n+   c(n = n, Z = Z, p = p)\n+ }\n> round(sapply(c('S1', 'S6'), ray), 4)\n       S1      S6\nn 20.0000 20.0000\nZ 14.8026  1.8658\np  0.0000  0.1553",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "394316075b003542d7ba",
+   "seconds": 0.0
+  },
+  "capitolo-05.R": {
+   "status": "ok",
+   "output": "> d <- read.csv('dati/fratture_v1.csv')\n> t <- d$direzione[d$famiglia == 'J1']\n> t <- t * pi / 180\n> r <- function(a) sqrt(mean(cos(a))^2 +\n+   mean(sin(a))^2)\n> m <- atan2(mean(sin(2*t)), mean(cos(2*t)))\n> round(c(R = r(t), R2 = r(2*t),\n+   asse = (m / 2 * 180 / pi) %% 180), 3)\n     R     R2   asse \n 0.036  0.930 42.597 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "626d70989960b1b304be",
+   "seconds": 0.0
+  },
+  "capitolo-06.R": {
+   "status": "ok",
+   "output": "> d <- read.csv('dati/paleomag_v1.csv')\n> D <- d$D * pi/180; I <- d$I * pi/180\n> X <- cbind(cos(I) * cos(D),\n+   cos(I) * sin(D), sin(I))\n> s <- colSums(X); N <- nrow(X)\n> R <- sqrt(sum(s^2)); k <- (N-1) / (N-R)\n> a95 <- acos(1 - (N-R) / R *\n+   (20^(1/(N-1)) - 1)) * 180 / pi\n> Dm <- atan2(s[2], s[1]) * 180/pi\n> round(c(D = Dm %% 360,\n+   I = asin(s[3] / R) * 180 / pi,\n+   R = R, k = k, a95 = a95), 2)\n     D      I      R      k    a95 \n344.83  58.97  13.73  47.34   5.84 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "7540306b057df4079e5d",
+   "seconds": 0.0
+  },
+  "capitolo-07.R": {
+   "status": "ok",
+   "output": "> d <- read.csv('dati/paleomag_v1.csv')\n> u <- function(D, I) { D <- D * pi/180\n+   I <- I * pi/180\n+   cbind(cos(I) * cos(D),\n+     cos(I) * sin(D), sin(I)) }\n> s <- colSums(u(d$D, d$I))\n> m <- s / sqrt(sum(s^2))\n> Ig <- atan(2 * tan(42 * pi/180))\n> g <- u(0, Ig * 180 / pi)\n> psi <- acos(sum(m * g)) * 180 / pi\n> round(c(I_gad = Ig * 180/pi,\n+   distanza = psi), 2)\n   I_gad distanza \n   60.96     7.83 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "433a68679303917062ad",
+   "seconds": 0.0
+  },
+  "capitolo-08.R": {
+   "status": "ok",
+   "output": "> d <- read.csv('dati/strati_v1.csv')\n> t <- (d$immersione + 180) * pi / 180\n> p <- (90 - d$inclinazione) * pi / 180\n> X <- cbind(cos(p) * cos(t),\n+   cos(p) * sin(t), sin(p))\n> e <- eigen(crossprod(X) / nrow(X))\n> v <- e$vectors[, 3]\n> v <- v * sign(v[3])\n> tr <- atan2(v[2], v[1]) * 180 / pi\n> round(c(S = e$values,\n+   trend = tr %% 360,\n+   plunge = asin(v[3]) * 180 / pi), 3)\n     S1      S2      S3   trend  plunge \n  0.564   0.422   0.014 298.205  16.097 ",
+   "R": "R version 4.6.0 (2026-04-24)",
+   "figures": 0,
+   "same": true,
+   "hash": "3efc2d4efd732979c0e7",
+   "seconds": 0.0
+  }
+ }
+}
